@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { CartButton } from "@/components/shop/cart-button";
 import type { MegaMenuCategory } from "@/lib/actions/product";
-import logo from "@/logo.png";
+import logo from "@/logosnapfit.png";
 
 export function HeaderNav({ menu }: { menu: MegaMenuCategory[] }) {
   const [open, setOpen] = useState(false); // mega-menu desktop
@@ -51,7 +51,7 @@ export function HeaderNav({ menu }: { menu: MegaMenuCategory[] }) {
                 src={logo}
                 alt="SnapFit"
                 priority
-                className="h-9 w-auto sm:h-10"
+                className="h-6 w-auto sm:h-7"
               />
             </Link>
 

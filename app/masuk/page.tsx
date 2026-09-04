@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { AuthForm } from "@/components/auth/auth-form";
-import logo from "@/logo.png";
+import logo from "@/logosnapfit.png";
 
 export const metadata = { title: "Masuk — SnapFit" };
 
@@ -16,7 +16,7 @@ export default async function LoginPage({
     <main className="flex min-h-dvh flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
         <Link href="/" className="flex justify-center">
-          <Image src={logo} alt="SnapFit" className="h-12 w-auto" priority />
+          <Image src={logo} alt="SnapFit" className="h-8 w-auto" priority />
         </Link>
         <h1 className="mt-6 text-center text-xl font-semibold">Masuk</h1>
 
