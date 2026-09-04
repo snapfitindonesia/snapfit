@@ -22,5 +22,12 @@ export async function GET(request: Request) {
   }
 
   const result = await getProducts(parsed.data);
-  return NextResponse.json(result);
+  return NextResponse.json(result, {
+    headers: {
+      // Cache di CDN Vercel per-URL (tipe/sort/q/skip): sajikan hasil 60 dtk,
+      // + stale-while-revalidate 5 mnt → query berulang instan tanpa nyentuh Supabase.
+      // Edit admin tetap tercermin dalam <=60 dtk.
+      "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+    },
+  });
 }
