@@ -1,5 +1,7 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ShieldCheck, BadgeCheck, RotateCcw } from "lucide-react";
+import logo from "@/logo.png";
 
 const COLUMNS = [
   {
@@ -53,9 +55,7 @@ export function SiteFooter() {
         {/* Link columns */}
         <div className="grid grid-cols-2 gap-8 py-12 sm:grid-cols-4">
           <div className="col-span-2 sm:col-span-1">
-            <span className="text-lg font-semibold tracking-tight">
-              snapfit<span className="text-muted-foreground">.</span>
-            </span>
+            <Image src={logo} alt="SnapFit" className="h-10 w-auto" />
             <p className="mt-3 max-w-xs text-sm text-muted-foreground">
               Aksesori HP & tablet yang benar-benar pas. Pilih tipe, pesan,
               beres.

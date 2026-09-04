@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { CartButton } from "@/components/shop/cart-button";
 import type { MegaMenuCategory } from "@/lib/actions/product";
+import logo from "@/logo.png";
 
 export function HeaderNav({ menu }: { menu: MegaMenuCategory[] }) {
   const [open, setOpen] = useState(false); // mega-menu desktop
@@ -42,11 +43,16 @@ export function HeaderNav({ menu }: { menu: MegaMenuCategory[] }) {
 
             <Link
               href="/"
-              className="text-lg font-semibold tracking-tight"
+              className="flex items-center"
               aria-label="SnapFit — beranda"
               onClick={closeMobile}
             >
-              snapfit<span className="text-muted-foreground">.</span>
+              <Image
+                src={logo}
+                alt="SnapFit"
+                priority
+                className="h-9 w-auto sm:h-10"
+              />
             </Link>
 
             {/* Nav tengah (desktop) */}
