@@ -39,6 +39,24 @@ export async function getShippingRates(params: {
 }): Promise<ShippingRate[]> {
   if (isBiteshipMock()) return mockRates(params.weightGram);
 
+  try {
+    return await fetchBiteshipRates(params);
+  } catch (e) {
+    // Dev: kalau Biteship gagal (mis. saldo belum top-up) pakai mock biar checkout bisa
+    // dites. Produksi: lempar error (jangan pakai tarif palsu → salah ongkir = rugi).
+    if (process.env.NODE_ENV === "development") {
+      console.warn("[biteship] fallback ke tarif mock (dev):", e instanceof Error ? e.message : e);
+      return mockRates(params.weightGram);
+    }
+    throw e;
+  }
+}
+
+async function fetchBiteshipRates(params: {
+  destinationPostalCode: string;
+  weightGram: number;
+  itemValue?: number;
+}): Promise<ShippingRate[]> {
   const res = await fetch(`${BITESHIP_BASE}/rates/couriers`, {
     method: "POST",
     headers: {
@@ -46,8 +64,8 @@ export async function getShippingRates(params: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      origin_postal_code: process.env.ORIGIN_POSTAL_CODE,
-      destination_postal_code: params.destinationPostalCode,
+      origin_postal_code: Number(process.env.ORIGIN_POSTAL_CODE),
+      destination_postal_code: Number(params.destinationPostalCode),
       couriers: "sicepat,jne,jnt",
       items: [
         {
@@ -60,8 +78,10 @@ export async function getShippingRates(params: {
     }),
   });
 
-  if (!res.ok) throw new Error(`Biteship rates gagal: ${res.status}`);
   const data = await res.json();
+  if (!res.ok || data.success === false) {
+    throw new Error(`Biteship rates gagal: ${data.error ?? res.status}`);
+  }
   type BiteshipPricing = {
     courier_code: string;
     courier_name: string;

@@ -13,6 +13,22 @@ import { addressSchema } from "@/lib/validations/checkout";
 import { createOrder, simulatePaymentSuccess } from "@/lib/actions/order";
 import type { ShippingRate } from "@/lib/biteship";
 
+declare global {
+  interface Window {
+    snap?: {
+      pay: (
+        token: string,
+        opts: {
+          onSuccess?: () => void;
+          onPending?: () => void;
+          onError?: () => void;
+          onClose?: () => void;
+        },
+      ) => void;
+    };
+  }
+}
+
 type Fields = {
   name: string;
   phone: string;
@@ -145,11 +161,23 @@ export function CheckoutView() {
       if (result.mock) {
         // Mode mock: tampilkan konfirmasi simulasi pembayaran
         setPending({ midtransOrderId: result.midtransOrderId, total: result.total });
+      } else if (typeof window !== "undefined" && window.snap) {
+        // Mode nyata: buka popup Snap. Status final tetap dari webhook (server).
+        const successUrl = `/checkout/sukses?order=${encodeURIComponent(result.midtransOrderId)}`;
+        window.snap.pay(result.snapToken, {
+          onSuccess: () => {
+            clear();
+            router.push(successUrl);
+          },
+          onPending: () => {
+            clear();
+            router.push(successUrl);
+          },
+          onError: () => setPayError("Pembayaran gagal. Coba lagi."),
+          onClose: () => setPayError("Pembayaran dibatalkan."),
+        });
       } else {
-        // Mode nyata: buka Snap. (Snap.js dimuat saat key sandbox terpasang.)
-        setPayError(
-          "Snap belum aktif di build ini. Isi MIDTRANS_CLIENT_KEY & pasang Snap.js.",
-        );
+        setPayError("Snap.js belum termuat. Muat ulang halaman lalu coba lagi.");
       }
     } catch (err) {
       setPayError(err instanceof Error ? err.message : "Gagal membuat order.");

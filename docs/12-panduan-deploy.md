@@ -81,16 +81,13 @@ Lalu admin login → diarahkan ke `/admin/mfa` untuk enroll TOTP → baru bisa b
 > Migration lokal saat ini dibuat untuk SQLite dan **tidak** kompatibel Postgres. Untuk
 > produksi, buat ulang migration Postgres.
 
-1. Ubah `prisma/schema.prisma`:
-   ```prisma
-   datasource db {
-     provider  = "postgresql"
-     url       = env("DATABASE_URL")   // pooled (runtime)
-     directUrl = env("DIRECT_URL")     // direct (migrate)
-   }
+1. Tukar datasource ke Postgres (1 perintah — mengganti blok `datasource` saja):
+   ```bash
+   npm run db:use-postgres
    ```
-2. Set `.env` lokal (sementara, untuk generate migration) ke connection string Supabase.
-3. Reset folder migration lama (khusus saat pindah DB):
+   (untuk balik ke SQLite dev lokal: `npm run db:use-sqlite`)
+2. Set `.env`: `DATABASE_URL` (pooled :6543) + `DIRECT_URL` (direct :5432) dari Supabase.
+3. Buat migration Postgres baru (migration SQLite lama tak kompatibel):
    ```bash
    rm -rf prisma/migrations
    npx prisma migrate dev --name init_postgres
@@ -265,14 +262,19 @@ Cukup **tambah record** di registrar/Cloudflare (NS tetap di tempat) — biar ho
 
 ## 15. TODO kode sebelum 100% produksi
 
-Tiga hal yang sengaja masih mock/placeholder dan perlu diselesaikan:
+Ketiganya sudah **dikerjakan** dan aktif otomatis saat key/DB diisi:
 
-1. **Snap.js** — `snap.pay(token)` di client (jalur bayar asli). Sekarang: panel simulasi.
-2. **Upload gambar admin** ke storage (drag-drop → CDN/Supabase). Sekarang: field URL.
-3. **Prisma provider** → `postgresql` + migration Postgres (langkah 3).
+1. **Snap.js** ✅ — `snap.pay(token)` terpasang (`components/shop/snap-script.tsx`, dipakai di
+   `checkout-view`). URL sandbox/production dideteksi dari prefix client key. Tanpa key →
+   jalur simulasi mock tetap tersedia.
+2. **Upload gambar admin** ✅ — tombol Upload di form produk & banner → `POST /api/admin/upload`
+   → Supabase Storage (bucket `product-images`, harus dibuat publik). Field URL tetap sebagai
+   fallback. Tanpa Supabase → tombol memberi pesan, tempel URL manual.
+3. **Prisma Postgres** ✅ — `npm run db:use-postgres` (dan `db:use-sqlite` untuk balik).
+   Default committed tetap SQLite agar dev lokal jalan tanpa setup; flip saat Supabase siap.
 
 Sisanya (checkout, order, webhook signature, auth fail-closed, rate-limit, tracking, email)
-sudah ter-wire ke env dan aktif otomatis begitu key diisi.
+juga sudah ter-wire ke env dan aktif otomatis begitu key diisi.
 
 ---
 

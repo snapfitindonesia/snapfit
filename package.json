@@ -9,7 +9,9 @@
     "lint": "eslint",
     "postinstall": "prisma generate",
     "db:seed": "prisma db seed",
-    "db:reset": "prisma migrate reset"
+    "db:reset": "prisma migrate reset",
+    "db:use-sqlite": "node scripts/switch-db.mjs sqlite",
+    "db:use-postgres": "node scripts/switch-db.mjs postgres"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

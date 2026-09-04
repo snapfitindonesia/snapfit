@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Loader2, Trash2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { saveBanner, deleteBanner } from "@/lib/actions/admin";
+import { ImageInput } from "@/components/admin/image-input";
 
 type Banner = {
   id: string;
@@ -71,9 +72,11 @@ export function BannerManager({ banners }: { banners: Banner[] }) {
             <option value="PROMO">PROMO</option>
           </select>
         </label>
-        <label className="block text-sm">URL gambar
-          <input className={`mt-1 ${input}`} value={f.image} onChange={(e) => setF({ ...f, image: e.target.value })} placeholder="https://…" required />
-        </label>
+        <div className="block text-sm">Gambar
+          <div className="mt-1">
+            <ImageInput value={f.image} onChange={(url) => setF({ ...f, image: url })} />
+          </div>
+        </div>
         <label className="block text-sm">Target link (opsional)
           <input className={`mt-1 ${input}`} value={f.targetUrl} onChange={(e) => setF({ ...f, targetUrl: e.target.value })} placeholder="/produk?tipe=iphone" />
         </label>

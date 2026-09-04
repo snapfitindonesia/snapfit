@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createProduct, updateProduct } from "@/lib/actions/admin";
+import { ImageInput } from "@/components/admin/image-input";
 
 type VariantRow = {
   id?: string;
@@ -115,10 +116,12 @@ export function ProductForm({
           <span className="text-sm font-medium">Deskripsi</span>
           <textarea className={`mt-1.5 ${input}`} rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
         </label>
-        <label className="block">
-          <span className="text-sm font-medium">URL foto cover</span>
-          <input className={`mt-1.5 ${input}`} value={coverImage} onChange={(e) => setCoverImage(e.target.value)} placeholder="https://…" required />
-        </label>
+        <div className="block">
+          <span className="text-sm font-medium">Foto cover</span>
+          <div className="mt-1.5">
+            <ImageInput value={coverImage} onChange={setCoverImage} />
+          </div>
+        </div>
         <label className="block">
           <span className="text-sm font-medium">Kategori</span>
           <select className={`mt-1.5 ${input}`} value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
@@ -146,7 +149,7 @@ export function ProductForm({
                 <input className={input} type="number" placeholder="Harga (rupiah)" value={v.price} onChange={(e) => setV(i, "price", e.target.value)} required />
                 <input className={input} type="number" placeholder="Stok" value={v.stock} onChange={(e) => setV(i, "stock", e.target.value)} required />
                 <input className={input} type="number" placeholder="Berat (gram)" value={v.weight} onChange={(e) => setV(i, "weight", e.target.value)} required />
-                <input className={input} placeholder="URL foto varian" value={v.image} onChange={(e) => setV(i, "image", e.target.value)} required />
+                <ImageInput value={v.image} onChange={(url) => setV(i, "image", url)} placeholder="URL / upload foto varian" />
               </div>
               {variants.length > 1 && (
                 <button type="button" onClick={() => setVariants((r) => r.filter((_, idx) => idx !== i))} className="mt-2 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive">
