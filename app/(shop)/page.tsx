@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, ShieldCheck, BadgeCheck, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getProducts } from "@/lib/actions/product";
+import { getProducts, type ProductListItem } from "@/lib/actions/product";
 import { ProductCard } from "@/components/shop/product-card";
 
 // ISR: homepage di-cache (cepat), regenerasi tiap 5 menit.
@@ -21,11 +21,14 @@ const TRUST = [
 ];
 
 export default async function HomePage() {
-  const { items: featured } = await getProducts({
-    sort: "terbaru",
-    take: 4,
-    skip: 0,
-  });
+  // Tahan-banting: kalau DB ngadat saat build, jangan gagalkan deploy —
+  // ISR akan mengisi produk unggulan saat request pertama.
+  let featured: ProductListItem[] = [];
+  try {
+    featured = (await getProducts({ sort: "terbaru", take: 4, skip: 0 })).items;
+  } catch {
+    featured = [];
+  }
 
   return (
     <>

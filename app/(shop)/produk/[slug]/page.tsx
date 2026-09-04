@@ -19,8 +19,13 @@ export const revalidate = 300;
 // Prerender semua PDP saat build (jadi statis/ISR dari CDN). Produk baru yang
 // ditambah admin ter-generate on-demand lalu di-cache.
 export async function generateStaticParams() {
-  const products = await db.product.findMany({ select: { slug: true } });
-  return products.map((p) => ({ slug: p.slug }));
+  try {
+    const products = await db.product.findMany({ select: { slug: true } });
+    return products.map((p) => ({ slug: p.slug }));
+  } catch {
+    // DB ngadat saat build → jangan gagalkan deploy; PDP di-generate on-demand.
+    return [];
+  }
 }
 
 export async function generateMetadata({
