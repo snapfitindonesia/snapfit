@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import NextTopLoader from "nextjs-toploader";
 import "@/styles/globals.css";
 import {
   GoogleTagManager,
@@ -32,6 +33,8 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        {/* Progress bar navigasi — feedback instan tiap klik pindah halaman */}
+        <NextTopLoader color="#171717" height={3} showSpinner={false} shadow="0 0 8px #171717" />
         <GoogleTagManager />
         <GoogleTagManagerNoScript />
         {children}

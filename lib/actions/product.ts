@@ -47,6 +47,29 @@ export async function getCategories() {
   });
 }
 
+export type MegaMenuCategory = {
+  name: string;
+  slug: string;
+  products: { name: string; slug: string; coverImage: string }[];
+};
+
+/** Data untuk mega-menu header: kategori + beberapa produk tiap kategori. */
+export async function getMegaMenu(): Promise<MegaMenuCategory[]> {
+  const categories = await db.category.findMany({
+    orderBy: { name: "asc" },
+    select: {
+      name: true,
+      slug: true,
+      products: {
+        orderBy: { createdAt: "desc" },
+        take: 4,
+        select: { name: true, slug: true, coverImage: true },
+      },
+    },
+  });
+  return categories;
+}
+
 export async function getProducts(query: ProductQuery): Promise<ProductListResult> {
   const { tipe, sort, skip, take } = query;
 
