@@ -4,6 +4,9 @@ import { Button } from "@/components/ui/button";
 import { getProducts } from "@/lib/actions/product";
 import { ProductCard } from "@/components/shop/product-card";
 
+// ISR: homepage di-cache (cepat), regenerasi tiap 5 menit.
+export const revalidate = 300;
+
 const DEVICE_TYPES = [
   { label: "iPhone", href: "/produk?tipe=iphone" },
   { label: "Samsung", href: "/produk?tipe=samsung" },

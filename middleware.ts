@@ -78,8 +78,15 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
+  // HANYA route yang butuh auth/proteksi. Storefront (/, /produk, dll) TIDAK menjalankan
+  // middleware → tak ada round-trip Supabase per request → jauh lebih cepat.
   matcher: [
-    // Semua route kecuali aset statis (biar sesi ke-refresh & admin ter-gate)
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/admin/:path*",
+    "/akun/:path*",
+    "/masuk",
+    "/daftar",
+    "/checkout/:path*",
+    "/api/auth/:path*",
+    "/api/admin/:path*",
   ],
 };

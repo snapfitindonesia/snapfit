@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { db } from "@/lib/db";
 import {
   getProductBySlug,
   getRelatedProducts,
@@ -10,6 +11,17 @@ import { ProductCard } from "@/components/shop/product-card";
 import { PdpStory } from "@/components/shop/pdp-story";
 import { ProductAccordion } from "@/components/shop/product-accordion";
 import { ProductReviews } from "@/components/shop/product-reviews";
+
+// ISR: halaman di-cache & disajikan dari CDN (cepat), regenerasi tiap 5 menit.
+// Perubahan admin langsung fresh via revalidatePath di lib/actions/admin.ts.
+export const revalidate = 300;
+
+// Prerender semua PDP saat build (jadi statis/ISR dari CDN). Produk baru yang
+// ditambah admin ter-generate on-demand lalu di-cache.
+export async function generateStaticParams() {
+  const products = await db.product.findMany({ select: { slug: true } });
+  return products.map((p) => ({ slug: p.slug }));
+}
 
 export async function generateMetadata({
   params,
