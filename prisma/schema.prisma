@@ -1,0 +1,107 @@
+// Prisma schema — lihat docs/03-database.md.
+// Dev: SQLite. Produksi: Postgres/Supabase (ganti cukup di datasource).
+// Aturan: harga selalu integer (rupiah); gambar hanya URL (file fisik di CDN);
+// enum & array Postgres TIDAK dipakai (biar portabel ke SQLite) — pakai String + relasi.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id          String     @id @default(cuid())
+  slug        String     @unique
+  name        String
+  description String?
+  coverImage  String // URL cover (level produk)
+  categoryId  String?
+  category    Category?  @relation(fields: [categoryId], references: [id])
+  variants    Variant[]
+  discounts   Discount[] @relation("DiscountProducts") // ganti productIds[] → relasi m-n
+  createdAt   DateTime   @default(now())
+}
+
+model Variant {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name      String // mis. "Hitam / iPhone 16 Pro"
+  sku       String  @unique
+  price     Int // rupiah, integer
+  stock     Int     @default(0)
+  image     String // 1 foto per varian
+  weight    Int     @default(200) // berat gram — utk ongkir Biteship (lihat docs/05)
+}
+
+model Category {
+  id       String    @id @default(cuid())
+  name     String
+  slug     String    @unique
+  products Product[]
+}
+
+model Banner {
+  id        String  @id @default(cuid())
+  type      String // MAIN | ETALASE | PROMO
+  image     String
+  targetUrl String?
+  order     Int     @default(0)
+  active    Boolean @default(true)
+}
+
+model Discount {
+  id       String    @id @default(cuid())
+  name     String
+  percent  Int // persen diskon
+  products Product[] @relation("DiscountProducts") // produk yang kena diskon
+  active   Boolean   @default(true)
+  startAt  DateTime?
+  endAt    DateTime?
+}
+
+model Voucher {
+  id          String  @id @default(cuid())
+  code        String  @unique
+  type        String // POTONGAN | GRATIS_ONGKIR
+  amount      Int     @default(0)
+  minPurchase Int     @default(0)
+  maxBenefit  Int     @default(0)
+  active      Boolean @default(true)
+}
+
+model Order {
+  id     String      @id @default(cuid())
+  userId String? // id user Supabase Auth (tidak simpan password sendiri)
+  status String      @default("PENDING") // PENDING|PAID|SHIPPED|DONE|CANCELLED
+  items  OrderItem[]
+
+  subtotal     Int
+  shippingCost Int
+  discount     Int @default(0)
+  total        Int
+
+  // pembayaran
+  midtransOrderId String? @unique
+  paymentStatus   String?
+
+  // pengiriman
+  courier    String?
+  trackingNo String?
+  address    Json // snapshot alamat pengiriman
+
+  createdAt DateTime @default(now())
+}
+
+model OrderItem {
+  id        String @id @default(cuid())
+  orderId   String
+  order     Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  variantId String // tanpa FK: snapshot, tahan walau varian dihapus
+  name      String // snapshot nama saat beli
+  price     Int // snapshot harga saat beli
+  qty       Int
+}

@@ -1,0 +1,111 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Loader2, Trash2, Pencil } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { saveBanner, deleteBanner } from "@/lib/actions/admin";
+
+type Banner = {
+  id: string;
+  type: string;
+  image: string;
+  targetUrl: string | null;
+  order: number;
+  active: boolean;
+};
+
+const input =
+  "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-foreground";
+
+const BLANK = { type: "MAIN", image: "", targetUrl: "", order: "0", active: true };
+
+export function BannerManager({ banners }: { banners: Banner[] }) {
+  const router = useRouter();
+  const [editId, setEditId] = useState<string | null>(null);
+  const [f, setF] = useState({ ...BLANK });
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  function reset() {
+    setEditId(null);
+    setF({ ...BLANK });
+    setError(null);
+  }
+
+  function edit(b: Banner) {
+    setEditId(b.id);
+    setF({ type: b.type, image: b.image, targetUrl: b.targetUrl ?? "", order: String(b.order), active: b.active });
+  }
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    setError(null);
+    const res = await saveBanner(
+      { type: f.type as "MAIN" | "ETALASE" | "PROMO", image: f.image, targetUrl: f.targetUrl, order: Number(f.order), active: f.active },
+      editId ?? undefined,
+    );
+    if (res.ok) {
+      reset();
+      router.refresh();
+    } else setError(res.error ?? "Gagal.");
+    setSaving(false);
+  }
+
+  async function del(id: string) {
+    if (!confirm("Hapus banner ini?")) return;
+    const res = await deleteBanner(id);
+    if (res.ok) router.refresh();
+    else alert(res.error);
+  }
+
+  return (
+    <div className="grid gap-8 lg:grid-cols-2">
+      <form onSubmit={save} className="space-y-3 rounded-lg border border-border p-4">
+        <h2 className="text-sm font-medium">{editId ? "Edit banner" : "Banner baru"}</h2>
+        <label className="block text-sm">Tipe
+          <select className={`mt-1 ${input}`} value={f.type} onChange={(e) => setF({ ...f, type: e.target.value })}>
+            <option value="MAIN">MAIN (hero)</option>
+            <option value="ETALASE">ETALASE</option>
+            <option value="PROMO">PROMO</option>
+          </select>
+        </label>
+        <label className="block text-sm">URL gambar
+          <input className={`mt-1 ${input}`} value={f.image} onChange={(e) => setF({ ...f, image: e.target.value })} placeholder="https://…" required />
+        </label>
+        <label className="block text-sm">Target link (opsional)
+          <input className={`mt-1 ${input}`} value={f.targetUrl} onChange={(e) => setF({ ...f, targetUrl: e.target.value })} placeholder="/produk?tipe=iphone" />
+        </label>
+        <label className="block text-sm">Urutan
+          <input type="number" className={`mt-1 ${input}`} value={f.order} onChange={(e) => setF({ ...f, order: e.target.value })} />
+        </label>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={f.active} onChange={(e) => setF({ ...f, active: e.target.checked })} className="accent-foreground" />
+          Aktif
+        </label>
+        {error && <p className="text-sm text-destructive">{error}</p>}
+        <div className="flex gap-2">
+          <Button type="submit" size="sm" disabled={saving}>
+            {saving && <Loader2 className="size-4 animate-spin" />}
+            {editId ? "Simpan" : "Tambah"}
+          </Button>
+          {editId && <Button type="button" size="sm" variant="ghost" onClick={reset}>Batal</Button>}
+        </div>
+      </form>
+
+      <div className="space-y-2">
+        {banners.map((b) => (
+          <div key={b.id} className="flex items-center gap-3 rounded-lg border border-border p-3">
+            <span className="rounded bg-muted px-2 py-0.5 text-xs font-medium">{b.type}</span>
+            <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">{b.image}</span>
+            {!b.active && <span className="text-xs text-muted-foreground">nonaktif</span>}
+            <button onClick={() => edit(b)} className="text-muted-foreground hover:text-foreground"><Pencil className="size-4" /></button>
+            <button onClick={() => del(b.id)} className="text-muted-foreground hover:text-destructive"><Trash2 className="size-4" /></button>
+          </div>
+        ))}
+        {banners.length === 0 && <p className="text-sm text-muted-foreground">Belum ada banner.</p>}
+      </div>
+    </div>
+  );
+}
