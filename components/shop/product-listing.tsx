@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ProductCard } from "@/components/shop/product-card";
@@ -23,14 +23,17 @@ export function ProductListing({
   initial,
   initialTipe = "",
   initialSort = "terbaru",
+  initialQ = "",
 }: {
   categories: Category[];
   initial: ProductListResult;
   initialTipe?: string;
   initialSort?: SortOption;
+  initialQ?: string;
 }) {
   const [tipe, setTipe] = useState(initialTipe);
   const [sort, setSort] = useState<SortOption>(initialSort);
+  const [q, setQ] = useState(initialQ);
   const [items, setItems] = useState<ProductListItem[]>(initial.items);
   const [total, setTotal] = useState(initial.total);
   const [hasMore, setHasMore] = useState(initial.hasMore);
@@ -42,7 +45,7 @@ export function ProductListing({
   const firstRender = useRef(true);
 
   const fetchList = useCallback(
-    async (opts: { tipe: string; sort: SortOption; skip: number; append: boolean }) => {
+    async (opts: { tipe: string; q: string; sort: SortOption; skip: number; append: boolean }) => {
       const id = ++reqId.current;
       setLoading(true);
       setError(false);
@@ -53,6 +56,7 @@ export function ProductListing({
           take: String(TAKE),
         });
         if (opts.tipe) params.set("tipe", opts.tipe);
+        if (opts.q) params.set("q", opts.q);
 
         const res = await fetch(`/api/products?${params.toString()}`);
         if (!res.ok) throw new Error("gagal");
@@ -78,19 +82,36 @@ export function ProductListing({
       firstRender.current = false;
       return;
     }
-    const params = new URLSearchParams();
-    if (tipe) params.set("tipe", tipe);
-    if (sort !== "terbaru") params.set("sort", sort);
-    const qs = params.toString();
-    window.history.replaceState(null, "", qs ? `/produk?${qs}` : "/produk");
-
-    fetchList({ tipe, sort, skip: 0, append: false });
-  }, [tipe, sort, fetchList]);
+    // Debounce (mengetik search & klik cepat): tunggu 250ms sebelum fetch
+    const t = setTimeout(() => {
+      const params = new URLSearchParams();
+      if (tipe) params.set("tipe", tipe);
+      if (q) params.set("q", q);
+      if (sort !== "terbaru") params.set("sort", sort);
+      const qs = params.toString();
+      window.history.replaceState(null, "", qs ? `/produk?${qs}` : "/produk");
+      fetchList({ tipe, q, sort, skip: 0, append: false });
+    }, 250);
+    return () => clearTimeout(t);
+  }, [tipe, sort, q, fetchList]);
 
   const chips = [{ name: "Semua", slug: "" }, ...categories];
 
   return (
     <div>
+      {/* Kotak pencarian */}
+      <div className="relative mb-4">
+        <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <input
+          type="search"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Cari produk…"
+          aria-label="Cari produk"
+          className="w-full rounded-full border border-border bg-background py-2.5 pl-11 pr-4 text-sm outline-none transition-colors focus:border-foreground"
+        />
+      </div>
+
       {/* Kontrol: filter tipe HP + sort */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap gap-2" role="group" aria-label="Filter tipe HP">
@@ -142,7 +163,9 @@ export function ProductListing({
       ) : (
         !loading && (
           <p className="mt-12 text-center text-sm text-muted-foreground">
-            Belum ada produk untuk filter ini.
+            {q
+              ? `Tak ada produk cocok dengan "${q}".`
+              : "Belum ada produk untuk filter ini."}
           </p>
         )
       )}
@@ -160,7 +183,7 @@ export function ProductListing({
             variant="outline"
             size="lg"
             disabled={loading}
-            onClick={() => fetchList({ tipe, sort, skip: items.length, append: true })}
+            onClick={() => fetchList({ tipe, q, sort, skip: items.length, append: true })}
           >
             {loading && <Loader2 className="size-4 animate-spin" />}
             Muat lebih banyak

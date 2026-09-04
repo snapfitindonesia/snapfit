@@ -29,7 +29,7 @@ export default async function HomePage() {
       {/* Hero */}
       <section className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="grid items-center gap-8 py-12 sm:py-16 md:grid-cols-2 md:gap-12 md:py-24">
-          <div>
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
             <p className="text-sm font-medium text-muted-foreground">
               Aksesori HP & tablet
             </p>
@@ -54,7 +54,7 @@ export default async function HomePage() {
           </div>
 
           {/* Placeholder foto hero — foto produk jadi bintang (belum ada data) */}
-          <div className="aspect-[4/3] w-full rounded-xl border border-border bg-muted" />
+          <div className="aspect-[4/3] w-full animate-in fade-in zoom-in-95 rounded-xl border border-border bg-muted delay-150 duration-700 fill-mode-both" />
         </div>
       </section>
 

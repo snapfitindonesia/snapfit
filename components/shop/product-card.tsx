@@ -7,7 +7,10 @@ export function ProductCard({ product }: { product: ProductListItem }) {
   const hasDiscount = product.discountPercent > 0;
 
   return (
-    <Link href={`/produk/${product.slug}`} className="group block">
+    <Link
+      href={`/produk/${product.slug}`}
+      className="group block animate-in fade-in slide-in-from-bottom-3 duration-500"
+    >
       <div className="relative aspect-square w-full overflow-hidden rounded-lg border border-border bg-muted">
         <Image
           src={product.coverImage}

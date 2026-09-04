@@ -29,7 +29,7 @@ export function HeaderNav({ menu }: { menu: MegaMenuCategory[] }) {
       <div className="mx-auto max-w-6xl px-3 sm:px-4">
         <div className="relative">
           {/* Bar mengambang */}
-          <div className="flex h-14 items-center gap-3 rounded-2xl border border-border bg-background/85 px-4 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/70 sm:px-5">
+          <div className="relative flex h-14 items-center gap-3 rounded-2xl border border-border bg-background/85 px-4 shadow-lg backdrop-blur transition-shadow hover:shadow-xl supports-[backdrop-filter]:bg-background/70 sm:px-5">
             {/* Hamburger (mobile) */}
             <button
               type="button"
@@ -43,7 +43,7 @@ export function HeaderNav({ menu }: { menu: MegaMenuCategory[] }) {
 
             <Link
               href="/"
-              className="flex items-center"
+              className="absolute left-1/2 flex -translate-x-1/2 items-center md:static md:translate-x-0"
               aria-label="SnapFit — beranda"
               onClick={closeMobile}
             >
@@ -107,7 +107,7 @@ export function HeaderNav({ menu }: { menu: MegaMenuCategory[] }) {
               onMouseEnter={cancelClose}
               onMouseLeave={scheduleClose}
             >
-              <div className="rounded-2xl border border-border bg-background p-6 shadow-xl">
+              <div className="animate-in fade-in slide-in-from-top-1 rounded-2xl border border-border bg-background p-6 shadow-xl duration-200">
                 <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
                   {menu.map((cat) => (
                     <div key={cat.slug}>
@@ -161,7 +161,7 @@ export function HeaderNav({ menu }: { menu: MegaMenuCategory[] }) {
           {/* Drawer menu (mobile) */}
           {mobileOpen && (
             <div className="absolute inset-x-0 top-full z-50 pt-2 md:hidden">
-              <div className="max-h-[75vh] overflow-y-auto rounded-2xl border border-border bg-background p-4 shadow-xl">
+              <div className="animate-in fade-in slide-in-from-top-2 max-h-[75vh] overflow-y-auto rounded-2xl border border-border bg-background p-4 shadow-xl duration-200">
                 <Link
                   href="/produk"
                   onClick={closeMobile}

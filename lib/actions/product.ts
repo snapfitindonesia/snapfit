@@ -71,10 +71,13 @@ export async function getMegaMenu(): Promise<MegaMenuCategory[]> {
 }
 
 export async function getProducts(query: ProductQuery): Promise<ProductListResult> {
-  const { tipe, sort, skip, take } = query;
+  const { tipe, q, sort, skip, take } = query;
 
   const products = await db.product.findMany({
-    where: tipe ? { category: { slug: tipe } } : undefined,
+    where: {
+      ...(tipe ? { category: { slug: tipe } } : {}),
+      ...(q ? { name: { contains: q, mode: "insensitive" as const } } : {}),
+    },
     include: {
       category: { select: { name: true, slug: true } },
       variants: { select: { price: true, stock: true } },
