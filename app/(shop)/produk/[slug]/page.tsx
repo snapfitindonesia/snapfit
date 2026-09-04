@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { db } from "@/lib/db";
 import {
   getProductBySlug,
   getRelatedProducts,
@@ -12,21 +11,9 @@ import { PdpStory } from "@/components/shop/pdp-story";
 import { ProductAccordion } from "@/components/shop/product-accordion";
 import { ProductReviews } from "@/components/shop/product-reviews";
 
-// ISR: halaman di-cache & disajikan dari CDN (cepat), regenerasi tiap 5 menit.
-// Perubahan admin langsung fresh via revalidatePath di lib/actions/admin.ts.
+// ISR: PDP di-generate on-demand saat request pertama lalu DI-CACHE 5 menit
+// (tak query DB saat build → deploy Vercel aman). Fresh via revalidatePath saat admin edit.
 export const revalidate = 300;
-
-// Prerender semua PDP saat build (jadi statis/ISR dari CDN). Produk baru yang
-// ditambah admin ter-generate on-demand lalu di-cache.
-export async function generateStaticParams() {
-  try {
-    const products = await db.product.findMany({ select: { slug: true } });
-    return products.map((p) => ({ slug: p.slug }));
-  } catch {
-    // DB ngadat saat build → jangan gagalkan deploy; PDP di-generate on-demand.
-    return [];
-  }
-}
 
 export async function generateMetadata({
   params,
