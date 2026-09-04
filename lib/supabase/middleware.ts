@@ -38,8 +38,10 @@ export async function updateSession(request: NextRequest): Promise<SessionResult
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Cek AAL (MFA) hanya kalau MFA diwajibkan — hemat 1 round-trip ke Supabase
+  // pada tiap request saat MFA tak dipakai.
   let aal: string | null = null;
-  if (user) {
+  if (user && process.env.ADMIN_REQUIRE_MFA === "true") {
     const { data } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
     aal = data?.currentLevel ?? null;
   }

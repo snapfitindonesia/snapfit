@@ -61,8 +61,12 @@ export async function middleware(request: NextRequest) {
         NextResponse.redirect(new URL("/?reason=forbidden", request.url)),
       );
     }
-    // Wajib MFA (AAL2) — kecuali halaman enroll/challenge MFA itu sendiri
-    if (pathname !== "/admin/mfa" && aal !== "aal2") {
+    // Wajib MFA (AAL2) — HANYA kalau ADMIN_REQUIRE_MFA=true; kecuali halaman MFA sendiri
+    if (
+      process.env.ADMIN_REQUIRE_MFA === "true" &&
+      pathname !== "/admin/mfa" &&
+      aal !== "aal2"
+    ) {
       return copyCookies(
         response,
         NextResponse.redirect(new URL("/admin/mfa", request.url)),
