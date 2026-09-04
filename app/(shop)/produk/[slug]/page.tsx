@@ -7,6 +7,9 @@ import {
 import { PdpView, type PdpProduct } from "@/components/shop/pdp-view";
 import { TrustBadges } from "@/components/shop/trust-badges";
 import { ProductCard } from "@/components/shop/product-card";
+import { PdpStory } from "@/components/shop/pdp-story";
+import { ProductAccordion } from "@/components/shop/product-accordion";
+import { ProductReviews } from "@/components/shop/product-reviews";
 
 export async function generateMetadata({
   params,
@@ -64,7 +67,7 @@ export default async function ProductDetailPage({
 
       {related.length > 0 && (
         <section className="mt-16">
-          <h2 className="text-xl font-semibold tracking-tight">
+          <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">
             Mungkin kamu butuhkan
           </h2>
           <div className="mt-6 grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
@@ -74,6 +77,24 @@ export default async function ProductDetailPage({
           </div>
         </section>
       )}
+
+      {/* Storytelling produk (ala Nomad) */}
+      <PdpStory
+        productName={product.name}
+        images={[
+          product.coverImage,
+          ...product.variants.map((v) => v.image),
+        ].filter((v, i, a) => a.indexOf(v) === i)}
+      />
+
+      {/* Info / kompatibilitas / FAQ */}
+      <ProductAccordion
+        description={product.description}
+        variants={product.variants.map((v) => ({ name: v.name }))}
+      />
+
+      {/* Ulasan */}
+      <ProductReviews />
     </div>
   );
 }
