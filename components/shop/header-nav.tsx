@@ -1,13 +1,15 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Search, ChevronDown, Menu, X, User } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Search, ChevronDown, Menu, X, User, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { formatRupiah } from "@/lib/format";
 import { CartButton } from "@/components/shop/cart-button";
-import type { MegaMenuCategory } from "@/lib/actions/product";
+import type { MegaMenuCategory, ProductListItem } from "@/lib/actions/product";
 import logo from "@/logosnapfit.png";
 
 export function HeaderNav({ menu }: { menu: MegaMenuCategory[] }) {
@@ -24,6 +26,68 @@ export function HeaderNav({ menu }: { menu: MegaMenuCategory[] }) {
   };
   const closeMobile = () => setMobileOpen(false);
 
+  // --- Search panel ---
+  const router = useRouter();
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<ProductListItem[]>([]);
+  const [searching, setSearching] = useState(false);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const searchReq = useRef(0);
+
+  function openSearch() {
+    setOpen(false);
+    setMobileOpen(false);
+    setSearchOpen(true);
+  }
+  function closeSearch() {
+    setSearchOpen(false);
+    setQuery("");
+    setResults([]);
+  }
+
+  useEffect(() => {
+    if (!searchOpen) return;
+    searchRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeSearch();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [searchOpen]);
+
+  useEffect(() => {
+    if (!searchOpen) return;
+    const term = query.trim();
+    if (term.length < 2) {
+      setResults([]);
+      setSearching(false);
+      return;
+    }
+    setSearching(true);
+    const id = ++searchReq.current;
+    const t = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/products?q=${encodeURIComponent(term)}&take=6`);
+        const data = await res.json();
+        if (id === searchReq.current) setResults(data.items ?? []);
+      } catch {
+        if (id === searchReq.current) setResults([]);
+      } finally {
+        if (id === searchReq.current) setSearching(false);
+      }
+    }, 250);
+    return () => clearTimeout(t);
+  }, [query, searchOpen]);
+
+  function submitSearch(e: React.FormEvent) {
+    e.preventDefault();
+    const term = query.trim();
+    if (!term) return;
+    router.push(`/produk?q=${encodeURIComponent(term)}`);
+    closeSearch();
+  }
+
   return (
     <div className="sticky top-0 z-40 pt-3">
       <div className="mx-auto max-w-6xl px-3 sm:px-4">
@@ -33,7 +97,10 @@ export function HeaderNav({ menu }: { menu: MegaMenuCategory[] }) {
             {/* Hamburger (mobile) */}
             <button
               type="button"
-              onClick={() => setMobileOpen((v) => !v)}
+              onClick={() => {
+                setSearchOpen(false);
+                setMobileOpen((v) => !v);
+              }}
               aria-label={mobileOpen ? "Tutup menu" : "Buka menu"}
               aria-expanded={mobileOpen}
               className="grid size-9 place-items-center rounded-md text-foreground md:hidden"
@@ -67,6 +134,7 @@ export function HeaderNav({ menu }: { menu: MegaMenuCategory[] }) {
                 type="button"
                 onMouseEnter={() => {
                   cancelClose();
+                  setSearchOpen(false);
                   setOpen(true);
                 }}
                 onMouseLeave={scheduleClose}
@@ -91,10 +159,14 @@ export function HeaderNav({ menu }: { menu: MegaMenuCategory[] }) {
             </nav>
 
             <div className="ml-auto flex items-center gap-1">
-              <Button variant="ghost" size="icon" aria-label="Cari" asChild>
-                <Link href="/produk">
-                  <Search className="size-5" />
-                </Link>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Cari"
+                aria-expanded={searchOpen}
+                onClick={openSearch}
+              >
+                <Search className="size-5" />
               </Button>
               <CartButton />
             </div>
@@ -208,6 +280,87 @@ export function HeaderNav({ menu }: { menu: MegaMenuCategory[] }) {
                   >
                     <User className="size-4" /> Akun
                   </Link>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Panel search */}
+          {searchOpen && (
+            <div className="absolute inset-x-0 top-full z-50 pt-2">
+              <div className="animate-in fade-in slide-in-from-top-2 rounded-2xl border border-border bg-background p-4 shadow-xl duration-200">
+                <form onSubmit={submitSearch} className="relative">
+                  <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    ref={searchRef}
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Cari produk…"
+                    aria-label="Cari produk"
+                    className="w-full rounded-full border border-border bg-background py-2.5 pl-11 pr-10 text-sm outline-none focus:border-foreground"
+                  />
+                  <button
+                    type="button"
+                    onClick={closeSearch}
+                    aria-label="Tutup pencarian"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="size-4" />
+                  </button>
+                </form>
+
+                <div className="mt-2">
+                  {searching && (
+                    <div className="flex items-center gap-2 px-2 py-2 text-sm text-muted-foreground">
+                      <Loader2 className="size-4 animate-spin" /> Mencari…
+                    </div>
+                  )}
+                  {!searching && query.trim().length >= 2 && results.length === 0 && (
+                    <p className="px-2 py-2 text-sm text-muted-foreground">
+                      Tak ada hasil untuk “{query.trim()}”.
+                    </p>
+                  )}
+                  {query.trim().length < 2 && (
+                    <p className="px-2 py-2 text-xs text-muted-foreground">
+                      Ketik minimal 2 huruf…
+                    </p>
+                  )}
+                  {results.length > 0 && (
+                    <ul className="divide-y divide-border">
+                      {results.map((p) => (
+                        <li key={p.id}>
+                          <Link
+                            href={`/produk/${p.slug}`}
+                            onClick={closeSearch}
+                            className="flex items-center gap-3 rounded-md px-2 py-2 hover:bg-accent"
+                          >
+                            <div className="relative size-10 shrink-0 overflow-hidden rounded-md border border-border bg-muted">
+                              <Image
+                                src={p.coverImage}
+                                alt={p.name}
+                                fill
+                                sizes="40px"
+                                className="object-cover"
+                              />
+                            </div>
+                            <span className="min-w-0 flex-1 truncate text-sm">{p.name}</span>
+                            <span className="shrink-0 text-sm font-medium">
+                              {formatRupiah(p.finalPrice)}
+                            </span>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {query.trim().length >= 2 && (
+                    <Link
+                      href={`/produk?q=${encodeURIComponent(query.trim())}`}
+                      onClick={closeSearch}
+                      className="mt-1 block px-2 py-2 text-sm font-medium underline underline-offset-2"
+                    >
+                      Lihat semua hasil
+                    </Link>
+                  )}
                 </div>
               </div>
             </div>
