@@ -10,6 +10,7 @@ const nextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "placehold.co" }, // dev/placeholder
       { protocol: "https", hostname: "cdn.snapfit.id" }, // CDN aset produksi
+      { protocol: "https", hostname: "cdn.shopify.com" }, // foto katalog impor (sementara)
       ...extraHosts.map((hostname) => ({ protocol: "https", hostname })),
     ],
   },
