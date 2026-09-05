@@ -245,7 +245,7 @@ export function PdpView({ product }: { product: PdpProduct }) {
       <div className="flex gap-3">
         {/* Thumbnail vertikal (desktop) */}
         {photos.length > 1 && (
-          <div className="hidden max-h-[540px] w-16 shrink-0 flex-col gap-3 overflow-y-auto sm:flex">
+          <div className="hidden max-h-[540px] w-16 shrink-0 flex-col gap-3 overflow-y-auto [scrollbar-width:none] sm:flex [&::-webkit-scrollbar]:hidden">
             {photos.map((src) => {
               const active = baseUrl(src) === baseUrl(displayImage);
               return (
@@ -342,7 +342,7 @@ export function PdpView({ product }: { product: PdpProduct }) {
 
       {/* Thumbnail baris (mobile) */}
       {photos.length > 1 && (
-        <div className="-mt-2 flex gap-2 overflow-x-auto sm:hidden">
+        <div className="-mt-2 flex gap-2 overflow-x-auto [scrollbar-width:none] sm:hidden [&::-webkit-scrollbar]:hidden">
           {photos.map((src) => {
             const active = baseUrl(src) === baseUrl(displayImage);
             return (
@@ -559,20 +559,28 @@ export function PdpView({ product }: { product: PdpProduct }) {
         <div className="mx-auto flex max-w-6xl items-center gap-2">
           <Button
             variant="outline"
-            size="icon-lg"
-            aria-label="Tambah ke keranjang"
-            className="shrink-0"
+            size="lg"
+            className="flex-1"
             disabled={outOfStock}
             onClick={handleAdd}
           >
-            {added ? <Check className="size-5" /> : <ShoppingBag className="size-5" />}
+            {added ? (
+              <>
+                <Check className="size-4" /> Ditambahkan
+              </>
+            ) : (
+              <>
+                <ShoppingBag className="size-4" /> Keranjang
+              </>
+            )}
           </Button>
           <Button
+            size="lg"
             className="flex-1"
             disabled={outOfStock}
             onClick={handleBuyNow}
           >
-            {outOfStock ? "Stok habis" : `Beli Langsung · ${formatRupiah(finalPrice)}`}
+            {outOfStock ? "Stok habis" : "Beli Langsung"}
           </Button>
         </div>
       </div>
