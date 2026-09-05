@@ -250,15 +250,24 @@ export function PdpView({ product }: { product: PdpProduct }) {
           onTouchStart={onTouchStart}
           onTouchEnd={onTouchEnd}
         >
-          <Image
-            key={displayImage}
-            src={displayImage}
-            alt={`${product.name} — ${variant.name}`}
-            fill
-            priority
-            sizes="(max-width: 1024px) 100vw, 55vw"
-            className="object-cover"
-          />
+          {/* Track geser: semua foto berjajar, digeser via translateX */}
+          <div
+            className="flex h-full w-full transition-transform duration-300 ease-out"
+            style={{ transform: `translateX(-${photoIndex * 100}%)` }}
+          >
+            {photos.map((src, i) => (
+              <div key={src} className="relative h-full w-full shrink-0">
+                <Image
+                  src={src}
+                  alt={`${product.name} — ${variant.name}`}
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 55vw"
+                  className="object-cover"
+                  {...(i === 0 ? { priority: true } : { loading: "eager" as const })}
+                />
+              </div>
+            ))}
+          </div>
           {hasDiscount && (
             <span className="absolute left-4 top-4 rounded-full bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground">
               -{product.discountPercent}%
@@ -590,18 +599,28 @@ export function PdpView({ product }: { product: PdpProduct }) {
             onTouchStart={onTouchStart}
             onTouchEnd={onTouchEnd}
           >
-            <Image
-              key={displayImage}
-              src={displayImage}
-              alt={`${product.name} — ${variant.name}`}
-              fill
-              sizes="92vw"
-              className={cn(
-                "object-contain transition-transform duration-200",
-                zoomed ? "scale-150 cursor-zoom-out" : "cursor-zoom-in",
-              )}
-              onClick={() => setZoomed((z) => !z)}
-            />
+            {/* Track geser lightbox */}
+            <div
+              className="flex h-full w-full transition-transform duration-300 ease-out"
+              style={{ transform: `translateX(-${photoIndex * 100}%)` }}
+            >
+              {photos.map((src) => (
+                <div key={src} className="relative h-full w-full shrink-0">
+                  <Image
+                    src={src}
+                    alt={`${product.name} — ${variant.name}`}
+                    fill
+                    loading="eager"
+                    sizes="92vw"
+                    className={cn(
+                      "object-contain transition-transform duration-200",
+                      zoomed ? "scale-150 cursor-zoom-out" : "cursor-zoom-in",
+                    )}
+                    onClick={() => setZoomed((z) => !z)}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
 
           {photos.length > 1 && (
