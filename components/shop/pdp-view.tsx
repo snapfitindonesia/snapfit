@@ -256,77 +256,64 @@ export function PdpView({ product }: { product: PdpProduct }) {
           </p>
         )}
 
-        {/* ===== Level 1: WARNA (swatch foto) ===== */}
-        {hasColorDim && (
-          <div className="mt-6">
-            <p className="text-sm font-medium">
-              Warna: <span className="text-muted-foreground">{selectedColor}</span>
-            </p>
-            <div className="mt-3 flex flex-wrap gap-3">
-              {colors.map((c) => {
-                const selected = c.name === selectedColor;
+        {/* ===== Selector varian (label kiri · pil kanan, ala referensi) ===== */}
+        <div className="mt-6 space-y-4">
+          {/* Level 1: WARNA — pil dengan foto kecil + teks */}
+          {hasColorDim && (
+            <div className="flex items-start gap-4">
+              <span className="w-14 shrink-0 pt-2 text-sm text-muted-foreground">Warna</span>
+              <div className="flex flex-wrap gap-2">
+                {colors.map((c) => {
+                  const selected = c.name === selectedColor;
+                  return (
+                    <button
+                      key={c.name}
+                      type="button"
+                      onClick={() => selectColor(c.name)}
+                      aria-pressed={selected}
+                      aria-label={c.name}
+                      className={cn(
+                        "inline-flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-sm transition-colors",
+                        selected ? "border-foreground" : "border-border hover:border-foreground",
+                        !c.inStock && "opacity-50",
+                      )}
+                    >
+                      <span className="relative size-6 shrink-0 overflow-hidden rounded bg-muted">
+                        <Image src={c.rep.image} alt={c.name} fill sizes="24px" className="object-cover" />
+                      </span>
+                      <span className={cn(!c.inStock && "line-through")}>{c.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Level 2: TIPE — pil teks */}
+          <div className="flex items-start gap-4">
+            <span className="w-14 shrink-0 pt-2 text-sm text-muted-foreground">Tipe</span>
+            <div className="flex flex-wrap gap-2">
+              {typeOptions.map((v) => {
+                const disabled = v.stock <= 0;
+                const selected = v.id === variant.id;
                 return (
                   <button
-                    key={c.name}
+                    key={v.id}
                     type="button"
-                    onClick={() => selectColor(c.name)}
+                    onClick={() => selectVariant(v)}
                     aria-pressed={selected}
-                    aria-label={c.name}
-                    className="flex w-16 flex-col items-center gap-1 text-center"
+                    disabled={disabled}
+                    className={cn(
+                      "rounded-lg border px-3 py-1.5 text-sm transition-colors",
+                      selected ? "border-foreground" : "border-border hover:border-foreground",
+                      disabled && "cursor-not-allowed border-dashed text-muted-foreground line-through opacity-60 hover:border-border",
+                    )}
                   >
-                    <span
-                      className={cn(
-                        "relative aspect-square w-full overflow-hidden rounded-lg border-2 bg-muted transition-colors",
-                        selected ? "border-foreground" : "border-border",
-                        !c.inStock && "opacity-40",
-                      )}
-                    >
-                      <Image src={c.rep.image} alt={c.name} fill sizes="64px" className="object-cover" />
-                    </span>
-                    <span
-                      className={cn(
-                        "line-clamp-2 text-[11px] leading-tight",
-                        selected ? "font-medium text-foreground" : "text-muted-foreground",
-                        !c.inStock && "line-through",
-                      )}
-                    >
-                      {c.name}
-                    </span>
+                    {typeLabel(v)}
                   </button>
                 );
               })}
             </div>
-          </div>
-        )}
-
-        {/* ===== Level 2: TIPE (pil teks) ===== */}
-        <div className="mt-6">
-          <p className="text-sm font-medium">
-            Tipe: <span className="text-muted-foreground">{typeLabel(variant)}</span>
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {typeOptions.map((v) => {
-              const disabled = v.stock <= 0;
-              const selected = v.id === variant.id;
-              return (
-                <button
-                  key={v.id}
-                  type="button"
-                  onClick={() => selectVariant(v)}
-                  aria-pressed={selected}
-                  disabled={disabled}
-                  className={cn(
-                    "rounded-md border px-3 py-2 text-sm transition-colors",
-                    selected
-                      ? "border-foreground bg-foreground text-background"
-                      : "border-border hover:border-foreground",
-                    disabled && "cursor-not-allowed border-dashed text-muted-foreground line-through opacity-60 hover:border-border",
-                  )}
-                >
-                  {typeLabel(v)}
-                </button>
-              );
-            })}
           </div>
         </div>
 
