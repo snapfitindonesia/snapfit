@@ -9,9 +9,35 @@ import {
 } from "@/lib/actions/product";
 import { ProductCard } from "@/components/shop/product-card";
 import { DevicePicker } from "@/components/shop/device-picker";
+import { HeroCarousel, type HeroSlide } from "@/components/shop/hero-carousel";
 
 // ISR: homepage di-cache (cepat), regenerasi tiap 5 menit.
 export const revalidate = 300;
+
+// Hero banner: produk device terbaru dari brand mitra (authorized reseller).
+const HERO_SLIDES: HeroSlide[] = [
+  {
+    image:
+      "https://cdn.shopify.com/s/files/1/1270/3733/files/1c577dc6092d75c0e453206fe7bae282_1dbf26b5-e4b3-4e32-9298-c1bbc2f38db3.jpg?v=1784240712",
+    brand: "VRS Design",
+    caption: "Galaxy Z Fold 8 · Case Rugged Premium",
+    href: "/produk/vrs-active-z-fold-8-ultra",
+  },
+  {
+    image:
+      "https://cdn.shopify.com/s/files/1/1696/1045/files/SUPCASE_iPhone_16_Pro_Max_Unicorn_Beetle_XT_MagSafe_phone_case_Ruddy_1x1_2c1bd284-d24a-4dff-a6ab-f918e0b46c95.png?v=1724767101",
+    brand: "Supcase",
+    caption: "iPhone 16 Pro Max · Unicorn Beetle MagSafe",
+    href: "/produk?tipe=apple",
+  },
+  {
+    image:
+      "https://cdn.shopify.com/s/files/1/1352/5175/files/XM17U_FUSX_MGNT_Main.jpg?v=1777668398",
+    brand: "Ringke",
+    caption: "Xiaomi 17 Ultra · Fusion-X Magnetic",
+    href: "/produk/ringke-xiaomi-17-ultra-case-fusion-x",
+  },
+];
 
 export default async function HomePage() {
   // Tahan-banting: kalau DB ngadat saat build, jangan gagalkan deploy —
@@ -59,8 +85,10 @@ export default async function HomePage() {
             </div>
           </div>
 
-          {/* Placeholder foto hero — foto produk jadi bintang (belum ada data) */}
-          <div className="aspect-[4/3] w-full animate-in fade-in zoom-in-95 rounded-xl border border-border bg-muted delay-150 duration-700 fill-mode-both" />
+          {/* Hero banner: carousel produk device terbaru */}
+          <div className="animate-in fade-in zoom-in-95 delay-150 duration-700 fill-mode-both">
+            <HeroCarousel slides={HERO_SLIDES} />
+          </div>
         </div>
       </section>
 
