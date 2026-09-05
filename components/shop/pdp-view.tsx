@@ -274,7 +274,9 @@ export function PdpView({ product }: { product: PdpProduct }) {
                       aria-label={c.name}
                       className={cn(
                         "inline-flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-sm transition-colors",
-                        selected ? "border-foreground" : "border-border hover:border-foreground",
+                        selected
+                          ? "border-primary bg-primary/5 font-medium text-primary ring-1 ring-primary"
+                          : "border-border hover:border-foreground",
                         !c.inStock && "opacity-50",
                       )}
                     >
@@ -305,7 +307,9 @@ export function PdpView({ product }: { product: PdpProduct }) {
                     disabled={disabled}
                     className={cn(
                       "rounded-lg border px-3 py-1.5 text-sm transition-colors",
-                      selected ? "border-foreground" : "border-border hover:border-foreground",
+                      selected
+                        ? "border-primary bg-primary/5 font-medium text-primary ring-1 ring-primary"
+                        : "border-border hover:border-foreground",
                       disabled && "cursor-not-allowed border-dashed text-muted-foreground line-through opacity-60 hover:border-border",
                     )}
                   >
