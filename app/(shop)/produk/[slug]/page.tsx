@@ -6,7 +6,6 @@ import {
 } from "@/lib/actions/product";
 import { PdpView, type PdpProduct } from "@/components/shop/pdp-view";
 import { ProductCard } from "@/components/shop/product-card";
-import { PdpStory } from "@/components/shop/pdp-story";
 import { ProductReviews } from "@/components/shop/product-reviews";
 
 // ISR: PDP di-generate on-demand saat request pertama lalu DI-CACHE 5 menit
@@ -83,15 +82,6 @@ export default async function ProductDetailPage({
             </div>
           </section>
         )}
-
-        {/* Storytelling produk (ala Nomad) */}
-        <PdpStory
-          productName={product.name}
-          images={[
-            product.coverImage,
-            ...product.variants.map((v) => v.image),
-          ].filter((v, i, a) => a.indexOf(v) === i)}
-        />
 
         {/* Ulasan (target anchor dari rating) */}
         <div id="ulasan" className="scroll-mt-24">
