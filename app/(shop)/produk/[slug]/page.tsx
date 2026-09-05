@@ -48,6 +48,7 @@ export default async function ProductDetailPage({
     coverImage: product.coverImage,
     categoryName: product.category?.name ?? null,
     discountPercent: product.discountPercent,
+    gallery: Array.isArray(product.images) ? (product.images as string[]) : [],
     variants: product.variants.map((v) => ({
       id: v.id,
       name: v.name,

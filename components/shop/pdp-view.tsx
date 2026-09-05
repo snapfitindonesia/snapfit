@@ -27,6 +27,7 @@ export type PdpProduct = {
   coverImage: string;
   categoryName: string | null;
   discountPercent: number;
+  gallery: string[];
   variants: PdpVariant[];
 };
 
@@ -42,6 +43,8 @@ export function PdpView({ product }: { product: PdpProduct }) {
   const [variantId, setVariantId] = useState(firstInStock?.id);
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
+  // Foto yang sedang dilihat (override galeri). null = ikut foto varian terpilih.
+  const [heroImage, setHeroImage] = useState<string | null>(null);
 
   // Dimensi warna aktif hanya jika ada varian yang punya warna terisi.
   const hasColorDim = useMemo(
@@ -96,6 +99,7 @@ export function PdpView({ product }: { product: PdpProduct }) {
     setVariantId(v.id);
     setQty(1);
     setAdded(false);
+    setHeroImage(null); // kembali ke foto varian saat ganti pilihan
   }
 
   // Pilih warna → lompat ke tipe pertama yang ready-stok pada warna itu.
@@ -137,47 +141,47 @@ export function PdpView({ product }: { product: PdpProduct }) {
     </>
   );
 
-  // Thumbnail galeri: 1 per warna (bila ada dimensi warna), else 1 per varian.
-  const galleryItems = hasColorDim
-    ? colors.map((c) => ({ id: c.rep.id, image: c.rep.image, label: c.name }))
-    : product.variants.map((v) => ({ id: v.id, image: v.image, label: v.name }));
+  // Galeri foto (lihat-saja): foto varian terpilih + foto fitur produk (dedupe).
+  const baseUrl = (u: string) => u.split("?")[0];
+  const photos: string[] = [];
+  for (const src of [variant.image, ...product.gallery]) {
+    if (src && !photos.some((p) => baseUrl(p) === baseUrl(src))) photos.push(src);
+  }
+  const displayImage = heroImage ?? variant.image;
 
   return (
     <div className="grid gap-6 lg:grid-cols-2 lg:items-start lg:gap-10">
       {/* ============ GALERI ============ */}
       <div className="flex gap-3">
         {/* Thumbnail vertikal (desktop) */}
-        {galleryItems.length > 1 && (
-          <div className="hidden w-16 shrink-0 flex-col gap-3 sm:flex">
-            {galleryItems.map((g) => (
-              <button
-                key={g.id}
-                type="button"
-                onClick={() =>
-                  hasColorDim ? selectColor(g.label) : selectVariant(product.variants.find((v) => v.id === g.id)!)
-                }
-                aria-label={g.label}
-                aria-pressed={
-                  hasColorDim ? g.label === selectedColor : g.id === variant.id
-                }
-                className={cn(
-                  "relative aspect-square w-full overflow-hidden rounded-lg border-2 bg-muted transition-colors",
-                  (hasColorDim ? g.label === selectedColor : g.id === variant.id)
-                    ? "border-foreground"
-                    : "border-transparent hover:border-border",
-                )}
-              >
-                <Image src={g.image} alt={g.label} fill sizes="64px" className="object-cover" />
-              </button>
-            ))}
+        {photos.length > 1 && (
+          <div className="hidden max-h-[540px] w-16 shrink-0 flex-col gap-3 overflow-y-auto sm:flex">
+            {photos.map((src) => {
+              const active = baseUrl(src) === baseUrl(displayImage);
+              return (
+                <button
+                  key={src}
+                  type="button"
+                  onClick={() => setHeroImage(src)}
+                  aria-label="Lihat foto"
+                  aria-pressed={active}
+                  className={cn(
+                    "relative aspect-square w-full shrink-0 overflow-hidden rounded-lg border-2 bg-muted transition-colors",
+                    active ? "border-foreground" : "border-transparent hover:border-border",
+                  )}
+                >
+                  <Image src={src} alt="" fill sizes="64px" className="object-cover" />
+                </button>
+              );
+            })}
           </div>
         )}
 
         {/* Gambar utama */}
         <div className="relative aspect-square flex-1 overflow-hidden rounded-2xl bg-muted">
           <Image
-            key={variant.id}
-            src={variant.image}
+            key={displayImage}
+            src={displayImage}
             alt={`${product.name} — ${variant.name}`}
             fill
             priority
@@ -193,26 +197,25 @@ export function PdpView({ product }: { product: PdpProduct }) {
       </div>
 
       {/* Thumbnail baris (mobile) */}
-      {galleryItems.length > 1 && (
-        <div className="-mt-2 flex gap-2 sm:hidden">
-          {galleryItems.map((g) => (
-            <button
-              key={g.id}
-              type="button"
-              onClick={() =>
-                hasColorDim ? selectColor(g.label) : selectVariant(product.variants.find((v) => v.id === g.id)!)
-              }
-              aria-label={g.label}
-              className={cn(
-                "relative size-14 shrink-0 overflow-hidden rounded-md border-2 bg-muted",
-                (hasColorDim ? g.label === selectedColor : g.id === variant.id)
-                  ? "border-foreground"
-                  : "border-transparent",
-              )}
-            >
-              <Image src={g.image} alt={g.label} fill sizes="56px" className="object-cover" />
-            </button>
-          ))}
+      {photos.length > 1 && (
+        <div className="-mt-2 flex gap-2 overflow-x-auto sm:hidden">
+          {photos.map((src) => {
+            const active = baseUrl(src) === baseUrl(displayImage);
+            return (
+              <button
+                key={src}
+                type="button"
+                onClick={() => setHeroImage(src)}
+                aria-label="Lihat foto"
+                className={cn(
+                  "relative size-14 shrink-0 overflow-hidden rounded-md border-2 bg-muted",
+                  active ? "border-foreground" : "border-transparent",
+                )}
+              >
+                <Image src={src} alt="" fill sizes="56px" className="object-cover" />
+              </button>
+            );
+          })}
         </div>
       )}
 
