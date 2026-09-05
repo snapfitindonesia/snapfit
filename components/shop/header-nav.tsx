@@ -9,10 +9,12 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatRupiah } from "@/lib/format";
 import { CartButton } from "@/components/shop/cart-button";
+import { useStoreUI } from "@/components/shop/store-ui-provider";
 import type { MegaMenuCategory, ProductListItem } from "@/lib/actions/product";
 import logo from "@/logosnapfit.png";
 
 export function HeaderNav({ menu }: { menu: MegaMenuCategory[] }) {
+  const { authed, openLogin } = useStoreUI();
   const [open, setOpen] = useState(false); // mega-menu desktop
   const [mobileOpen, setMobileOpen] = useState(false); // drawer mobile
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -33,6 +35,8 @@ export function HeaderNav({ menu }: { menu: MegaMenuCategory[] }) {
   const [results, setResults] = useState<ProductListItem[]>([]);
   const [searching, setSearching] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
+  const searchPanelRef = useRef<HTMLDivElement>(null);
+  const searchBtnRef = useRef<HTMLButtonElement>(null);
   const searchReq = useRef(0);
 
   function openSearch() {
@@ -52,8 +56,19 @@ export function HeaderNav({ menu }: { menu: MegaMenuCategory[] }) {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") closeSearch();
     };
+    // Klik di luar kolom search → tutup otomatis (tak perlu klik "x").
+    const onDown = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (searchPanelRef.current?.contains(t)) return;
+      if (searchBtnRef.current?.contains(t)) return;
+      closeSearch();
+    };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    document.addEventListener("mousedown", onDown);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.removeEventListener("mousedown", onDown);
+    };
   }, [searchOpen]);
 
   useEffect(() => {
@@ -160,6 +175,7 @@ export function HeaderNav({ menu }: { menu: MegaMenuCategory[] }) {
 
             <div className="ml-auto flex items-center gap-1">
               <Button
+                ref={searchBtnRef}
                 variant="ghost"
                 size="icon"
                 aria-label="Cari"
@@ -168,6 +184,23 @@ export function HeaderNav({ menu }: { menu: MegaMenuCategory[] }) {
               >
                 <Search className="size-5" />
               </Button>
+              {authed ? (
+                <Button variant="ghost" size="icon" aria-label="Akun" className="hidden md:inline-flex" asChild>
+                  <Link href="/akun">
+                    <User className="size-5" />
+                  </Link>
+                </Button>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Masuk / Akun"
+                  className="hidden md:inline-flex"
+                  onClick={openLogin}
+                >
+                  <User className="size-5" />
+                </Button>
+              )}
               <CartButton />
             </div>
           </div>
@@ -273,13 +306,26 @@ export function HeaderNav({ menu }: { menu: MegaMenuCategory[] }) {
                 </div>
 
                 <div className="mt-3 border-t border-border pt-3">
-                  <Link
-                    href="/akun"
-                    onClick={closeMobile}
-                    className="flex items-center gap-2 rounded-md px-2 py-2.5 text-sm font-medium hover:bg-accent"
-                  >
-                    <User className="size-4" /> Akun
-                  </Link>
+                  {authed ? (
+                    <Link
+                      href="/akun"
+                      onClick={closeMobile}
+                      className="flex items-center gap-2 rounded-md px-2 py-2.5 text-sm font-medium hover:bg-accent"
+                    >
+                      <User className="size-4" /> Akun
+                    </Link>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        closeMobile();
+                        openLogin();
+                      }}
+                      className="flex w-full items-center gap-2 rounded-md px-2 py-2.5 text-sm font-medium hover:bg-accent"
+                    >
+                      <User className="size-4" /> Masuk / Daftar
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -287,7 +333,7 @@ export function HeaderNav({ menu }: { menu: MegaMenuCategory[] }) {
 
           {/* Panel search */}
           {searchOpen && (
-            <div className="absolute inset-x-0 top-full z-50 pt-2">
+            <div ref={searchPanelRef} className="absolute inset-x-0 top-full z-50 pt-2">
               <div className="animate-in fade-in slide-in-from-top-2 rounded-2xl border border-border bg-background p-4 shadow-xl duration-200">
                 <form onSubmit={submitSearch} className="relative">
                   <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />

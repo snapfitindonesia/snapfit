@@ -1,12 +1,25 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import { Check, Minus, Plus, ShoppingBag, Star, ChevronDown } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  Check,
+  Minus,
+  Plus,
+  ShoppingBag,
+  Star,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ZoomIn,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatRupiah, applyDiscount } from "@/lib/format";
 import { useCart } from "@/components/shop/cart-provider";
+import { useStoreUI } from "@/components/shop/store-ui-provider";
 import { trackViewItem, trackAddToCart } from "@/lib/tracking";
 
 export type PdpVariant = {
@@ -37,6 +50,8 @@ const typeLabel = (v: PdpVariant) => v.type.trim() || v.name;
 
 export function PdpView({ product }: { product: PdpProduct }) {
   const { addItem } = useCart();
+  const { openCart } = useStoreUI();
+  const router = useRouter();
 
   const firstInStock =
     product.variants.find((v) => v.stock > 0) ?? product.variants[0];
@@ -45,6 +60,10 @@ export function PdpView({ product }: { product: PdpProduct }) {
   const [added, setAdded] = useState(false);
   // Foto yang sedang dilihat (override galeri). null = ikut foto varian terpilih.
   const [heroImage, setHeroImage] = useState<string | null>(null);
+  const [lightbox, setLightbox] = useState(false); // mode zoom layar penuh
+  const [zoomed, setZoomed] = useState(false);
+  const touchX = useRef<number | null>(null);
+  const navRef = useRef<{ prev: () => void; next: () => void }>({ prev: () => {}, next: () => {} });
 
   // Dimensi warna aktif hanya jika ada varian yang punya warna terisi.
   const hasColorDim = useMemo(
@@ -76,6 +95,25 @@ export function PdpView({ product }: { product: PdpProduct }) {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product.slug]);
+
+  // Lightbox: kunci scroll + navigasi keyboard (panah / Esc).
+  useEffect(() => {
+    if (!lightbox) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setLightbox(false);
+        setZoomed(false);
+      } else if (e.key === "ArrowLeft") navRef.current.prev();
+      else if (e.key === "ArrowRight") navRef.current.next();
+    };
+    window.addEventListener("keydown", onKey);
+    const prevOv = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOv;
+    };
+  }, [lightbox]);
 
   const variant =
     product.variants.find((v) => v.id === variantId) ?? firstInStock;
@@ -109,8 +147,7 @@ export function PdpView({ product }: { product: PdpProduct }) {
     if (target) selectVariant(target);
   }
 
-  function handleAdd() {
-    if (outOfStock) return;
+  function addToCart() {
     addItem(
       {
         variantId: variant!.id,
@@ -127,8 +164,20 @@ export function PdpView({ product }: { product: PdpProduct }) {
       price: finalPrice,
       quantity: qty,
     });
+  }
+
+  function handleAdd() {
+    if (outOfStock) return;
+    addToCart();
     setAdded(true);
+    openCart(); // buka floating cart = umpan-balik jelas "masuk keranjang"
     setTimeout(() => setAdded(false), 1800);
+  }
+
+  function handleBuyNow() {
+    if (outOfStock) return;
+    addToCart();
+    router.push("/checkout");
   }
 
   const addBtnLabel = added ? (
@@ -148,6 +197,23 @@ export function PdpView({ product }: { product: PdpProduct }) {
     if (src && !photos.some((p) => baseUrl(p) === baseUrl(src))) photos.push(src);
   }
   const displayImage = heroImage ?? variant.image;
+
+  // Navigasi antar foto (slide) — dipakai panah + swipe + lightbox.
+  const photoIndex = Math.max(0, photos.findIndex((p) => baseUrl(p) === baseUrl(displayImage)));
+  const goTo = (i: number) => setHeroImage(photos[(i + photos.length) % photos.length]);
+  const goPrev = () => goTo(photoIndex - 1);
+  const goNext = () => goTo(photoIndex + 1);
+  navRef.current = { prev: goPrev, next: goNext };
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchX.current = e.touches[0].clientX;
+  };
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (touchX.current == null) return;
+    const dx = e.changedTouches[0].clientX - touchX.current;
+    if (Math.abs(dx) > 40) (dx < 0 ? goNext : goPrev)();
+    touchX.current = null;
+  };
 
   return (
     <div className="grid gap-6 lg:grid-cols-2 lg:items-start lg:gap-10">
@@ -177,8 +243,13 @@ export function PdpView({ product }: { product: PdpProduct }) {
           </div>
         )}
 
-        {/* Gambar utama */}
-        <div className="relative aspect-square flex-1 overflow-hidden rounded-2xl bg-muted">
+        {/* Gambar utama (klik = zoom, geser = slide) */}
+        <div
+          className="group relative aspect-square flex-1 cursor-zoom-in overflow-hidden rounded-2xl bg-muted"
+          onClick={() => setLightbox(true)}
+          onTouchStart={onTouchStart}
+          onTouchEnd={onTouchEnd}
+        >
           <Image
             key={displayImage}
             src={displayImage}
@@ -192,6 +263,37 @@ export function PdpView({ product }: { product: PdpProduct }) {
             <span className="absolute left-4 top-4 rounded-full bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground">
               -{product.discountPercent}%
             </span>
+          )}
+          <span className="pointer-events-none absolute right-3 top-3 grid size-8 place-items-center rounded-full bg-background/80 text-foreground shadow-sm backdrop-blur transition-opacity">
+            <ZoomIn className="size-4" />
+          </span>
+
+          {/* Panah slide (desktop) */}
+          {photos.length > 1 && (
+            <>
+              <button
+                type="button"
+                aria-label="Foto sebelumnya"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  goPrev();
+                }}
+                className="absolute left-2 top-1/2 hidden -translate-y-1/2 place-items-center rounded-full bg-background/80 p-1.5 text-foreground opacity-0 shadow-sm backdrop-blur transition-opacity group-hover:opacity-100 sm:grid"
+              >
+                <ChevronLeft className="size-5" />
+              </button>
+              <button
+                type="button"
+                aria-label="Foto berikutnya"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  goNext();
+                }}
+                className="absolute right-2 top-1/2 hidden -translate-y-1/2 place-items-center rounded-full bg-background/80 p-1.5 text-foreground opacity-0 shadow-sm backdrop-blur transition-opacity group-hover:opacity-100 sm:grid"
+              >
+                <ChevronRight className="size-5" />
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -353,15 +455,26 @@ export function PdpView({ product }: { product: PdpProduct }) {
           </span>
         </div>
 
-        {/* Add to cart (desktop; mobile pakai sticky bar) */}
-        <Button
-          size="lg"
-          className="mt-6 hidden w-full md:flex"
-          disabled={outOfStock}
-          onClick={handleAdd}
-        >
-          {outOfStock ? "Stok habis" : addBtnLabel}
-        </Button>
+        {/* Add to cart + Beli Langsung (desktop; mobile pakai sticky bar) */}
+        <div className="mt-6 hidden gap-3 md:flex">
+          <Button
+            size="lg"
+            variant="outline"
+            className="flex-1"
+            disabled={outOfStock}
+            onClick={handleAdd}
+          >
+            {outOfStock ? "Stok habis" : addBtnLabel}
+          </Button>
+          <Button
+            size="lg"
+            className="flex-1"
+            disabled={outOfStock}
+            onClick={handleBuyNow}
+          >
+            Beli Langsung
+          </Button>
+        </div>
         <p className="mt-3 text-center text-xs text-muted-foreground">
           Garansi Resmi · 100% Original · 7 Hari Pengembalian
         </p>
@@ -401,30 +514,103 @@ export function PdpView({ product }: { product: PdpProduct }) {
 
       {/* Sticky add-to-cart bar (mobile) — di atas bottom nav */}
       <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-30 border-y border-border bg-background/95 p-3 backdrop-blur md:hidden">
-        <div className="mx-auto flex max-w-6xl items-center gap-3">
-          <div className="min-w-0">
-            <p className="truncate text-xs text-muted-foreground">{variant.name}</p>
-            <p className="text-sm font-semibold">{formatRupiah(finalPrice)}</p>
-          </div>
+        <div className="mx-auto flex max-w-6xl items-center gap-2">
           <Button
-            className="ml-auto max-w-[60%] flex-1"
+            variant="outline"
+            size="icon-lg"
+            aria-label="Tambah ke keranjang"
+            className="shrink-0"
             disabled={outOfStock}
             onClick={handleAdd}
           >
-            {outOfStock ? (
-              "Habis"
-            ) : added ? (
-              <>
-                <Check className="size-4" /> Ditambahkan
-              </>
-            ) : (
-              <>
-                <ShoppingBag className="size-4" /> Tambah
-              </>
-            )}
+            {added ? <Check className="size-5" /> : <ShoppingBag className="size-5" />}
+          </Button>
+          <Button
+            className="flex-1"
+            disabled={outOfStock}
+            onClick={handleBuyNow}
+          >
+            {outOfStock ? "Stok habis" : `Beli Langsung · ${formatRupiah(finalPrice)}`}
           </Button>
         </div>
       </div>
+
+      {/* Lightbox zoom foto (klik gambar utama) */}
+      {lightbox && (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/90 animate-in fade-in duration-200"
+          onClick={() => {
+            setLightbox(false);
+            setZoomed(false);
+          }}
+        >
+          <button
+            type="button"
+            aria-label="Tutup"
+            className="absolute right-4 top-4 z-10 grid size-10 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20"
+            onClick={(e) => {
+              e.stopPropagation();
+              setLightbox(false);
+              setZoomed(false);
+            }}
+          >
+            <X className="size-5" />
+          </button>
+
+          {photos.length > 1 && (
+            <>
+              <button
+                type="button"
+                aria-label="Foto sebelumnya"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  goPrev();
+                }}
+                className="absolute left-3 top-1/2 z-10 grid size-11 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20"
+              >
+                <ChevronLeft className="size-6" />
+              </button>
+              <button
+                type="button"
+                aria-label="Foto berikutnya"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  goNext();
+                }}
+                className="absolute right-3 top-1/2 z-10 grid size-11 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20"
+              >
+                <ChevronRight className="size-6" />
+              </button>
+            </>
+          )}
+
+          <div
+            className="relative h-[85vh] w-[92vw] max-w-4xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={onTouchStart}
+            onTouchEnd={onTouchEnd}
+          >
+            <Image
+              key={displayImage}
+              src={displayImage}
+              alt={`${product.name} — ${variant.name}`}
+              fill
+              sizes="92vw"
+              className={cn(
+                "object-contain transition-transform duration-200",
+                zoomed ? "scale-150 cursor-zoom-out" : "cursor-zoom-in",
+              )}
+              onClick={() => setZoomed((z) => !z)}
+            />
+          </div>
+
+          {photos.length > 1 && (
+            <p className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white/10 px-3 py-1 text-xs text-white">
+              {photoIndex + 1} / {photos.length}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -14,9 +14,11 @@ import { TurnstileWidget } from "@/components/auth/turnstile-widget";
 export function AuthForm({
   mode,
   next = "/",
+  onSuccess,
 }: {
   mode: "login" | "register";
   next?: string;
+  onSuccess?: () => void; // dipakai modal: tutup + refresh alih-alih navigasi
 }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -45,8 +47,13 @@ export function AuthForm({
       const res = await fn({ email, password, turnstileToken: token || undefined });
       if (res.ok) {
         if (isLogin) {
-          router.push(next);
-          router.refresh();
+          if (onSuccess) {
+            onSuccess();
+            router.refresh();
+          } else {
+            router.push(next);
+            router.refresh();
+          }
         } else {
           setMessage(res.message ?? "Pendaftaran berhasil.");
         }

@@ -4,21 +4,21 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, LayoutGrid, ShoppingBag, User } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const ITEMS = [
-  { label: "Beranda", href: "/", icon: Home },
-  { label: "Kategori", href: "/produk", icon: LayoutGrid },
-  { label: "Keranjang", href: "/keranjang", icon: ShoppingBag },
-  { label: "Akun", href: "/akun", icon: User },
-];
+import { useCart } from "@/components/shop/cart-provider";
+import { useStoreUI } from "@/components/shop/store-ui-provider";
 
 function isActive(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+const baseCls =
+  "flex h-16 w-full flex-col items-center justify-center gap-1 text-xs transition-colors";
+
 export function MobileBottomBar() {
   const pathname = usePathname();
+  const { count } = useCart();
+  const { openCart, openLogin, authed } = useStoreUI();
 
   return (
     <nav
@@ -26,26 +26,52 @@ export function MobileBottomBar() {
       className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/90 backdrop-blur md:hidden"
     >
       <ul className="mx-auto grid max-w-md grid-cols-4 pb-[env(safe-area-inset-bottom)]">
-        {ITEMS.map(({ label, href, icon: Icon }) => {
-          const active = isActive(pathname, href);
-          return (
-            <li key={href}>
-              <Link
-                href={href}
-                aria-current={active ? "page" : undefined}
-                className={cn(
-                  "flex h-16 flex-col items-center justify-center gap-1 text-xs transition-colors",
-                  active
-                    ? "text-foreground"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                <Icon className={cn("size-5", active && "stroke-[2.25]")} />
-                {label}
-              </Link>
-            </li>
-          );
-        })}
+        <li>
+          <Link
+            href="/"
+            aria-current={isActive(pathname, "/") ? "page" : undefined}
+            className={cn(baseCls, isActive(pathname, "/") ? "text-foreground" : "text-muted-foreground hover:text-foreground")}
+          >
+            <Home className="size-5" /> Beranda
+          </Link>
+        </li>
+        <li>
+          <Link
+            href="/produk"
+            aria-current={isActive(pathname, "/produk") ? "page" : undefined}
+            className={cn(baseCls, isActive(pathname, "/produk") ? "text-foreground" : "text-muted-foreground hover:text-foreground")}
+          >
+            <LayoutGrid className="size-5" /> Kategori
+          </Link>
+        </li>
+        <li>
+          <button type="button" onClick={openCart} className={cn(baseCls, "relative text-muted-foreground hover:text-foreground")}>
+            <span className="relative">
+              <ShoppingBag className="size-5" />
+              {count > 0 && (
+                <span className="absolute -right-2 -top-1 flex min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold leading-4 text-primary-foreground">
+                  {count > 99 ? "99+" : count}
+                </span>
+              )}
+            </span>
+            Keranjang
+          </button>
+        </li>
+        <li>
+          {authed ? (
+            <Link
+              href="/akun"
+              aria-current={isActive(pathname, "/akun") ? "page" : undefined}
+              className={cn(baseCls, isActive(pathname, "/akun") ? "text-foreground" : "text-muted-foreground hover:text-foreground")}
+            >
+              <User className="size-5" /> Akun
+            </Link>
+          ) : (
+            <button type="button" onClick={openLogin} className={cn(baseCls, "text-muted-foreground hover:text-foreground")}>
+              <User className="size-5" /> Akun
+            </button>
+          )}
+        </li>
       </ul>
     </nav>
   );
