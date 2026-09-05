@@ -98,7 +98,7 @@ export function PdpView({ product }: { product: PdpProduct }) {
   );
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10">
+    <div className="grid gap-6 lg:grid-cols-2 lg:items-start lg:gap-10">
       {/* ============ GALERI ============ */}
       <div className="flex gap-3">
         {/* Thumbnail vertikal (desktop) */}
@@ -175,24 +175,26 @@ export function PdpView({ product }: { product: PdpProduct }) {
           </a>
         </div>
 
-        {/* Judul + harga sebaris */}
-        <div className="mt-3 flex items-start justify-between gap-4">
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            {product.name}
-          </h1>
-          <div className="shrink-0 text-right">
-            <p className="text-xl font-bold sm:text-2xl">{formatRupiah(finalPrice)}</p>
-            {hasDiscount && (
-              <p className="text-sm text-muted-foreground line-through">
-                {formatRupiah(variant.price)}
-              </p>
-            )}
-          </div>
+        {/* Judul */}
+        {product.categoryName && (
+          <p className="mt-3 text-sm text-muted-foreground">{product.categoryName}</p>
+        )}
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-[28px] sm:leading-tight">
+          {product.name}
+        </h1>
+
+        {/* Harga (baris sendiri) */}
+        <div className="mt-3 flex items-baseline gap-3">
+          <span className="text-2xl font-bold sm:text-3xl">
+            {formatRupiah(finalPrice)}
+          </span>
+          {hasDiscount && (
+            <span className="text-base text-muted-foreground line-through">
+              {formatRupiah(variant.price)}
+            </span>
+          )}
         </div>
 
-        {product.categoryName && (
-          <p className="mt-1 text-sm text-muted-foreground">{product.categoryName}</p>
-        )}
         {product.description && (
           <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
             {product.description}
