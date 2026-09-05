@@ -42,9 +42,14 @@ model Variant {
 }
 
 model Category {
-  id       String    @id @default(cuid())
+  id       String     @id @default(cuid())
   name     String
-  slug     String    @unique
+  slug     String     @unique
+  // Pohon kategori: brand (tingkat 1) → line/tipe HP (tingkat 2). parentId null = brand.
+  parentId String?
+  parent   Category?  @relation("CatTree", fields: [parentId], references: [id])
+  children Category[] @relation("CatTree")
+  order    Int        @default(0) // urutan tampil
   products Product[]
 }
 

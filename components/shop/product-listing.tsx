@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Loader2, Search } from "lucide-react";
+import { Loader2, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ProductCard } from "@/components/shop/product-card";
@@ -22,16 +22,19 @@ export function ProductListing({
   categories,
   initial,
   initialTipe = "",
+  initialModel = "",
   initialSort = "terbaru",
   initialQ = "",
 }: {
   categories: Category[];
   initial: ProductListResult;
   initialTipe?: string;
+  initialModel?: string;
   initialSort?: SortOption;
   initialQ?: string;
 }) {
   const [tipe, setTipe] = useState(initialTipe);
+  const [model, setModel] = useState(initialModel);
   const [sort, setSort] = useState<SortOption>(initialSort);
   const [q, setQ] = useState(initialQ);
   const [items, setItems] = useState<ProductListItem[]>(initial.items);
@@ -45,7 +48,7 @@ export function ProductListing({
   const firstRender = useRef(true);
 
   const fetchList = useCallback(
-    async (opts: { tipe: string; q: string; sort: SortOption; skip: number; append: boolean }) => {
+    async (opts: { tipe: string; model: string; q: string; sort: SortOption; skip: number; append: boolean }) => {
       const id = ++reqId.current;
       setLoading(true);
       setError(false);
@@ -56,6 +59,7 @@ export function ProductListing({
           take: String(TAKE),
         });
         if (opts.tipe) params.set("tipe", opts.tipe);
+        if (opts.model) params.set("model", opts.model);
         if (opts.q) params.set("q", opts.q);
 
         const res = await fetch(`/api/products?${params.toString()}`);
@@ -86,14 +90,15 @@ export function ProductListing({
     const t = setTimeout(() => {
       const params = new URLSearchParams();
       if (tipe) params.set("tipe", tipe);
+      if (model) params.set("model", model);
       if (q) params.set("q", q);
       if (sort !== "terbaru") params.set("sort", sort);
       const qs = params.toString();
       window.history.replaceState(null, "", qs ? `/produk?${qs}` : "/produk");
-      fetchList({ tipe, q, sort, skip: 0, append: false });
+      fetchList({ tipe, model, q, sort, skip: 0, append: false });
     }, 250);
     return () => clearTimeout(t);
-  }, [tipe, sort, q, fetchList]);
+  }, [tipe, model, sort, q, fetchList]);
 
   const chips = [{ name: "Semua", slug: "" }, ...categories];
 
@@ -119,7 +124,10 @@ export function ProductListing({
             <button
               key={c.slug || "all"}
               type="button"
-              onClick={() => setTipe(c.slug)}
+              onClick={() => {
+                setTipe(c.slug);
+                setModel(""); // model terikat ke line tertentu — reset saat ganti filter
+              }}
               aria-pressed={tipe === c.slug}
               className={cn(
                 "rounded-full border px-4 py-1.5 text-sm font-medium transition-colors",
@@ -148,6 +156,21 @@ export function ProductListing({
           </select>
         </label>
       </div>
+
+      {/* Filter model aktif (dari picker homepage) — bisa dilepas */}
+      {model && (
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <span className="text-sm text-muted-foreground">Model:</span>
+          <button
+            type="button"
+            onClick={() => setModel("")}
+            className="inline-flex items-center gap-1 rounded-full border border-foreground bg-foreground px-3 py-1 text-sm font-medium text-background"
+          >
+            {model}
+            <X className="size-3.5" />
+          </button>
+        </div>
+      )}
 
       <p className="mt-4 text-sm text-muted-foreground" aria-live="polite">
         {total} produk
@@ -183,7 +206,7 @@ export function ProductListing({
             variant="outline"
             size="lg"
             disabled={loading}
-            onClick={() => fetchList({ tipe, q, sort, skip: items.length, append: true })}
+            onClick={() => fetchList({ tipe, model, q, sort, skip: items.length, append: true })}
           >
             {loading && <Loader2 className="size-4 animate-spin" />}
             Muat lebih banyak

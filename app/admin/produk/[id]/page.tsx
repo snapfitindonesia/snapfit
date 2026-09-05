@@ -10,14 +10,23 @@ export default async function EditProductPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [product, categories] = await Promise.all([
+  const [product, lines] = await Promise.all([
     db.product.findUnique({
       where: { id },
       include: { variants: { orderBy: [{ color: "asc" }, { price: "asc" }] } },
     }),
-    db.category.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
+    db.category.findMany({
+      where: { parentId: { not: null } },
+      select: { id: true, name: true, parent: { select: { name: true } } },
+      orderBy: [{ parentId: "asc" }, { order: "asc" }],
+    }),
   ]);
   if (!product) notFound();
+
+  const categories = lines.map((c) => ({
+    id: c.id,
+    name: c.parent ? `${c.parent.name} › ${c.name}` : c.name,
+  }));
 
   return (
     <div>

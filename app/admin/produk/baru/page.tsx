@@ -4,7 +4,15 @@ import { ProductForm } from "@/components/admin/product-form";
 export const dynamic = "force-dynamic";
 
 export default async function NewProductPage() {
-  const categories = await db.category.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } });
+  const lines = await db.category.findMany({
+    where: { parentId: { not: null } },
+    select: { id: true, name: true, parent: { select: { name: true } } },
+    orderBy: [{ parentId: "asc" }, { order: "asc" }],
+  });
+  const categories = lines.map((c) => ({
+    id: c.id,
+    name: c.parent ? `${c.parent.name} › ${c.name}` : c.name,
+  }));
   return (
     <div>
       <h1 className="text-xl font-semibold">Tambah produk</h1>

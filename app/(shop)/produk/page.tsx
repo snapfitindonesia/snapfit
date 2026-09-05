@@ -10,11 +10,11 @@ export const metadata = {
 export default async function ProductListPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tipe?: string; sort?: string; q?: string }>;
+  searchParams: Promise<{ tipe?: string; model?: string; sort?: string; q?: string }>;
 }) {
   const sp = await searchParams;
   // Muat awal via RSC (cepat + SEO); interaksi berikutnya via AJAX di client.
-  const query = productQuerySchema.parse({ tipe: sp.tipe, sort: sp.sort, q: sp.q });
+  const query = productQuerySchema.parse({ tipe: sp.tipe, model: sp.model, sort: sp.sort, q: sp.q });
 
   const [categories, initial] = await Promise.all([
     getCategories(),
@@ -36,6 +36,7 @@ export default async function ProductListPage({
         categories={categories.map((c) => ({ name: c.name, slug: c.slug }))}
         initial={initial}
         initialTipe={query.tipe ?? ""}
+        initialModel={query.model ?? ""}
         initialSort={query.sort}
         initialQ={query.q ?? ""}
       />

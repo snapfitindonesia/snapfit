@@ -1,18 +1,17 @@
 import Link from "next/link";
 import { ArrowRight, ShieldCheck, BadgeCheck, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getProducts, type ProductListItem } from "@/lib/actions/product";
+import {
+  getProducts,
+  getDeviceTree,
+  type ProductListItem,
+  type DeviceBrand,
+} from "@/lib/actions/product";
 import { ProductCard } from "@/components/shop/product-card";
+import { DevicePicker } from "@/components/shop/device-picker";
 
 // ISR: homepage di-cache (cepat), regenerasi tiap 5 menit.
 export const revalidate = 300;
-
-const DEVICE_TYPES = [
-  { label: "iPhone", href: "/produk?tipe=iphone" },
-  { label: "Samsung", href: "/produk?tipe=samsung" },
-  { label: "iPad & Tablet", href: "/produk?tipe=tablet" },
-  { label: "Lainnya", href: "/produk" },
-];
 
 const TRUST = [
   { icon: ShieldCheck, label: "Garansi Resmi" },
@@ -28,6 +27,13 @@ export default async function HomePage() {
     featured = (await getProducts({ sort: "terbaru", take: 4, skip: 0 })).items;
   } catch {
     featured = [];
+  }
+
+  let deviceTree: DeviceBrand[] = [];
+  try {
+    deviceTree = await getDeviceTree();
+  } catch {
+    deviceTree = [];
   }
 
   return (
@@ -64,26 +70,9 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Pilih tipe HP kamu — UX paling kritis (lihat 02-design-system.md) */}
+      {/* Pilih tipe HP kamu — drill-down brand → line → model (lihat 02-design-system.md) */}
       <section className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="rounded-2xl border border-border p-6 sm:p-8">
-          <h2 className="text-lg font-medium">Pilih tipe HP kamu</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Kami tampilkan yang pas untuk perangkatmu.
-          </p>
-          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {DEVICE_TYPES.map((t) => (
-              <Link
-                key={t.label}
-                href={t.href}
-                className="flex items-center justify-between rounded-lg border border-border px-4 py-3 text-sm font-medium transition-colors hover:bg-accent"
-              >
-                {t.label}
-                <ArrowRight className="size-4 text-muted-foreground" />
-              </Link>
-            ))}
-          </div>
-        </div>
+        <DevicePicker tree={deviceTree} />
       </section>
 
       {/* Produk unggulan — grid placeholder (belum ada data) */}

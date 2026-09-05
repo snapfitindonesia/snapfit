@@ -40,11 +40,71 @@ function activeDiscountPercent(
   return percents.length ? Math.max(...percents) : 0;
 }
 
+/** Kategori "line" (tingkat 2) — dipakai chip filter di halaman /produk. */
 export async function getCategories() {
   return db.category.findMany({
-    orderBy: { name: "asc" },
+    where: { parentId: { not: null } },
+    orderBy: [{ parentId: "asc" }, { order: "asc" }],
     select: { id: true, name: true, slug: true },
   });
+}
+
+export type DeviceModel = { label: string; count: number };
+export type DeviceLine = { name: string; slug: string; productCount: number; models: DeviceModel[] };
+export type DeviceBrand = { name: string; slug: string; lines: DeviceLine[] };
+
+/**
+ * Pohon pemilih perangkat untuk homepage (drill-down 3 tingkat):
+ * Brand → Line → Model. Model diturunkan dari variant.type (selalu sinkron).
+ * Hanya brand/line yang punya produk yang ditampilkan.
+ */
+export async function getDeviceTree(): Promise<DeviceBrand[]> {
+  try {
+    const brands = await db.category.findMany({
+      where: { parentId: null },
+      orderBy: [{ order: "asc" }, { name: "asc" }],
+      select: {
+        name: true,
+        slug: true,
+        children: {
+          orderBy: [{ order: "asc" }, { name: "asc" }],
+          select: {
+            name: true,
+            slug: true,
+            products: { select: { variants: { select: { type: true } } } },
+          },
+        },
+      },
+    });
+
+    return brands
+      .map((b) => ({
+        name: b.name,
+        slug: b.slug,
+        lines: b.children
+          .map((l) => {
+            const counts = new Map<string, number>();
+            for (const p of l.products) {
+              const types = new Set(
+                p.variants.map((v) => v.type.trim()).filter(Boolean),
+              );
+              for (const t of types) counts.set(t, (counts.get(t) ?? 0) + 1);
+            }
+            return {
+              name: l.name,
+              slug: l.slug,
+              productCount: l.products.length,
+              models: Array.from(counts.entries())
+                .map(([label, count]) => ({ label, count }))
+                .sort((a, b) => a.label.localeCompare(b.label)),
+            };
+          })
+          .filter((l) => l.productCount > 0),
+      }))
+      .filter((b) => b.lines.length > 0);
+  } catch {
+    return [];
+  }
 }
 
 export type MegaMenuCategory = {
@@ -57,7 +117,8 @@ export type MegaMenuCategory = {
 export async function getMegaMenu(): Promise<MegaMenuCategory[]> {
   try {
     const categories = await db.category.findMany({
-      orderBy: { name: "asc" },
+      where: { parentId: { not: null }, products: { some: {} } },
+      orderBy: [{ parentId: "asc" }, { order: "asc" }],
       select: {
         name: true,
         slug: true,
@@ -76,11 +137,16 @@ export async function getMegaMenu(): Promise<MegaMenuCategory[]> {
 }
 
 export async function getProducts(query: ProductQuery): Promise<ProductListResult> {
-  const { tipe, q, sort, skip, take } = query;
+  const { tipe, model, q, sort, skip, take } = query;
 
   const products = await db.product.findMany({
     where: {
-      ...(tipe ? { category: { slug: tipe } } : {}),
+      // tipe cocok bila slug = line ITU atau slug = brand induknya (brand → semua line-nya)
+      ...(tipe
+        ? { OR: [{ category: { slug: tipe } }, { category: { parent: { slug: tipe } } }] }
+        : {}),
+      // model tingkat 3: produk punya varian dengan type persis
+      ...(model ? { variants: { some: { type: model } } } : {}),
       ...(q ? { name: { contains: q, mode: "insensitive" as const } } : {}),
     },
     include: {
