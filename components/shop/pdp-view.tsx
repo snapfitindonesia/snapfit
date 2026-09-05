@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Check, Minus, Plus, ShoppingBag } from "lucide-react";
+import { Check, Minus, Plus, ShoppingBag, Star, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatRupiah, applyDiscount } from "@/lib/format";
@@ -31,14 +31,12 @@ export type PdpProduct = {
 export function PdpView({ product }: { product: PdpProduct }) {
   const { addItem } = useCart();
 
-  // Default: varian pertama yang ada stok, jika tak ada pakai varian pertama
   const firstInStock =
     product.variants.find((v) => v.stock > 0) ?? product.variants[0];
   const [variantId, setVariantId] = useState(firstInStock?.id);
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
 
-  // view_item sekali saat buka PDP (docs/08)
   useEffect(() => {
     if (!firstInStock) return;
     trackViewItem({
@@ -69,7 +67,6 @@ export function PdpView({ product }: { product: PdpProduct }) {
 
   function handleAdd() {
     if (outOfStock) return;
-    // Optimistic: badge keranjang naik seketika via context (lihat cart-provider).
     addItem(
       {
         variantId: variant!.id,
@@ -90,29 +87,23 @@ export function PdpView({ product }: { product: PdpProduct }) {
     setTimeout(() => setAdded(false), 1800);
   }
 
-  return (
-    <div className="grid gap-8 md:grid-cols-2 md:gap-12">
-      {/* Galeri — foto ganti mengikuti varian terpilih */}
-      <div>
-        <div className="relative aspect-square w-full overflow-hidden rounded-xl border border-border bg-muted">
-          <Image
-            key={variant.id}
-            src={variant.image}
-            alt={`${product.name} — ${variant.name}`}
-            fill
-            priority
-            sizes="(max-width: 768px) 100vw, 50vw"
-            className="object-cover"
-          />
-          {hasDiscount && (
-            <span className="absolute left-3 top-3 rounded-full bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground">
-              -{product.discountPercent}%
-            </span>
-          )}
-        </div>
+  const addBtnLabel = added ? (
+    <>
+      <Check className="size-4" /> Ditambahkan
+    </>
+  ) : (
+    <>
+      <ShoppingBag className="size-4" /> Tambah ke Keranjang
+    </>
+  );
 
+  return (
+    <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10">
+      {/* ============ GALERI ============ */}
+      <div className="flex gap-3">
+        {/* Thumbnail vertikal (desktop) */}
         {product.variants.length > 1 && (
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="hidden w-16 shrink-0 flex-col gap-3 sm:flex">
             {product.variants.map((v) => (
               <button
                 key={v.id}
@@ -121,75 +112,129 @@ export function PdpView({ product }: { product: PdpProduct }) {
                 aria-label={v.name}
                 aria-pressed={v.id === variant.id}
                 className={cn(
-                  "relative size-16 overflow-hidden rounded-md border-2 transition-colors",
-                  v.id === variant.id ? "border-foreground" : "border-border",
+                  "relative aspect-square w-full overflow-hidden rounded-lg border-2 bg-muted transition-colors",
+                  v.id === variant.id ? "border-foreground" : "border-transparent hover:border-border",
                 )}
               >
-                <Image
-                  src={v.image}
-                  alt={v.name}
-                  fill
-                  sizes="64px"
-                  className="object-cover"
-                />
+                <Image src={v.image} alt={v.name} fill sizes="64px" className="object-cover" />
               </button>
             ))}
           </div>
         )}
-      </div>
 
-      {/* Info + selektor + add to cart */}
-      <div className="flex flex-col">
-        {product.categoryName && (
-          <p className="text-sm text-muted-foreground">{product.categoryName}</p>
-        )}
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
-          {product.name}
-        </h1>
-
-        <div className="mt-4 flex items-baseline gap-3">
-          <span className="text-2xl font-semibold">
-            {formatRupiah(finalPrice)}
-          </span>
+        {/* Gambar utama */}
+        <div className="relative aspect-square flex-1 overflow-hidden rounded-2xl bg-muted">
+          <Image
+            key={variant.id}
+            src={variant.image}
+            alt={`${product.name} — ${variant.name}`}
+            fill
+            priority
+            sizes="(max-width: 1024px) 100vw, 55vw"
+            className="object-cover"
+          />
           {hasDiscount && (
-            <span className="text-base text-muted-foreground line-through">
-              {formatRupiah(variant.price)}
+            <span className="absolute left-4 top-4 rounded-full bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground">
+              -{product.discountPercent}%
             </span>
           )}
         </div>
+      </div>
 
+      {/* Thumbnail baris (mobile) */}
+      {product.variants.length > 1 && (
+        <div className="-mt-2 flex gap-2 sm:hidden">
+          {product.variants.map((v) => (
+            <button
+              key={v.id}
+              type="button"
+              onClick={() => selectVariant(v)}
+              aria-label={v.name}
+              className={cn(
+                "relative size-14 shrink-0 overflow-hidden rounded-md border-2 bg-muted",
+                v.id === variant.id ? "border-foreground" : "border-transparent",
+              )}
+            >
+              <Image src={v.image} alt={v.name} fill sizes="56px" className="object-cover" />
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* ============ KARTU INFO (mengambang) ============ */}
+      <div className="rounded-2xl bg-background p-6 shadow-sm ring-1 ring-border/60 sm:p-8">
+        {/* Rating */}
+        <div className="flex items-center gap-2">
+          <div className="flex text-foreground">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Star key={i} className="size-4 fill-current" />
+            ))}
+          </div>
+          <a href="#ulasan" className="text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground">
+            Ulasan
+          </a>
+        </div>
+
+        {/* Judul + harga sebaris */}
+        <div className="mt-3 flex items-start justify-between gap-4">
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+            {product.name}
+          </h1>
+          <div className="shrink-0 text-right">
+            <p className="text-xl font-bold sm:text-2xl">{formatRupiah(finalPrice)}</p>
+            {hasDiscount && (
+              <p className="text-sm text-muted-foreground line-through">
+                {formatRupiah(variant.price)}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {product.categoryName && (
+          <p className="mt-1 text-sm text-muted-foreground">{product.categoryName}</p>
+        )}
         {product.description && (
           <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
             {product.description}
           </p>
         )}
 
-        {/* VariantPicker */}
+        {/* Swatch varian (foto + nama, ala pilihan warna Nomad) */}
         <div className="mt-6">
           <p className="text-sm font-medium">
-            Pilih tipe:{" "}
-            <span className="text-muted-foreground">{variant.name}</span>
+            Tipe: <span className="text-muted-foreground">{variant.name}</span>
           </p>
-          <div className="mt-2 flex flex-wrap gap-2">
+          <div className="mt-3 flex flex-wrap gap-3">
             {product.variants.map((v) => {
               const disabled = v.stock <= 0;
+              const selected = v.id === variant.id;
               return (
                 <button
                   key={v.id}
                   type="button"
-                  disabled={disabled}
                   onClick={() => selectVariant(v)}
-                  aria-pressed={v.id === variant.id}
-                  className={cn(
-                    "rounded-md border px-3 py-2 text-sm transition-colors",
-                    v.id === variant.id
-                      ? "border-foreground bg-foreground text-background"
-                      : "border-border hover:border-foreground",
-                    disabled &&
-                      "cursor-not-allowed opacity-40 line-through hover:border-border",
-                  )}
+                  aria-pressed={selected}
+                  aria-label={v.name}
+                  className="flex w-16 flex-col items-center gap-1 text-center"
                 >
-                  {v.name}
+                  <span
+                    className={cn(
+                      "relative aspect-square w-full overflow-hidden rounded-lg border-2 bg-muted transition-colors",
+                      selected ? "border-foreground" : "border-border",
+                      disabled && "opacity-40",
+                    )}
+                  >
+                    <Image src={v.image} alt={v.name} fill sizes="64px" className="object-cover" />
+                  </span>
+                  <span
+                    className={cn(
+                      "line-clamp-2 text-[11px] leading-tight",
+                      selected ? "font-medium text-foreground" : "text-muted-foreground",
+                      disabled && "line-through",
+                    )}
+                  >
+                    {v.name}
+                  </span>
                 </button>
               );
             })}
@@ -225,44 +270,67 @@ export function PdpView({ product }: { product: PdpProduct }) {
           </span>
         </div>
 
-        {/* Add to cart — desktop/tablet inline; mobile ada sticky bar di bawah */}
-        <div className="mt-8 hidden md:block">
-          <Button
-            size="lg"
-            className="w-full"
-            disabled={outOfStock}
-            onClick={handleAdd}
-          >
-            {added ? (
-              <>
-                <Check className="size-4" /> Ditambahkan
-              </>
-            ) : (
-              <>
-                <ShoppingBag className="size-4" /> Tambah ke Keranjang
-              </>
-            )}
-          </Button>
-        </div>
+        {/* Add to cart (desktop; mobile pakai sticky bar) */}
+        <Button
+          size="lg"
+          className="mt-6 hidden w-full md:flex"
+          disabled={outOfStock}
+          onClick={handleAdd}
+        >
+          {outOfStock ? "Stok habis" : addBtnLabel}
+        </Button>
+        <p className="mt-3 text-center text-xs text-muted-foreground">
+          Garansi Resmi · 100% Original · 7 Hari Pengembalian
+        </p>
 
+        {/* Accordion Overview / More Info (di dalam kartu, ala Nomad) */}
+        <div className="mt-6 divide-y divide-border border-t border-border">
+          <details className="group" open>
+            <summary className="flex cursor-pointer list-none items-center justify-between py-3 text-sm font-medium">
+              Overview
+              <ChevronDown className="size-4 text-muted-foreground transition-transform group-open:rotate-180" />
+            </summary>
+            <div className="pb-3 text-sm text-muted-foreground">
+              <p>{product.description || "Aksesori premium dari SnapFit."}</p>
+              <ul className="mt-2 list-inside list-disc space-y-1">
+                <li>Garansi resmi & 100% original</li>
+                <li>Material berkualitas, tahan pakai</li>
+                <li>7 hari pengembalian bila tidak sesuai</li>
+              </ul>
+            </div>
+          </details>
+          <details className="group">
+            <summary className="flex cursor-pointer list-none items-center justify-between py-3 text-sm font-medium">
+              More Info
+              <ChevronDown className="size-4 text-muted-foreground transition-transform group-open:rotate-180" />
+            </summary>
+            <div className="pb-3 text-sm text-muted-foreground">
+              <p className="font-medium text-foreground">Tipe tersedia:</p>
+              <p className="mt-1">{product.variants.map((v) => v.name).join(" · ")}</p>
+              <p className="mt-3">
+                Dikirim via kurir pilihanmu (cek ongkir di checkout). Estimasi 1–3 hari
+                untuk area umum.
+              </p>
+            </div>
+          </details>
+        </div>
       </div>
 
-      {/* Sticky add-to-cart bar khusus mobile — duduk DI ATAS bottom nav global
-          (lihat 02-design-system.md). */}
+      {/* Sticky add-to-cart bar (mobile) — di atas bottom nav */}
       <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-30 border-y border-border bg-background/95 p-3 backdrop-blur md:hidden">
         <div className="mx-auto flex max-w-6xl items-center gap-3">
           <div className="min-w-0">
-            <p className="truncate text-xs text-muted-foreground">
-              {variant.name}
-            </p>
+            <p className="truncate text-xs text-muted-foreground">{variant.name}</p>
             <p className="text-sm font-semibold">{formatRupiah(finalPrice)}</p>
           </div>
           <Button
-            className="ml-auto flex-1 max-w-[60%]"
+            className="ml-auto max-w-[60%] flex-1"
             disabled={outOfStock}
             onClick={handleAdd}
           >
-            {added ? (
+            {outOfStock ? (
+              "Habis"
+            ) : added ? (
               <>
                 <Check className="size-4" /> Ditambahkan
               </>
