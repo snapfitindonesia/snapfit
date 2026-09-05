@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, ShieldCheck, BadgeCheck, RotateCcw } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   getProducts,
@@ -12,12 +12,6 @@ import { DevicePicker } from "@/components/shop/device-picker";
 
 // ISR: homepage di-cache (cepat), regenerasi tiap 5 menit.
 export const revalidate = 300;
-
-const TRUST = [
-  { icon: ShieldCheck, label: "Garansi Resmi" },
-  { icon: BadgeCheck, label: "100% Original" },
-  { icon: RotateCcw, label: "7 Hari Pengembalian" },
-];
 
 export default async function HomePage() {
   // Tahan-banting: kalau DB ngadat saat build, jangan gagalkan deploy —
@@ -95,22 +89,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Brand story strip — keunggulan single-brand */}
-      <section className="border-y border-border bg-muted/40">
-        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 px-4 py-12 sm:grid-cols-3 sm:px-6">
-          {TRUST.map(({ icon: Icon, label }) => (
-            <div key={label} className="flex items-start gap-3">
-              <Icon className="mt-0.5 size-5" />
-              <div>
-                <p className="text-sm font-medium">{label}</p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Setiap produk dikurasi langsung oleh SnapFit.
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
     </>
   );
 }
