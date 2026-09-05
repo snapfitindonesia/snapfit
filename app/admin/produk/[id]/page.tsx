@@ -13,7 +13,7 @@ export default async function EditProductPage({
   const [product, categories] = await Promise.all([
     db.product.findUnique({
       where: { id },
-      include: { variants: { orderBy: { price: "asc" } } },
+      include: { variants: { orderBy: [{ color: "asc" }, { price: "asc" }] } },
     }),
     db.category.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
   ]);
@@ -35,6 +35,8 @@ export default async function EditProductPage({
             variants: product.variants.map((v) => ({
               id: v.id,
               name: v.name,
+              color: v.color,
+              type: v.type,
               sku: v.sku,
               price: v.price,
               stock: v.stock,

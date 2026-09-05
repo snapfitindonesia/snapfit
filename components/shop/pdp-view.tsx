@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { Check, Minus, Plus, ShoppingBag, Star, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,8 @@ import { trackViewItem, trackAddToCart } from "@/lib/tracking";
 export type PdpVariant = {
   id: string;
   name: string;
+  color: string;
+  type: string;
   sku: string;
   price: number;
   stock: number;
@@ -28,6 +30,10 @@ export type PdpProduct = {
   variants: PdpVariant[];
 };
 
+const NO_COLOR = "Lainnya";
+const colorKey = (v: PdpVariant) => v.color.trim() || NO_COLOR;
+const typeLabel = (v: PdpVariant) => v.type.trim() || v.name;
+
 export function PdpView({ product }: { product: PdpProduct }) {
   const { addItem } = useCart();
 
@@ -36,6 +42,27 @@ export function PdpView({ product }: { product: PdpProduct }) {
   const [variantId, setVariantId] = useState(firstInStock?.id);
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
+
+  // Dimensi warna aktif hanya jika ada varian yang punya warna terisi.
+  const hasColorDim = useMemo(
+    () => product.variants.some((v) => v.color.trim() !== ""),
+    [product.variants],
+  );
+
+  // Daftar warna unik (urut kemunculan), tiap warna punya 1 gambar wakil.
+  const colors = useMemo(() => {
+    if (!hasColorDim) return [] as { name: string; rep: PdpVariant; inStock: boolean }[];
+    const seen = new Map<string, PdpVariant>();
+    for (const v of product.variants) {
+      const k = colorKey(v);
+      if (!seen.has(k)) seen.set(k, v);
+    }
+    return Array.from(seen.entries()).map(([name, rep]) => ({
+      name,
+      rep,
+      inStock: product.variants.some((v) => colorKey(v) === name && v.stock > 0),
+    }));
+  }, [product.variants, hasColorDim]);
 
   useEffect(() => {
     if (!firstInStock) return;
@@ -54,6 +81,12 @@ export function PdpView({ product }: { product: PdpProduct }) {
     return <p className="text-muted-foreground">Produk belum punya varian.</p>;
   }
 
+  const selectedColor = colorKey(variant);
+  // Level 2: tipe yang tersedia dalam warna terpilih (atau semua varian bila tanpa warna).
+  const typeOptions = hasColorDim
+    ? product.variants.filter((v) => colorKey(v) === selectedColor)
+    : product.variants;
+
   const finalPrice = applyDiscount(variant.price, product.discountPercent);
   const hasDiscount = product.discountPercent > 0;
   const outOfStock = variant.stock <= 0;
@@ -63,6 +96,13 @@ export function PdpView({ product }: { product: PdpProduct }) {
     setVariantId(v.id);
     setQty(1);
     setAdded(false);
+  }
+
+  // Pilih warna → lompat ke tipe pertama yang ready-stok pada warna itu.
+  function selectColor(name: string) {
+    const inColor = product.variants.filter((v) => colorKey(v) === name);
+    const target = inColor.find((v) => v.stock > 0) ?? inColor[0];
+    if (target) selectVariant(target);
   }
 
   function handleAdd() {
@@ -97,26 +137,37 @@ export function PdpView({ product }: { product: PdpProduct }) {
     </>
   );
 
+  // Thumbnail galeri: 1 per warna (bila ada dimensi warna), else 1 per varian.
+  const galleryItems = hasColorDim
+    ? colors.map((c) => ({ id: c.rep.id, image: c.rep.image, label: c.name }))
+    : product.variants.map((v) => ({ id: v.id, image: v.image, label: v.name }));
+
   return (
     <div className="grid gap-6 lg:grid-cols-2 lg:items-start lg:gap-10">
       {/* ============ GALERI ============ */}
       <div className="flex gap-3">
         {/* Thumbnail vertikal (desktop) */}
-        {product.variants.length > 1 && (
+        {galleryItems.length > 1 && (
           <div className="hidden w-16 shrink-0 flex-col gap-3 sm:flex">
-            {product.variants.map((v) => (
+            {galleryItems.map((g) => (
               <button
-                key={v.id}
+                key={g.id}
                 type="button"
-                onClick={() => selectVariant(v)}
-                aria-label={v.name}
-                aria-pressed={v.id === variant.id}
+                onClick={() =>
+                  hasColorDim ? selectColor(g.label) : selectVariant(product.variants.find((v) => v.id === g.id)!)
+                }
+                aria-label={g.label}
+                aria-pressed={
+                  hasColorDim ? g.label === selectedColor : g.id === variant.id
+                }
                 className={cn(
                   "relative aspect-square w-full overflow-hidden rounded-lg border-2 bg-muted transition-colors",
-                  v.id === variant.id ? "border-foreground" : "border-transparent hover:border-border",
+                  (hasColorDim ? g.label === selectedColor : g.id === variant.id)
+                    ? "border-foreground"
+                    : "border-transparent hover:border-border",
                 )}
               >
-                <Image src={v.image} alt={v.name} fill sizes="64px" className="object-cover" />
+                <Image src={g.image} alt={g.label} fill sizes="64px" className="object-cover" />
               </button>
             ))}
           </div>
@@ -142,20 +193,24 @@ export function PdpView({ product }: { product: PdpProduct }) {
       </div>
 
       {/* Thumbnail baris (mobile) */}
-      {product.variants.length > 1 && (
+      {galleryItems.length > 1 && (
         <div className="-mt-2 flex gap-2 sm:hidden">
-          {product.variants.map((v) => (
+          {galleryItems.map((g) => (
             <button
-              key={v.id}
+              key={g.id}
               type="button"
-              onClick={() => selectVariant(v)}
-              aria-label={v.name}
+              onClick={() =>
+                hasColorDim ? selectColor(g.label) : selectVariant(product.variants.find((v) => v.id === g.id)!)
+              }
+              aria-label={g.label}
               className={cn(
                 "relative size-14 shrink-0 overflow-hidden rounded-md border-2 bg-muted",
-                v.id === variant.id ? "border-foreground" : "border-transparent",
+                (hasColorDim ? g.label === selectedColor : g.id === variant.id)
+                  ? "border-foreground"
+                  : "border-transparent",
               )}
             >
-              <Image src={v.image} alt={v.name} fill sizes="56px" className="object-cover" />
+              <Image src={g.image} alt={g.label} fill sizes="56px" className="object-cover" />
             </button>
           ))}
         </div>
@@ -201,13 +256,56 @@ export function PdpView({ product }: { product: PdpProduct }) {
           </p>
         )}
 
-        {/* Swatch varian (foto + nama, ala pilihan warna Nomad) */}
+        {/* ===== Level 1: WARNA (swatch foto) ===== */}
+        {hasColorDim && (
+          <div className="mt-6">
+            <p className="text-sm font-medium">
+              Warna: <span className="text-muted-foreground">{selectedColor}</span>
+            </p>
+            <div className="mt-3 flex flex-wrap gap-3">
+              {colors.map((c) => {
+                const selected = c.name === selectedColor;
+                return (
+                  <button
+                    key={c.name}
+                    type="button"
+                    onClick={() => selectColor(c.name)}
+                    aria-pressed={selected}
+                    aria-label={c.name}
+                    className="flex w-16 flex-col items-center gap-1 text-center"
+                  >
+                    <span
+                      className={cn(
+                        "relative aspect-square w-full overflow-hidden rounded-lg border-2 bg-muted transition-colors",
+                        selected ? "border-foreground" : "border-border",
+                        !c.inStock && "opacity-40",
+                      )}
+                    >
+                      <Image src={c.rep.image} alt={c.name} fill sizes="64px" className="object-cover" />
+                    </span>
+                    <span
+                      className={cn(
+                        "line-clamp-2 text-[11px] leading-tight",
+                        selected ? "font-medium text-foreground" : "text-muted-foreground",
+                        !c.inStock && "line-through",
+                      )}
+                    >
+                      {c.name}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ===== Level 2: TIPE (pil teks) ===== */}
         <div className="mt-6">
           <p className="text-sm font-medium">
-            Tipe: <span className="text-muted-foreground">{variant.name}</span>
+            Tipe: <span className="text-muted-foreground">{typeLabel(variant)}</span>
           </p>
-          <div className="mt-3 flex flex-wrap gap-3">
-            {product.variants.map((v) => {
+          <div className="mt-3 flex flex-wrap gap-2">
+            {typeOptions.map((v) => {
               const disabled = v.stock <= 0;
               const selected = v.id === variant.id;
               return (
@@ -216,27 +314,16 @@ export function PdpView({ product }: { product: PdpProduct }) {
                   type="button"
                   onClick={() => selectVariant(v)}
                   aria-pressed={selected}
-                  aria-label={v.name}
-                  className="flex w-16 flex-col items-center gap-1 text-center"
+                  disabled={disabled}
+                  className={cn(
+                    "rounded-md border px-3 py-2 text-sm transition-colors",
+                    selected
+                      ? "border-foreground bg-foreground text-background"
+                      : "border-border hover:border-foreground",
+                    disabled && "cursor-not-allowed border-dashed text-muted-foreground line-through opacity-60 hover:border-border",
+                  )}
                 >
-                  <span
-                    className={cn(
-                      "relative aspect-square w-full overflow-hidden rounded-lg border-2 bg-muted transition-colors",
-                      selected ? "border-foreground" : "border-border",
-                      disabled && "opacity-40",
-                    )}
-                  >
-                    <Image src={v.image} alt={v.name} fill sizes="64px" className="object-cover" />
-                  </span>
-                  <span
-                    className={cn(
-                      "line-clamp-2 text-[11px] leading-tight",
-                      selected ? "font-medium text-foreground" : "text-muted-foreground",
-                      disabled && "line-through",
-                    )}
-                  >
-                    {v.name}
-                  </span>
+                  {typeLabel(v)}
                 </button>
               );
             })}
@@ -307,7 +394,7 @@ export function PdpView({ product }: { product: PdpProduct }) {
               <ChevronDown className="size-4 text-muted-foreground transition-transform group-open:rotate-180" />
             </summary>
             <div className="pb-3 text-sm text-muted-foreground">
-              <p className="font-medium text-foreground">Tipe tersedia:</p>
+              <p className="font-medium text-foreground">Varian tersedia:</p>
               <p className="mt-1">{product.variants.map((v) => v.name).join(" · ")}</p>
               <p className="mt-3">
                 Dikirim via kurir pilihanmu (cek ongkir di checkout). Estimasi 1–3 hari

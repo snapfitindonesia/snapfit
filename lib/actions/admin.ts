@@ -44,6 +44,8 @@ export async function createProduct(input: ProductInput): Promise<Result> {
         variants: {
           create: data.variants.map((v) => ({
             name: v.name,
+            color: v.color,
+            type: v.type,
             sku: v.sku,
             price: v.price,
             stock: v.stock,
@@ -87,10 +89,10 @@ export async function updateProduct(id: string, input: ProductInput): Promise<Re
         v.id
           ? db.variant.update({
               where: { id: v.id },
-              data: { name: v.name, sku: v.sku, price: v.price, stock: v.stock, weight: v.weight, image: v.image },
+              data: { name: v.name, color: v.color, type: v.type, sku: v.sku, price: v.price, stock: v.stock, weight: v.weight, image: v.image },
             })
           : db.variant.create({
-              data: { productId: id, name: v.name, sku: v.sku, price: v.price, stock: v.stock, weight: v.weight, image: v.image },
+              data: { productId: id, name: v.name, color: v.color, type: v.type, sku: v.sku, price: v.price, stock: v.stock, weight: v.weight, image: v.image },
             }),
       ),
     ]);

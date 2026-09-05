@@ -6,6 +6,8 @@ const rupiah = z.coerce.number().int().min(0);
 export const variantSchema = z.object({
   id: z.string().optional(), // ada = update, kosong = baru
   name: z.string().trim().min(1, "Nama varian wajib"),
+  color: z.string().trim().optional().default(""), // dimensi 1 (warna)
+  type: z.string().trim().optional().default(""), // dimensi 2 (tipe)
   sku: z.string().trim().min(1, "SKU wajib"),
   price: rupiah,
   stock: z.coerce.number().int().min(0),

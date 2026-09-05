@@ -10,6 +10,8 @@ import { ImageInput } from "@/components/admin/image-input";
 type VariantRow = {
   id?: string;
   name: string;
+  color: string;
+  type: string;
   sku: string;
   price: string;
   stock: string;
@@ -24,17 +26,25 @@ type Initial = {
   description: string | null;
   coverImage: string;
   categoryId: string | null;
-  variants: { id: string; name: string; sku: string; price: number; stock: number; weight: number; image: string }[];
+  variants: { id: string; name: string; color: string; type: string; sku: string; price: number; stock: number; weight: number; image: string }[];
 };
 
 const BLANK_VARIANT: VariantRow = {
   name: "",
+  color: "",
+  type: "",
   sku: "",
   price: "",
   stock: "0",
   weight: "200",
   image: "",
 };
+
+// Nama tampilan otomatis dari warna + tipe (mis. "Hitam / iPhone 16 Pro").
+function composeName(color: string, type: string, fallback: string) {
+  const parts = [color.trim(), type.trim()].filter(Boolean);
+  return parts.length ? parts.join(" / ") : fallback.trim();
+}
 
 const input =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-foreground";
@@ -56,6 +66,8 @@ export function ProductForm({
     initial?.variants.map((v) => ({
       id: v.id,
       name: v.name,
+      color: v.color,
+      type: v.type,
       sku: v.sku,
       price: String(v.price),
       stock: String(v.stock),
@@ -81,7 +93,9 @@ export function ProductForm({
       categoryId,
       variants: variants.map((v) => ({
         id: v.id,
-        name: v.name,
+        name: composeName(v.color, v.type, v.name),
+        color: v.color,
+        type: v.type,
         sku: v.sku,
         price: Number(v.price),
         stock: Number(v.stock),
@@ -144,7 +158,8 @@ export function ProductForm({
           {variants.map((v, i) => (
             <div key={i} className="rounded-lg border border-border p-3">
               <div className="grid gap-2 sm:grid-cols-2">
-                <input className={input} placeholder="Nama (mis. iPhone 15)" value={v.name} onChange={(e) => setV(i, "name", e.target.value)} required />
+                <input className={input} placeholder="Warna (mis. Hitam) — opsional" value={v.color} onChange={(e) => setV(i, "color", e.target.value)} />
+                <input className={input} placeholder="Tipe (mis. iPhone 16 Pro)" value={v.type} onChange={(e) => setV(i, "type", e.target.value)} />
                 <input className={input} placeholder="SKU" value={v.sku} onChange={(e) => setV(i, "sku", e.target.value)} required />
                 <input className={input} type="number" placeholder="Harga (rupiah)" value={v.price} onChange={(e) => setV(i, "price", e.target.value)} required />
                 <input className={input} type="number" placeholder="Stok" value={v.stock} onChange={(e) => setV(i, "stock", e.target.value)} required />

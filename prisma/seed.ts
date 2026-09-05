@@ -34,11 +34,15 @@ async function main() {
         "Case bening anti-kuning dengan proteksi sudut. Pas presisi per tipe.",
       coverImage: img("Clear Case iPhone"),
       categoryId: iphone.id,
+      // Varian 2 tingkat: WARNA (Bening/Hitam) × TIPE (iPhone 15/16/16 Pro)
       variants: {
         create: [
-          { name: "iPhone 15", sku: "CC-IP15", price: 89000, stock: 40, weight: 60, image: img("iPhone 15") },
-          { name: "iPhone 16", sku: "CC-IP16", price: 99000, stock: 35, weight: 60, image: img("iPhone 16") },
-          { name: "iPhone 16 Pro", sku: "CC-IP16PRO", price: 109000, stock: 25, weight: 65, image: img("iPhone 16 Pro") },
+          { name: "Bening / iPhone 15", color: "Bening", type: "iPhone 15", sku: "CC-BN-IP15", price: 89000, stock: 40, weight: 60, image: img("Bening 15") },
+          { name: "Bening / iPhone 16", color: "Bening", type: "iPhone 16", sku: "CC-BN-IP16", price: 99000, stock: 35, weight: 60, image: img("Bening 16") },
+          { name: "Bening / iPhone 16 Pro", color: "Bening", type: "iPhone 16 Pro", sku: "CC-BN-IP16PRO", price: 109000, stock: 25, weight: 65, image: img("Bening 16 Pro") },
+          { name: "Hitam / iPhone 15", color: "Hitam", type: "iPhone 15", sku: "CC-HT-IP15", price: 89000, stock: 20, weight: 60, image: img("Hitam 15") },
+          { name: "Hitam / iPhone 16", color: "Hitam", type: "iPhone 16", sku: "CC-HT-IP16", price: 99000, stock: 30, weight: 60, image: img("Hitam 16") },
+          { name: "Hitam / iPhone 16 Pro", color: "Hitam", type: "iPhone 16 Pro", sku: "CC-HT-IP16PRO", price: 109000, stock: 0, weight: 65, image: img("Hitam 16 Pro") },
         ],
       },
     },
@@ -51,10 +55,11 @@ async function main() {
       description: "Pelindung layar 9H, oleophobic, full cover.",
       coverImage: img("Glass S24"),
       categoryId: samsung.id,
+      // Tanpa dimensi warna → PDP otomatis tampil 1 tingkat (tipe saja)
       variants: {
         create: [
-          { name: "Galaxy S24", sku: "TG-S24", price: 59000, stock: 60, weight: 40, image: img("S24") },
-          { name: "Galaxy S24 Ultra", sku: "TG-S24U", price: 69000, stock: 45, weight: 45, image: img("S24 Ultra") },
+          { name: "Galaxy S24", type: "Galaxy S24", sku: "TG-S24", price: 59000, stock: 60, weight: 40, image: img("S24") },
+          { name: "Galaxy S24 Ultra", type: "Galaxy S24 Ultra", sku: "TG-S24U", price: 69000, stock: 45, weight: 45, image: img("S24 Ultra") },
         ],
       },
     },
@@ -67,10 +72,13 @@ async function main() {
       description: "Cover magnetik dengan slot Apple Pencil dan multi-angle stand.",
       coverImage: img("Folio iPad Air"),
       categoryId: tablet.id,
+      // Varian 2 tingkat: WARNA (Hitam/Navy) × TIPE (iPad Air 11/13)
       variants: {
         create: [
-          { name: "iPad Air 11 - Hitam", sku: "FC-IPADAIR-BLK", price: 149000, stock: 20, weight: 280, image: img("iPad Air Hitam") },
-          { name: "iPad Air 11 - Navy", sku: "FC-IPADAIR-NVY", price: 149000, stock: 15, weight: 280, image: img("iPad Air Navy") },
+          { name: "Hitam / iPad Air 11”", color: "Hitam", type: "iPad Air 11”", sku: "FC-HT-AIR11", price: 149000, stock: 20, weight: 280, image: img("Hitam 11") },
+          { name: "Hitam / iPad Air 13”", color: "Hitam", type: "iPad Air 13”", sku: "FC-HT-AIR13", price: 169000, stock: 12, weight: 320, image: img("Hitam 13") },
+          { name: "Navy / iPad Air 11”", color: "Navy", type: "iPad Air 11”", sku: "FC-NV-AIR11", price: 149000, stock: 15, weight: 280, image: img("Navy 11") },
+          { name: "Navy / iPad Air 13”", color: "Navy", type: "iPad Air 13”", sku: "FC-NV-AIR13", price: 169000, stock: 8, weight: 320, image: img("Navy 13") },
         ],
       },
     },

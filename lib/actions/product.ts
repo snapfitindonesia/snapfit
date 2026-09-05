@@ -124,7 +124,7 @@ export async function getProductBySlug(slug: string) {
     where: { slug },
     include: {
       category: { select: { name: true, slug: true } },
-      variants: { orderBy: { price: "asc" } },
+      variants: { orderBy: [{ color: "asc" }, { price: "asc" }] },
       discounts: { select: { percent: true, active: true, startAt: true, endAt: true } },
     },
   });

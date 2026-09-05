@@ -52,6 +52,8 @@ export default async function ProductDetailPage({
     variants: product.variants.map((v) => ({
       id: v.id,
       name: v.name,
+      color: v.color,
+      type: v.type,
       sku: v.sku,
       price: v.price,
       stock: v.stock,

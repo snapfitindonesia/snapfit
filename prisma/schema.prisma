@@ -30,7 +30,9 @@ model Variant {
   id        String  @id @default(cuid())
   productId String
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  name      String // mis. "Hitam / iPhone 16 Pro"
+  name      String // mis. "Hitam / iPhone 16 Pro" (display)
+  color     String  @default("") // dimensi 1: warna (mis. "Hitam")
+  type      String  @default("") // dimensi 2: tipe HP (mis. "iPhone 16 Pro")
   sku       String  @unique
   price     Int // rupiah, integer
   stock     Int     @default(0)
