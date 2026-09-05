@@ -62,6 +62,8 @@ export function PdpView({ product }: { product: PdpProduct }) {
   const [heroImage, setHeroImage] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState(false); // mode zoom layar penuh
   const [zoomed, setZoomed] = useState(false);
+  const [drag, setDrag] = useState(0); // offset px saat menyeret gambar utama
+  const dragRef = useRef({ startX: 0, active: false, moved: false });
   const touchX = useRef<number | null>(null);
   const navRef = useRef<{ prev: () => void; next: () => void }>({ prev: () => {}, next: () => {} });
 
@@ -205,6 +207,28 @@ export function PdpView({ product }: { product: PdpProduct }) {
   const goNext = () => goTo(photoIndex + 1);
   navRef.current = { prev: goPrev, next: goNext };
 
+  // Drag gambar utama (mouse + sentuh) — gambar mengikuti seretan, snap saat dilepas.
+  const onDragStart = (e: React.PointerEvent) => {
+    dragRef.current = { startX: e.clientX, active: true, moved: false };
+  };
+  const onDragMove = (e: React.PointerEvent) => {
+    if (!dragRef.current.active) return;
+    const dx = e.clientX - dragRef.current.startX;
+    if (Math.abs(dx) > 5) dragRef.current.moved = true;
+    setDrag(dx);
+  };
+  const onDragEnd = (e: React.PointerEvent) => {
+    if (!dragRef.current.active) return;
+    const dx = e.clientX - dragRef.current.startX;
+    dragRef.current.active = false;
+    setDrag(0);
+    if (photos.length > 1) {
+      if (dx <= -50) goNext();
+      else if (dx >= 50) goPrev();
+    }
+  };
+
+  // Swipe lightbox (sentuh) — tetap pakai touch sederhana.
   const onTouchStart = (e: React.TouchEvent) => {
     touchX.current = e.touches[0].clientX;
   };
@@ -243,17 +267,25 @@ export function PdpView({ product }: { product: PdpProduct }) {
           </div>
         )}
 
-        {/* Gambar utama (klik = zoom, geser = slide) */}
+        {/* Gambar utama (seret = geser, klik = zoom) */}
         <div
-          className="group relative aspect-square flex-1 cursor-zoom-in overflow-hidden rounded-2xl bg-muted"
-          onClick={() => setLightbox(true)}
-          onTouchStart={onTouchStart}
-          onTouchEnd={onTouchEnd}
+          className="group relative aspect-square flex-1 touch-pan-y select-none overflow-hidden rounded-2xl bg-muted"
+          style={{ cursor: dragRef.current.active ? "grabbing" : "grab" }}
+          onClick={() => {
+            if (!dragRef.current.moved) setLightbox(true);
+          }}
+          onPointerDown={onDragStart}
+          onPointerMove={onDragMove}
+          onPointerUp={onDragEnd}
+          onPointerLeave={onDragEnd}
         >
-          {/* Track geser: semua foto berjajar, digeser via translateX */}
+          {/* Track geser: semua foto berjajar, mengikuti seretan lalu snap */}
           <div
-            className="flex h-full w-full transition-transform duration-300 ease-out"
-            style={{ transform: `translateX(-${photoIndex * 100}%)` }}
+            className={cn(
+              "flex h-full w-full ease-out",
+              !dragRef.current.active && "transition-transform duration-300",
+            )}
+            style={{ transform: `translateX(calc(-${photoIndex * 100}% + ${drag}px))` }}
           >
             {photos.map((src, i) => (
               <div key={src} className="relative h-full w-full shrink-0">
@@ -261,6 +293,7 @@ export function PdpView({ product }: { product: PdpProduct }) {
                   src={src}
                   alt={`${product.name} — ${variant.name}`}
                   fill
+                  draggable={false}
                   sizes="(max-width: 1024px) 100vw, 55vw"
                   className="object-cover"
                   {...(i === 0 ? { priority: true } : { loading: "eager" as const })}
