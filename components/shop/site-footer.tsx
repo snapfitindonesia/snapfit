@@ -8,9 +8,10 @@ const COLUMNS = [
     title: "Belanja",
     links: [
       { label: "Semua Produk", href: "/produk" },
+      { label: "Grosir Deadstock", href: "/grosir" },
       { label: "iPhone", href: "/produk?tipe=iphone" },
       { label: "Samsung", href: "/produk?tipe=samsung" },
-      { label: "iPad & Tablet", href: "/produk?tipe=tablet" },
+      { label: "iPad", href: "/produk?tipe=ipad" },
     ],
   },
   {
