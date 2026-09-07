@@ -39,7 +39,7 @@ export const metadata: Metadata = {
    ============================================================ */
 const OFFER = {
   waNumber: "6285179779770",
-  shopeeUrl: "https://shopee.co.id/snapfit.id", // GANTI: link toko Shopee-mu
+  shopeeUrl: "https://shopee.co.id/primaryfocuss", // toko Shopee
   countdownMinutes: 15, // durasi countdown FOMO tiap pengunjung
   priceFrom: 29000, // harga grosir per pcs (anchoring + estimasi)
   priceAnchor: 99000, // harga "normal/toko lain" (dicoret)
