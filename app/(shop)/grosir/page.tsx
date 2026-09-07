@@ -49,11 +49,14 @@ const BRANDS = [
   "Raptic X-Doria", "Caudabe", "VRS Design", "Xfitted", "Otterbox",
 ];
 
-// GANTI dengan testimoni ASLI (screenshot chat/marketplace).
+// Testimoni asli pembeli Shopee (toko primaryfocuss).
 const TESTIMONI = [
-  { nama: "[contoh]", info: "Reseller · [kota]", teks: "[Ganti dengan testimoni pembeli aslimu.]" },
-  { nama: "[contoh]", info: "Toko HP · [kota]", teks: "[Ganti dengan testimoni pembeli aslimu.]" },
-  { nama: "[contoh]", info: "Pembeli · [kota]", teks: "[Ganti dengan testimoni pembeli aslimu.]" },
+  { nama: "ivan060606", variasi: "Camo Black · S25 Ultra", produk: "Ringke Case Samsung Galaxy S25 Ultra", tgl: "05 Sep 2026", teks: "Best value 👍👍, yang didapat jauh lebih banyak dibanding yang dibayar. Terima kasih, salam sehat dan sukses 🙌" },
+  { nama: "n*****a", variasi: "Matte Clear", produk: "SnapFit Case Galaxy Z Flip 8 Frosted", tgl: "04 Sep 2026", teks: "Proses order cepat.. barang dikemas dengan rapi dan aman.. diterima dalam kondisi sangat baik! :)" },
+  { nama: "r*****2", variasi: "Purple · Full Clear", produk: "SnapFit Lens Shield Camera Galaxy Z Flip 8", tgl: "13 Agu 2026", teks: "Sesuai dengan deskripsi. Kalau mau match dengan Flip 8 pink, pilih yang ungu muda." },
+  { nama: "konicaputra", variasi: "Neon Green · 46mm", produk: "Ringke Case Apple Watch 42/46mm", tgl: "30 Jul 2026", teks: "Keren barangnya. Seller fast respon, mantap!" },
+  { nama: "nzen_01", variasi: "Mallard · iPhone 16 Pro Max", produk: "UAG Case iPhone 16 Pro Max Civilian", tgl: "18 Jul 2026", teks: "Akhirnya sampe juga ni case ke tangan gw 🥰😍 seller gokil, cepet banget langsung dikirim." },
+  { nama: "mnh.tessa", variasi: "Matte Clear · Vivo X300 Pro", produk: "SnapFit Case Vivo X300 Pro", tgl: "09 Jul 2026", teks: "Toko ini bagus dan amanah, saya sudah 2x belanja di sini. Thanks ya!" },
 ];
 
 const REASONS = [
@@ -321,20 +324,43 @@ export default async function GrosirLandingPage() {
       {/* ===== Testimoni ===== */}
       <section className="border-y border-border bg-muted/40">
         <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
-          <h2 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">Kata Mereka</h2>
-          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <h2 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">Kata Pembeli</h2>
+          <p className="mt-2 text-center text-sm text-muted-foreground">
+            Rating {OFFER.stats.rating} dari {OFFER.stats.terjual} pesanan — ulasan asli di Shopee.
+          </p>
+          <div className="mt-8 grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {TESTIMONI.map((t, i) => (
-              <div key={i} className="rounded-2xl border border-border bg-background p-6">
-                <div className="flex gap-0.5 text-brand">
-                  {Array.from({ length: 5 }).map((_, s) => (
-                    <Star key={s} className="size-4 fill-current" />
-                  ))}
+              <div key={i} className="flex h-full flex-col rounded-2xl border border-border bg-background p-5">
+                <div className="flex items-center gap-3">
+                  <span className="grid size-9 shrink-0 place-items-center rounded-full bg-brand/10 text-sm font-bold text-brand">
+                    {t.nama.charAt(0).toUpperCase()}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold leading-tight">{t.nama}</p>
+                    <div className="mt-0.5 flex gap-0.5 text-brand">
+                      {Array.from({ length: 5 }).map((_, s) => (
+                        <Star key={s} className="size-3 fill-current" />
+                      ))}
+                    </div>
+                  </div>
                 </div>
-                <p className="mt-3 text-sm text-muted-foreground">“{t.teks}”</p>
-                <p className="mt-4 text-sm font-medium">{t.nama}</p>
-                <p className="text-xs text-muted-foreground">{t.info}</p>
+                <span className="mt-3 inline-flex w-fit rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+                  {t.variasi}
+                </span>
+                <p className="mt-3 line-clamp-4 min-h-[5rem] text-sm leading-relaxed text-muted-foreground">
+                  “{t.teks}”
+                </p>
+                <div className="mt-auto border-t border-border pt-3">
+                  <p className="line-clamp-1 text-xs font-medium">{t.produk}</p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">{t.tgl}</p>
+                </div>
               </div>
             ))}
+          </div>
+          <div className="mt-8 text-center">
+            <a href={OFFER.shopeeUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-brand underline underline-offset-4 hover:opacity-80">
+              Lihat semua ulasan di Shopee →
+            </a>
           </div>
         </div>
       </section>
