@@ -104,7 +104,7 @@ export default async function GrosirLandingPage() {
   }
 
   return (
-    <div className="pb-44 md:pb-16">
+    <div className="pb-28 md:pb-16">
       {/* ===== Bar urgensi (sticky) ===== */}
       <div className="sticky top-0 z-30 bg-brand text-brand-foreground">
         <div className="mx-auto flex max-w-6xl items-center justify-center gap-2 px-4 py-2 text-center text-sm font-semibold sm:px-6">
@@ -405,8 +405,8 @@ export default async function GrosirLandingPage() {
         </div>
       </section>
 
-      {/* ===== Sticky beli (mobile) — di atas bottom nav global ===== */}
-      <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-30 border-y border-border bg-background/95 p-3 backdrop-blur md:hidden">
+      {/* ===== Sticky beli (mobile) ===== */}
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur md:hidden">
         <div className="mb-2 flex items-center justify-center gap-1.5 text-xs font-medium text-muted-foreground">
           <Flame className="size-3.5 text-brand" /> Promo berakhir dalam{" "}
           <EvergreenCountdown minutes={OFFER.countdownMinutes} variant="bar" />
