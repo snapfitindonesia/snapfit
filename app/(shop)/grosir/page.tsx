@@ -33,7 +33,7 @@ const PROMO = {
   discountPercent: 45, // % diskon grosir (anchoring di hero)
   endsAt: "2026-09-14T23:59:59+07:00", // GANTI: tanggal & jam promo berakhir
   minOrder: 10, // minimal qty grosir
-  waNumber: "", // GANTI: nomor WA tanpa "+" (mis. "628123456789"). Kosong = tombol ke katalog.
+  waNumber: "6285179779770", // 085179779770 → format internasional (0 → 62)
   stats: { terjual: "—", reseller: "—", rating: "—" }, // ISI ANGKA ASLI
   tiers: [
     { qty: "10–49 pcs", label: "Grosir", off: "45%" },
