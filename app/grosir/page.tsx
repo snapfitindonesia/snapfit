@@ -196,13 +196,13 @@ export default async function GrosirLandingPage() {
           <p className="mt-2 text-center text-sm text-muted-foreground">
             Harga per pcs turun otomatis mengikuti jumlah order. Minimal {OFFER.minOrder} pcs.
           </p>
-          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="mt-8 flex snap-x snap-mandatory gap-4 overflow-x-auto px-1 pt-3 pb-2 [scrollbar-width:none] sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0 sm:pt-0 [&::-webkit-scrollbar]:hidden">
             {[
               { qty: "10–49 pcs", label: "Grosir", off: "45%" },
               { qty: "50–99 pcs", label: "Grosir Plus", off: "50%" },
               { qty: "100+ pcs", label: "Distributor", off: "55%" },
             ].map((t, i, arr) => (
-              <div key={t.label} className={`relative rounded-2xl border bg-background p-6 text-center ${i === arr.length - 1 ? "border-brand ring-1 ring-brand" : "border-border"}`}>
+              <div key={t.label} className={`relative w-[80%] shrink-0 snap-center rounded-2xl border bg-background p-6 text-center sm:w-auto ${i === arr.length - 1 ? "border-brand ring-1 ring-brand" : "border-border"}`}>
                 {i === arr.length - 1 && (
                   <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-brand px-3 py-0.5 text-xs font-semibold text-brand-foreground">Paling Hemat</span>
                 )}
