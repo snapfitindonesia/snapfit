@@ -9,35 +9,32 @@ import {
   TrendingUp,
   Flame,
   Star,
-  PackageX,
-  MessageCircle,
+  Boxes,
   ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getProducts, type ProductListItem } from "@/lib/actions/product";
 import { ProductCard } from "@/components/shop/product-card";
 import { CountdownTimer } from "@/components/shop/countdown-timer";
+import { GrosirConfigurator } from "@/components/shop/grosir-configurator";
 
 export const revalidate = 300;
 
 export const metadata: Metadata = {
-  title: "Grosir Deadstock — Case & Pelindung Harga Pabrik | SnapFit",
+  title: "Grosir Case HP — Harga Distributor 19+ Merek Original | SnapFit",
   description:
-    "Cuci gudang deadstock: case & pelindung original (iPhone 11–15, Samsung, dll) harga grosir. Stok terbatas, tidak restock. Cocok reseller & pemakai.",
+    "Grosir case HP original harga distributor: iPhone 11–15, Galaxy S20–S24, Fold/Flip 3–6, dll. Pilih merek & tipe HP, order grosir. Ringke, Spigen, UAG, ESR, Supcase & lainnya.",
 };
 
 /* ============================================================
-   KONFIG PROMO — ganti dengan angka & tanggal ASLI-mu.
-   Countdown & harga coret ikut nilai di sini.
+   KONFIG PROMO/GROSIR — ganti dengan angka & tanggal ASLI-mu.
    ============================================================ */
 const PROMO = {
-  discountPercent: 45, // % diskon grosir (untuk anchoring harga coret di hero)
+  discountPercent: 45, // % diskon grosir (anchoring di hero)
   endsAt: "2026-09-14T23:59:59+07:00", // GANTI: tanggal & jam promo berakhir
-  minOrder: 10, // minimal qty untuk harga grosir
+  minOrder: 10, // minimal qty grosir
   waNumber: "", // GANTI: nomor WA tanpa "+" (mis. "628123456789"). Kosong = tombol ke katalog.
-  // Statistik sosial-proof — ISI ANGKA ASLI (jangan karang):
-  stats: { terjual: "—", reseller: "—", rating: "—" },
-  // Tingkatan harga grosir (contoh — sesuaikan):
+  stats: { terjual: "—", reseller: "—", rating: "—" }, // ISI ANGKA ASLI
   tiers: [
     { qty: "10–49 pcs", label: "Grosir", off: "45%" },
     { qty: "50–99 pcs", label: "Grosir Plus", off: "50%" },
@@ -45,35 +42,48 @@ const PROMO = {
   ],
 };
 
-// GANTI dengan testimoni ASLI (screenshot chat/marketplace). Ini hanya contoh struktur.
+// Authorized distributor — 19 merek global.
+const BRANDS = [
+  "Ringke", "Araree", "Supcase", "SnapFit", "UAG", "CaseMe", "SwitchEasy",
+  "MagEasy", "ESR", "WiWU", "Spigen", "GKK", "Sulada", "Puloka",
+  "Raptic X-Doria", "Caudabe", "VRS Design", "Xfitted", "Otterbox",
+];
+
+// Tipe HP yang bisa dipilih (grosir). Tambah sesuai stok.
+const SERIES = [
+  "iPhone 11–15 Series",
+  "iPhone 16 Series",
+  "Galaxy S20–S24 Series",
+  "Galaxy Z Fold 3–6",
+  "Galaxy Z Flip 3–6",
+  "Galaxy A Series",
+  "Xiaomi / POCO",
+  "Lainnya",
+];
+
+// GANTI dengan testimoni ASLI (screenshot chat/marketplace).
 const TESTIMONI = [
   { nama: "Reseller — [contoh]", kota: "[kota]", teks: "[Ganti dengan testimoni pembeli aslimu di sini.]" },
   { nama: "Toko HP — [contoh]", kota: "[kota]", teks: "[Ganti dengan testimoni pembeli aslimu di sini.]" },
-  { nama: "Pembeli — [contoh]", kota: "[kota]", teks: "[Ganti dengan testimoni pembeli aslimu di sini.]" },
+  { nama: "Online Shop — [contoh]", kota: "[kota]", teks: "[Ganti dengan testimoni pembeli aslimu di sini.]" },
 ];
 
 const FAQ = [
-  { q: "Apa itu deadstock? Barangnya bekas?", a: "Bukan bekas. Deadstock = stok baru & original yang tersisa dari batch lama (mis. case tipe HP generasi sebelumnya). Kondisi 100% baru, cuma dilepas harga grosir untuk kosongkan gudang." },
-  { q: "Minimal order berapa untuk harga grosir?", a: `Harga grosir mulai dari ${PROMO.minOrder} pcs — boleh campur tipe/model dalam koleksi ini.` },
-  { q: "Dijamin original?", a: "Ya. Kami authorized reseller Ringke, VRS, Araree, dan Supcase. Semua 100% original bergaransi." },
-  { q: "Kalau stok habis, ada restock?", a: "Tidak. Namanya deadstock — jumlahnya terbatas dan tidak diproduksi lagi. Begitu habis, hilang selamanya." },
-  { q: "Bisa dikirim ke seluruh Indonesia?", a: "Bisa. Dikirim via kurir pilihanmu, ongkir dihitung otomatis saat checkout." },
+  { q: "Kenapa model case-nya acak (assorted)?", a: "Supaya harga bisa semurah ini, model dikirim campur (bumper, clear, rugged, dll) mengikuti stok tercepat. Merek & tipe HP tetap 100% sesuai pilihanmu — yang menyesuaikan hanya model case-nya." },
+  { q: "Minimal order berapa?", a: `Harga grosir mulai dari ${PROMO.minOrder} pcs — boleh campur tipe HP dalam satu order.` },
+  { q: "Dijamin original semua?", a: "Ya. Kami authorized distributor resmi 19+ merek (Ringke, Spigen, UAG, Supcase, ESR, dll). Semua 100% original & bergaransi." },
+  { q: "Bisa request model tertentu?", a: "Untuk order besar/khusus bisa request model — chat tim kami. Harga grosir standar memakai sistem assorted." },
+  { q: "Kirim ke seluruh Indonesia?", a: "Bisa. Dikirim via kurir pilihanmu, ongkir dihitung otomatis saat checkout atau info via chat." },
 ];
 
 const BENEFITS = [
-  { icon: BadgeCheck, title: "100% Original", desc: "Authorized reseller resmi. Bukan KW, bukan bekas." },
-  { icon: TrendingUp, title: "Margin Gede", desc: "Harga grosir bikin untung besar saat dijual lagi." },
-  { icon: Layers, title: "Boleh Campur Tipe", desc: `Minimal ${PROMO.minOrder} pcs, bebas mix model & warna.` },
+  { icon: BadgeCheck, title: "100% Original", desc: "Authorized distributor resmi 19+ merek global." },
+  { icon: TrendingUp, title: "Harga Distributor", desc: "Ambil dari sumber — margin jual lagi besar." },
+  { icon: Boxes, title: "19+ Merek Lengkap", desc: "Ringke, Spigen, UAG, Supcase, ESR, dan banyak lagi." },
+  { icon: Layers, title: "Boleh Campur", desc: `Minimal ${PROMO.minOrder} pcs, bebas mix tipe HP.` },
   { icon: ShieldCheck, title: "Garansi Resmi", desc: "Tetap bergaransi walau harga grosir." },
   { icon: Truck, title: "Kirim Cepat", desc: "Proses & kirim cepat ke seluruh Indonesia." },
-  { icon: PackageX, title: "Deadstock Terbatas", desc: "Stok tersisa, tidak restock. Habis ya habis." },
 ];
-
-function waHref() {
-  if (!PROMO.waNumber) return "/produk";
-  const text = encodeURIComponent("Halo SnapFit, saya mau order grosir deadstock. Boleh minta katalog & harganya?");
-  return `https://wa.me/${PROMO.waNumber}?text=${text}`;
-}
 
 export default async function GrosirLandingPage() {
   let items: ProductListItem[] = [];
@@ -83,9 +93,6 @@ export default async function GrosirLandingPage() {
     items = [];
   }
 
-  const orderHref = waHref();
-  const orderLabel = PROMO.waNumber ? "Pesan Grosir via WhatsApp" : "Lihat Katalog Grosir";
-
   return (
     <div className="pb-16">
       {/* ===== Bar urgensi (sticky) ===== */}
@@ -93,7 +100,7 @@ export default async function GrosirLandingPage() {
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-4 py-2.5 sm:flex-row sm:px-6">
           <p className="flex items-center gap-2 text-sm font-medium">
             <Flame className="size-4 text-brand" />
-            CUCI GUDANG DEADSTOCK · diskon s/d {PROMO.tiers[PROMO.tiers.length - 1].off}
+            PROMO GROSIR · diskon s/d {PROMO.tiers[PROMO.tiers.length - 1].off}
           </p>
           <div className="flex items-center gap-3">
             <span className="hidden text-xs text-background/60 sm:inline">Berakhir dalam</span>
@@ -107,19 +114,18 @@ export default async function GrosirLandingPage() {
         <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20">
           <div className="mx-auto max-w-3xl text-center">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-brand/15 px-3 py-1 text-xs font-semibold text-brand ring-1 ring-brand/30">
-              <PackageX className="size-3.5" /> Deadstock · Stok Terbatas
+              <Boxes className="size-3.5" /> Authorized Distributor · 19+ Merek
             </span>
             <h1 className="mt-5 text-3xl font-bold tracking-tight text-balance sm:text-5xl">
-              Borong Case Original Harga Grosir,
-              <span className="text-brand"> Untung Jual Lagi.</span>
+              Grosir Case HP Original,
+              <span className="text-brand"> Harga Distributor.</span>
             </h1>
             <p className="mx-auto mt-4 max-w-xl text-base text-background/70 text-pretty sm:text-lg">
-              Case & pelindung <strong className="text-background">100% original</strong> (iPhone 11–15,
-              Samsung, dll) sisa stok gudang — dilepas harga miring. Cocok reseller,
-              toko HP, atau yang mau stok banyak. Sekali habis, tidak restock.
+              Pilih <strong className="text-background">merek</strong> &{" "}
+              <strong className="text-background">tipe HP</strong> — order grosir case original
+              (iPhone 11–15, Galaxy S20–S24, Fold/Flip 3–6, dll). Cocok reseller, toko HP & online shop.
             </p>
 
-            {/* Anchor harga */}
             <div className="mt-6 inline-flex items-baseline gap-3 rounded-xl bg-white/5 px-5 py-3">
               <span className="text-sm text-background/60">Diskon grosir hingga</span>
               <span className="text-3xl font-bold text-brand">{PROMO.discountPercent}%+</span>
@@ -127,19 +133,17 @@ export default async function GrosirLandingPage() {
 
             <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Button size="lg" className="w-full bg-brand text-brand-foreground hover:bg-brand/90 sm:w-auto" asChild>
-                <Link href={orderHref}>
-                  {PROMO.waNumber && <MessageCircle className="size-4" />}
-                  {orderLabel}
-                  <ArrowRight className="size-4" />
-                </Link>
+                <a href="#pesan">
+                  Mulai Pesan Grosir <ArrowRight className="size-4" />
+                </a>
               </Button>
               <Button size="lg" variant="outline" className="w-full border-white/20 bg-transparent text-background hover:bg-white/10 hover:text-background sm:w-auto" asChild>
-                <a href="#koleksi">Lihat Koleksi</a>
+                <a href="#koleksi">Lihat Contoh Produk</a>
               </Button>
             </div>
 
             <div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-background/60">
-              <span className="inline-flex items-center gap-1.5"><BadgeCheck className="size-4 text-brand" /> Authorized Reseller</span>
+              <span className="inline-flex items-center gap-1.5"><BadgeCheck className="size-4 text-brand" /> 100% Original</span>
               <span className="inline-flex items-center gap-1.5"><ShieldCheck className="size-4 text-brand" /> Garansi Resmi</span>
               <span className="inline-flex items-center gap-1.5"><Truck className="size-4 text-brand" /> Kirim Se-Indonesia</span>
             </div>
@@ -163,10 +167,48 @@ export default async function GrosirLandingPage() {
         </div>
       </section>
 
+      {/* ===== Konfigurator pesanan grosir ===== */}
+      <section id="pesan" className="mx-auto max-w-3xl scroll-mt-16 px-4 py-14 sm:px-6">
+        <div className="text-center">
+          <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">Order Grosir dalam 3 Langkah</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Pilih merek & tipe HP, tentukan jumlah — langsung kirim pesananmu.
+          </p>
+        </div>
+        <div className="mt-8">
+          <GrosirConfigurator brands={BRANDS} series={SERIES} waNumber={PROMO.waNumber} minOrder={PROMO.minOrder} />
+        </div>
+      </section>
+
+      {/* ===== Brand wall ===== */}
+      <section className="border-y border-border bg-muted/40">
+        <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
+          <h2 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
+            Authorized Distributor Resmi
+          </h2>
+          <p className="mt-2 text-center text-sm text-muted-foreground">
+            Kami distributor resmi 19+ merek case & pelindung global.
+          </p>
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            {BRANDS.map((b) => (
+              <div
+                key={b}
+                className="grid place-items-center rounded-xl border border-border bg-background px-3 py-5 text-center text-sm font-bold uppercase tracking-tight text-foreground/80"
+              >
+                {b}
+              </div>
+            ))}
+          </div>
+          <p className="mt-4 text-center text-xs text-muted-foreground">
+            *Logo brand bisa ditambahkan — kirim file logonya, saya pasang.
+          </p>
+        </div>
+      </section>
+
       {/* ===== Benefit ===== */}
       <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
         <h2 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
-          Kenapa Borong di SnapFit?
+          Kenapa Grosir di SnapFit?
         </h2>
         <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {BENEFITS.map(({ icon: Icon, title, desc }) => (
@@ -212,12 +254,12 @@ export default async function GrosirLandingPage() {
         </div>
       </section>
 
-      {/* ===== Koleksi produk ===== */}
+      {/* ===== Contoh produk ===== */}
       <section id="koleksi" className="mx-auto max-w-6xl scroll-mt-16 px-4 py-14 sm:px-6">
         <div className="text-center">
-          <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">Koleksi Deadstock</h2>
+          <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">Sekilas Koleksi</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Stok tersisa — buruan sebelum kehabisan.
+            Contoh kualitas case yang kami distribusikan.
           </p>
         </div>
         {items.length > 0 ? (
@@ -241,9 +283,7 @@ export default async function GrosirLandingPage() {
       {/* ===== Testimoni ===== */}
       <section className="border-y border-border bg-muted/40">
         <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
-          <h2 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
-            Kata Mereka
-          </h2>
+          <h2 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">Kata Mereka</h2>
           <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
             {TESTIMONI.map((t, i) => (
               <div key={i} className="rounded-2xl border border-border bg-background p-6">
@@ -264,7 +304,7 @@ export default async function GrosirLandingPage() {
       {/* ===== FAQ ===== */}
       <section className="mx-auto max-w-3xl px-4 py-14 sm:px-6">
         <h2 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
-          Masih Ragu? Baca Ini
+          Pertanyaan Umum
         </h2>
         <div className="mt-8 divide-y divide-border border-y border-border">
           {FAQ.map((f) => (
@@ -284,25 +324,23 @@ export default async function GrosirLandingPage() {
         <div className="rounded-3xl bg-foreground px-6 py-12 text-center text-background sm:px-12 sm:py-16">
           <Flame className="mx-auto size-8 text-brand" />
           <h2 className="mt-4 text-2xl font-bold tracking-tight text-balance sm:text-4xl">
-            Deadstock Tidak Menunggu. Ambil Sebelum Habis.
+            Siap Stok & Jual Lagi? Ambil Harga Grosirnya.
           </h2>
           <p className="mx-auto mt-3 max-w-lg text-background/70">
-            Harga grosir ini terbatas waktu & stok. Begitu berakhir, harga kembali normal.
+            Promo grosir terbatas waktu. Begitu berakhir, harga kembali normal.
           </p>
           <div className="mt-6 flex justify-center">
             <CountdownTimer endsAt={PROMO.endsAt} variant="dark" />
           </div>
           <div className="mt-8">
-            <Button size="lg" className="w-full sm:w-auto" asChild>
-              <Link href={orderHref}>
-                {PROMO.waNumber && <MessageCircle className="size-4" />}
-                {orderLabel}
-                <ArrowRight className="size-4" />
-              </Link>
+            <Button size="lg" className="w-full bg-brand text-brand-foreground hover:bg-brand/90 sm:w-auto" asChild>
+              <a href="#pesan">
+                Mulai Pesan Grosir <ArrowRight className="size-4" />
+              </a>
             </Button>
           </div>
           <p className="mt-4 text-xs text-background/50">
-            Authorized reseller Ringke · VRS · Araree · Supcase — 100% original bergaransi.
+            Authorized distributor Ringke · Spigen · UAG · Supcase · ESR · & 14 merek lainnya.
           </p>
         </div>
       </section>
