@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type { Metadata } from "next";
 import {
   ArrowRight,
@@ -7,24 +6,19 @@ import {
   Truck,
   Flame,
   Star,
-  Boxes,
   Check,
   X,
   ChevronDown,
   ShoppingBag,
   MessageCircle,
-  Store,
   Sparkles,
   Zap,
-  Gift,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatRupiah } from "@/lib/format";
 import { getProducts, type ProductListItem } from "@/lib/actions/product";
 import { ProductCard } from "@/components/shop/product-card";
 import { EvergreenCountdown } from "@/components/shop/evergreen-countdown";
-import { GrosirConfigurator } from "@/components/shop/grosir-configurator";
 
 export const revalidate = 300;
 
@@ -41,23 +35,11 @@ const OFFER = {
   waNumber: "6285179779770",
   shopeeUrl: "https://shopee.co.id/primaryfocuss", // toko Shopee
   countdownMinutes: 15, // durasi countdown FOMO tiap pengunjung
-  priceFrom: 29000, // harga grosir per pcs (anchoring + estimasi)
-  priceAnchor: 99000, // harga "normal/toko lain" (dicoret)
+  priceFrom: 45000, // harga grosir mulai (anchoring)
+  priceAnchor: 1249000, // harga "normal/toko" (dicoret)
   minOrder: 10, // minimal pcs paket grosir
-  stats: { terjual: "—", rating: "—", merek: "19+" }, // ISI ANGKA ASLI (terjual, rating)
+  stats: { terjual: "500.000++", rating: "4,9+", merek: "19+" },
 };
-
-// Tipe HP yang bisa dipilih untuk paket grosir.
-const SERIES = [
-  "iPhone 11–15 Series",
-  "iPhone 16 Series",
-  "Galaxy S20–S24 Series",
-  "Galaxy Z Fold 3–6",
-  "Galaxy Z Flip 3–6",
-  "Galaxy A Series",
-  "Xiaomi / POCO",
-  "Lainnya",
-];
 
 const savePercent = Math.round((1 - OFFER.priceFrom / OFFER.priceAnchor) * 100);
 
@@ -79,14 +61,14 @@ const REASONS = [
   { t: "Harga paling masuk akal", d: "Ambil langsung dari sumber — jadi kamu dapat harga grosir walau beli sedikit." },
   { t: "19+ merek dunia lengkap", d: "Spigen, UAG, Ringke, Supcase, ESR, Otterbox… tinggal pilih favoritmu." },
   { t: "Cocok reseller & toko", d: "Borong makin murah. Modal balik cepat, untung jalan terus." },
-  { t: "Beli sesukamu", d: "Checkout di web, chat WhatsApp, atau ambil di Shopee — semua bisa." },
+  { t: "Beli sesukamu", d: "Langsung di toko Shopee kami, atau chat WhatsApp — praktis." },
   { t: "Kirim cepat se-Indonesia", d: "Diproses cepat, dikirim ke seluruh Indonesia." },
 ];
 
 const FAQ = [
   { q: "Kenapa model case-nya kejutan (assorted)?", a: "Supaya harganya bisa segrosir ini, model dikirim campur (bumper, clear, rugged, dll) mengikuti stok tercepat & terlaris. Merek & tipe HP tetap 100% sesuai pilihanmu — hanya modelnya yang surprise. Semua original bergaransi." },
   { q: "Dijamin original semua?", a: "Ya. Kami authorized distributor resmi 19+ merek global. Semua 100% original & bergaransi — kalau terbukti tidak asli, uang kembali." },
-  { q: "Bisa beli lewat mana saja?", a: "Paket grosir dipesan lewat WhatsApp (pilih merek & tipe HP). Untuk beli satuan bisa checkout di website atau toko Shopee kami." },
+  { q: "Bisa beli lewat mana saja?", a: "Lewat toko Shopee kami (klik 'Beli di Shopee') atau chat WhatsApp untuk penawaran grosir. Pilih yang paling nyaman." },
   { q: "Ada harga grosir untuk reseller?", a: "Ada. Makin banyak makin murah. Chat WhatsApp kami untuk penawaran grosir & jadi reseller." },
   { q: "Kirim ke seluruh Indonesia?", a: "Bisa. Ongkir dihitung otomatis saat checkout, atau tanya via chat." },
 ];
@@ -100,14 +82,11 @@ function BuyButtons({ className }: { className?: string }) {
     "inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3.5 text-sm font-semibold shadow-sm transition-transform hover:-translate-y-0.5 active:translate-y-0";
   return (
     <div className={cn("flex w-full flex-col gap-3 sm:w-auto sm:flex-row", className)}>
-      <Link href="/produk" className={cn(base, "bg-brand text-brand-foreground")}>
-        <Store className="size-4" /> Belanja di Web
-      </Link>
-      <a href={OFFER.shopeeUrl} target="_blank" rel="noopener noreferrer" className={cn(base, "bg-[#ee4d2d] text-white")}>
-        <ShoppingBag className="size-4" /> Beli di Shopee
+      <a href={OFFER.shopeeUrl} target="_blank" rel="noopener noreferrer" className={cn(base, "bg-[#ee4d2d] px-8 text-base text-white")}>
+        <ShoppingBag className="size-5" /> Beli di Shopee
       </a>
-      <a href={waLink} target="_blank" rel="noopener noreferrer" className={cn(base, "bg-[#25d366] text-white")}>
-        <MessageCircle className="size-4" /> Chat WhatsApp
+      <a href={waLink} target="_blank" rel="noopener noreferrer" className={cn(base, "bg-[#25d366] px-8 text-base text-white")}>
+        <MessageCircle className="size-5" /> Chat WhatsApp
       </a>
     </div>
   );
@@ -149,9 +128,9 @@ export default async function GrosirLandingPage() {
             </h1>
 
             <p className="mx-auto mt-4 max-w-xl text-base text-background/70 text-pretty sm:text-lg">
-              Cukup pilih <strong className="text-background">merek</strong> &{" "}
-              <strong className="text-background">tipe HP</strong> — kami kirim paket case grosir terbaik
-              (model campur). 100% original dari authorized distributor 19+ merek. Untung besar buat reseller.
+              Case original 19+ merek dunia — Spigen, UAG, Ringke, Supcase & lainnya — dengan{" "}
+              <strong className="text-background">harga grosir</strong>. 100% original dari authorized
+              distributor. Beli langsung di Shopee atau chat WhatsApp. Untung besar buat reseller.
             </p>
 
             {/* Anchor harga */}
@@ -172,13 +151,7 @@ export default async function GrosirLandingPage() {
               <EvergreenCountdown minutes={OFFER.countdownMinutes} variant="dark" />
             </div>
 
-            <div className="mt-8 flex flex-col items-center gap-4">
-              <a href="#racik" className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand px-8 py-4 text-base font-semibold text-brand-foreground shadow-lg shadow-brand/20 transition-transform hover:-translate-y-0.5 sm:w-auto">
-                <Gift className="size-5" /> Racik Paket Grosir Sekarang <ArrowRight className="size-5" />
-              </a>
-              <div className="flex items-center gap-3 text-xs text-background/50">
-                <span className="h-px w-8 bg-white/15" /> atau beli satuan <span className="h-px w-8 bg-white/15" />
-              </div>
+            <div className="mt-8 flex justify-center">
               <BuyButtons />
             </div>
 
@@ -203,28 +176,6 @@ export default async function GrosirLandingPage() {
               <p className="mt-1 text-xs text-muted-foreground sm:text-sm">{s.l}</p>
             </div>
           ))}
-        </div>
-      </section>
-
-      {/* ===== Racik paket grosir (selector) ===== */}
-      <section id="racik" className="mx-auto max-w-3xl scroll-mt-16 px-4 py-14 sm:px-6">
-        <div className="text-center">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-brand/10 px-3 py-1 text-xs font-semibold text-brand">
-            <Gift className="size-3.5" /> Paket Kejutan Grosir
-          </span>
-          <h2 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">Racik Paket Grosirmu</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Pilih merek & tipe HP — model case-nya kejutan (assorted), harga grosir. Gampang & untung.
-          </p>
-        </div>
-        <div className="mt-8">
-          <GrosirConfigurator
-            brands={BRANDS}
-            series={SERIES}
-            waNumber={OFFER.waNumber}
-            minOrder={OFFER.minOrder}
-            pricePerPcs={OFFER.priceFrom}
-          />
         </div>
       </section>
 
@@ -340,9 +291,11 @@ export default async function GrosirLandingPage() {
       <section id="koleksi" className="mx-auto max-w-6xl scroll-mt-16 px-4 py-14 sm:px-6">
         <div className="text-center">
           <h2 className="inline-flex items-center gap-2 text-2xl font-semibold tracking-tight sm:text-3xl">
-            <Sparkles className="size-6 text-brand" /> Paling Diburu
+            <Sparkles className="size-6 text-brand" /> Intip Koleksi Kami
           </h2>
-          <p className="mt-2 text-sm text-muted-foreground">Case original favorit — stok gerak cepat.</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Sebagian case original yang kami jual. Cek koleksi lengkap & harga grosir di Shopee.
+          </p>
         </div>
         {items.length > 0 ? (
           <div className="mt-8 grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
@@ -354,11 +307,14 @@ export default async function GrosirLandingPage() {
           <p className="mt-8 text-center text-sm text-muted-foreground">Koleksi sedang disiapkan.</p>
         )}
         <div className="mt-8 text-center">
-          <Button size="lg" variant="outline" asChild>
-            <Link href="/produk">
-              Lihat Semua Produk <ArrowRight className="size-4" />
-            </Link>
-          </Button>
+          <a
+            href={OFFER.shopeeUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#ee4d2d] px-8 py-4 text-base font-semibold text-white shadow-sm transition-transform hover:-translate-y-0.5"
+          >
+            <ShoppingBag className="size-5" /> Lihat Semua di Shopee <ArrowRight className="size-5" />
+          </a>
         </div>
       </section>
 
@@ -413,13 +369,7 @@ export default async function GrosirLandingPage() {
             <div className="mt-6 flex justify-center">
               <EvergreenCountdown minutes={OFFER.countdownMinutes} variant="dark" />
             </div>
-            <div className="mt-8 flex flex-col items-center gap-4">
-              <a href="#racik" className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand px-8 py-4 text-base font-semibold text-brand-foreground shadow-lg shadow-brand/20 transition-transform hover:-translate-y-0.5 sm:w-auto">
-                <Gift className="size-5" /> Racik Paket Grosir <ArrowRight className="size-5" />
-              </a>
-              <div className="flex items-center gap-3 text-xs text-background/40">
-                <span className="h-px w-8 bg-white/15" /> atau beli satuan <span className="h-px w-8 bg-white/15" />
-              </div>
+            <div className="mt-8 flex justify-center">
               <BuyButtons />
             </div>
             <p className="mt-5 text-xs text-background/50">
@@ -436,14 +386,11 @@ export default async function GrosirLandingPage() {
           <EvergreenCountdown minutes={OFFER.countdownMinutes} variant="bar" />
         </div>
         <div className="flex gap-2">
-          <a href="#racik" className="inline-flex flex-[1.3] items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2.5 text-sm font-semibold text-brand-foreground">
-            <Gift className="size-4" /> Racik Grosir
+          <a href={OFFER.shopeeUrl} target="_blank" rel="noopener noreferrer" className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#ee4d2d] px-3 py-3 text-sm font-semibold text-white">
+            <ShoppingBag className="size-4" /> Beli di Shopee
           </a>
-          <a href={waLink} target="_blank" rel="noopener noreferrer" className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#25d366] px-3 py-2.5 text-sm font-semibold text-white">
-            <MessageCircle className="size-4" /> WA
-          </a>
-          <a href={OFFER.shopeeUrl} target="_blank" rel="noopener noreferrer" className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#ee4d2d] px-3 py-2.5 text-sm font-semibold text-white">
-            <ShoppingBag className="size-4" /> Shopee
+          <a href={waLink} target="_blank" rel="noopener noreferrer" className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#25d366] px-3 py-3 text-sm font-semibold text-white">
+            <MessageCircle className="size-4" /> WhatsApp
           </a>
         </div>
       </div>
