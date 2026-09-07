@@ -137,13 +137,20 @@ export default async function GrosirLandingPage() {
             </p>
 
             {/* Anchor harga */}
-            <div className="mt-7 inline-flex items-center gap-3 rounded-2xl bg-white/5 px-6 py-4 ring-1 ring-white/10">
-              <div className="text-left">
-                <p className="text-xs text-background/50">Harga toko <span className="line-through">{formatRupiah(OFFER.priceAnchor)}</span></p>
-                <p className="text-sm text-background/70">Grosir mulai</p>
+            <div className="mt-7 inline-flex max-w-full flex-col items-center gap-1.5 rounded-2xl bg-white/5 px-5 py-4 ring-1 ring-white/10 sm:px-6">
+              <p className="text-xs text-background/50">
+                Harga toko <span className="line-through">{formatRupiah(OFFER.priceAnchor)}</span>
+              </p>
+              <div className="flex flex-wrap items-baseline justify-center gap-x-2 gap-y-1.5">
+                <span className="text-sm text-background/70">Grosir mulai</span>
+                <span className="text-3xl font-extrabold text-brand sm:text-4xl">
+                  {formatRupiah(OFFER.priceFrom)}
+                  <span className="text-base font-bold">/pcs</span>
+                </span>
+                <span className="rounded-full bg-brand px-2.5 py-1 text-xs font-bold text-brand-foreground">
+                  HEMAT {savePercent}%
+                </span>
               </div>
-              <p className="text-4xl font-extrabold text-brand sm:text-5xl">{formatRupiah(OFFER.priceFrom)}<span className="text-lg">/pcs</span></p>
-              <span className="rounded-full bg-brand px-2.5 py-1 text-xs font-bold text-brand-foreground">HEMAT {savePercent}%</span>
             </div>
 
             {/* Countdown FOMO */}
