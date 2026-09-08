@@ -33,7 +33,7 @@ export const metadata: Metadata = {
    ============================================================ */
 const OFFER = {
   waNumber: "6285179779770",
-  shopeeUrl: "https://shopee.co.id/primaryfocuss", // toko Shopee
+  shopeeUrl: "https://id.shp.ee/KcnkDw66", // etalase grosir Shopee (short link)
   countdownMinutes: 15, // durasi countdown FOMO tiap pengunjung
   priceFrom: 45000, // harga grosir mulai (anchoring)
   priceAnchor: 1249000, // harga "normal/toko" (dicoret)
