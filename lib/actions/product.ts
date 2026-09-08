@@ -137,7 +137,7 @@ export async function getMegaMenu(): Promise<MegaMenuCategory[]> {
 }
 
 export async function getProducts(query: ProductQuery): Promise<ProductListResult> {
-  const { tipe, model, q, sort, skip, take } = query;
+  const { tipe, model, grosir, q, sort, skip, take } = query;
 
   const products = await db.product.findMany({
     where: {
@@ -147,6 +147,8 @@ export async function getProducts(query: ProductQuery): Promise<ProductListResul
         : {}),
       // model tingkat 3: produk punya varian dengan type persis
       ...(model ? { variants: { some: { type: model } } } : {}),
+      // hanya produk yang ditandai untuk halaman grosir
+      ...(grosir ? { isGrosir: true } : {}),
       ...(q ? { name: { contains: q, mode: "insensitive" as const } } : {}),
     },
     include: {
@@ -183,6 +185,16 @@ export async function getProducts(query: ProductQuery): Promise<ProductListResul
   const total = mapped.length;
   const items = mapped.slice(skip, skip + take);
   return { items, total, hasMore: skip + take < total };
+}
+
+/** Produk yang ditandai untuk halaman /grosir (isGrosir = true). */
+export async function getGrosirProducts(take = 12): Promise<ProductListItem[]> {
+  try {
+    const { items } = await getProducts({ grosir: true, sort: "terbaru", skip: 0, take });
+    return items;
+  } catch {
+    return [];
+  }
 }
 
 export async function getProductBySlug(slug: string) {

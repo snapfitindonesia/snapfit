@@ -38,6 +38,7 @@ type Initial = {
   description: string | null;
   coverImage: string;
   categoryId: string | null;
+  isGrosir: boolean;
   variants: InitVariant[];
 };
 
@@ -117,6 +118,7 @@ export function ProductForm({
   const [description, setDescription] = useState(initial?.description ?? "");
   const [coverImage, setCoverImage] = useState(initial?.coverImage ?? "");
   const [categoryId, setCategoryId] = useState(initial?.categoryId ?? "");
+  const [isGrosir, setIsGrosir] = useState(initial?.isGrosir ?? false);
 
   const init = useMemo(() => buildInitialState(initial), [initial]);
   const [colors, setColors] = useState<ColorOpt[]>(init.colors);
@@ -188,7 +190,7 @@ export function ProductForm({
     }
 
     setSaving(true);
-    const payload = { slug, name, description, coverImage, categoryId, variants: rows };
+    const payload = { slug, name, description, coverImage, categoryId, isGrosir, variants: rows };
     const res = initial
       ? await updateProduct(initial.id, payload)
       : await createProduct(payload);
@@ -231,6 +233,20 @@ export function ProductForm({
               <option key={c.id} value={c.id}>{c.name}</option>
             ))}
           </select>
+        </label>
+        <label className="flex cursor-pointer items-start gap-2.5 rounded-md border border-border p-3 sm:col-span-2">
+          <input
+            type="checkbox"
+            checked={isGrosir}
+            onChange={(e) => setIsGrosir(e.target.checked)}
+            className="mt-0.5 size-4"
+          />
+          <span>
+            <span className="text-sm font-medium">Tampilkan di halaman Grosir</span>
+            <span className="mt-0.5 block text-xs text-muted-foreground">
+              Centang agar produk ini muncul di landing page /grosir.
+            </span>
+          </span>
         </label>
       </div>
 

@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatRupiah } from "@/lib/format";
-import { getProducts, type ProductListItem } from "@/lib/actions/product";
+import { getGrosirProducts, type ProductListItem } from "@/lib/actions/product";
 import { ProductCard } from "@/components/shop/product-card";
 import { EvergreenCountdown } from "@/components/shop/evergreen-countdown";
 
@@ -96,12 +96,8 @@ function BuyButtons({ className }: { className?: string }) {
 }
 
 export default async function GrosirLandingPage() {
-  let items: ProductListItem[] = [];
-  try {
-    items = (await getProducts({ sort: "termurah", take: 8, skip: 0 })).items;
-  } catch {
-    items = [];
-  }
+  // Hanya produk yang ditandai grosir (isGrosir=true) yang tampil di sini.
+  const items: ProductListItem[] = await getGrosirProducts(12);
 
   return (
     <div className="pb-28 md:pb-16">

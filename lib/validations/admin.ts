@@ -25,6 +25,7 @@ export const productSchema = z.object({
   description: z.string().trim().optional().or(z.literal("")),
   coverImage: url,
   categoryId: z.string().optional().or(z.literal("")),
+  isGrosir: z.coerce.boolean().optional().default(false), // tampil di halaman /grosir
   variants: z.array(variantSchema).min(1, "Minimal 1 varian"),
 });
 

@@ -41,6 +41,7 @@ export async function createProduct(input: ProductInput): Promise<Result> {
         description: data.description || null,
         coverImage: data.coverImage,
         categoryId: data.categoryId || null,
+        isGrosir: data.isGrosir,
         variants: {
           create: data.variants.map((v) => ({
             name: v.name,
@@ -78,6 +79,7 @@ export async function updateProduct(id: string, input: ProductInput): Promise<Re
           description: data.description || null,
           coverImage: data.coverImage,
           categoryId: data.categoryId || null,
+          isGrosir: data.isGrosir,
         },
       }),
       // hapus varian yang dibuang di form
