@@ -181,9 +181,9 @@ export default async function GrosirLandingPage() {
             { v: OFFER.stats.rating, l: "Rating Pembeli" },
             { v: OFFER.stats.merek, l: "Merek Original" },
           ].map((s) => (
-            <div key={s.l} className="px-2 text-center">
-              <p className="text-2xl font-bold sm:text-3xl">{s.v}</p>
-              <p className="mt-1 text-xs text-muted-foreground sm:text-sm">{s.l}</p>
+            <div key={s.l} className="min-w-0 px-2 text-center">
+              <p className="text-lg font-bold leading-tight sm:text-3xl">{s.v}</p>
+              <p className="mt-1 text-[11px] text-muted-foreground sm:text-sm">{s.l}</p>
             </div>
           ))}
         </div>
