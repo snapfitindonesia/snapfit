@@ -9,6 +9,7 @@ export async function GET(request: Request) {
   const parsed = productQuerySchema.safeParse({
     tipe: searchParams.get("tipe") ?? undefined,
     model: searchParams.get("model") ?? undefined,
+    grosir: searchParams.get("grosir") ?? undefined,
     q: searchParams.get("q") ?? undefined,
     sort: searchParams.get("sort") ?? undefined,
     skip: searchParams.get("skip") ?? undefined,
