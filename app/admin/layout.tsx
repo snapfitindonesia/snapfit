@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { AdminNav } from "@/components/admin/admin-nav";
+import { AdminMobileNav } from "@/components/admin/admin-mobile-nav";
 
 // Proteksi (login + role admin + MFA) ditegakkan di middleware.ts (fail-closed).
 export default async function AdminLayout({
@@ -30,21 +31,16 @@ export default async function AdminLayout({
         </div>
       </aside>
 
-      {/* Header atas (mobile) */}
+      {/* Header atas (mobile) — menu jadi drawer yang bisa dibuka/tutup */}
       <header className="sticky top-0 z-30 border-b border-border bg-card lg:hidden">
-        <div className="flex h-14 items-center gap-3 px-4">
+        <div className="flex h-14 items-center gap-2 px-3">
+          <AdminMobileNav email={user?.email} />
           <Link href="/admin" className="flex items-center gap-2">
             <span className="flex size-7 items-center justify-center rounded-lg bg-brand text-xs font-bold text-brand-foreground">
               S
             </span>
             <span className="text-sm font-semibold">SnapFit Admin</span>
           </Link>
-          <div className="ml-auto">
-            <SignOutButton />
-          </div>
-        </div>
-        <div className="border-t border-border px-2 py-2">
-          <AdminNav orientation="horizontal" />
         </div>
       </header>
 
