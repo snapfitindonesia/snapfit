@@ -24,6 +24,7 @@ export const productSchema = z.object({
   name: z.string().trim().min(1, "Nama produk wajib"),
   description: z.string().trim().optional().or(z.literal("")),
   coverImage: url,
+  images: z.array(url).optional().default([]), // galeri foto tambahan (PDP)
   categoryId: z.string().optional().or(z.literal("")),
   isGrosir: z.coerce.boolean().optional().default(false), // tampil di halaman /grosir
   variants: z.array(variantSchema).min(1, "Minimal 1 varian"),

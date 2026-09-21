@@ -40,6 +40,7 @@ export async function createProduct(input: ProductInput): Promise<Result> {
         name: data.name,
         description: data.description || null,
         coverImage: data.coverImage,
+        images: data.images,
         categoryId: data.categoryId || null,
         isGrosir: data.isGrosir,
         variants: {
@@ -78,6 +79,7 @@ export async function updateProduct(id: string, input: ProductInput): Promise<Re
           name: data.name,
           description: data.description || null,
           coverImage: data.coverImage,
+          images: data.images,
           categoryId: data.categoryId || null,
           isGrosir: data.isGrosir,
         },

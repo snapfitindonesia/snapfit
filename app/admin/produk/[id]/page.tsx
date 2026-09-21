@@ -37,6 +37,7 @@ export default async function EditProductPage({
             name: product.name,
             description: product.description,
             coverImage: product.coverImage,
+            images: Array.isArray(product.images) ? (product.images as string[]) : [],
             categoryId: product.categoryId,
             isGrosir: product.isGrosir,
             variants: product.variants.map((v) => ({

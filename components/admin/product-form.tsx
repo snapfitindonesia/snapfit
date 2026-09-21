@@ -6,6 +6,7 @@ import { Loader2, Plus, Trash2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createProduct, updateProduct } from "@/lib/actions/admin";
 import { ImageInput } from "@/components/admin/image-input";
+import { ImageGridInput } from "@/components/admin/image-grid-input";
 
 /* ============================================================
    Varian 2 tingkat ala Shopee:
@@ -37,6 +38,7 @@ type Initial = {
   name: string;
   description: string | null;
   coverImage: string;
+  images: string[];
   categoryId: string | null;
   isGrosir: boolean;
   variants: InitVariant[];
@@ -126,7 +128,15 @@ export function ProductForm({
   const [name, setName] = useState(initial?.name ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [coverImage, setCoverImage] = useState(initial?.coverImage ?? "");
+  const [images, setImages] = useState<string[]>(initial?.images ?? []);
   const [categoryId, setCategoryId] = useState(initial?.categoryId ?? "");
+
+  // Foto: gabungan [cover, ...galeri]; foto pertama = utama (cover).
+  const photos = [coverImage, ...images].filter(Boolean);
+  const setPhotos = (v: string[]) => {
+    setCoverImage(v[0] ?? "");
+    setImages(v.slice(1));
+  };
   const [isGrosir, setIsGrosir] = useState(initial?.isGrosir ?? false);
 
   const init = useMemo(() => buildInitialState(initial), [initial]);
@@ -197,8 +207,13 @@ export function ProductForm({
       return;
     }
 
+    if (!coverImage) {
+      setError("Unggah minimal 1 foto produk.");
+      return;
+    }
+
     setSaving(true);
-    const payload = { slug, name, description, coverImage, categoryId, isGrosir, variants: rows };
+    const payload = { slug, name, description, coverImage, images, categoryId, isGrosir, variants: rows };
     const res = initial
       ? await updateProduct(initial.id, payload)
       : await createProduct(payload);
@@ -276,8 +291,8 @@ export function ProductForm({
             <div className="space-y-5">
               <div>
                 <p className="text-sm font-medium">Gambar <Req /></p>
-                <p className="mb-2 text-xs text-muted-foreground">Foto utama produk. Foto tiap warna diatur di bagian Info penjualan.</p>
-                <ImageInput value={coverImage} onChange={setCoverImage} />
+                <p className="mb-2 text-xs text-muted-foreground">Unggah hingga 9 foto. Foto pertama jadi foto utama. Foto tiap warna diatur di bagian Info penjualan.</p>
+                <ImageGridInput value={photos} onChange={setPhotos} />
               </div>
 
               <label className="block">
