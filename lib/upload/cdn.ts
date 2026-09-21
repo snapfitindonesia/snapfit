@@ -59,10 +59,15 @@ export async function uploadToR2(buffer: Buffer, filename: string): Promise<stri
     region: "auto",
   });
   const endpoint = `https://${cfg.accountId}.r2.cloudflarestorage.com/${cfg.bucket}/${filename}`;
+  const body = new Uint8Array(buffer);
   const res = await client.fetch(endpoint, {
     method: "PUT",
-    body: new Uint8Array(buffer),
-    headers: { "Content-Type": "image/webp", "Cache-Control": "public, max-age=31536000, immutable" },
+    body,
+    headers: {
+      "Content-Type": "image/webp",
+      "Content-Length": String(body.byteLength), // R2 wajib (runtime Vercel tak auto-isi)
+      "Cache-Control": "public, max-age=31536000, immutable",
+    },
   });
   if (!res.ok) throw new Error(`R2 ${res.status}: ${await res.text().catch(() => "")}`.slice(0, 200));
   return `${cfg.publicUrl}/${filename}`;
