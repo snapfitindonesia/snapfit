@@ -29,12 +29,9 @@ export default async function EditProductPage({
   }));
 
   return (
-    <div>
-      <h1 className="text-xl font-semibold">Edit produk</h1>
-      <div className="mt-6">
-        <ProductForm
-          categories={categories}
-          initial={{
+    <ProductForm
+      categories={categories}
+      initial={{
             id: product.id,
             slug: product.slug,
             name: product.name,
@@ -54,8 +51,6 @@ export default async function EditProductPage({
               image: v.image,
             })),
           }}
-        />
-      </div>
-    </div>
+    />
   );
 }

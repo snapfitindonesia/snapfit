@@ -13,12 +13,5 @@ export default async function NewProductPage() {
     id: c.id,
     name: c.parent ? `${c.parent.name} › ${c.name}` : c.name,
   }));
-  return (
-    <div>
-      <h1 className="text-xl font-semibold">Tambah produk</h1>
-      <div className="mt-6">
-        <ProductForm categories={categories} />
-      </div>
-    </div>
-  );
+  return <ProductForm categories={categories} />;
 }
