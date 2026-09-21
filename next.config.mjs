@@ -10,6 +10,8 @@ const nextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "placehold.co" }, // dev/placeholder
       { protocol: "https", hostname: "cdn.snapfit.id" }, // CDN aset produksi
+      { protocol: "https", hostname: "**.r2.dev" }, // Cloudflare R2 public bucket
+      { protocol: "https", hostname: "**.r2.cloudflarestorage.com" }, // R2 (jaga-jaga)
       { protocol: "https", hostname: "cdn.shopify.com" }, // foto katalog impor (sementara)
       ...extraHosts.map((hostname) => ({ protocol: "https", hostname })),
     ],
