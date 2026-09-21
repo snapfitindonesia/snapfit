@@ -126,12 +126,12 @@ export function HeaderNav({ menu }: { menu: MegaMenuCategory[] }) {
             <Link
               href="/"
               className="absolute left-1/2 flex -translate-x-1/2 items-center md:static md:translate-x-0"
-              aria-label="SnapFit — beranda"
+              aria-label="SNAPFIT — beranda"
               onClick={closeMobile}
             >
               <Image
                 src={logo}
-                alt="SnapFit"
+                alt="SNAPFIT"
                 priority
                 className="h-6 w-auto sm:h-7"
               />

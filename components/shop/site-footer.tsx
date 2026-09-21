@@ -24,7 +24,7 @@ const COLUMNS = [
     ],
   },
   {
-    title: "SnapFit",
+    title: "SNAPFIT",
     links: [
       { label: "Tentang", href: "#" },
       { label: "Garansi", href: "#" },
@@ -56,7 +56,7 @@ export function SiteFooter() {
         {/* Link columns */}
         <div className="grid grid-cols-2 gap-8 py-12 sm:grid-cols-4">
           <div className="col-span-2 sm:col-span-1">
-            <Image src={logo} alt="SnapFit" className="h-7 w-auto" />
+            <Image src={logo} alt="SNAPFIT" className="h-7 w-auto" />
             <p className="mt-3 max-w-xs text-sm text-muted-foreground">
               Aksesori HP & tablet yang benar-benar pas. Pilih tipe, pesan,
               beres.
@@ -82,7 +82,7 @@ export function SiteFooter() {
         </div>
 
         <div className="flex flex-col gap-2 border-t border-border py-6 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-          <p>© {new Date().getFullYear()} SnapFit. Semua hak dilindungi.</p>
+          <p>© {new Date().getFullYear()} SNAPFIT. Semua hak dilindungi.</p>
           <p>Dibuat di Indonesia.</p>
         </div>
       </div>

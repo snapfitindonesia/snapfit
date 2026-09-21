@@ -47,7 +47,7 @@ export default async function AdminProductsPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold">Produk Saya</h1>
-          <p className="text-sm text-muted-foreground">Kelola produk & varian toko SnapFit</p>
+          <p className="text-sm text-muted-foreground">Kelola produk & varian toko SNAPFIT</p>
         </div>
         <div className="flex gap-2">
           <Button asChild size="sm" variant="outline">

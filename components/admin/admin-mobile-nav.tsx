@@ -42,7 +42,7 @@ export function AdminMobileNav({ email }: { email?: string | null }) {
           <div className="absolute inset-y-0 left-0 flex w-64 max-w-[80%] flex-col bg-card shadow-xl">
             <div className="flex h-14 items-center gap-2 border-b border-border px-4">
               <span className="flex size-7 items-center justify-center rounded-lg bg-brand text-xs font-bold text-brand-foreground">S</span>
-              <span className="text-sm font-semibold">SnapFit Admin</span>
+              <span className="text-sm font-semibold">SNAPFIT Admin</span>
               <button
                 type="button"
                 onClick={() => setOpen(false)}

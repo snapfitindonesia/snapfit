@@ -69,7 +69,7 @@ async function fetchBiteshipRates(params: {
       couriers: "sicepat,jne,jnt",
       items: [
         {
-          name: "Paket SnapFit",
+          name: "Paket SNAPFIT",
           value: params.itemValue ?? 0,
           weight: params.weightGram,
           quantity: 1,

@@ -23,7 +23,7 @@ import { EvergreenCountdown } from "@/components/shop/evergreen-countdown";
 export const revalidate = 300;
 
 export const metadata: Metadata = {
-  title: "Case Original Harga Grosir — Spigen, UAG, Ringke & 16+ Merek | SnapFit",
+  title: "Case Original Harga Grosir — Spigen, UAG, Ringke & 16+ Merek | SNAPFIT",
   description:
     "Case HP original harga grosir dari authorized distributor 19+ merek dunia. Beli satuan atau borong. Bisa via Shopee, WhatsApp, atau website. Garansi 100% original.",
 };
@@ -44,7 +44,7 @@ const OFFER = {
 const savePercent = Math.round((1 - OFFER.priceFrom / OFFER.priceAnchor) * 100);
 
 const BRANDS = [
-  "Ringke", "Araree", "Supcase", "SnapFit", "UAG", "CaseMe", "SwitchEasy",
+  "Ringke", "Araree", "Supcase", "SNAPFIT", "UAG", "CaseMe", "SwitchEasy",
   "MagEasy", "ESR", "WiWU", "Spigen", "GKK", "Sulada", "Puloka",
   "Raptic X-Doria", "Caudabe", "VRS Design", "Xfitted", "Otterbox",
 ];
@@ -52,11 +52,11 @@ const BRANDS = [
 // Testimoni asli pembeli Shopee (toko primaryfocuss).
 const TESTIMONI = [
   { nama: "ivan060606", variasi: "Camo Black · S25 Ultra", produk: "Ringke Case Samsung Galaxy S25 Ultra", tgl: "05 Sep 2026", teks: "Best value 👍👍, yang didapat jauh lebih banyak dibanding yang dibayar. Terima kasih, salam sehat dan sukses 🙌" },
-  { nama: "n*****a", variasi: "Matte Clear", produk: "SnapFit Case Galaxy Z Flip 8 Frosted", tgl: "04 Sep 2026", teks: "Proses order cepat.. barang dikemas dengan rapi dan aman.. diterima dalam kondisi sangat baik! :)" },
-  { nama: "r*****2", variasi: "Purple · Full Clear", produk: "SnapFit Lens Shield Camera Galaxy Z Flip 8", tgl: "13 Agu 2026", teks: "Sesuai dengan deskripsi. Kalau mau match dengan Flip 8 pink, pilih yang ungu muda." },
+  { nama: "n*****a", variasi: "Matte Clear", produk: "SNAPFIT Case Galaxy Z Flip 8 Frosted", tgl: "04 Sep 2026", teks: "Proses order cepat.. barang dikemas dengan rapi dan aman.. diterima dalam kondisi sangat baik! :)" },
+  { nama: "r*****2", variasi: "Purple · Full Clear", produk: "SNAPFIT Lens Shield Camera Galaxy Z Flip 8", tgl: "13 Agu 2026", teks: "Sesuai dengan deskripsi. Kalau mau match dengan Flip 8 pink, pilih yang ungu muda." },
   { nama: "konicaputra", variasi: "Neon Green · 46mm", produk: "Ringke Case Apple Watch 42/46mm", tgl: "30 Jul 2026", teks: "Keren barangnya. Seller fast respon, mantap!" },
   { nama: "nzen_01", variasi: "Mallard · iPhone 16 Pro Max", produk: "UAG Case iPhone 16 Pro Max Civilian", tgl: "18 Jul 2026", teks: "Akhirnya sampe juga ni case ke tangan gw 🥰😍 seller gokil, cepet banget langsung dikirim." },
-  { nama: "mnh.tessa", variasi: "Matte Clear · Vivo X300 Pro", produk: "SnapFit Case Vivo X300 Pro", tgl: "09 Jul 2026", teks: "Toko ini bagus dan amanah, saya sudah 2x belanja di sini. Thanks ya!" },
+  { nama: "mnh.tessa", variasi: "Matte Clear · Vivo X300 Pro", produk: "SNAPFIT Case Vivo X300 Pro", tgl: "09 Jul 2026", teks: "Toko ini bagus dan amanah, saya sudah 2x belanja di sini. Thanks ya!" },
 ];
 
 const REASONS = [
@@ -77,7 +77,7 @@ const FAQ = [
 ];
 
 const waLink = `https://wa.me/${OFFER.waNumber}?text=${encodeURIComponent(
-  "Halo SnapFit, saya mau tanya/pesan case original. Boleh info stok & harganya? 🙏",
+  "Halo SNAPFIT, saya mau tanya/pesan case original. Boleh info stok & harganya? 🙏",
 )}`;
 
 function BuyButtons({ className }: { className?: string }) {
@@ -215,7 +215,7 @@ export default async function GrosirLandingPage() {
       {/* ===== Alasan (value) ===== */}
       <section className="mx-auto max-w-5xl px-4 py-14 sm:px-6">
         <h2 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
-          Kenapa Grosir Case di SnapFit?
+          Kenapa Grosir Case di SNAPFIT?
         </h2>
         <div className="mt-8 grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2">
           {REASONS.map((r) => (
@@ -250,7 +250,7 @@ export default async function GrosirLandingPage() {
               </ul>
             </div>
             <div className="bg-foreground p-5 text-background sm:p-6">
-              <p className="text-sm font-semibold text-brand">Case Original SnapFit</p>
+              <p className="text-sm font-semibold text-brand">Case Original SNAPFIT</p>
               <ul className="mt-4 space-y-3 text-sm">
                 {["100% original bergaransi", "Material premium tahan lama", "Garansi / uang kembali", "Proteksi teruji anti-jatuh"].map((x) => (
                   <li key={x} className="flex items-start gap-2">

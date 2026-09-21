@@ -50,7 +50,7 @@ export function LoginModal() {
           <X className="size-5" />
         </button>
 
-        <h2 className="text-center text-xl font-semibold">Masuk ke SnapFit</h2>
+        <h2 className="text-center text-xl font-semibold">Masuk ke SNAPFIT</h2>
         <p className="mt-1 text-center text-sm text-muted-foreground">
           Masuk untuk checkout lebih cepat & lacak pesananmu.
         </p>

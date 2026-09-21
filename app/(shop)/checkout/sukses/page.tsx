@@ -6,7 +6,7 @@ import { getOrderSummary } from "@/lib/actions/order";
 import { PurchaseTracker } from "@/components/tracking/purchase-tracker";
 
 export const metadata = {
-  title: "Pesanan Berhasil — SnapFit",
+  title: "Pesanan Berhasil — SNAPFIT",
 };
 
 export default async function CheckoutSuccessPage({

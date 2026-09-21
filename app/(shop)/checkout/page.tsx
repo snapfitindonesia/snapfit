@@ -2,7 +2,7 @@ import { CheckoutView } from "@/components/shop/checkout-view";
 import { SnapScript } from "@/components/shop/snap-script";
 
 export const metadata = {
-  title: "Checkout — SnapFit",
+  title: "Checkout — SNAPFIT",
 };
 
 export default function CheckoutPage() {

@@ -18,7 +18,7 @@ export default async function AdminLayout({
           <span className="flex size-8 items-center justify-center rounded-lg bg-brand text-sm font-bold text-brand-foreground">
             S
           </span>
-          <span className="text-sm font-semibold tracking-tight">SnapFit Admin</span>
+          <span className="text-sm font-semibold tracking-tight">SNAPFIT Admin</span>
         </div>
         <div className="flex-1 overflow-y-auto px-3 py-2">
           <AdminNav />
@@ -39,7 +39,7 @@ export default async function AdminLayout({
             <span className="flex size-7 items-center justify-center rounded-lg bg-brand text-xs font-bold text-brand-foreground">
               S
             </span>
-            <span className="text-sm font-semibold">SnapFit Admin</span>
+            <span className="text-sm font-semibold">SNAPFIT Admin</span>
           </Link>
         </div>
       </header>

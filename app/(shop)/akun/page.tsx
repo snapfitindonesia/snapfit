@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 
-export const metadata = { title: "Akun — SnapFit" };
+export const metadata = { title: "Akun — SNAPFIT" };
 
 export default async function AccountPage() {
   const user = await getCurrentUser();

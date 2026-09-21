@@ -1,6 +1,6 @@
 import { formatRupiah } from "@/lib/format";
 
-const FROM = process.env.EMAIL_FROM || "SnapFit <no-reply@snapfit.id>";
+const FROM = process.env.EMAIL_FROM || "SNAPFIT <no-reply@snapfit.id>";
 
 export function isEmailConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY);
@@ -58,7 +58,7 @@ function shell(title: string, body: string): string {
     <h1 style="font-size:20px">snapfit.</h1>
     <h2 style="font-size:16px">${title}</h2>
     ${body}
-    <p style="color:#71717a;font-size:12px;margin-top:24px">Email otomatis SnapFit.</p>
+    <p style="color:#71717a;font-size:12px;margin-top:24px">Email otomatis SNAPFIT.</p>
   </div>`;
 }
 

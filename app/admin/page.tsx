@@ -125,7 +125,7 @@ export default async function AdminDashboardPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold">Laporan Analitik</h1>
-          <p className="text-sm text-muted-foreground">Ringkasan penjualan toko SnapFit</p>
+          <p className="text-sm text-muted-foreground">Ringkasan penjualan toko SNAPFIT</p>
         </div>
         <Link href="/admin/pesanan" className="hidden rounded-lg border border-border px-3 py-1.5 text-sm hover:bg-muted sm:block">
           Lihat pesanan

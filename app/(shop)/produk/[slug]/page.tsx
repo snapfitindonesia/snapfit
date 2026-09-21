@@ -19,9 +19,9 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const product = await getProductBySlug(slug);
-  if (!product) return { title: "Produk tidak ditemukan — SnapFit" };
+  if (!product) return { title: "Produk tidak ditemukan — SNAPFIT" };
   return {
-    title: `${product.name} — SnapFit`,
+    title: `${product.name} — SNAPFIT`,
     description: product.description ?? undefined,
   };
 }

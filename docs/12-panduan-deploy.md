@@ -1,6 +1,6 @@
 # 12 — Panduan Deploy & Go Live (Vercel, Supabase, DNS, Kredensial)
 
-Panduan langkah-demi-langkah membawa SnapFit dari localhost ke produksi. Urutan penting —
+Panduan langkah-demi-langkah membawa SNAPFIT dari localhost ke produksi. Urutan penting —
 kerjakan dari atas. Semua kredensial **Anda** yang isi (Claude tak pernah pegang key asli);
 taruh di Vercel Environment Variables, jangan commit ke git.
 
@@ -34,7 +34,7 @@ taruh di Vercel Environment Variables, jangan commit ke git.
 ```bash
 git init
 git add -A
-git commit -m "SnapFit siap deploy"
+git commit -m "SNAPFIT siap deploy"
 git branch -M main
 git remote add origin https://github.com/<user>/snapfit.git
 git push -u origin main
@@ -167,7 +167,7 @@ memakai **field URL** (tempel URL gambar). Dua opsi untuk upload sungguhan:
 
 1. [resend.com](https://resend.com) → **API Keys** → `RESEND_API_KEY`.
 2. **Domains** → verifikasi `snapfit.id` (tambah record DKIM/SPF di DNS).
-3. Set `EMAIL_FROM="SnapFit <no-reply@snapfit.id>"`. Tanpa key → email hanya di-log.
+3. Set `EMAIL_FROM="SNAPFIT <no-reply@snapfit.id>"`. Tanpa key → email hanya di-log.
 
 ---
 
@@ -239,7 +239,7 @@ Cukup **tambah record** di registrar/Cloudflare (NS tetap di tempat) — biar ho
 | `TURNSTILE_SECRET_KEY` | ➖ | Turnstile | **rahasia** |
 | `NEXT_PUBLIC_GTM_ID` | ➖ | GTM | publik |
 | `RESEND_API_KEY` | ➖ | Resend | **rahasia** |
-| `EMAIL_FROM` | ➖ | mis. `SnapFit <no-reply@snapfit.id>` | |
+| `EMAIL_FROM` | ➖ | mis. `SNAPFIT <no-reply@snapfit.id>` | |
 | `NEXT_PUBLIC_IMAGE_HOSTS` | ➖ | host CDN tambahan (mis. supabase) | koma-pisah |
 | `ADMIN_DEV_BYPASS` | ❌ | **jangan diisi di produksi** | dev-only |
 

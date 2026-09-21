@@ -3,7 +3,7 @@ import { productQuerySchema } from "@/lib/validations/product";
 import { ProductListing } from "@/components/shop/product-listing";
 
 export const metadata = {
-  title: "Semua Produk — SnapFit",
+  title: "Semua Produk — SNAPFIT",
   description: "Case & pelindung untuk iPhone, Samsung, iPad, dan tablet.",
 };
 

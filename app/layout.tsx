@@ -20,8 +20,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SnapFit",
-  description: "SnapFit — toko online",
+  title: "SNAPFIT",
+  description: "SNAPFIT — toko online",
 };
 
 export default function RootLayout({

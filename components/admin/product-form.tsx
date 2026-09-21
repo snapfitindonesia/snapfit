@@ -225,7 +225,7 @@ export function ProductForm({ categories, initial }: { categories: { id: string;
           </button>
           <div>
             <h1 className="text-xl font-semibold">{initial ? "Ubah produk" : "Tambah produk"}</h1>
-            <p className="text-sm text-muted-foreground">Toko SnapFit</p>
+            <p className="text-sm text-muted-foreground">Toko SNAPFIT</p>
           </div>
         </div>
         <div className="hidden gap-2 sm:flex">
