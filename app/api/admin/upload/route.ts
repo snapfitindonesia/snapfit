@@ -1,24 +1,20 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { compressToWebp, uploadToCdn, cdnConfig } from "@/lib/upload/cdn";
 
+export const runtime = "nodejs";
 const BUCKET = "product-images";
 
-// Upload gambar admin → Supabase Storage → kembalikan public URL (docs/07, docs/09).
-// Belum dikonfigurasi → 501 (admin bisa tetap tempel URL manual sebagai fallback).
+// Upload gambar admin:
+// 1) kompres → WebP (resize 1200px, q80)
+// 2) kirim ke CDN cPanel (cdn.snapfit.id) via FTPS bila dikonfigurasi
+// 3) fallback: Supabase Storage
 export async function POST(request: Request) {
   try {
     await requireAdmin();
   } catch {
     return NextResponse.json({ error: "Tidak diizinkan." }, { status: 403 });
-  }
-
-  const supabase = createSupabaseAdminClient();
-  if (!supabase) {
-    return NextResponse.json(
-      { error: "Storage belum dikonfigurasi (Supabase). Tempel URL manual dulu." },
-      { status: 501 },
-    );
   }
 
   let file: File | null = null;
@@ -28,26 +24,44 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ error: "Form tidak valid." }, { status: 400 });
   }
-  if (!file || file.size === 0) {
-    return NextResponse.json({ error: "File kosong." }, { status: 400 });
-  }
-  if (!file.type.startsWith("image/")) {
-    return NextResponse.json({ error: "Harus file gambar." }, { status: 400 });
+  if (!file || file.size === 0) return NextResponse.json({ error: "File kosong." }, { status: 400 });
+  if (!file.type.startsWith("image/")) return NextResponse.json({ error: "Harus file gambar." }, { status: 400 });
+
+  // Kompres → WebP
+  let webp: Buffer;
+  try {
+    const buf = Buffer.from(await file.arrayBuffer());
+    webp = await compressToWebp(buf);
+  } catch (e) {
+    return NextResponse.json({ error: `Gagal memproses gambar: ${e instanceof Error ? e.message : "error"}` }, { status: 500 });
   }
 
-  const ext = file.name.includes(".") ? file.name.split(".").pop() : "jpg";
-  const path = `${Date.now()}-${crypto.randomUUID()}.${ext}`;
+  const filename = `${Date.now()}-${crypto.randomUUID()}.webp`;
 
-  const { error } = await supabase.storage
-    .from(BUCKET)
-    .upload(path, file, { contentType: file.type, upsert: false });
-  if (error) {
+  // 1) CDN cPanel (bila dikonfigurasi)
+  if (cdnConfig()) {
+    try {
+      const url = await uploadToCdn(webp, filename);
+      if (url) return NextResponse.json({ url, via: "cdn" });
+    } catch (e) {
+      // jangan gagal total — coba fallback Supabase
+      console.error("Upload CDN gagal, fallback Supabase:", e instanceof Error ? e.message : e);
+    }
+  }
+
+  // 2) Fallback Supabase Storage
+  const supabase = createSupabaseAdminClient();
+  if (!supabase) {
     return NextResponse.json(
-      { error: `Upload gagal: ${error.message}` },
-      { status: 500 },
+      { error: "Storage belum dikonfigurasi (CDN & Supabase). Tempel URL manual dulu." },
+      { status: 501 },
     );
   }
+  const { error } = await supabase.storage
+    .from(BUCKET)
+    .upload(filename, webp, { contentType: "image/webp", upsert: false });
+  if (error) return NextResponse.json({ error: `Upload gagal: ${error.message}` }, { status: 500 });
 
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
-  return NextResponse.json({ url: data.publicUrl });
+  const { data } = supabase.storage.from(BUCKET).getPublicUrl(filename);
+  return NextResponse.json({ url: data.publicUrl, via: "supabase" });
 }
