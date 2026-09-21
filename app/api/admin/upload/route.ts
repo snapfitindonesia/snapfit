@@ -1,15 +1,16 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { compressToWebp, uploadToCdn, cdnConfig } from "@/lib/upload/cdn";
+import { compressToWebp, uploadToCdn, cdnConfig, uploadToR2, r2Config } from "@/lib/upload/cdn";
 
 export const runtime = "nodejs";
 const BUCKET = "product-images";
 
 // Upload gambar admin:
 // 1) kompres → WebP (resize 1200px, q80)
-// 2) kirim ke CDN cPanel (cdn.snapfit.id) via FTPS bila dikonfigurasi
-// 3) fallback: Supabase Storage
+// 2) upload ke Cloudflare R2 (egress gratis) bila dikonfigurasi
+// 3) atau CDN cPanel via FTPS bila dikonfigurasi
+// 4) fallback: Supabase Storage
 export async function POST(request: Request) {
   try {
     await requireAdmin();
@@ -38,7 +39,17 @@ export async function POST(request: Request) {
 
   const filename = `${Date.now()}-${crypto.randomUUID()}.webp`;
 
-  // 1) CDN cPanel (bila dikonfigurasi)
+  // 1) Cloudflare R2 (bila dikonfigurasi) — egress gratis
+  if (r2Config()) {
+    try {
+      const url = await uploadToR2(webp, filename);
+      if (url) return NextResponse.json({ url, via: "r2" });
+    } catch (e) {
+      console.error("Upload R2 gagal, coba fallback:", e instanceof Error ? e.message : e);
+    }
+  }
+
+  // 2) CDN cPanel via FTPS (bila dikonfigurasi)
   if (cdnConfig()) {
     try {
       const url = await uploadToCdn(webp, filename);
@@ -49,7 +60,7 @@ export async function POST(request: Request) {
     }
   }
 
-  // 2) Fallback Supabase Storage
+  // 3) Fallback Supabase Storage
   const supabase = createSupabaseAdminClient();
   if (!supabase) {
     return NextResponse.json(
