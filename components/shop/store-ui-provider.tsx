@@ -5,6 +5,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 type StoreUI = {
   authed: boolean;
+  refreshAuth: () => void;
   cartOpen: boolean;
   openCart: () => void;
   closeCart: () => void;
@@ -20,8 +21,16 @@ export function StoreUIProvider({ children }: { children: React.ReactNode }) {
   const [loginOpen, setLoginOpen] = useState(false);
   const [authed, setAuthed] = useState(false);
 
-  // Deteksi sesi di client (baca dari storage, tanpa network yang memblokir),
-  // lalu ikuti perubahan login/logout secara real-time.
+  // Cek ulang sesi dari cookie (tanpa network) — dipanggil setelah login modal
+  // dan saat tab kembali fokus, karena login via server-action tak memicu
+  // onAuthStateChange di browser client.
+  const refreshAuth = useCallback(() => {
+    const supabase = createSupabaseBrowserClient();
+    if (!supabase) return;
+    supabase.auth.getSession().then(({ data }) => setAuthed(Boolean(data.session)));
+  }, []);
+
+  // Deteksi sesi di client, ikuti perubahan login/logout, dan re-cek saat fokus.
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
     if (!supabase) return;
@@ -32,11 +41,16 @@ export function StoreUIProvider({ children }: { children: React.ReactNode }) {
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
       setAuthed(Boolean(session));
     });
+    const onFocus = () => refreshAuth();
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
     return () => {
       active = false;
       sub.subscription.unsubscribe();
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
     };
-  }, []);
+  }, [refreshAuth]);
 
   const openCart = useCallback(() => setCartOpen(true), []);
   const closeCart = useCallback(() => setCartOpen(false), []);
@@ -44,8 +58,8 @@ export function StoreUIProvider({ children }: { children: React.ReactNode }) {
   const closeLogin = useCallback(() => setLoginOpen(false), []);
 
   const value = useMemo<StoreUI>(
-    () => ({ authed, cartOpen, openCart, closeCart, loginOpen, openLogin, closeLogin }),
-    [authed, cartOpen, openCart, closeCart, loginOpen, openLogin, closeLogin],
+    () => ({ authed, refreshAuth, cartOpen, openCart, closeCart, loginOpen, openLogin, closeLogin }),
+    [authed, refreshAuth, cartOpen, openCart, closeCart, loginOpen, openLogin, closeLogin],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
