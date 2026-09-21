@@ -20,6 +20,7 @@ model Product {
   description String?
   coverImage  String // URL cover (level produk)
   images      Json? // galeri foto fitur produk (array URL) — ditampilkan di PDP
+  variantGroups Json? // nama & opsi variasi custom: { groups: [{name, options:[{value,desc}]}] }
   isGrosir    Boolean    @default(false) // true = tampil di halaman /grosir
   categoryId  String?
   category    Category?  @relation(fields: [categoryId], references: [id])

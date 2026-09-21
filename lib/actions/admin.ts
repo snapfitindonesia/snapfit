@@ -41,6 +41,7 @@ export async function createProduct(input: ProductInput): Promise<Result> {
         description: data.description || null,
         coverImage: data.coverImage,
         images: data.images,
+        variantGroups: data.variantGroups ?? undefined,
         categoryId: data.categoryId || null,
         isGrosir: data.isGrosir,
         variants: {
@@ -80,6 +81,7 @@ export async function updateProduct(id: string, input: ProductInput): Promise<Re
           description: data.description || null,
           coverImage: data.coverImage,
           images: data.images,
+          variantGroups: data.variantGroups ?? undefined,
           categoryId: data.categoryId || null,
           isGrosir: data.isGrosir,
         },

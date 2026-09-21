@@ -38,6 +38,8 @@ export default async function EditProductPage({
             description: product.description,
             coverImage: product.coverImage,
             images: Array.isArray(product.images) ? (product.images as string[]) : [],
+            variantGroups: (product.variantGroups as { groups: { name: string; options: { value: string; desc: string }[] }[] } | null) ?? null,
+            weight: product.variants[0]?.weight ?? 200,
             categoryId: product.categoryId,
             isGrosir: product.isGrosir,
             variants: product.variants.map((v) => ({

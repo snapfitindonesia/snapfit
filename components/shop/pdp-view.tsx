@@ -40,6 +40,8 @@ export type PdpProduct = {
   coverImage: string;
   categoryName: string | null;
   discountPercent: number;
+  group1Name: string | null;
+  group2Name: string | null;
   gallery: string[];
   variants: PdpVariant[];
 };
@@ -408,7 +410,7 @@ export function PdpView({ product }: { product: PdpProduct }) {
           {/* Level 1: WARNA — pil dengan foto kecil + teks */}
           {hasColorDim && (
             <div className="flex items-start gap-4">
-              <span className="w-14 shrink-0 pt-2 text-sm text-muted-foreground">Warna</span>
+              <span className="w-14 shrink-0 pt-2 text-sm text-muted-foreground">{product.group1Name || "Warna"}</span>
               <div className="flex flex-wrap gap-2">
                 {colors.map((c) => {
                   const selected = c.name === selectedColor;
@@ -440,7 +442,7 @@ export function PdpView({ product }: { product: PdpProduct }) {
 
           {/* Level 2: TIPE — pil teks */}
           <div className="flex items-start gap-4">
-            <span className="w-14 shrink-0 pt-2 text-sm text-muted-foreground">Tipe</span>
+            <span className="w-14 shrink-0 pt-2 text-sm text-muted-foreground">{(hasColorDim ? product.group2Name : product.group1Name) || "Tipe"}</span>
             <div className="flex flex-wrap gap-2">
               {typeOptions.map((v) => {
                 const disabled = v.stock <= 0;

@@ -25,6 +25,17 @@ export const productSchema = z.object({
   description: z.string().trim().optional().or(z.literal("")),
   coverImage: url,
   images: z.array(url).optional().default([]), // galeri foto tambahan (PDP)
+  variantGroups: z
+    .object({
+      groups: z.array(
+        z.object({
+          name: z.string().trim().default(""),
+          options: z.array(z.object({ value: z.string().trim().default(""), desc: z.string().trim().default("") })),
+        }),
+      ),
+    })
+    .nullable()
+    .optional(), // nama & opsi variasi custom (label PDP)
   categoryId: z.string().optional().or(z.literal("")),
   isGrosir: z.coerce.boolean().optional().default(false), // tampil di halaman /grosir
   variants: z.array(variantSchema).min(1, "Minimal 1 varian"),
