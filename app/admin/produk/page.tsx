@@ -1,76 +1,62 @@
 import Link from "next/link";
-import { Plus, Pencil } from "lucide-react";
+import { Plus } from "lucide-react";
 import { db } from "@/lib/db";
 import { Button } from "@/components/ui/button";
-import { formatRupiah } from "@/lib/format";
-import { ProductDeleteButton } from "@/components/admin/product-delete-button";
+import { ProductTable, type AdminProduct } from "@/components/admin/product-table";
 
 export const dynamic = "force-dynamic";
 
+const PAID_STATUSES = ["PAID", "SHIPPED", "DONE"];
+
 export default async function AdminProductsPage() {
-  const products = await db.product.findMany({
-    orderBy: { createdAt: "desc" },
-    include: {
-      category: { select: { name: true } },
-      variants: { select: { price: true, stock: true } },
-    },
-  });
+  const [products, paidOrders] = await Promise.all([
+    db.product.findMany({
+      orderBy: { createdAt: "desc" },
+      include: {
+        category: { select: { name: true } },
+        variants: {
+          orderBy: [{ color: "asc" }, { price: "asc" }],
+          select: { id: true, name: true, color: true, type: true, price: true, stock: true, image: true, sku: true },
+        },
+      },
+    }),
+    db.order.findMany({
+      where: { status: { in: PAID_STATUSES } },
+      select: { items: { select: { name: true, qty: true } } },
+    }),
+  ]);
+
+  // Penjualan (unit terjual) per nama produk
+  const soldByName = new Map<string, number>();
+  for (const o of paidOrders)
+    for (const it of o.items) soldByName.set(it.name, (soldByName.get(it.name) ?? 0) + it.qty);
+
+  const data: AdminProduct[] = products.map((p) => ({
+    id: p.id,
+    name: p.name,
+    slug: p.slug,
+    coverImage: p.coverImage,
+    category: p.category?.name ?? null,
+    isGrosir: p.isGrosir,
+    sold: soldByName.get(p.name) ?? 0,
+    variants: p.variants,
+  }));
 
   return (
-    <div>
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Produk</h1>
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-semibold">Produk Saya</h1>
+          <p className="text-sm text-muted-foreground">Kelola produk & varian toko SnapFit</p>
+        </div>
         <Button asChild size="sm">
           <Link href="/admin/produk/baru">
-            <Plus className="size-4" /> Tambah produk
+            <Plus className="size-4" /> Tambah Produk Baru
           </Link>
         </Button>
       </div>
 
-      <div className="mt-6 overflow-x-auto rounded-lg border border-border">
-        <table className="w-full text-sm">
-          <thead className="border-b border-border bg-muted/40 text-left text-muted-foreground">
-            <tr>
-              <th className="px-4 py-2 font-medium">Nama</th>
-              <th className="px-4 py-2 font-medium">Kategori</th>
-              <th className="px-4 py-2 font-medium">Varian</th>
-              <th className="px-4 py-2 font-medium">Harga mulai</th>
-              <th className="px-4 py-2 font-medium">Stok</th>
-              <th className="px-4 py-2" />
-            </tr>
-          </thead>
-          <tbody>
-            {products.map((p) => {
-              const minPrice = p.variants.length ? Math.min(...p.variants.map((v) => v.price)) : 0;
-              const stock = p.variants.reduce((n, v) => n + v.stock, 0);
-              return (
-                <tr key={p.id} className="border-b border-border last:border-0">
-                  <td className="px-4 py-3 font-medium">{p.name}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{p.category?.name ?? "—"}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{p.variants.length}</td>
-                  <td className="px-4 py-3">{formatRupiah(minPrice)}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{stock}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-3">
-                      <Link href={`/admin/produk/${p.id}`} className="text-muted-foreground hover:text-foreground" aria-label="Edit">
-                        <Pencil className="size-4" />
-                      </Link>
-                      <ProductDeleteButton id={p.id} name={p.name} />
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-            {products.length === 0 && (
-              <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-                  Belum ada produk.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      <ProductTable products={data} />
     </div>
   );
 }
