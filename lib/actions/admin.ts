@@ -123,6 +123,126 @@ export async function deleteProduct(id: string): Promise<Result> {
   }
 }
 
+/* ---------- Impor massal (CSV) ---------- */
+
+export type BulkRow = {
+  slug: string; name: string; category?: string; description?: string;
+  coverImage?: string; images?: string; isGrosir?: string; weight?: string;
+  variasi1?: string; opsi1?: string; foto_opsi1?: string;
+  variasi2?: string; opsi2?: string;
+  harga?: string; stok?: string; sku?: string;
+};
+type BulkResult = { ok: boolean; created: number; skipped: number; errors: string[] };
+
+const slugify = (s: string) =>
+  s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80);
+const skuify = (parts: (string | undefined)[]) =>
+  parts.filter(Boolean).join("-").toUpperCase().replace(/[^A-Z0-9-]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").slice(0, 60);
+
+export async function bulkImportProducts(rows: BulkRow[]): Promise<BulkResult> {
+  const errors: string[] = [];
+  try {
+    await requireAdmin();
+  } catch {
+    return { ok: false, created: 0, skipped: 0, errors: ["Tidak diizinkan."] };
+  }
+  if (!rows.length) return { ok: false, created: 0, skipped: 0, errors: ["Tidak ada baris."] };
+
+  // Kategori: cocokkan by nama daun (case-insensitive) atau slug.
+  const cats = await db.category.findMany({ where: { parentId: { not: null } }, select: { id: true, name: true, slug: true } });
+  const catByName = new Map(cats.map((c) => [c.name.toLowerCase(), c.id]));
+  const catBySlug = new Map(cats.map((c) => [c.slug.toLowerCase(), c.id]));
+
+  // Kelompokkan baris per slug (produk).
+  const groups = new Map<string, BulkRow[]>();
+  for (const r of rows) {
+    const slug = slugify(r.slug || r.name || "");
+    if (!slug) { errors.push("Baris tanpa slug/nama dilewati."); continue; }
+    (groups.get(slug) ?? groups.set(slug, []).get(slug)!).push(r);
+  }
+
+  const existing = await db.product.findMany({ where: { slug: { in: [...groups.keys()] } }, select: { slug: true } });
+  const existingSlugs = new Set(existing.map((p) => p.slug));
+
+  let created = 0, skipped = 0;
+  for (const [slug, grp] of groups) {
+    if (existingSlugs.has(slug)) { skipped++; errors.push(`Slug "${slug}" sudah ada — dilewati.`); continue; }
+    try {
+      const head = grp[0];
+      const has2 = grp.some((r) => (r.opsi2 ?? "").trim() !== "");
+      const weight = Math.max(1, Number(head.weight) || 200);
+      const galleryFromCol = (head.images ?? "").split("|").map((s) => s.trim()).filter(Boolean);
+      const firstOptImg = grp.find((r) => (r.foto_opsi1 ?? "").trim())?.foto_opsi1?.trim();
+      const cover = (head.coverImage ?? "").trim() || firstOptImg || galleryFromCol[0];
+      if (!cover) { skipped++; errors.push(`"${slug}": tak ada foto (coverImage/foto_opsi1) — dilewati.`); continue; }
+
+      const categoryId = head.category
+        ? (catByName.get(head.category.toLowerCase()) ?? catBySlug.get(head.category.toLowerCase()) ?? null)
+        : null;
+
+      // Varian dari tiap baris (lewati tanpa harga).
+      const variants = grp
+        .filter((r) => (r.harga ?? "").trim() !== "")
+        .map((r) => {
+          const o1 = (r.opsi1 ?? "").trim();
+          const o2 = (r.opsi2 ?? "").trim();
+          const color = has2 ? o1 : "";
+          const type = has2 ? o2 : o1;
+          return {
+            name: [has2 ? color : type, has2 ? type : ""].filter(Boolean).join(" / ") || type || "Default",
+            color, type,
+            sku: (r.sku ?? "").trim() || skuify([slug, has2 ? color : "", type]),
+            price: Math.max(0, Math.round(Number(r.harga) || 0)),
+            stock: Math.max(0, Math.round(Number(r.stok) || 0)),
+            weight,
+            image: (r.foto_opsi1 ?? "").trim() || cover,
+          };
+        });
+      if (!variants.length) { skipped++; errors.push(`"${slug}": tak ada varian berharga — dilewati.`); continue; }
+
+      // SKU unik
+      const skus = variants.map((v) => v.sku);
+      if (new Set(skus).size !== skus.length)
+        variants.forEach((v, i) => (v.sku = `${v.sku}-${i + 1}`));
+
+      // variantGroups (nama variasi custom + opsi)
+      const uniq = (arr: string[]) => [...new Set(arr.filter(Boolean))];
+      const g1vals = has2 ? uniq(grp.map((r) => (r.opsi1 ?? "").trim())) : uniq(grp.map((r) => (r.opsi1 ?? "").trim()));
+      const groupsMeta = [
+        { name: (head.variasi1 ?? "").trim() || (has2 ? "Warna" : "Tipe"), options: g1vals.map((v) => ({ value: v, desc: "" })) },
+      ];
+      if (has2) {
+        const g2vals = uniq(grp.map((r) => (r.opsi2 ?? "").trim()));
+        groupsMeta.push({ name: (head.variasi2 ?? "").trim() || "Tipe", options: g2vals.map((v) => ({ value: v, desc: "" })) });
+      }
+
+      const grosir = /^(1|true|ya|yes)$/i.test((head.isGrosir ?? "").trim());
+
+      await db.product.create({
+        data: {
+          slug,
+          name: (head.name ?? slug).trim(),
+          description: (head.description ?? "").trim() || null,
+          coverImage: cover,
+          images: galleryFromCol,
+          variantGroups: { groups: groupsMeta },
+          categoryId,
+          isGrosir: grosir,
+          variants: { create: variants },
+        },
+      });
+      created++;
+    } catch (e) {
+      skipped++;
+      errors.push(`"${slug}": ${e instanceof Error ? e.message : "gagal"}`);
+    }
+  }
+
+  revalidatePath("/admin/produk");
+  revalidateStorefront();
+  return { ok: created > 0, created, skipped, errors: errors.slice(0, 30) };
+}
+
 /* ============================ BANNER ============================ */
 
 export async function saveBanner(input: BannerInput, id?: string): Promise<Result> {

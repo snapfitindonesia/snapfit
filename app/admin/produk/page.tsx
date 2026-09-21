@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus, Upload } from "lucide-react";
 import { db } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { ProductTable, type AdminProduct } from "@/components/admin/product-table";
@@ -49,11 +49,18 @@ export default async function AdminProductsPage() {
           <h1 className="text-xl font-semibold">Produk Saya</h1>
           <p className="text-sm text-muted-foreground">Kelola produk & varian toko SnapFit</p>
         </div>
-        <Button asChild size="sm">
-          <Link href="/admin/produk/baru">
-            <Plus className="size-4" /> Tambah Produk Baru
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button asChild size="sm" variant="outline">
+            <Link href="/admin/produk/impor">
+              <Upload className="size-4" /> Impor CSV
+            </Link>
+          </Button>
+          <Button asChild size="sm">
+            <Link href="/admin/produk/baru">
+              <Plus className="size-4" /> Tambah Produk Baru
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <ProductTable products={data} />
