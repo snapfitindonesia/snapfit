@@ -6,7 +6,8 @@ import { Search, Loader2, PackagePlus, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { searchGineeForImport, importGineeProducts } from "@/lib/actions/ginee";
 
-type Item = { productId: string; name: string; image: string; variantCount: number; stock: number; imported: boolean };
+type Variation = { id: string; sku: string; optionValues?: string[]; stock?: number };
+type Item = { productId: string; name: string; image: string; variantCount: number; stock: number; imported: boolean; variations: Variation[] };
 
 const QUICK = ["Fold 8", "iPhone 18 Pro Max", "S26 Ultra"];
 
@@ -72,10 +73,14 @@ export function GineeImport() {
 
   async function doImport() {
     if (!selectedIds.length) return;
+    const selectedSet = new Set(selectedIds);
+    const inputs = items
+      .filter((it) => selectedSet.has(it.productId) && !it.imported)
+      .map((it) => ({ productId: it.productId, name: it.name, variations: it.variations }));
     setImporting(true);
     setMsg(null);
     setErrList([]);
-    const res = await importGineeProducts(selectedIds);
+    const res = await importGineeProducts(inputs);
     setImporting(false);
     setMsg(`Impor selesai: ${res.created} dibuat, ${res.skipped} dilewati. Harga, stok, varian, foto & deskripsi otomatis dari Ginee.`);
     setErrList(res.errors.slice(0, 10));

@@ -8,15 +8,17 @@ import {
   searchGineeMasterProducts,
   summarizeGinee,
   getGineeProductDetail,
-  getGineeVariationInventory,
-  mapGineeFull,
+  getGineeVariationPrices,
+  mapGineeFromBriefs,
+  type GineeVariationBrief,
 } from "@/lib/ginee/products";
 import { runGineeStockSync, type StockSyncResult } from "@/lib/ginee/sync";
 
-type SearchItem = ReturnType<typeof summarizeGinee> & { imported: boolean };
-type SearchResult =
-  | { ok: true; total: number; items: SearchItem[] }
-  | { ok: false; error: string };
+type SearchItem = ReturnType<typeof summarizeGinee> & {
+  imported: boolean;
+  variations: GineeVariationBrief[];
+};
+type SearchResult = { ok: true; total: number; items: SearchItem[] } | { ok: false; error: string };
 
 export async function searchGineeForImport(keyword: string, page = 0): Promise<SearchResult> {
   try {
@@ -29,78 +31,85 @@ export async function searchGineeForImport(keyword: string, page = 0): Promise<S
 
   try {
     const { total, content } = await searchGineeMasterProducts(keyword, page, 100);
-    const items = content.map(summarizeGinee);
-    // Tandai yang sudah pernah diimpor (by gineeProductId) → tak bisa dipilih ulang.
     const existing = await db.product.findMany({
-      where: { gineeProductId: { in: items.map((i) => i.productId) } },
+      where: { gineeProductId: { in: content.map((c) => c.productId) } },
       select: { gineeProductId: true },
     });
     const importedSet = new Set(existing.map((e) => e.gineeProductId));
-    return {
-      ok: true,
-      total,
-      items: items.map((i) => ({ ...i, imported: importedSet.has(i.productId) })),
-    };
+    const items: SearchItem[] = content.map((c) => ({
+      ...summarizeGinee(c),
+      imported: importedSet.has(c.productId),
+      // variationBriefs dari search = sumber varian yang benar (terfilter per produk)
+      variations: (c.variationBriefs ?? []).map((v) => ({
+        id: v.id,
+        sku: v.sku,
+        optionValues: v.optionValues ?? [],
+        stock: v.stock?.availableStock ?? 0,
+      })),
+    }));
+    return { ok: true, total, items };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Gagal mengambil data Ginee." };
   }
 }
 
+type ImportInput = { productId: string; name: string; variations: GineeVariationBrief[] };
 type ImportResult = { ok: boolean; created: number; skipped: number; errors: string[] };
 
 /**
- * Impor PENUH & OTOMATIS dari Ginee: harga per varian, stok, varian, foto,
- * deskripsi — semua ditarik dari Ginee (tanpa isi manual).
+ * Impor PENUH & OTOMATIS dari Ginee: harga per-varian (list-price by variationIds),
+ * stok & varian (variationBriefs search), foto & deskripsi (product detail).
  */
-export async function importGineeProducts(productIds: string[]): Promise<ImportResult> {
+export async function importGineeProducts(inputs: ImportInput[]): Promise<ImportResult> {
   try {
     await requireAdmin();
   } catch {
     return { ok: false, created: 0, skipped: 0, errors: ["Tidak diizinkan."] };
   }
   if (!isGineeConfigured()) return { ok: false, created: 0, skipped: 0, errors: ["Ginee belum dikonfigurasi."] };
-  if (!productIds.length) return { ok: false, created: 0, skipped: 0, errors: ["Tidak ada produk terpilih."] };
+  if (!inputs.length) return { ok: false, created: 0, skipped: 0, errors: ["Tidak ada produk terpilih."] };
 
   const errors: string[] = [];
   let created = 0;
   let skipped = 0;
 
-  for (const productId of productIds) {
+  for (const input of inputs) {
+    const label = input.name?.slice(0, 40) ?? input.productId;
     try {
-      const [detail, inv] = await Promise.all([
-        getGineeProductDetail(productId),
-        getGineeVariationInventory(productId),
-      ]);
-      if (!detail) {
+      if (!input.variations?.length) {
         skipped++;
-        errors.push(`${productId}: detail tak ditemukan.`);
-        continue;
-      }
-      const mapped = mapGineeFull(detail, inv);
-      if (!mapped) {
-        skipped++;
-        errors.push(`"${detail.name.slice(0, 40)}": tanpa varian/foto — dilewati.`);
+        errors.push(`"${label}": tanpa varian — dilewati.`);
         continue;
       }
 
+      const [detail, priceMap] = await Promise.all([
+        getGineeProductDetail(input.productId),
+        getGineeVariationPrices(input.variations.map((v) => v.id)),
+      ]);
+
+      const mapped = mapGineeFromBriefs(input.productId, detail, input.variations, priceMap, input.name);
+      if (!mapped) {
+        skipped++;
+        errors.push(`"${label}": tanpa foto — dilewati.`);
+        continue;
+      }
+
+      // Sudah pernah diimpor (by gineeProductId)?
+      if (await db.product.findFirst({ where: { gineeProductId: input.productId }, select: { id: true } })) {
+        skipped++;
+        errors.push(`"${label}": sudah diimpor — dilewati.`);
+        continue;
+      }
       // Slug unik
       let slug = mapped.slug;
       if (await db.product.findUnique({ where: { slug }, select: { id: true } })) {
-        slug = `${slug}-${mapped.gineeProductId.slice(-6).toLowerCase()}`.slice(0, 90);
+        slug = `${slug}-${input.productId.slice(-6).toLowerCase()}`.slice(0, 90);
       }
-
-      // Anti-duplikat: kalau sudah pernah diimpor (by gineeProductId atau SKU) → skip
-      const existing = await db.product.findFirst({ where: { gineeProductId: mapped.gineeProductId }, select: { id: true } });
-      if (existing) {
-        skipped++;
-        errors.push(`"${mapped.name.slice(0, 40)}": sudah diimpor — dilewati.`);
-        continue;
-      }
-      const skus = mapped.variants.map((v) => v.sku);
-      const clash = await db.variant.findFirst({ where: { sku: { in: skus } }, select: { sku: true } });
+      // SKU unik global
+      const clash = await db.variant.findFirst({ where: { sku: { in: mapped.variants.map((v) => v.sku) } }, select: { sku: true } });
       if (clash) {
         skipped++;
-        errors.push(`"${mapped.name.slice(0, 40)}": SKU ${clash.sku} sudah ada — dilewati.`);
+        errors.push(`"${label}": SKU ${clash.sku} sudah ada — dilewati.`);
         continue;
       }
 
@@ -124,7 +133,7 @@ export async function importGineeProducts(productIds: string[]): Promise<ImportR
       created++;
     } catch (e) {
       skipped++;
-      errors.push(`${productId}: ${e instanceof Error ? e.message : "gagal"}.`);
+      errors.push(`"${label}": ${e instanceof Error ? e.message : "gagal"}.`);
     }
   }
 
