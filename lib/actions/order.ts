@@ -1,6 +1,8 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
+import { requireAdmin } from "@/lib/auth/require-admin";
 import { applyDiscount } from "@/lib/format";
 import {
   createOrderSchema,
@@ -10,6 +12,7 @@ import {
 import { getShippingRates } from "@/lib/biteship";
 import { createShipment } from "@/lib/biteship";
 import { createSnapToken, isMidtransMock } from "@/lib/midtrans";
+import { isManualPayment, isFlatShipping, FLAT_SHIPPING_COST, MANUAL_BANK } from "@/lib/payment";
 import { sendEmail, orderConfirmationEmail } from "@/lib/email";
 import { pushOrderToGinee } from "@/lib/ginee/orders";
 import { isGineeConfigured } from "@/lib/ginee/config";
@@ -33,7 +36,7 @@ function activeDiscountPercent(
  * Hitung ULANG order dari DB (harga varian + diskon + ongkir) — JANGAN percaya
  * angka dari client (lihat docs/04). Mengembalikan rincian tepercaya.
  */
-async function computeOrder(lines: CartLine[], postalCode: string, rateId: string) {
+async function computeOrder(lines: CartLine[], postalCode: string, rateId: string | undefined) {
   const variants = await db.variant.findMany({
     where: { id: { in: lines.map((l) => l.variantId) } },
     include: {
@@ -64,7 +67,22 @@ async function computeOrder(lines: CartLine[], postalCode: string, rateId: strin
   const subtotal = items.reduce((n, i) => n + i.price * i.qty, 0);
   const totalWeight = items.reduce((n, i) => n + i.weight * i.qty, 0);
 
-  // Ongkir authoritative: ambil tarif dari server, cocokkan dgn pilihan client
+  // Ongkir FLAT (Biteship belum aktif) — tak butuh pilih kurir.
+  if (isFlatShipping()) {
+    const shippingCost = FLAT_SHIPPING_COST;
+    const rate = {
+      id: "flat",
+      courier: "flat",
+      courierName: "Ongkir Flat",
+      service: "flat",
+      serviceName: "Flat",
+      cost: shippingCost,
+      etd: "-",
+    };
+    return { items, subtotal, shippingCost, total: subtotal + shippingCost, rate, totalWeight };
+  }
+
+  // Ongkir authoritative Biteship: ambil tarif dari server, cocokkan dgn pilihan client
   const rates = await getShippingRates({
     destinationPostalCode: postalCode,
     weightGram: totalWeight,
@@ -112,6 +130,20 @@ export async function createOrder(input: CreateOrderInput) {
     },
   });
 
+  // Mode TRANSFER MANUAL (Midtrans belum aktif): tak buat Snap token.
+  // Order PENDING → pembeli transfer → admin konfirmasi (markOrderPaid).
+  if (isManualPayment()) {
+    return {
+      orderId: order.id,
+      midtransOrderId,
+      snapToken: null,
+      mock: false,
+      manual: true,
+      total,
+      bank: MANUAL_BANK,
+    };
+  }
+
   const snap = await createSnapToken({
     orderId: midtransOrderId,
     grossAmount: total,
@@ -136,7 +168,9 @@ export async function createOrder(input: CreateOrderInput) {
     midtransOrderId,
     snapToken: snap.token,
     mock: snap.mock,
+    manual: false,
     total,
+    bank: MANUAL_BANK,
   };
 }
 
@@ -163,22 +197,31 @@ export async function handlePaidOrder(
     ),
   );
 
-  // Buat pengiriman (mock → resi palsu)
-  const [courier, service] = (order.courier ?? "sicepat:reg").split(":");
-  const address = order.address as { postalCode?: string } | null;
-  const shipment = await createShipment({
-    orderId: order.id,
-    courier,
-    service: service ?? "reg",
-    destinationPostalCode: address?.postalCode ?? "",
-  });
+  // Buat pengiriman via Biteship HANYA di mode Biteship. Mode flat: resi diisi
+  // admin manual di langkah "Kirim Pesanan". Best-effort: jangan gagalkan LUNAS.
+  let trackingNo: string | null = null;
+  if (!isFlatShipping()) {
+    try {
+      const [courier, service] = (order.courier ?? "sicepat:reg").split(":");
+      const address = order.address as { postalCode?: string } | null;
+      const shipment = await createShipment({
+        orderId: order.id,
+        courier,
+        service: service ?? "reg",
+        destinationPostalCode: address?.postalCode ?? "",
+      });
+      trackingNo = shipment.trackingNo;
+    } catch (e) {
+      console.error("Buat pengiriman Biteship gagal (lanjut tanpa resi):", e);
+    }
+  }
 
   const updated = await db.order.update({
     where: { id: order.id },
     data: {
       status: "PAID",
       paymentStatus,
-      trackingNo: shipment.trackingNo,
+      ...(trackingNo ? { trackingNo } : {}),
     },
   });
 
@@ -258,4 +301,26 @@ export async function getOrderSummary(midtransOrderId: string) {
     include: { items: true },
   });
   return order;
+}
+
+/**
+ * ADMIN: konfirmasi pembayaran transfer manual sudah masuk → tandai LUNAS.
+ * Menjalankan handlePaidOrder (kurangi stok, push Ginee, email konfirmasi).
+ */
+export async function markOrderPaid(orderId: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    await requireAdmin();
+  } catch {
+    return { ok: false, error: "Tidak diizinkan." };
+  }
+  const order = await db.order.findUnique({ where: { id: orderId }, select: { midtransOrderId: true, id: true } });
+  if (!order) return { ok: false, error: "Order tidak ditemukan." };
+  try {
+    await handlePaidOrder(order.midtransOrderId ?? order.id, "manual-transfer");
+    revalidatePath("/admin/pesanan");
+    revalidatePath("/akun/pesanan");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Gagal konfirmasi." };
+  }
 }

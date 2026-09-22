@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Loader2, PackageCheck, Truck, MessageCircle, Star, CheckCircle2 } from "lucide-react";
+import { ChevronDown, Loader2, PackageCheck, Truck, MessageCircle, Star, CheckCircle2, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatRupiah } from "@/lib/format";
 import { updateOrder } from "@/lib/actions/admin";
+import { markOrderPaid } from "@/lib/actions/order";
 import { ORDER_STATUSES } from "@/lib/validations/admin";
 import { waLink, waProcessingMessage, waShippedMessage, waReviewMessage } from "@/lib/wa";
 
@@ -77,7 +78,14 @@ function OrderRow({ order }: { order: AdminOrder }) {
     apply("SHIPPED", "ship", trackingNo.trim());
   }
 
-  const isPreProcess = order.status === "PENDING" || order.status === "PAID";
+  async function confirmPay() {
+    setBusy("pay");
+    setErr(null);
+    const res = await markOrderPaid(order.id);
+    if (res.ok) router.refresh();
+    else setErr(res.error ?? "Gagal konfirmasi pembayaran.");
+    setBusy(null);
+  }
 
   return (
     <div className="rounded-lg border border-border">
@@ -94,7 +102,17 @@ function OrderRow({ order }: { order: AdminOrder }) {
 
       {/* Alur aksi kontekstual */}
       <div className="flex flex-wrap items-center gap-2 border-t border-border bg-muted/30 p-3">
-        {isPreProcess && (
+        {order.status === "PENDING" && (
+          <>
+            <Button size="sm" onClick={confirmPay} disabled={busy !== null}>
+              {busy === "pay" ? <Loader2 className="size-3.5 animate-spin" /> : <Wallet className="size-3.5" />}
+              Konfirmasi Bayar
+            </Button>
+            <span className="text-xs text-muted-foreground">Transfer masuk? Tandai LUNAS → stok & Ginee otomatis.</span>
+          </>
+        )}
+
+        {order.status === "PAID" && (
           <>
             <Button size="sm" onClick={() => apply("PROCESSING", "process")} disabled={busy !== null}>
               {busy === "process" ? <Loader2 className="size-3.5 animate-spin" /> : <PackageCheck className="size-3.5" />}

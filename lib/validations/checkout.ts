@@ -25,7 +25,8 @@ export const ratesRequestSchema = z.object({
 export const createOrderSchema = z.object({
   address: addressSchema,
   items: z.array(cartLineSchema).min(1),
-  rateId: z.string().min(1, "Pilih kurir dulu"), // "courier:service"
+  // Opsional: hanya dipakai saat ongkir Biteship aktif. Mode flat tak butuh.
+  rateId: z.string().optional().or(z.literal("")),
 });
 
 export type AddressInput = z.infer<typeof addressSchema>;
