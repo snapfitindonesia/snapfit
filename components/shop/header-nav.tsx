@@ -10,10 +10,10 @@ import { cn } from "@/lib/utils";
 import { formatRupiah } from "@/lib/format";
 import { CartButton } from "@/components/shop/cart-button";
 import { useStoreUI } from "@/components/shop/store-ui-provider";
-import type { MegaMenuCategory, ProductListItem } from "@/lib/actions/product";
+import type { MegaMenuBrand, ProductListItem } from "@/lib/actions/product";
 import logo from "@/logosnapfit.png";
 
-export function HeaderNav({ menu }: { menu: MegaMenuCategory[] }) {
+export function HeaderNav({ menu }: { menu: MegaMenuBrand[] }) {
   const { authed, openLogin } = useStoreUI();
   const [open, setOpen] = useState(false); // mega-menu desktop
   const [mobileOpen, setMobileOpen] = useState(false); // drawer mobile
@@ -213,48 +213,39 @@ export function HeaderNav({ menu }: { menu: MegaMenuCategory[] }) {
               onMouseLeave={scheduleClose}
             >
               <div className="animate-in fade-in slide-in-from-top-1 rounded-2xl border border-border bg-background p-6 shadow-xl duration-200">
-                <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
-                  {menu.map((cat) => (
-                    <div key={cat.slug}>
-                      <Link
-                        href={`/produk?tipe=${cat.slug}`}
-                        onClick={() => setOpen(false)}
-                        className="group block"
-                      >
-                        <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg border border-border bg-muted">
-                          {cat.products[0] && (
-                            <Image
-                              src={cat.products[0].coverImage}
-                              alt={cat.name}
-                              fill
-                              sizes="200px"
-                              className="object-cover transition-transform duration-300 group-hover:scale-105"
-                            />
-                          )}
-                        </div>
-                        <p className="mt-3 text-sm font-semibold">{cat.name}</p>
-                      </Link>
-                      <ul className="mt-2 space-y-1.5">
-                        {cat.products.map((p) => (
-                          <li key={p.slug}>
+                <div className="grid grid-cols-2 gap-x-8 gap-y-6 sm:grid-cols-4">
+                  {menu.map((brand) => (
+                    <div key={brand.slug}>
+                      <div className="mb-2.5 flex items-center justify-between border-b border-border pb-2">
+                        <h3 className="text-sm font-semibold">{brand.name}</h3>
+                        <Link
+                          href={`/produk?tipe=${brand.slug}`}
+                          onClick={() => setOpen(false)}
+                          className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
+                        >
+                          Semua
+                        </Link>
+                      </div>
+                      <ul className="space-y-0.5">
+                        {brand.lines.map((line) => (
+                          <li key={line.slug}>
                             <Link
-                              href={`/produk/${p.slug}`}
+                              href={`/produk?tipe=${line.slug}`}
                               onClick={() => setOpen(false)}
-                              className="line-clamp-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                              className="group flex items-center gap-2.5 rounded-md px-1.5 py-1.5 transition-colors hover:bg-accent"
                             >
-                              {p.name}
+                              <span className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-md border border-border bg-muted">
+                                {line.cover && (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img src={line.cover} alt="" className="size-full object-cover" />
+                                )}
+                              </span>
+                              <span className="text-sm text-muted-foreground transition-colors group-hover:text-foreground">
+                                {line.name}
+                              </span>
                             </Link>
                           </li>
                         ))}
-                        <li>
-                          <Link
-                            href={`/produk?tipe=${cat.slug}`}
-                            onClick={() => setOpen(false)}
-                            className="text-sm font-medium underline underline-offset-2"
-                          >
-                            Lihat semua
-                          </Link>
-                        </li>
                       </ul>
                     </div>
                   ))}
@@ -279,24 +270,24 @@ export function HeaderNav({ menu }: { menu: MegaMenuCategory[] }) {
                   Kategori
                 </p>
                 <div className="mt-1 space-y-3">
-                  {menu.map((cat) => (
-                    <div key={cat.slug}>
+                  {menu.map((brand) => (
+                    <div key={brand.slug}>
                       <Link
-                        href={`/produk?tipe=${cat.slug}`}
+                        href={`/produk?tipe=${brand.slug}`}
                         onClick={closeMobile}
                         className="block rounded-md px-2 py-1.5 text-sm font-semibold hover:bg-accent"
                       >
-                        {cat.name}
+                        {brand.name}
                       </Link>
                       <ul className="ml-2 border-l border-border pl-3">
-                        {cat.products.map((p) => (
-                          <li key={p.slug}>
+                        {brand.lines.map((line) => (
+                          <li key={line.slug}>
                             <Link
-                              href={`/produk/${p.slug}`}
+                              href={`/produk?tipe=${line.slug}`}
                               onClick={closeMobile}
                               className="block py-1 text-sm text-muted-foreground hover:text-foreground"
                             >
-                              {p.name}
+                              {line.name}
                             </Link>
                           </li>
                         ))}

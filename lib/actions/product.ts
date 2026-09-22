@@ -107,29 +107,44 @@ export async function getDeviceTree(): Promise<DeviceBrand[]> {
   }
 }
 
-export type MegaMenuCategory = {
-  name: string;
-  slug: string;
-  products: { name: string; slug: string; coverImage: string }[];
-};
+export type MegaMenuLine = { name: string; slug: string; cover: string | null };
+export type MegaMenuBrand = { name: string; slug: string; lines: MegaMenuLine[] };
 
-/** Data untuk mega-menu header: kategori + beberapa produk tiap kategori. */
-export async function getMegaMenu(): Promise<MegaMenuCategory[]> {
+/** Data mega-menu header: dikelompokkan per BRAND (induk) → seri device (line). */
+export async function getMegaMenu(): Promise<MegaMenuBrand[]> {
   try {
-    const categories = await db.category.findMany({
-      where: { parentId: { not: null }, products: { some: {} } },
-      orderBy: [{ parentId: "asc" }, { order: "asc" }],
+    const brands = await db.category.findMany({
+      where: { parentId: null },
+      orderBy: [{ order: "asc" }, { name: "asc" }],
       select: {
         name: true,
         slug: true,
-        products: {
-          orderBy: { createdAt: "desc" },
-          take: 4,
-          select: { name: true, slug: true, coverImage: true },
+        children: {
+          where: { products: { some: {} } },
+          orderBy: [{ order: "asc" }, { name: "asc" }],
+          select: {
+            name: true,
+            slug: true,
+            products: {
+              orderBy: { createdAt: "desc" },
+              take: 1,
+              select: { coverImage: true },
+            },
+          },
         },
       },
     });
-    return categories;
+    return brands
+      .map((b) => ({
+        name: b.name,
+        slug: b.slug,
+        lines: b.children.map((l) => ({
+          name: l.name,
+          slug: l.slug,
+          cover: l.products[0]?.coverImage ?? null,
+        })),
+      }))
+      .filter((b) => b.lines.length > 0);
   } catch {
     // DB tak terjangkau saat build → header tetap render tanpa mega-menu
     return [];
