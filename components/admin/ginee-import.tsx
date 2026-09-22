@@ -16,6 +16,8 @@ export function GineeImport() {
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<Item[]>([]);
   const [total, setTotal] = useState<number | null>(null);
+  const [page, setPage] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [importing, setImporting] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -36,7 +38,22 @@ export function GineeImport() {
     }
     setItems(res.items);
     setTotal(res.total);
+    setPage(0);
     setChecked({});
+  }
+
+  async function loadMore() {
+    setLoadingMore(true);
+    const next = page + 1;
+    const res = await searchGineeForImport(keyword, next);
+    setLoadingMore(false);
+    if (!res.ok) { setMsg(res.error); return; }
+    // Gabung, hindari duplikat by productId
+    setItems((prev) => {
+      const seen = new Set(prev.map((p) => p.productId));
+      return [...prev, ...res.items.filter((i) => !seen.has(i.productId))];
+    });
+    setPage(next);
   }
 
   const selectedIds = Object.keys(checked).filter((id) => checked[id]);
@@ -102,7 +119,7 @@ export function GineeImport() {
       {total !== null && (
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
           <p className="text-xs text-muted-foreground">
-            {total} hasil untuk “{keyword}”. Menampilkan {items.length} pertama. Semua detail
+            {total} hasil untuk “{keyword}”. Menampilkan {items.length}. Semua detail
             (harga per-varian, stok, foto, deskripsi) otomatis dari Ginee.
           </p>
           {items.length > 0 && (
@@ -150,6 +167,16 @@ export function GineeImport() {
           );
         })}
       </div>
+
+      {/* Muat lebih banyak */}
+      {total !== null && items.length < total && (
+        <div className="mt-4 flex justify-center">
+          <Button variant="outline" onClick={loadMore} disabled={loadingMore}>
+            {loadingMore && <Loader2 className="size-4 animate-spin" />}
+            Muat lebih banyak ({total - items.length} lagi)
+          </Button>
+        </div>
+      )}
 
       {items.length > 0 && (
         <div className="sticky bottom-0 mt-4 flex items-center justify-between gap-3 border-t border-border bg-background/95 py-3 backdrop-blur">

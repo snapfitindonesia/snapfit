@@ -27,7 +27,7 @@ export async function searchGineeForImport(keyword: string, page = 0): Promise<S
   if (!keyword.trim()) return { ok: false, error: "Masukkan kata kunci pencarian." };
 
   try {
-    const { total, content } = await searchGineeMasterProducts(keyword, page, 20);
+    const { total, content } = await searchGineeMasterProducts(keyword, page, 100);
     return { ok: true, total, items: content.map(summarizeGinee) };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Gagal mengambil data Ginee." };
