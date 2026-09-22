@@ -17,10 +17,10 @@ const COLUMNS = [
   {
     title: "Bantuan",
     links: [
-      { label: "Cara Pesan", href: "#" },
-      { label: "Pengiriman", href: "#" },
-      { label: "Pengembalian", href: "#" },
-      { label: "Hubungi Kami", href: "#" },
+      { label: "Cara Pesan", href: "/bantuan#cara-pesan" },
+      { label: "Pengiriman", href: "/bantuan#pengiriman" },
+      { label: "Pengembalian", href: "/bantuan#pengembalian" },
+      { label: "Hubungi Kami", href: "/bantuan#hubungi" },
     ],
   },
   {

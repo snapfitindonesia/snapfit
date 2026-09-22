@@ -166,7 +166,7 @@ export function HeaderNav({ menu }: { menu: MegaMenuCategory[] }) {
                 />
               </button>
               <Link
-                href="/produk"
+                href="/bantuan"
                 className="text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
                 Bantuan
