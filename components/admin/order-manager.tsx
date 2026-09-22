@@ -197,7 +197,7 @@ function OrderRow({ order }: { order: AdminOrder }) {
                       className="size-11 shrink-0 rounded-md border border-border object-cover"
                     />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-foreground">{it.name}</p>
+                      <p className="text-sm font-medium text-foreground break-words">{it.name}</p>
                       <p className="text-xs text-muted-foreground">
                         {it.sku ? <>SKU: <span className="font-mono">{it.sku}</span> · </> : null}
                         Qty: <span className="font-medium text-foreground">{it.qty}</span> · {formatRupiah(it.price)}/pcs
