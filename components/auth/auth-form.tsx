@@ -109,6 +109,14 @@ export function AuthForm({
         </div>
       </label>
 
+      {isLogin && (
+        <div className="-mt-1 text-right">
+          <Link href="/lupa-password" className="text-xs font-medium text-muted-foreground hover:text-foreground hover:underline">
+            Lupa password?
+          </Link>
+        </div>
+      )}
+
       <TurnstileWidget onToken={setToken} />
 
       {error && <p className="text-sm text-destructive">{error}</p>}
