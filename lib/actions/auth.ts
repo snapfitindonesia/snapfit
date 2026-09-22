@@ -1,7 +1,8 @@
 "use server";
 
 import { headers } from "next/headers";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient, getCurrentUser } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { verifyTurnstile } from "@/lib/security/turnstile";
 import { credentialsSchema, type Credentials } from "@/lib/validations/auth";
 
@@ -66,4 +67,22 @@ export async function signUp(input: Credentials): Promise<AuthResult> {
 export async function signOut(): Promise<void> {
   const supabase = await createSupabaseServerClient();
   if (supabase) await supabase.auth.signOut();
+}
+
+// Hapus akun sendiri (hanya user yang sedang login). Pesanan tetap tersimpan
+// untuk pembukuan, tapi tak lagi tertaut ke akun.
+export async function deleteMyAccount(): Promise<AuthResult> {
+  const user = await getCurrentUser();
+  if (!user) return { ok: false, error: "Kamu belum login." };
+
+  const admin = createSupabaseAdminClient();
+  if (!admin) return { ok: false, error: "Hapus akun belum tersedia." };
+
+  const { error } = await admin.auth.admin.deleteUser(user.id);
+  if (error) return { ok: false, error: "Gagal menghapus akun. Coba lagi." };
+
+  // akhiri sesi
+  const supabase = await createSupabaseServerClient();
+  if (supabase) await supabase.auth.signOut();
+  return { ok: true };
 }
