@@ -75,19 +75,19 @@ export function StoreUIProvider({ children }: { children: React.ReactNode }) {
   return (
     <Ctx.Provider value={value}>
       {children}
-      {/* Toast global (mis. "Berhasil masuk") */}
+      {/* Toast global (mis. "Berhasil masuk") — di tengah layar */}
       <div
         aria-live="polite"
-        className={`pointer-events-none fixed inset-x-0 top-4 z-[80] flex justify-center px-4 transition-all duration-300 ${
-          toast ? "translate-y-0 opacity-100" : "-translate-y-3 opacity-0"
+        className={`pointer-events-none fixed inset-0 z-[80] flex items-center justify-center px-4 transition-all duration-300 ${
+          toast ? "scale-100 opacity-100" : "scale-95 opacity-0"
         }`}
       >
         {toast && (
-          <div className="pointer-events-auto flex items-center gap-2 rounded-full bg-foreground px-4 py-2.5 text-sm font-medium text-background shadow-lg">
-            <span className="grid size-5 place-items-center rounded-full bg-emerald-500 text-white">
-              <Check className="size-3.5" strokeWidth={3} />
+          <div className="pointer-events-auto flex flex-col items-center gap-3 rounded-2xl bg-foreground px-8 py-6 text-center text-background shadow-2xl">
+            <span className="grid size-12 place-items-center rounded-full bg-emerald-500 text-white">
+              <Check className="size-7" strokeWidth={3} />
             </span>
-            {toast}
+            <span className="text-base font-semibold">{toast}</span>
           </div>
         )}
       </div>
