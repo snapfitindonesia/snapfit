@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
@@ -23,6 +23,7 @@ export function AuthForm({
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPass, setShowPass] = useState(false);
   const [token, setToken] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -87,14 +88,24 @@ export function AuthForm({
 
       <label className="block">
         <span className="text-sm font-medium">Password</span>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          autoComplete={isLogin ? "current-password" : "new-password"}
-          className="mt-1.5 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-foreground"
-        />
+        <div className="relative mt-1.5">
+          <input
+            type={showPass ? "text" : "password"}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            autoComplete={isLogin ? "current-password" : "new-password"}
+            className="w-full rounded-md border border-border bg-background px-3 py-2 pr-10 text-sm outline-none focus:border-foreground"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPass((v) => !v)}
+            aria-label={showPass ? "Sembunyikan password" : "Lihat password"}
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          >
+            {showPass ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+          </button>
+        </div>
       </label>
 
       <TurnstileWidget onToken={setToken} />

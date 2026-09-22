@@ -1,7 +1,6 @@
-import Link from "next/link";
-import Image from "next/image";
 import { AuthForm } from "@/components/auth/auth-form";
-import logo from "@/logosnapfit.png";
+import { AuthShell } from "@/components/auth/auth-shell";
+import { OAuthButtons } from "@/components/auth/oauth-buttons";
 
 export const metadata = { title: "Masuk — SNAPFIT" };
 
@@ -13,28 +12,32 @@ export default async function LoginPage({
   const { next, reason } = await searchParams;
 
   return (
-    <main className="flex min-h-dvh flex-col items-center justify-center px-4 py-12">
-      <div className="w-full max-w-sm">
-        <Link href="/" className="flex justify-center">
-          <Image src={logo} alt="SNAPFIT" className="h-8 w-auto" priority />
-        </Link>
-        <h1 className="mt-6 text-center text-xl font-semibold">Masuk</h1>
+    <AuthShell
+      title="Selamat datang kembali"
+      subtitle="Masuk ke akun SNAPFIT-mu."
+      panelTitle="Belanja aksesori HP, tanpa ribet."
+      panelSub="Case & pelindung original untuk semua tipe HP-mu — kelola pesanan & lacak pengiriman dari satu akun."
+    >
+      {reason === "locked" && (
+        <p className="mb-4 rounded-md border border-border bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
+          Area admin terkunci sampai auth dikonfigurasi.
+        </p>
+      )}
+      {reason === "forbidden" && (
+        <p className="mb-4 rounded-md border border-destructive/40 px-3 py-2 text-xs text-destructive">
+          Akun kamu tidak punya akses admin.
+        </p>
+      )}
+      {reason === "oauth" && (
+        <p className="mb-4 rounded-md border border-destructive/40 px-3 py-2 text-xs text-destructive">
+          Login Google gagal. Coba lagi.
+        </p>
+      )}
 
-        {reason === "locked" && (
-          <p className="mt-4 rounded-md border border-border bg-muted/50 px-3 py-2 text-center text-xs text-muted-foreground">
-            Area admin terkunci sampai auth dikonfigurasi.
-          </p>
-        )}
-        {reason === "forbidden" && (
-          <p className="mt-4 rounded-md border border-destructive/40 px-3 py-2 text-center text-xs text-destructive">
-            Akun kamu tidak punya akses admin.
-          </p>
-        )}
-
-        <div className="mt-6">
-          <AuthForm mode="login" next={next ?? "/"} />
-        </div>
+      <AuthForm mode="login" next={next ?? "/"} />
+      <div className="mt-5">
+        <OAuthButtons next={next ?? "/"} />
       </div>
-    </main>
+    </AuthShell>
   );
 }
