@@ -153,7 +153,7 @@ export async function syncGineeStock(): Promise<StockSyncResult> {
   try {
     await requireAdmin();
   } catch {
-    return { ok: false, productsChecked: 0, variantsUpdated: 0, errors: ["Tidak diizinkan."] };
+    return { ok: false, productsChecked: 0, stockUpdated: 0, priceUpdated: 0, errors: ["Tidak diizinkan."] };
   }
   const res = await runGineeStockSync();
   revalidatePath("/admin/produk");

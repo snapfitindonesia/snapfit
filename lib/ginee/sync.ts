@@ -1,31 +1,43 @@
-// Sinkron stok Ginee → web (pull). Dipakai server action (tombol admin) & cron.
-// Sumber kebenaran stok = Ginee. Untuk tiap produk hasil impor (punya
-// gineeProductId), baca availableStock terkini per SKU lalu update Variant.stock.
+// Sinkron STOK + HARGA Ginee → web (pull). Dipakai server action (tombol admin) & cron.
+// Sumber kebenaran = Ginee. 2 tahap agar hemat panggilan:
+//  Tahap 1 (per produk): ListMasterProduct by sku → stok per sku + peta variationId↔sku.
+//  Tahap 2 (batch): list-price by SEMUA variationIds sekaligus (chunk 200) → harga.
 import { db } from "@/lib/db";
-import { getGineeProductBySku, stockMapFromProduct } from "./products";
+import { getGineeProductBySku, getGineeVariationPrices } from "./products";
 import { isGineeConfigured } from "./config";
 
 export type StockSyncResult = {
   ok: boolean;
   productsChecked: number;
-  variantsUpdated: number;
+  stockUpdated: number;
+  priceUpdated: number;
   errors: string[];
 };
 
-export async function runGineeStockSync(limit = 500): Promise<StockSyncResult> {
+type Pending = {
+  variantId: string;
+  currentStock: number;
+  currentPrice: number;
+  nextStock?: number;
+  gineeVarId?: string;
+};
+
+export async function runGineeStockSync(limit = 1000): Promise<StockSyncResult> {
   if (!isGineeConfigured()) {
-    return { ok: false, productsChecked: 0, variantsUpdated: 0, errors: ["Ginee belum dikonfigurasi."] };
+    return { ok: false, productsChecked: 0, stockUpdated: 0, priceUpdated: 0, errors: ["Ginee belum dikonfigurasi."] };
   }
 
   const products = await db.product.findMany({
     where: { gineeProductId: { not: null } },
-    select: { id: true, name: true, variants: { select: { id: true, sku: true, stock: true } } },
+    select: { id: true, name: true, variants: { select: { id: true, sku: true, stock: true, price: true } } },
     take: limit,
   });
 
   const errors: string[] = [];
-  let variantsUpdated = 0;
+  const pending: Pending[] = [];
+  const allVarIds: string[] = [];
 
+  // Tahap 1: stok + peta variationId per produk
   for (const p of products) {
     const firstSku = p.variants.find((v) => v.sku)?.sku;
     if (!firstSku) continue;
@@ -35,18 +47,55 @@ export async function runGineeStockSync(limit = 500): Promise<StockSyncResult> {
         errors.push(`"${p.name.slice(0, 30)}": tak ditemukan di Ginee.`);
         continue;
       }
-      const stock = stockMapFromProduct(mp);
+      const briefs = mp.variationBriefs ?? [];
+      const stockBySku = new Map<string, number>();
+      const varIdBySku = new Map<string, string>();
+      for (const b of briefs) {
+        if (b.sku) stockBySku.set(b.sku, Math.max(0, b.stock?.availableStock ?? 0));
+        if (b.sku && b.id) varIdBySku.set(b.sku, b.id);
+      }
       for (const v of p.variants) {
-        const next = stock.get(v.sku);
-        if (next !== undefined && next !== v.stock) {
-          await db.variant.update({ where: { id: v.id }, data: { stock: next } });
-          variantsUpdated++;
-        }
+        const gineeVarId = varIdBySku.get(v.sku);
+        if (gineeVarId) allVarIds.push(gineeVarId);
+        pending.push({
+          variantId: v.id,
+          currentStock: v.stock,
+          currentPrice: v.price,
+          nextStock: stockBySku.get(v.sku),
+          gineeVarId,
+        });
       }
     } catch (e) {
       errors.push(`"${p.name.slice(0, 30)}": ${e instanceof Error ? e.message : "gagal"}.`);
     }
   }
 
-  return { ok: true, productsChecked: products.length, variantsUpdated, errors };
+  // Tahap 2: harga per variationId (batch 200)
+  const priceByVarId = new Map<string, number>();
+  for (let i = 0; i < allVarIds.length; i += 200) {
+    const chunk = allVarIds.slice(i, i + 200);
+    try {
+      const map = await getGineeVariationPrices(chunk);
+      for (const [id, p] of map) if (p.price > 0) priceByVarId.set(id, p.price);
+    } catch (e) {
+      errors.push(`Harga batch gagal: ${e instanceof Error ? e.message : "?"}.`);
+    }
+  }
+
+  // Update
+  let stockUpdated = 0;
+  let priceUpdated = 0;
+  for (const pen of pending) {
+    const data: { stock?: number; price?: number } = {};
+    if (pen.nextStock !== undefined && pen.nextStock !== pen.currentStock) data.stock = pen.nextStock;
+    const nextPrice = pen.gineeVarId ? priceByVarId.get(pen.gineeVarId) : undefined;
+    if (nextPrice !== undefined && nextPrice !== pen.currentPrice) data.price = nextPrice;
+    if (data.stock !== undefined || data.price !== undefined) {
+      await db.variant.update({ where: { id: pen.variantId }, data });
+      if (data.stock !== undefined) stockUpdated++;
+      if (data.price !== undefined) priceUpdated++;
+    }
+  }
+
+  return { ok: true, productsChecked: products.length, stockUpdated, priceUpdated, errors };
 }

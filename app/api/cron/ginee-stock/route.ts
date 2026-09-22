@@ -3,7 +3,7 @@ import { runGineeStockSync } from "@/lib/ginee/sync";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+export const maxDuration = 300; // katalog besar butuh waktu (banyak panggilan Ginee)
 
 // Sinkron stok Ginee → web berkala (Vercel Cron, lihat vercel.json).
 // Diamankan CRON_SECRET (sama seperti cron ajakan ulas).

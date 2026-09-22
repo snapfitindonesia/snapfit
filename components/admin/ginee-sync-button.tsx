@@ -20,7 +20,7 @@ export function GineeSyncButton() {
       setMsg(res.errors[0] ?? "Gagal sinkron.");
       return;
     }
-    setMsg(`Stok tersinkron: ${res.variantsUpdated} varian diperbarui dari ${res.productsChecked} produk.`);
+    setMsg(`Sinkron selesai dari ${res.productsChecked} produk: stok ${res.stockUpdated} varian, harga ${res.priceUpdated} varian diperbarui.`);
     router.refresh();
   }
 
@@ -28,7 +28,7 @@ export function GineeSyncButton() {
     <div className="flex flex-wrap items-center gap-3">
       <Button size="sm" variant="outline" onClick={run} disabled={busy}>
         {busy ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
-        Sinkron Stok dari Ginee
+        Sinkron Stok & Harga dari Ginee
       </Button>
       {msg && <span className="text-xs text-muted-foreground">{msg}</span>}
     </div>
