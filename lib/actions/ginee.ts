@@ -13,8 +13,9 @@ import {
 } from "@/lib/ginee/products";
 import { runGineeStockSync, type StockSyncResult } from "@/lib/ginee/sync";
 
+type SearchItem = ReturnType<typeof summarizeGinee> & { imported: boolean };
 type SearchResult =
-  | { ok: true; total: number; items: ReturnType<typeof summarizeGinee>[] }
+  | { ok: true; total: number; items: SearchItem[] }
   | { ok: false; error: string };
 
 export async function searchGineeForImport(keyword: string, page = 0): Promise<SearchResult> {
@@ -28,7 +29,18 @@ export async function searchGineeForImport(keyword: string, page = 0): Promise<S
 
   try {
     const { total, content } = await searchGineeMasterProducts(keyword, page, 100);
-    return { ok: true, total, items: content.map(summarizeGinee) };
+    const items = content.map(summarizeGinee);
+    // Tandai yang sudah pernah diimpor (by gineeProductId) → tak bisa dipilih ulang.
+    const existing = await db.product.findMany({
+      where: { gineeProductId: { in: items.map((i) => i.productId) } },
+      select: { gineeProductId: true },
+    });
+    const importedSet = new Set(existing.map((e) => e.gineeProductId));
+    return {
+      ok: true,
+      total,
+      items: items.map((i) => ({ ...i, imported: importedSet.has(i.productId) })),
+    };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Gagal mengambil data Ginee." };
   }

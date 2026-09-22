@@ -6,7 +6,7 @@ import { Search, Loader2, PackagePlus, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { searchGineeForImport, importGineeProducts } from "@/lib/actions/ginee";
 
-type Item = { productId: string; name: string; image: string; variantCount: number; stock: number };
+type Item = { productId: string; name: string; image: string; variantCount: number; stock: number; imported: boolean };
 
 const QUICK = ["Fold 8", "iPhone 18 Pro Max", "S26 Ultra"];
 
@@ -57,14 +57,15 @@ export function GineeImport() {
   }
 
   const selectedIds = Object.keys(checked).filter((id) => checked[id]);
-  const allChecked = items.length > 0 && selectedIds.length === items.length;
+  const selectable = items.filter((i) => !i.imported);
+  const allChecked = selectable.length > 0 && selectedIds.length === selectable.length;
 
   function toggleAll() {
     if (allChecked) {
       setChecked({});
     } else {
       const next: Record<string, boolean> = {};
-      for (const it of items) next[it.productId] = true;
+      for (const it of selectable) next[it.productId] = true; // lewati yang sudah diimpor
       setChecked(next);
     }
   }
@@ -142,6 +143,23 @@ export function GineeImport() {
       <div className="mt-4 space-y-2">
         {items.map((it) => {
           const on = !!checked[it.productId];
+          if (it.imported) {
+            return (
+              <div
+                key={it.productId}
+                className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-muted/40 p-3 opacity-70"
+              >
+                <div className="size-4 shrink-0" />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={it.image || "https://placehold.co/64"} alt="" className="size-12 shrink-0 rounded-md border border-border object-cover grayscale" />
+                <div className="min-w-[180px] flex-1">
+                  <p className="line-clamp-2 text-sm font-medium">{it.name}</p>
+                  <p className="text-xs text-muted-foreground">{it.variantCount} varian · stok {it.stock}</p>
+                </div>
+                <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700">✓ Sudah diimpor</span>
+              </div>
+            );
+          }
           return (
             <label
               key={it.productId}
