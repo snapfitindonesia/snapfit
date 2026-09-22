@@ -70,19 +70,27 @@ export async function gineeRequest<T = unknown>(
     method === "GET" && body && typeof body === "object"
       ? `${GINEE_HOST}${uri}?${new URLSearchParams(body as Record<string, string>).toString()}`
       : `${GINEE_HOST}${uri}`;
-  const res = await fetch(url, {
-    method,
-    headers: {
-      "Content-Type": "application/json",
-      "X-Advai-Country": GINEE_COUNTRY,
-      Authorization: `${GINEE_ACCESS_KEY}:${signature}`,
-    },
-    body: method === "POST" ? JSON.stringify(body ?? {}) : undefined,
-    // Ginee OMS bukan data statis — jangan cache.
-    cache: "no-store",
-  });
 
-  const text = await res.text();
+  // Retry saat 429 (rate limit Ginee) dengan backoff.
+  let res: Response;
+  let text = "";
+  for (let attempt = 0; ; attempt++) {
+    res = await fetch(url, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+        "X-Advai-Country": GINEE_COUNTRY,
+        Authorization: `${GINEE_ACCESS_KEY}:${signature}`,
+      },
+      body: method === "POST" ? JSON.stringify(body ?? {}) : undefined,
+      cache: "no-store", // Ginee OMS bukan data statis
+    });
+    if (res.status !== 429 || attempt >= 5) {
+      text = await res.text();
+      break;
+    }
+    await new Promise((r) => setTimeout(r, 500 + attempt * 700)); // 0.5s,1.2s,1.9s,...
+  }
   let json: GineeResponse<T>;
   try {
     json = text ? JSON.parse(text) : ({ code: res.status } as GineeResponse<T>);

@@ -82,10 +82,14 @@ export async function importGineeProducts(inputs: ImportInput[]): Promise<Import
         continue;
       }
 
-      const [detail, priceMap] = await Promise.all([
-        getGineeProductDetail(input.productId),
-        getGineeVariationPrices(input.variations.map((v) => v.id)),
-      ]);
+      const priceMap = await getGineeVariationPrices(input.variations.map((v) => v.id));
+      // Deskripsi & galeri opsional — jangan gagalkan produk kalau `get` kena limit.
+      let detail = null;
+      try {
+        detail = await getGineeProductDetail(input.productId);
+      } catch {
+        /* lanjut tanpa deskripsi/galeri */
+      }
 
       const mapped = mapGineeFromBriefs(input.productId, detail, input.variations, priceMap, input.name);
       if (!mapped) {
@@ -135,6 +139,8 @@ export async function importGineeProducts(inputs: ImportInput[]): Promise<Import
       skipped++;
       errors.push(`"${label}": ${e instanceof Error ? e.message : "gagal"}.`);
     }
+    // Jeda kecil antar-produk untuk hormati rate limit Ginee.
+    await new Promise((r) => setTimeout(r, 200));
   }
 
   revalidatePath("/admin/produk");
