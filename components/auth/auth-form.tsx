@@ -52,7 +52,8 @@ export function AuthForm({
             onSuccess();
             router.refresh();
           } else {
-            router.push(next);
+            const dest = next + (next.includes("?") ? "&" : "?") + "login=success";
+            router.push(dest);
             router.refresh();
           }
         } else {

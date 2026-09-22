@@ -5,6 +5,8 @@ import { CartProvider } from "@/components/shop/cart-provider";
 import { StoreUIProvider } from "@/components/shop/store-ui-provider";
 import { CartDrawer } from "@/components/shop/cart-drawer";
 import { LoginModal } from "@/components/shop/login-modal";
+import { AuthToast } from "@/components/shop/auth-toast";
+import { Suspense } from "react";
 
 // Tetap statis/cepat: status login dideteksi di client (StoreUIProvider),
 // tanpa round-trip Supabase per request seperti dulu.
@@ -25,6 +27,9 @@ export default function ShopLayout({
         </div>
         <CartDrawer />
         <LoginModal />
+        <Suspense>
+          <AuthToast />
+        </Suspense>
       </StoreUIProvider>
     </CartProvider>
   );

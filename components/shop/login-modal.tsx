@@ -8,7 +8,7 @@ import { AuthForm } from "@/components/auth/auth-form";
 import { useStoreUI } from "@/components/shop/store-ui-provider";
 
 export function LoginModal() {
-  const { loginOpen, closeLogin, refreshAuth } = useStoreUI();
+  const { loginOpen, closeLogin, refreshAuth, notify } = useStoreUI();
   const router = useRouter();
 
   useEffect(() => {
@@ -62,6 +62,7 @@ export function LoginModal() {
               onSuccess={() => {
                 closeLogin();
                 refreshAuth();
+                notify("Berhasil masuk 🎉");
                 router.refresh();
               }}
             />

@@ -13,7 +13,10 @@ export async function GET(request: Request) {
     const supabase = await createSupabaseServerClient();
     if (supabase) {
       const { error } = await supabase.auth.exchangeCodeForSession(code);
-      if (!error) return NextResponse.redirect(`${origin}${dest}`);
+      if (!error) {
+        const sep = dest.includes("?") ? "&" : "?";
+        return NextResponse.redirect(`${origin}${dest}${sep}login=success`);
+      }
     }
   }
   return NextResponse.redirect(`${origin}/masuk?reason=oauth`);
