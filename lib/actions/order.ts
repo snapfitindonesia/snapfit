@@ -11,6 +11,8 @@ import { getShippingRates } from "@/lib/biteship";
 import { createShipment } from "@/lib/biteship";
 import { createSnapToken, isMidtransMock } from "@/lib/midtrans";
 import { sendEmail, orderConfirmationEmail } from "@/lib/email";
+import { pushOrderToGinee } from "@/lib/ginee/orders";
+import { isGineeConfigured } from "@/lib/ginee/config";
 
 function activeDiscountPercent(
   discounts: { percent: number; active: boolean; startAt: Date | null; endAt: Date | null }[],
@@ -181,13 +183,58 @@ export async function handlePaidOrder(
   });
 
   // Email konfirmasi (docs/08) — jangan gagalkan order kalau email error
-  const email = (updated.address as { email?: string } | null)?.email;
+  const addressData = updated.address as { email?: string; name?: string; phone?: string; address?: string; city?: string; province?: string; district?: string; postalCode?: string } | null;
+  const email = addressData?.email;
   if (email) {
     try {
       const tpl = orderConfirmationEmail(updated, items);
       await sendEmail({ to: email, ...tpl });
     } catch (e) {
       console.error("Email konfirmasi gagal:", e);
+    }
+  }
+
+  // Push ke Ginee (best-effort) — hanya item produk hasil impor Ginee. Ginee
+  // otomatis mengurangi stok gudang. Jangan gagalkan order kalau push gagal.
+  if (isGineeConfigured() && !updated.gineePushedAt) {
+    try {
+      const variants = await db.variant.findMany({
+        where: { id: { in: items.map((i) => i.variantId) } },
+        select: { id: true, sku: true, weight: true, product: { select: { gineeProductId: true } } },
+      });
+      const gineeItems = items
+        .map((it) => {
+          const v = variants.find((x) => x.id === it.variantId);
+          if (!v || !v.product.gineeProductId) return null;
+          return { sku: v.sku, quantity: it.qty, actualPrice: it.price, weight: v.weight };
+        })
+        .filter((x): x is NonNullable<typeof x> => x !== null);
+
+      if (gineeItems.length) {
+        const res = await pushOrderToGinee({
+          externalOrderSn: updated.midtransOrderId ?? updated.id,
+          customer: { name: addressData?.name ?? "Pelanggan", email, phone: addressData?.phone ?? "" },
+          address: {
+            province: addressData?.province,
+            city: addressData?.city,
+            district: addressData?.district,
+            postalCode: addressData?.postalCode,
+            fullAddress: addressData?.address ?? "-",
+          },
+          items: gineeItems,
+          payAmount: updated.total,
+        });
+        if (res.ok) {
+          await db.order.update({
+            where: { id: updated.id },
+            data: { gineePushedAt: new Date(), gineeOrderSn: res.orderSn ?? null },
+          });
+        } else {
+          console.error("Push Ginee gagal:", res.error);
+        }
+      }
+    } catch (e) {
+      console.error("Push Ginee error:", e);
     }
   }
 

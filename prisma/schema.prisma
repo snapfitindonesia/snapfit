@@ -109,6 +109,10 @@ model Order {
   // after-sales
   reviewRequestedAt DateTime? // diisi saat email ajakan ulas terkirim (anti-kirim ulang)
 
+  // integrasi Ginee
+  gineePushedAt DateTime? // diisi saat order berhasil dikirim ke Ginee (anti-kirim ulang)
+  gineeOrderSn  String? // externalOrderSn yang dipakai saat push ke Ginee
+
   createdAt DateTime @default(now())
 }
 
