@@ -15,6 +15,14 @@ const nextConfig = {
       { protocol: "https", hostname: "cdn.shopify.com" }, // foto katalog impor (sementara)
       { protocol: "https", hostname: "cf.shopee.co.id" }, // foto master produk Ginee (Shopee CDN)
       { protocol: "https", hostname: "**.susercontent.com" }, // foto Shopee (mirror)
+      // Foto master produk Ginee bisa dari CDN marketplace mana pun:
+      { protocol: "https", hostname: "**.ibyteimg.com" }, // TikTok Shop
+      { protocol: "https", hostname: "**.tiktokcdn.com" }, // TikTok (cadangan)
+      { protocol: "https", hostname: "**.slatic.net" }, // Lazada
+      { protocol: "https", hostname: "**.tokopedia.net" }, // Tokopedia
+      { protocol: "https", hostname: "images.tokopedia.com" }, // Tokopedia
+      { protocol: "https", hostname: "**.static-src.com" }, // Blibli
+      { protocol: "https", hostname: "**.bmdstatic.com" }, // Blibli (cadangan)
       ...extraHosts.map((hostname) => ({ protocol: "https", hostname })),
     ],
   },
