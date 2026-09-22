@@ -10,6 +10,7 @@ import {
   mapGineeToProduct,
   type GineeMasterProduct,
 } from "@/lib/ginee/products";
+import { runGineeStockSync, type StockSyncResult } from "@/lib/ginee/sync";
 
 type SearchResult =
   | { ok: true; total: number; items: ReturnType<typeof summarizeGinee>[]; raw: GineeMasterProduct[] }
@@ -84,6 +85,7 @@ export async function importGineeProducts(items: ImportItem[]): Promise<ImportRe
           coverImage: mapped.coverImage,
           images: mapped.images,
           variantGroups: mapped.variantGroups,
+          gineeProductId: mapped.gineeProductId,
           variants: {
             create: mapped.variants.map((v) => ({
               name: v.name, color: v.color, type: v.type,
@@ -102,4 +104,17 @@ export async function importGineeProducts(items: ImportItem[]): Promise<ImportRe
   revalidatePath("/admin/produk");
   revalidatePath("/produk");
   return { ok: created > 0, created, skipped, errors };
+}
+
+/** Sinkron stok Ginee → web untuk semua produk hasil impor (tombol admin). */
+export async function syncGineeStock(): Promise<StockSyncResult> {
+  try {
+    await requireAdmin();
+  } catch {
+    return { ok: false, productsChecked: 0, variantsUpdated: 0, errors: ["Tidak diizinkan."] };
+  }
+  const res = await runGineeStockSync();
+  revalidatePath("/admin/produk");
+  revalidatePath("/produk");
+  return res;
 }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { GineeImport } from "@/components/admin/ginee-import";
+import { GineeSyncButton } from "@/components/admin/ginee-sync-button";
 import { isGineeConfigured } from "@/lib/ginee/config";
 
 export const dynamic = "force-dynamic";
@@ -37,6 +38,14 @@ export default function GineeImportPage() {
         </p>
       ) : (
         <div className="mt-6">
+          <div className="mb-6 rounded-lg border border-border bg-muted/30 p-4">
+            <h2 className="text-sm font-semibold">Sinkron Stok</h2>
+            <p className="mb-3 mt-0.5 text-xs text-muted-foreground">
+              Tarik stok terkini dari Ginee untuk semua produk hasil impor. Berjalan otomatis tiap 6 jam;
+              klik untuk sinkron manual sekarang.
+            </p>
+            <GineeSyncButton />
+          </div>
           <GineeImport />
         </div>
       )}

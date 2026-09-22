@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/review-request",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/ginee-stock",
+      "schedule": "0 */6 * * *"
     }
   ]
 }

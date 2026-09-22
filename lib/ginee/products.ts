@@ -33,6 +33,27 @@ export async function searchGineeMasterProducts(
   return res.data ?? { total: 0, content: [] };
 }
 
+/** Ambil 1 master produk lewat salah satu SKU-nya (utk baca stok terkini). */
+export async function getGineeProductBySku(sku: string): Promise<GineeMasterProduct | null> {
+  const res = await gineeRequest<GineeListResult>(
+    "POST",
+    "/openapi/product/master/v1/list",
+    { page: 0, size: 5, sku },
+  );
+  const list = res.data?.content ?? [];
+  // Cocokkan produk yang benar-benar memuat SKU tsb.
+  return list.find((p) => (p.variationBriefs ?? []).some((v) => v.sku === sku)) ?? list[0] ?? null;
+}
+
+/** Peta SKU → availableStock dari sebuah master produk. */
+export function stockMapFromProduct(mp: GineeMasterProduct): Map<string, number> {
+  const m = new Map<string, number>();
+  for (const v of mp.variationBriefs ?? []) {
+    if (v.sku) m.set(v.sku, Math.max(0, v.stock?.availableStock ?? 0));
+  }
+  return m;
+}
+
 // --- Pemetaan ke bentuk Product/Variant web (samakan konvensi bulkImport) ---
 
 const slugify = (s: string) =>
