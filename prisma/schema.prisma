@@ -87,7 +87,7 @@ model Voucher {
 model Order {
   id     String      @id @default(cuid())
   userId String? // id user Supabase Auth (tidak simpan password sendiri)
-  status String      @default("PENDING") // PENDING|PAID|SHIPPED|DONE|CANCELLED
+  status String      @default("PENDING") // PENDING|PAID|PROCESSING|SHIPPED|DONE|CANCELLED
   items  OrderItem[]
 
   subtotal     Int
@@ -103,6 +103,10 @@ model Order {
   courier    String?
   trackingNo String?
   address    Json // snapshot alamat pengiriman
+  shippedAt  DateTime? // diisi saat status → SHIPPED (basis timer ajakan ulas)
+
+  // after-sales
+  reviewRequestedAt DateTime? // diisi saat email ajakan ulas terkirim (anti-kirim ulang)
 
   createdAt DateTime @default(now())
 }

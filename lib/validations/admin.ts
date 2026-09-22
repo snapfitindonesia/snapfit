@@ -71,7 +71,7 @@ export const voucherSchema = z.object({
   active: z.coerce.boolean().default(true),
 });
 
-export const ORDER_STATUSES = ["PENDING", "PAID", "SHIPPED", "DONE", "CANCELLED"] as const;
+export const ORDER_STATUSES = ["PENDING", "PAID", "PROCESSING", "SHIPPED", "DONE", "CANCELLED"] as const;
 
 export const orderUpdateSchema = z.object({
   id: z.string().min(1),

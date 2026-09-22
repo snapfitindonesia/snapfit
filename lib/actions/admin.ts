@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/require-admin";
-import { sendEmail, orderShippedEmail } from "@/lib/email";
+import { sendEmail, orderShippedEmail, orderProcessingEmail } from "@/lib/email";
 import {
   productSchema,
   bannerSchema,
@@ -366,22 +366,36 @@ export async function updateOrder(input: OrderUpdateInput): Promise<Result> {
       where: { id: data.id },
       include: { items: true },
     });
+    // Set shippedAt sekali saat pertama kali → SHIPPED (basis timer ajakan ulas)
+    const toShipped = data.status === "SHIPPED" && existing?.status !== "SHIPPED";
     const updated = await db.order.update({
       where: { id: data.id },
-      data: { status: data.status, trackingNo: data.trackingNo || null },
+      data: {
+        status: data.status,
+        trackingNo: data.trackingNo || null,
+        ...(toShipped && !existing?.shippedAt ? { shippedAt: new Date() } : {}),
+      },
     });
     revalidatePath("/admin/pesanan");
+    revalidatePath("/akun/pesanan");
+
+    const email = (updated.address as { email?: string } | null)?.email;
+
+    // Email "sedang diproses" saat baru berubah ke PROCESSING
+    if (data.status === "PROCESSING" && existing && existing.status !== "PROCESSING" && email) {
+      try {
+        await sendEmail({ to: email, ...orderProcessingEmail(updated, existing.items) });
+      } catch (e) {
+        console.error("Email diproses gagal:", e);
+      }
+    }
 
     // Email resi saat baru berubah ke SHIPPED (docs/08)
-    if (data.status === "SHIPPED" && existing && existing.status !== "SHIPPED") {
-      const email = (updated.address as { email?: string } | null)?.email;
-      if (email) {
-        try {
-          const tpl = orderShippedEmail(updated, existing.items);
-          await sendEmail({ to: email, ...tpl });
-        } catch (e) {
-          console.error("Email resi gagal:", e);
-        }
+    if (toShipped && existing && email) {
+      try {
+        await sendEmail({ to: email, ...orderShippedEmail(updated, existing.items) });
+      } catch (e) {
+        console.error("Email resi gagal:", e);
       }
     }
     return { ok: true };

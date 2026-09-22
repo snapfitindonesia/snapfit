@@ -76,6 +76,18 @@ export function orderConfirmationEmail(order: OrderLike, items: ItemLike[]) {
   };
 }
 
+export function orderProcessingEmail(order: OrderLike, items: ItemLike[]) {
+  return {
+    subject: `Pesanan ${order.midtransOrderId} sedang kami proses 🛠️`,
+    html: shell(
+      "Pesanan sedang diproses",
+      `<p>Hai ${addr(order).name ?? ""}, pesananmu sedang kami siapkan & kemas.</p>
+       <p style="font-size:14px">Kami akan kabari lagi begitu paket dikirim beserta nomor resinya.</p>
+       ${itemsTable(items)}`,
+    ),
+  };
+}
+
 export function orderShippedEmail(order: OrderLike, items: ItemLike[]) {
   return {
     subject: `Pesanan ${order.midtransOrderId} sudah dikirim 📦`,
@@ -84,6 +96,31 @@ export function orderShippedEmail(order: OrderLike, items: ItemLike[]) {
       `<p>Pesananmu sedang dalam perjalanan.</p>
        <p style="font-size:14px"><strong>No. Resi: ${order.trackingNo ?? "-"}</strong></p>
        ${itemsTable(items)}`,
+    ),
+  };
+}
+
+/**
+ * Ajakan ulas ~7 hari setelah dikirim. `productLinks` = daftar {name, url}
+ * halaman produk yang dibeli (opsional) agar pembeli mudah memberi ulasan.
+ */
+export function reviewRequestEmail(
+  order: OrderLike,
+  productLinks: { name: string; url: string }[] = [],
+) {
+  const links = productLinks.length
+    ? `<ul style="font-size:14px;padding-left:18px;margin:12px 0">${productLinks
+        .map((p) => `<li><a href="${p.url}" style="color:#18181b">${p.name}</a></li>`)
+        .join("")}</ul>`
+    : "";
+  return {
+    subject: `Bagaimana pengalaman belanjamu di SNAPFIT? ⭐`,
+    html: shell(
+      "Bagikan pengalamanmu",
+      `<p>Hai ${addr(order).name ?? ""}, semoga pesananmu sudah sampai dengan selamat!</p>
+       <p style="font-size:14px">Kami ingin tahu pengalamanmu berbelanja di SNAPFIT. Ulasan jujurmu sangat membantu pembeli lain — dan kami. 🙏</p>
+       ${links}
+       <p style="font-size:14px">Cukup balas email ini untuk memberi masukan, atau tulis ulasan di halaman produk. Terima kasih sudah mempercayai SNAPFIT!</p>`,
     ),
   };
 }
