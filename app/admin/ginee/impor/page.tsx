@@ -27,9 +27,8 @@ export default function GineeImportPage() {
       </div>
 
       <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-        Cari produk master di Ginee lalu impor selektif ke toko web. Ginee tak menyimpan harga jual,
-        jadi <b>isi harga</b> tiap produk sebelum impor (bisa disesuaikan lagi di editor produk).
-        Stok & varian ikut otomatis.
+        Cari produk master di Ginee lalu centang yang mau diimpor. <b>Semua otomatis dari Ginee</b> —
+        harga per-varian, stok, varian, foto, & deskripsi. Tinggal klik impor.
       </p>
 
       {!configured ? (

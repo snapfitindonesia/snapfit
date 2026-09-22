@@ -64,8 +64,13 @@ export async function gineeRequest<T = unknown>(
     );
   }
 
+  // Signature dihitung dari PATH saja (tanpa query). Utk GET, body → query string.
   const signature = sign(method, uri);
-  const res = await fetch(`${GINEE_HOST}${uri}`, {
+  const url =
+    method === "GET" && body && typeof body === "object"
+      ? `${GINEE_HOST}${uri}?${new URLSearchParams(body as Record<string, string>).toString()}`
+      : `${GINEE_HOST}${uri}`;
+  const res = await fetch(url, {
     method,
     headers: {
       "Content-Type": "application/json",

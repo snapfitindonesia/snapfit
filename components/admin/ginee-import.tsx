@@ -4,9 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, Loader2, PackagePlus, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { formatRupiah } from "@/lib/format";
 import { searchGineeForImport, importGineeProducts } from "@/lib/actions/ginee";
-import type { GineeMasterProduct } from "@/lib/ginee/products";
 
 type Item = { productId: string; name: string; image: string; variantCount: number; stock: number };
 
@@ -17,9 +15,7 @@ export function GineeImport() {
   const [keyword, setKeyword] = useState("");
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<Item[]>([]);
-  const [raw, setRaw] = useState<Map<string, GineeMasterProduct>>(new Map());
   const [total, setTotal] = useState<number | null>(null);
-  const [prices, setPrices] = useState<Record<string, string>>({});
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [importing, setImporting] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -39,25 +35,31 @@ export function GineeImport() {
       return;
     }
     setItems(res.items);
-    setRaw(new Map(res.raw.map((p) => [p.productId, p])));
     setTotal(res.total);
     setChecked({});
   }
 
   const selectedIds = Object.keys(checked).filter((id) => checked[id]);
+  const allChecked = items.length > 0 && selectedIds.length === items.length;
+
+  function toggleAll() {
+    if (allChecked) {
+      setChecked({});
+    } else {
+      const next: Record<string, boolean> = {};
+      for (const it of items) next[it.productId] = true;
+      setChecked(next);
+    }
+  }
 
   async function doImport() {
-    const payload = selectedIds
-      .map((id) => ({ product: raw.get(id), price: Math.round(Number(prices[id] || 0)) }))
-      .filter((x): x is { product: GineeMasterProduct; price: number } => Boolean(x.product));
-    if (!payload.length) return;
-
+    if (!selectedIds.length) return;
     setImporting(true);
     setMsg(null);
     setErrList([]);
-    const res = await importGineeProducts(payload);
+    const res = await importGineeProducts(selectedIds);
     setImporting(false);
-    setMsg(`Impor selesai: ${res.created} dibuat, ${res.skipped} dilewati.`);
+    setMsg(`Impor selesai: ${res.created} dibuat, ${res.skipped} dilewati. Harga, stok, varian, foto & deskripsi otomatis dari Ginee.`);
     setErrList(res.errors.slice(0, 10));
     if (res.created > 0) {
       setChecked({});
@@ -98,9 +100,18 @@ export function GineeImport() {
       </div>
 
       {total !== null && (
-        <p className="mt-3 text-xs text-muted-foreground">
-          {total} hasil untuk “{keyword}”. Menampilkan {items.length} pertama. Centang + isi harga → Impor.
-        </p>
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs text-muted-foreground">
+            {total} hasil untuk “{keyword}”. Menampilkan {items.length} pertama. Semua detail
+            (harga per-varian, stok, foto, deskripsi) otomatis dari Ginee.
+          </p>
+          {items.length > 0 && (
+            <label className="flex cursor-pointer items-center gap-2 text-xs font-medium">
+              <input type="checkbox" checked={allChecked} onChange={toggleAll} className="size-4" />
+              Centang semua
+            </label>
+          )}
+        </div>
       )}
 
       {msg && <p className="mt-3 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm">{msg}</p>}
@@ -115,9 +126,9 @@ export function GineeImport() {
         {items.map((it) => {
           const on = !!checked[it.productId];
           return (
-            <div
+            <label
               key={it.productId}
-              className={`flex flex-wrap items-center gap-3 rounded-lg border p-3 ${on ? "border-foreground bg-muted/30" : "border-border"}`}
+              className={`flex cursor-pointer flex-wrap items-center gap-3 rounded-lg border p-3 ${on ? "border-foreground bg-muted/30" : "border-border"}`}
             >
               <input
                 type="checkbox"
@@ -133,35 +144,16 @@ export function GineeImport() {
               />
               <div className="min-w-[180px] flex-1">
                 <p className="line-clamp-2 text-sm font-medium">{it.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {it.variantCount} varian · stok {it.stock}
-                </p>
+                <p className="text-xs text-muted-foreground">{it.variantCount} varian · stok {it.stock}</p>
               </div>
-              <div className="flex items-center gap-1">
-                <span className="text-xs text-muted-foreground">Rp</span>
-                <input
-                  type="number"
-                  min={0}
-                  value={prices[it.productId] ?? ""}
-                  onChange={(e) => setPrices((p) => ({ ...p, [it.productId]: e.target.value }))}
-                  placeholder="harga"
-                  className="w-28 rounded-md border border-border bg-background px-2 py-1.5 text-sm outline-none focus:border-foreground"
-                />
-              </div>
-            </div>
+            </label>
           );
         })}
       </div>
 
       {items.length > 0 && (
         <div className="sticky bottom-0 mt-4 flex items-center justify-between gap-3 border-t border-border bg-background/95 py-3 backdrop-blur">
-          <span className="text-sm text-muted-foreground">
-            {selectedIds.length} dipilih
-            {selectedIds.length > 0 && (() => {
-              const sum = selectedIds.reduce((n, id) => n + Number(prices[id] || 0), 0);
-              return sum > 0 ? ` · total harga contoh ${formatRupiah(sum)}` : "";
-            })()}
-          </span>
+          <span className="text-sm text-muted-foreground">{selectedIds.length} dipilih</span>
           <Button onClick={doImport} disabled={importing || selectedIds.length === 0}>
             {importing ? <Loader2 className="size-4 animate-spin" /> : <PackagePlus className="size-4" />}
             Impor terpilih ({selectedIds.length})
