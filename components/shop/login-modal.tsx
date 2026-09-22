@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AuthForm } from "@/components/auth/auth-form";
+import { OAuthButtons } from "@/components/auth/oauth-buttons";
 import { useStoreUI } from "@/components/shop/store-ui-provider";
 
 export function LoginModal() {
@@ -50,22 +51,29 @@ export function LoginModal() {
           <X className="size-5" />
         </button>
 
-        <h2 className="text-center text-xl font-semibold">Masuk ke SNAPFIT</h2>
+        {/* Logo */}
+        <div className="flex justify-center">
+          <span className="grid size-11 place-items-center rounded-2xl bg-brand text-lg font-bold text-brand-foreground">S</span>
+        </div>
+        <h2 className="mt-3 text-center text-xl font-semibold tracking-tight">Masuk ke SNAPFIT</h2>
         <p className="mt-1 text-center text-sm text-muted-foreground">
           Masuk untuk checkout lebih cepat & lacak pesananmu.
         </p>
 
-        <div className="mt-5">
+        <div className="mt-6 space-y-5">
           {loginOpen && (
-            <AuthForm
-              mode="login"
-              onSuccess={() => {
-                closeLogin();
-                refreshAuth();
-                notify("Berhasil masuk 🎉");
-                router.refresh();
-              }}
-            />
+            <>
+              <AuthForm
+                mode="login"
+                onSuccess={() => {
+                  closeLogin();
+                  refreshAuth();
+                  notify("Berhasil masuk 🎉");
+                  router.refresh();
+                }}
+              />
+              <OAuthButtons />
+            </>
           )}
         </div>
       </div>

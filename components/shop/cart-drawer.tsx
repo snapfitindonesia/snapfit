@@ -45,7 +45,7 @@ export function CartDrawer() {
         aria-label="Keranjang"
         aria-modal={cartOpen}
         className={cn(
-          "fixed inset-y-0 right-0 z-50 flex w-full max-w-sm flex-col bg-background shadow-2xl transition-transform duration-300 ease-out",
+          "fixed inset-y-0 right-0 z-50 flex w-3/4 max-w-sm flex-col bg-background shadow-2xl transition-transform duration-300 ease-out",
           cartOpen ? "translate-x-0" : "translate-x-full",
         )}
       >
