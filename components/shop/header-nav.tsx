@@ -16,6 +16,7 @@ import logo from "@/logosnapfit.png";
 export function HeaderNav({ menu }: { menu: MegaMenuBrand[] }) {
   const { authed, openLogin } = useStoreUI();
   const [open, setOpen] = useState(false); // mega-menu desktop
+  const [activeBrand, setActiveBrand] = useState(0); // brand aktif di panel kanan
   const [mobileOpen, setMobileOpen] = useState(false); // drawer mobile
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -212,43 +213,76 @@ export function HeaderNav({ menu }: { menu: MegaMenuBrand[] }) {
               onMouseEnter={cancelClose}
               onMouseLeave={scheduleClose}
             >
-              <div className="animate-in fade-in slide-in-from-top-1 rounded-2xl border border-border bg-background p-6 shadow-xl duration-200">
-                <div className="grid grid-cols-2 gap-x-8 gap-y-6 sm:grid-cols-4">
-                  {menu.map((brand) => (
-                    <div key={brand.slug}>
-                      <div className="mb-2.5 flex items-center justify-between border-b border-border pb-2">
-                        <h3 className="text-sm font-semibold">{brand.name}</h3>
+              <div className="animate-in fade-in slide-in-from-top-1 flex max-h-[70vh] overflow-hidden rounded-2xl border border-border bg-background shadow-xl duration-200">
+                {/* Kiri: daftar brand */}
+                <div className="w-48 shrink-0 border-r border-border bg-muted/30 p-2">
+                  {menu.map((brand, i) => (
+                    <button
+                      key={brand.slug}
+                      type="button"
+                      onMouseEnter={() => setActiveBrand(i)}
+                      onFocus={() => setActiveBrand(i)}
+                      className={cn(
+                        "flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors",
+                        activeBrand === i ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:bg-background/60",
+                      )}
+                    >
+                      {brand.name}
+                      <ChevronDown className="size-4 -rotate-90" />
+                    </button>
+                  ))}
+                </div>
+
+                {/* Kanan: seri + model dari brand aktif */}
+                <div className="flex-1 overflow-y-auto p-5">
+                  {menu[activeBrand] && (
+                    <>
+                      <div className="mb-3 flex items-center justify-between">
+                        <h3 className="text-sm font-semibold">{menu[activeBrand].name}</h3>
                         <Link
-                          href={`/produk?tipe=${brand.slug}`}
+                          href={`/produk?tipe=${menu[activeBrand].slug}`}
                           onClick={() => setOpen(false)}
                           className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
                         >
-                          Semua
+                          Lihat semua {menu[activeBrand].name}
                         </Link>
                       </div>
-                      <ul className="space-y-0.5">
-                        {brand.lines.map((line) => (
-                          <li key={line.slug}>
+                      <div className="grid grid-cols-2 gap-x-6 gap-y-4 lg:grid-cols-3">
+                        {menu[activeBrand].lines.map((line) => (
+                          <div key={line.slug}>
                             <Link
                               href={`/produk?tipe=${line.slug}`}
                               onClick={() => setOpen(false)}
-                              className="group flex items-center gap-2.5 rounded-md px-1.5 py-1.5 transition-colors hover:bg-accent"
+                              className="flex items-center gap-2 font-semibold text-sm hover:underline"
                             >
-                              <span className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-md border border-border bg-muted">
+                              <span className="grid size-7 shrink-0 place-items-center overflow-hidden rounded-md border border-border bg-muted">
                                 {line.cover && (
                                   // eslint-disable-next-line @next/next/no-img-element
                                   <img src={line.cover} alt="" className="size-full object-cover" />
                                 )}
                               </span>
-                              <span className="text-sm text-muted-foreground transition-colors group-hover:text-foreground">
-                                {line.name}
-                              </span>
+                              {line.name}
                             </Link>
-                          </li>
+                            {line.models.length > 0 && (
+                              <ul className="mt-1.5 space-y-0.5 pl-9">
+                                {line.models.map((m) => (
+                                  <li key={m}>
+                                    <Link
+                                      href={`/produk?tipe=${line.slug}&model=${encodeURIComponent(m)}`}
+                                      onClick={() => setOpen(false)}
+                                      className="block text-sm text-muted-foreground transition-colors hover:text-foreground"
+                                    >
+                                      {m}
+                                    </Link>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
                         ))}
-                      </ul>
-                    </div>
-                  ))}
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -285,10 +319,25 @@ export function HeaderNav({ menu }: { menu: MegaMenuBrand[] }) {
                             <Link
                               href={`/produk?tipe=${line.slug}`}
                               onClick={closeMobile}
-                              className="block py-1 text-sm text-muted-foreground hover:text-foreground"
+                              className="block py-1 text-sm font-medium hover:text-foreground"
                             >
                               {line.name}
                             </Link>
+                            {line.models.length > 0 && (
+                              <ul className="mb-1 ml-1 flex flex-wrap gap-1.5">
+                                {line.models.map((m) => (
+                                  <li key={m}>
+                                    <Link
+                                      href={`/produk?tipe=${line.slug}&model=${encodeURIComponent(m)}`}
+                                      onClick={closeMobile}
+                                      className="inline-block rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground"
+                                    >
+                                      {m}
+                                    </Link>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
                           </li>
                         ))}
                       </ul>

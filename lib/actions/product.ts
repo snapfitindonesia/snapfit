@@ -107,10 +107,10 @@ export async function getDeviceTree(): Promise<DeviceBrand[]> {
   }
 }
 
-export type MegaMenuLine = { name: string; slug: string; cover: string | null };
+export type MegaMenuLine = { name: string; slug: string; cover: string | null; models: string[] };
 export type MegaMenuBrand = { name: string; slug: string; lines: MegaMenuLine[] };
 
-/** Data mega-menu header: dikelompokkan per BRAND (induk) → seri device (line). */
+/** Data mega-menu: BRAND (induk) → seri device (line) → model (variant.type). */
 export async function getMegaMenu(): Promise<MegaMenuBrand[]> {
   try {
     const brands = await db.category.findMany({
@@ -125,11 +125,7 @@ export async function getMegaMenu(): Promise<MegaMenuBrand[]> {
           select: {
             name: true,
             slug: true,
-            products: {
-              orderBy: { createdAt: "desc" },
-              take: 1,
-              select: { coverImage: true },
-            },
+            products: { select: { coverImage: true, variants: { select: { type: true } } } },
           },
         },
       },
@@ -138,11 +134,17 @@ export async function getMegaMenu(): Promise<MegaMenuBrand[]> {
       .map((b) => ({
         name: b.name,
         slug: b.slug,
-        lines: b.children.map((l) => ({
-          name: l.name,
-          slug: l.slug,
-          cover: l.products[0]?.coverImage ?? null,
-        })),
+        lines: b.children.map((l) => {
+          const models = [
+            ...new Set(l.products.flatMap((p) => p.variants.map((v) => v.type.trim()).filter(Boolean))),
+          ].sort((a, z) => a.localeCompare(z, "id", { numeric: true }));
+          return {
+            name: l.name,
+            slug: l.slug,
+            cover: l.products.find((p) => p.coverImage)?.coverImage ?? null,
+            models,
+          };
+        }),
       }))
       .filter((b) => b.lines.length > 0);
   } catch {
