@@ -27,8 +27,8 @@ const COLUMNS = [
     title: "SNAPFIT",
     links: [
       { label: "Tentang", href: "#" },
-      { label: "Garansi", href: "#" },
-      { label: "Kebijakan Privasi", href: "#" },
+      { label: "Kebijakan Privasi", href: "/privacy" },
+      { label: "Syarat & Ketentuan", href: "/terms" },
     ],
   },
 ];
