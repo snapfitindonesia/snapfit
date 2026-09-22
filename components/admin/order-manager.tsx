@@ -21,7 +21,7 @@ export type AdminOrder = {
   courier: string | null;
   createdAt: string;
   address: { name?: string; phone?: string; address?: string; city?: string; postalCode?: string } | null;
-  items: { id: string; name: string; price: number; qty: number }[];
+  items: { id: string; name: string; price: number; qty: number; sku?: string | null; image?: string | null }[];
 };
 
 const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
@@ -187,11 +187,23 @@ function OrderRow({ order }: { order: AdminOrder }) {
             </div>
             <div>
               <p className="font-medium">Item</p>
-              <ul className="mt-1 space-y-1 text-muted-foreground">
+              <ul className="mt-2 space-y-2">
                 {order.items.map((it) => (
-                  <li key={it.id} className="flex justify-between gap-3">
-                    <span className="truncate">{it.name} × {it.qty}</span>
-                    <span>{formatRupiah(it.price * it.qty)}</span>
+                  <li key={it.id} className="flex items-start gap-3">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={it.image || "https://placehold.co/48"}
+                      alt=""
+                      className="size-11 shrink-0 rounded-md border border-border object-cover"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-foreground">{it.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {it.sku ? <>SKU: <span className="font-mono">{it.sku}</span> · </> : null}
+                        Qty: <span className="font-medium text-foreground">{it.qty}</span> · {formatRupiah(it.price)}/pcs
+                      </p>
+                    </div>
+                    <span className="shrink-0 text-sm font-medium">{formatRupiah(it.price * it.qty)}</span>
                   </li>
                 ))}
               </ul>

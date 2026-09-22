@@ -9,6 +9,14 @@ export default async function AdminOrdersPage() {
     include: { items: true },
   });
 
+  // Lengkapi tiap item dgn SKU + foto varian (varian bisa terhapus → fallback aman).
+  const variantIds = [...new Set(orders.flatMap((o) => o.items.map((it) => it.variantId)))];
+  const variants = await db.variant.findMany({
+    where: { id: { in: variantIds } },
+    select: { id: true, sku: true, image: true },
+  });
+  const vMap = new Map(variants.map((v) => [v.id, v]));
+
   const data: AdminOrder[] = orders.map((o) => ({
     id: o.id,
     midtransOrderId: o.midtransOrderId,
@@ -20,7 +28,14 @@ export default async function AdminOrdersPage() {
     courier: o.courier,
     createdAt: o.createdAt.toISOString(),
     address: o.address as AdminOrder["address"],
-    items: o.items.map((it) => ({ id: it.id, name: it.name, price: it.price, qty: it.qty })),
+    items: o.items.map((it) => ({
+      id: it.id,
+      name: it.name,
+      price: it.price,
+      qty: it.qty,
+      sku: vMap.get(it.variantId)?.sku ?? null,
+      image: vMap.get(it.variantId)?.image ?? null,
+    })),
   }));
 
   return (
