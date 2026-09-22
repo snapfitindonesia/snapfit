@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, Upload } from "lucide-react";
+import { Plus, Upload, DownloadCloud } from "lucide-react";
 import { db } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { ProductTable, type AdminProduct } from "@/components/admin/product-table";
@@ -50,6 +50,11 @@ export default async function AdminProductsPage() {
           <p className="text-sm text-muted-foreground">Kelola produk & varian toko SNAPFIT</p>
         </div>
         <div className="flex gap-2">
+          <Button asChild size="sm" variant="outline">
+            <Link href="/admin/ginee/impor">
+              <DownloadCloud className="size-4" /> Impor Ginee
+            </Link>
+          </Button>
           <Button asChild size="sm" variant="outline">
             <Link href="/admin/produk/impor">
               <Upload className="size-4" /> Impor CSV

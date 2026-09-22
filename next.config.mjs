@@ -13,6 +13,8 @@ const nextConfig = {
       { protocol: "https", hostname: "**.r2.dev" }, // Cloudflare R2 public bucket
       { protocol: "https", hostname: "**.r2.cloudflarestorage.com" }, // R2 (jaga-jaga)
       { protocol: "https", hostname: "cdn.shopify.com" }, // foto katalog impor (sementara)
+      { protocol: "https", hostname: "cf.shopee.co.id" }, // foto master produk Ginee (Shopee CDN)
+      { protocol: "https", hostname: "**.susercontent.com" }, // foto Shopee (mirror)
       ...extraHosts.map((hostname) => ({ protocol: "https", hostname })),
     ],
   },

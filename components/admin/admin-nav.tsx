@@ -9,11 +9,13 @@ import {
   Percent,
   Ticket,
   ShoppingBag,
+  DownloadCloud,
 } from "lucide-react";
 
 const ITEMS = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/produk", label: "Produk", icon: Package },
+  { href: "/admin/ginee/impor", label: "Impor Ginee", icon: DownloadCloud },
   { href: "/admin/banner", label: "Banner", icon: ImageIcon },
   { href: "/admin/diskon", label: "Diskon", icon: Percent },
   { href: "/admin/voucher", label: "Voucher", icon: Ticket },
