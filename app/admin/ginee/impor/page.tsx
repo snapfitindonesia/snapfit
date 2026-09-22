@@ -41,8 +41,8 @@ export default function GineeImportPage() {
           <div className="mb-6 rounded-lg border border-border bg-muted/30 p-4">
             <h2 className="text-sm font-semibold">Sinkron Stok</h2>
             <p className="mb-3 mt-0.5 text-xs text-muted-foreground">
-              Tarik stok terkini dari Ginee untuk semua produk hasil impor. Berjalan otomatis tiap 6 jam;
-              klik untuk sinkron manual sekarang.
+              Tarik stok terkini dari Ginee untuk semua produk hasil impor. Berjalan otomatis tiap hari;
+              klik untuk sinkron manual kapan saja.
             </p>
             <GineeSyncButton />
           </div>
