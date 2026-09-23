@@ -31,6 +31,7 @@ export type PdpVariant = {
   price: number;
   stock: number;
   image: string;
+  discountPercent: number;
 };
 
 export type PdpProduct = {
@@ -95,7 +96,7 @@ export function PdpView({ product }: { product: PdpProduct }) {
     trackViewItem({
       item_id: firstInStock.id,
       item_name: product.name,
-      price: applyDiscount(firstInStock.price, product.discountPercent),
+      price: applyDiscount(firstInStock.price, firstInStock.discountPercent),
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product.slug]);
@@ -132,8 +133,8 @@ export function PdpView({ product }: { product: PdpProduct }) {
     ? product.variants.filter((v) => colorKey(v) === selectedColor)
     : product.variants;
 
-  const finalPrice = applyDiscount(variant.price, product.discountPercent);
-  const hasDiscount = product.discountPercent > 0;
+  const finalPrice = applyDiscount(variant.price, variant.discountPercent);
+  const hasDiscount = variant.discountPercent > 0;
   const outOfStock = variant.stock <= 0;
   const maxQty = Math.max(1, variant.stock);
 

@@ -40,12 +40,8 @@ async function computeOrder(lines: CartLine[], postalCode: string, rateId: strin
   const variants = await db.variant.findMany({
     where: { id: { in: lines.map((l) => l.variantId) } },
     include: {
-      product: {
-        select: {
-          name: true,
-          discounts: { select: { percent: true, active: true, startAt: true, endAt: true } },
-        },
-      },
+      product: { select: { name: true } },
+      discounts: { select: { percent: true, active: true, startAt: true, endAt: true } },
     },
   });
 
@@ -53,7 +49,7 @@ async function computeOrder(lines: CartLine[], postalCode: string, rateId: strin
     const v = variants.find((x) => x.id === line.variantId);
     if (!v) throw new Error("Varian tidak ditemukan / sudah tidak tersedia.");
     if (line.qty > v.stock) throw new Error(`Stok "${v.name}" tidak cukup.`);
-    const percent = activeDiscountPercent(v.product.discounts);
+    const percent = activeDiscountPercent(v.discounts);
     const unit = applyDiscount(v.price, percent);
     return {
       variantId: v.id,

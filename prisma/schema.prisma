@@ -26,7 +26,6 @@ model Product {
   categoryId  String?
   category    Category?  @relation(fields: [categoryId], references: [id])
   variants    Variant[]
-  discounts   Discount[] @relation("DiscountProducts") // ganti productIds[] → relasi m-n
   createdAt   DateTime   @default(now())
 }
 
@@ -42,6 +41,7 @@ model Variant {
   stock     Int     @default(0)
   image     String // 1 foto per varian
   weight    Int     @default(200) // berat gram — utk ongkir Biteship (lihat docs/05)
+  discounts Discount[] @relation("DiscountVariants") // diskon per-varian
 }
 
 model Category {
@@ -69,7 +69,7 @@ model Discount {
   id       String    @id @default(cuid())
   name     String
   percent  Int // persen diskon
-  products Product[] @relation("DiscountProducts") // produk yang kena diskon
+  variants Variant[] @relation("DiscountVariants") // varian yang kena diskon
   active   Boolean   @default(true)
   startAt  DateTime?
   endAt    DateTime?

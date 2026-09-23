@@ -95,13 +95,17 @@ async function main() {
     },
   });
 
-  // Diskon massal (relasi m-n ke produk) — pengganti productIds[] Postgres
+  // Diskon PER-VARIAN (relasi m-n ke varian) — kena semua varian caseIphone.
+  const caseIphoneVariants = await db.variant.findMany({
+    where: { productId: caseIphone.id },
+    select: { id: true },
+  });
   await db.discount.create({
     data: {
       name: "Promo Case iPhone",
       percent: 15,
       active: true,
-      products: { connect: [{ id: caseIphone.id }] },
+      variants: { connect: caseIphoneVariants.map((v) => ({ id: v.id })) },
     },
   });
 

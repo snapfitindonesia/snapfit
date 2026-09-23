@@ -60,6 +60,7 @@ export default async function ProductDetailPage({
       price: v.price,
       stock: v.stock,
       image: v.image,
+      discountPercent: v.discountPercent,
     })),
   };
 

@@ -52,7 +52,7 @@ export const bannerSchema = z.object({
 export const discountSchema = z.object({
   name: z.string().trim().min(1, "Nama diskon wajib"),
   percent: z.coerce.number().int().min(1).max(99),
-  productIds: z.array(z.string()).min(1, "Pilih minimal 1 produk"),
+  variantIds: z.array(z.string()).min(1, "Pilih minimal 1 varian"),
   active: z.coerce.boolean().default(true),
   startAt: z.string().optional().or(z.literal("")),
   endAt: z.string().optional().or(z.literal("")),

@@ -292,14 +292,14 @@ export async function saveDiscount(input: DiscountInput, id?: string): Promise<R
       startAt: data.startAt ? new Date(data.startAt) : null,
       endAt: data.endAt ? new Date(data.endAt) : null,
     };
-    const refs = data.productIds.map((pid) => ({ id: pid }));
+    const refs = data.variantIds.map((vid) => ({ id: vid }));
     const discount = id
       ? await db.discount.update({
           where: { id },
-          data: { ...base, products: { set: refs } },
+          data: { ...base, variants: { set: refs } },
         })
       : await db.discount.create({
-          data: { ...base, products: { connect: refs } },
+          data: { ...base, variants: { connect: refs } },
         });
     revalidatePath("/admin/diskon");
     revalidateStorefront();

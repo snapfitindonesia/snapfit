@@ -200,8 +200,13 @@ export async function getProducts(query: ProductQuery): Promise<ProductListResul
     },
     include: {
       category: { select: { name: true, slug: true } },
-      variants: { select: { price: true, stock: true } },
-      discounts: { select: { percent: true, active: true, startAt: true, endAt: true } },
+      variants: {
+        select: {
+          price: true,
+          stock: true,
+          discounts: { select: { percent: true, active: true, startAt: true, endAt: true } },
+        },
+      },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -210,8 +215,13 @@ export async function getProducts(query: ProductQuery): Promise<ProductListResul
     // Sembunyikan produk stok habis dari daftar (semua varian stok 0).
     .filter((p) => p.variants.some((v) => v.stock > 0))
     .map((p) => {
-      const minPrice = Math.min(...p.variants.map((v) => v.price));
-      const percent = activeDiscountPercent(p.discounts);
+      // Diskon per-varian: harga akhir tiap varian dihitung sendiri.
+      const priced = p.variants.map((v) => {
+        const pct = activeDiscountPercent(v.discounts);
+        return { price: v.price, final: applyDiscount(v.price, pct), pct };
+      });
+      const minPrice = Math.min(...priced.map((x) => x.price));
+      const cheapest = priced.reduce((a, b) => (b.final < a.final ? b : a));
       return {
         id: p.id,
         slug: p.slug,
@@ -220,8 +230,8 @@ export async function getProducts(query: ProductQuery): Promise<ProductListResul
         categoryName: p.category?.name ?? null,
         categorySlug: p.category?.slug ?? null,
         minPrice,
-        finalPrice: applyDiscount(minPrice, percent),
-        discountPercent: percent,
+        finalPrice: cheapest.final, // harga termurah setelah diskon per-varian
+        discountPercent: cheapest.pct, // diskon pada varian termurah (utk badge)
         inStock: p.variants.some((v) => v.stock > 0),
       };
     });
@@ -250,14 +260,21 @@ export async function getProductBySlug(slug: string) {
     where: { slug },
     include: {
       category: { select: { name: true, slug: true } },
-      variants: { orderBy: [{ color: "asc" }, { price: "asc" }] },
-      discounts: { select: { percent: true, active: true, startAt: true, endAt: true } },
+      variants: {
+        orderBy: [{ color: "asc" }, { price: "asc" }],
+        include: { discounts: { select: { percent: true, active: true, startAt: true, endAt: true } } },
+      },
     },
   });
   if (!product) return null;
 
-  const percent = activeDiscountPercent(product.discounts);
-  return { ...product, discountPercent: percent };
+  // Diskon PER-VARIAN → tiap varian bawa discountPercent-nya sendiri.
+  const variants = product.variants.map((v) => ({
+    ...v,
+    discountPercent: activeDiscountPercent(v.discounts),
+  }));
+  const maxPercent = variants.reduce((m, v) => Math.max(m, v.discountPercent), 0);
+  return { ...product, variants, discountPercent: maxPercent };
 }
 
 export type ProductDetail = NonNullable<Awaited<ReturnType<typeof getProductBySlug>>>;
