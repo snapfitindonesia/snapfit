@@ -267,13 +267,13 @@ export function HeaderNav({ menu, navLinks = [] }: { menu: MegaMenuBrand[]; navL
                             {line.models.length > 0 && (
                               <ul className="mt-1.5 space-y-0.5 pl-9">
                                 {line.models.map((m) => (
-                                  <li key={m}>
+                                  <li key={m.slug ?? m.label}>
                                     <Link
-                                      href={`/produk?tipe=${line.slug}&model=${encodeURIComponent(m)}`}
+                                      href={m.slug ? `/produk?tipe=${m.slug}` : `/produk?tipe=${line.slug}&model=${encodeURIComponent(m.label)}`}
                                       onClick={() => setOpen(false)}
                                       className="block text-sm text-muted-foreground transition-colors hover:text-foreground"
                                     >
-                                      {m}
+                                      {m.label}
                                     </Link>
                                   </li>
                                 ))}
@@ -322,13 +322,13 @@ export function HeaderNav({ menu, navLinks = [] }: { menu: MegaMenuBrand[]; navL
                                   {line.models.length > 0 && (
                                     <ul className="mb-1 ml-1 flex flex-wrap gap-1.5">
                                       {line.models.map((m) => (
-                                        <li key={m}>
+                                        <li key={m.slug ?? m.label}>
                                           <Link
-                                            href={`/produk?tipe=${line.slug}&model=${encodeURIComponent(m)}`}
+                                            href={m.slug ? `/produk?tipe=${m.slug}` : `/produk?tipe=${line.slug}&model=${encodeURIComponent(m.label)}`}
                                             onClick={closeMobile}
                                             className="inline-block rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground"
                                           >
-                                            {m}
+                                            {m.label}
                                           </Link>
                                         </li>
                                       ))}

@@ -153,10 +153,13 @@ export async function getNavLinks(location: "HEADER" | "FOOTER"): Promise<NavLin
   }
 }
 
-export type MegaMenuLine = { name: string; slug: string; cover: string | null; models: string[] };
+// Model (tingkat 3): slug != null = kategori manual → link ?tipe=slug;
+// slug null = model dari variant.type → link ?tipe=line&model=label.
+export type MegaMenuModel = { label: string; slug: string | null };
+export type MegaMenuLine = { name: string; slug: string; cover: string | null; models: MegaMenuModel[] };
 export type MegaMenuBrand = { name: string; slug: string; lines: MegaMenuLine[] };
 
-/** Data mega-menu: BRAND (induk) → seri device (line) → model (variant.type). */
+/** Data mega-menu: BRAND (1) → seri (2) → model (3: kategori manual / variant.type). */
 export async function getMegaMenu(): Promise<MegaMenuBrand[]> {
   try {
     const brands = await db.category.findMany({
@@ -166,11 +169,16 @@ export async function getMegaMenu(): Promise<MegaMenuBrand[]> {
         name: true,
         slug: true,
         children: {
-          where: { products: { some: {} } },
           orderBy: [{ order: "asc" }, { name: "asc" }],
           select: {
             name: true,
             slug: true,
+            image: true,
+            // tingkat 3: kategori model manual
+            children: {
+              orderBy: [{ order: "asc" }, { name: "asc" }],
+              select: { name: true, slug: true },
+            },
             products: { select: { coverImage: true, variants: { select: { type: true } } } },
           },
         },
@@ -181,13 +189,16 @@ export async function getMegaMenu(): Promise<MegaMenuBrand[]> {
         name: b.name,
         slug: b.slug,
         lines: b.children.map((l) => {
-          const models = [
-            ...new Set(l.products.flatMap((p) => p.variants.map((v) => v.type.trim()).filter(Boolean))),
-          ].sort((a, z) => a.localeCompare(z, "id", { numeric: true }));
+          // Level-3 kategori manual bila ada; jika tidak, fallback ke variant.type.
+          const models: MegaMenuModel[] = l.children.length
+            ? l.children.map((c) => ({ label: c.name, slug: c.slug }))
+            : [...new Set(l.products.flatMap((p) => p.variants.map((v) => v.type.trim()).filter(Boolean)))]
+                .sort((a, z) => a.localeCompare(z, "id", { numeric: true }))
+                .map((label) => ({ label, slug: null }));
           return {
             name: l.name,
             slug: l.slug,
-            cover: l.products.find((p) => p.coverImage)?.coverImage ?? null,
+            cover: l.image || l.products.find((p) => p.coverImage)?.coverImage || null,
             models,
           };
         }),
@@ -205,8 +216,15 @@ export async function getProducts(query: ProductQuery): Promise<ProductListResul
   const products = await db.product.findMany({
     where: {
       // tipe cocok bila slug = line ITU atau slug = brand induknya (brand → semua line-nya)
+      // cocok bila slug = kategori produk ATAU salah satu induknya (brand/seri) — 3 tingkat
       ...(tipe
-        ? { OR: [{ category: { slug: tipe } }, { category: { parent: { slug: tipe } } }] }
+        ? {
+            OR: [
+              { category: { slug: tipe } },
+              { category: { parent: { slug: tipe } } },
+              { category: { parent: { parent: { slug: tipe } } } },
+            ],
+          }
         : {}),
       // model tingkat 3: produk punya varian dengan type persis
       ...(model ? { variants: { some: { type: model } } } : {}),

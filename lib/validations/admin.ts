@@ -62,6 +62,7 @@ export const categorySchema = z.object({
   name: z.string().trim().min(1, "Nama kategori wajib"),
   slug: z.string().trim().optional().or(z.literal("")),
   parentId: z.string().optional().or(z.literal("")), // kosong = brand (induk)
+  image: z.string().trim().optional().or(z.literal("")),
   order: z.coerce.number().int().min(0).default(0),
 });
 

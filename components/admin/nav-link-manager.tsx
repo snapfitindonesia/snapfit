@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Trash2, Pencil, ExternalLink } from "lucide-react";
+import { Loader2, Trash2, Pencil, ExternalLink, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { saveNavLink, deleteNavLink } from "@/lib/actions/admin";
+import { saveNavLink, deleteNavLink, reorderNavLinks } from "@/lib/actions/admin";
 
 export type NavLinkRow = {
   id: string;
@@ -26,6 +26,18 @@ export function NavLinkManager({ rows }: { rows: NavLinkRow[] }) {
   const [f, setF] = useState({ ...BLANK });
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [drag, setDrag] = useState<{ id: string; loc: string } | null>(null);
+
+  async function onDrop(loc: string, items: NavLinkRow[], targetId: string) {
+    if (!drag || drag.loc !== loc || drag.id === targetId) { setDrag(null); return; }
+    const ids = items.map((i) => i.id);
+    const from = ids.indexOf(drag.id), to = ids.indexOf(targetId);
+    if (from < 0 || to < 0) { setDrag(null); return; }
+    ids.splice(to, 0, ids.splice(from, 1)[0]);
+    setDrag(null);
+    await reorderNavLinks(ids);
+    router.refresh();
+  }
 
   function reset() { setEditId(null); setF({ ...BLANK }); setError(null); }
   function edit(r: NavLinkRow) {
@@ -57,7 +69,15 @@ export function NavLinkManager({ rows }: { rows: NavLinkRow[] }) {
       <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">{title}</p>
       <div className="space-y-2">
         {items.map((r) => (
-          <div key={r.id} className="flex items-center gap-2 rounded-lg border border-border p-2.5">
+          <div
+            key={r.id}
+            draggable
+            onDragStart={() => setDrag({ id: r.id, loc: r.location })}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={() => onDrop(r.location, items, r.id)}
+            className={`flex items-center gap-2 rounded-lg border border-border p-2.5 ${drag?.id === r.id ? "opacity-40" : ""}`}
+          >
+            <GripVertical className="size-4 shrink-0 cursor-grab text-muted-foreground" />
             <span className="text-sm font-medium">{r.label}</span>
             {r.kind === "MEGA" && <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium">Kategori</span>}
             {r.newTab && <ExternalLink className="size-3 text-muted-foreground" />}
