@@ -58,6 +58,13 @@ export const discountSchema = z.object({
   endAt: z.string().optional().or(z.literal("")),
 });
 
+export const categorySchema = z.object({
+  name: z.string().trim().min(1, "Nama kategori wajib"),
+  slug: z.string().trim().optional().or(z.literal("")),
+  parentId: z.string().optional().or(z.literal("")), // kosong = brand (induk)
+  order: z.coerce.number().int().min(0).default(0),
+});
+
 export const voucherSchema = z.object({
   code: z
     .string()
@@ -81,6 +88,7 @@ export const orderUpdateSchema = z.object({
 
 export type ProductInput = z.infer<typeof productSchema>;
 export type BannerInput = z.infer<typeof bannerSchema>;
+export type CategoryInput = z.infer<typeof categorySchema>;
 export type DiscountInput = z.infer<typeof discountSchema>;
 export type VoucherInput = z.infer<typeof voucherSchema>;
 export type OrderUpdateInput = z.infer<typeof orderUpdateSchema>;

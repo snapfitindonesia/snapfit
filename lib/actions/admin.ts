@@ -7,11 +7,13 @@ import { sendEmail, orderShippedEmail, orderProcessingEmail } from "@/lib/email"
 import {
   productSchema,
   bannerSchema,
+  categorySchema,
   discountSchema,
   voucherSchema,
   orderUpdateSchema,
   type ProductInput,
   type BannerInput,
+  type CategoryInput,
   type DiscountInput,
   type VoucherInput,
   type OrderUpdateInput,
@@ -398,6 +400,59 @@ export async function updateOrder(input: OrderUpdateInput): Promise<Result> {
         console.error("Email resi gagal:", e);
       }
     }
+    return { ok: true };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+// ===== Kategori (CRUD manual) =====
+export async function saveCategory(input: CategoryInput, id?: string): Promise<Result> {
+  try {
+    await requireAdmin();
+    const data = categorySchema.parse(input);
+    const slug = slugify(data.slug || data.name);
+    if (!slug) return { ok: false, error: "Nama/slug tidak valid." };
+
+    // Slug harus unik (kecuali dirinya sendiri saat edit).
+    const dup = await db.category.findFirst({ where: { slug, ...(id ? { id: { not: id } } : {}) }, select: { id: true } });
+    if (dup) return { ok: false, error: `Slug "${slug}" sudah dipakai.` };
+
+    const parentId = data.parentId || null;
+    // Cegah kategori jadi anak dari dirinya sendiri.
+    if (id && parentId === id) return { ok: false, error: "Kategori tak bisa jadi induk dirinya." };
+    // Pohon hanya 2 tingkat: induk yang dipilih harus brand (parentId null).
+    if (parentId) {
+      const parent = await db.category.findUnique({ where: { id: parentId }, select: { parentId: true } });
+      if (!parent) return { ok: false, error: "Induk tidak ditemukan." };
+      if (parent.parentId) return { ok: false, error: "Induk harus brand (tingkat 1)." };
+    }
+
+    const payload = { name: data.name, slug, parentId, order: data.order };
+    const cat = id
+      ? await db.category.update({ where: { id }, data: payload })
+      : await db.category.create({ data: payload });
+    revalidatePath("/admin/kategori");
+    revalidateStorefront();
+    return { ok: true, id: cat.id };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+export async function deleteCategory(id: string): Promise<Result> {
+  try {
+    await requireAdmin();
+    const cat = await db.category.findUnique({
+      where: { id },
+      select: { _count: { select: { children: true, products: true } } },
+    });
+    if (!cat) return { ok: false, error: "Kategori tidak ditemukan." };
+    if (cat._count.children > 0) return { ok: false, error: "Masih punya sub-kategori. Hapus/pindahkan dulu." };
+    if (cat._count.products > 0) return { ok: false, error: "Masih ada produk di kategori ini. Pindahkan dulu." };
+    await db.category.delete({ where: { id } });
+    revalidatePath("/admin/kategori");
+    revalidateStorefront();
     return { ok: true };
   } catch (e) {
     return fail(e);
