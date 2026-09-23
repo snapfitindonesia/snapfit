@@ -207,7 +207,8 @@ export async function getProducts(query: ProductQuery): Promise<ProductListResul
   });
 
   const mapped: ProductListItem[] = products
-    .filter((p) => p.variants.length > 0)
+    // Sembunyikan produk stok habis dari daftar (semua varian stok 0).
+    .filter((p) => p.variants.some((v) => v.stock > 0))
     .map((p) => {
       const minPrice = Math.min(...p.variants.map((v) => v.price));
       const percent = activeDiscountPercent(p.discounts);
