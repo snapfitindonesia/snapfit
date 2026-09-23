@@ -26,7 +26,7 @@ export function StripBanner({ banner }: { banner: MainBanner | null }) {
   return (
     <Link href={banner.href} className="block overflow-hidden rounded-xl border border-border">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={banner.image} alt="" className="h-auto w-full object-cover" />
+      <img src={banner.image} alt="" loading="lazy" decoding="async" className="h-auto w-full object-cover" />
     </Link>
   );
 }
