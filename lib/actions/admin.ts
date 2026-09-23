@@ -11,6 +11,7 @@ import {
   navLinkSchema,
   discountSchema,
   voucherSchema,
+  reviewSchema,
   orderUpdateSchema,
   type ProductInput,
   type BannerInput,
@@ -18,6 +19,7 @@ import {
   type NavLinkInput,
   type DiscountInput,
   type VoucherInput,
+  type ReviewInput,
   type OrderUpdateInput,
 } from "@/lib/validations/admin";
 
@@ -523,6 +525,47 @@ export async function reorderNavLinks(ids: string[]): Promise<Result> {
     await db.$transaction(ids.map((id, i) => db.navLink.update({ where: { id }, data: { order: i } })));
     revalidatePath("/admin/menu");
     revalidateStorefront();
+    return { ok: true };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+/* ============================ ULASAN ============================ */
+
+async function revalidateReview(productId: string) {
+  const p = await db.product.findUnique({ where: { id: productId }, select: { slug: true } });
+  if (p) revalidatePath(`/produk/${p.slug}`);
+  revalidatePath("/admin/ulasan");
+}
+
+export async function saveReview(input: ReviewInput, id?: string): Promise<Result> {
+  try {
+    await requireAdmin();
+    const data = reviewSchema.parse(input);
+    const payload = {
+      productId: data.productId,
+      author: data.author,
+      image: data.image || null,
+      rating: data.rating,
+      comment: data.comment,
+      ...(data.createdAt ? { createdAt: new Date(data.createdAt) } : {}),
+    };
+    const review = id
+      ? await db.review.update({ where: { id }, data: payload })
+      : await db.review.create({ data: payload });
+    await revalidateReview(data.productId);
+    return { ok: true, id: review.id };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+export async function deleteReview(id: string): Promise<Result> {
+  try {
+    await requireAdmin();
+    const review = await db.review.delete({ where: { id } });
+    await revalidateReview(review.productId);
     return { ok: true };
   } catch (e) {
     return fail(e);

@@ -12,6 +12,7 @@ import {
   DownloadCloud,
   FolderTree,
   Link2,
+  Star,
 } from "lucide-react";
 
 const ITEMS = [
@@ -23,6 +24,7 @@ const ITEMS = [
   { href: "/admin/menu", label: "Menu", icon: Link2 },
   { href: "/admin/diskon", label: "Diskon", icon: Percent },
   { href: "/admin/voucher", label: "Voucher", icon: Ticket },
+  { href: "/admin/ulasan", label: "Ulasan", icon: Star },
   { href: "/admin/pesanan", label: "Pesanan", icon: ShoppingBag },
 ];
 

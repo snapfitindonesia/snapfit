@@ -26,7 +26,21 @@ model Product {
   categoryId  String?
   category    Category?  @relation(fields: [categoryId], references: [id])
   variants    Variant[]
+  reviews     Review[]
   createdAt   DateTime   @default(now())
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  author    String // nama pengulas
+  image     String? // foto (opsional) — foto pembeli / foto produk dari pembeli
+  rating    Int      @default(5) // 1-5 bintang
+  comment   String
+  createdAt DateTime @default(now())
+
+  @@index([productId])
 }
 
 model Variant {

@@ -313,6 +313,22 @@ export async function getProductBySlug(slug: string) {
 
 export type ProductDetail = NonNullable<Awaited<ReturnType<typeof getProductBySlug>>>;
 
+export async function getProductReviews(productId: string) {
+  const reviews = await db.review.findMany({
+    where: { productId },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, author: true, image: true, rating: true, comment: true, createdAt: true },
+  });
+  return reviews.map((r) => ({
+    id: r.id,
+    author: r.author,
+    image: r.image,
+    rating: r.rating,
+    comment: r.comment,
+    createdAt: r.createdAt.toISOString(),
+  }));
+}
+
 export async function getRelatedProducts(
   productId: string,
   categorySlug: string | null,

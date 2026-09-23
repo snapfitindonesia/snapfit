@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import {
   getProductBySlug,
   getRelatedProducts,
+  getProductReviews,
 } from "@/lib/actions/product";
 import { PdpView, type PdpProduct } from "@/components/shop/pdp-view";
 import { ProductCard } from "@/components/shop/product-card";
@@ -35,10 +36,10 @@ export default async function ProductDetailPage({
   const product = await getProductBySlug(slug); // RSC: muat awal server-side
   if (!product) notFound();
 
-  const related = await getRelatedProducts(
-    product.id,
-    product.category?.slug ?? null,
-  );
+  const [related, reviews] = await Promise.all([
+    getRelatedProducts(product.id, product.category?.slug ?? null),
+    getProductReviews(product.id),
+  ]);
 
   // Bentuk data serializable untuk Client Component (tanpa Date dsb.)
   const pdpProduct: PdpProduct = {
@@ -89,7 +90,7 @@ export default async function ProductDetailPage({
 
         {/* Ulasan (target anchor dari rating) */}
         <div id="ulasan" className="scroll-mt-24">
-          <ProductReviews />
+          <ProductReviews reviews={reviews} />
         </div>
       </div>
     </div>
