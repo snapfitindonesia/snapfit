@@ -401,7 +401,7 @@ export function PdpView({ product }: { product: PdpProduct }) {
         </div>
 
         {product.description && (
-          <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+          <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
             {product.description}
           </p>
         )}
@@ -532,8 +532,7 @@ export function PdpView({ product }: { product: PdpProduct }) {
               <ChevronDown className="size-4 text-muted-foreground transition-transform group-open:rotate-180" />
             </summary>
             <div className="pb-3 text-sm text-muted-foreground">
-              <p>{product.description || "Aksesori premium dari SNAPFIT."}</p>
-              <ul className="mt-2 list-inside list-disc space-y-1">
+              <ul className="list-inside list-disc space-y-1">
                 <li>Garansi resmi & 100% original</li>
                 <li>Material berkualitas, tahan pakai</li>
                 <li>7 hari pengembalian bila tidak sesuai</li>
