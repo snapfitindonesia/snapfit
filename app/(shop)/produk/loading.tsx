@@ -10,7 +10,7 @@ export default function LoadingProducts() {
           <div key={i} className="h-8 w-24 rounded-full bg-muted" />
         ))}
       </div>
-      <div className="mt-6 grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
+      <div className="mt-6 grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
         {Array.from({ length: 8 }).map((_, i) => (
           <div key={i} className="space-y-3">
             <div className="aspect-square w-full rounded-lg bg-muted" />

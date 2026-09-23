@@ -78,7 +78,7 @@ export default async function ProductDetailPage({
             <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">
               Mungkin kamu butuhkan
             </h2>
-            <div className="mt-6 grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
+            <div className="mt-6 grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
               {related.map((p) => (
                 <ProductCard key={p.id} product={p} />
               ))}

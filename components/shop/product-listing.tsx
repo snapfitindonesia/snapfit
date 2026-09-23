@@ -178,7 +178,7 @@ export function ProductListing({
 
       {/* Grid: mobile 2 kolom → tablet → desktop 4 kolom */}
       {items.length > 0 ? (
-        <div className="mt-4 grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
+        <div className="mt-4 grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
           {items.map((p) => (
             <ProductCard key={p.id} product={p} />
           ))}

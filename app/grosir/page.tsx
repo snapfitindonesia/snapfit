@@ -192,7 +192,7 @@ export default async function GrosirLandingPage() {
           <p className="mt-2 text-center text-sm text-muted-foreground">
             Harga per pcs turun otomatis mengikuti jumlah order. Minimal {OFFER.minOrder} pcs.
           </p>
-          <div className="mt-8 grid grid-cols-2 gap-x-4 gap-y-6 lg:grid-cols-4">
+          <div className="mt-8 grid grid-cols-2 gap-x-4 gap-y-6 md:grid-cols-3 lg:grid-cols-4">
             {[
               { qty: "10–29 pcs", label: "Grosir", off: "40%" },
               { qty: "30–99 pcs", label: "Grosir Plus", off: "45%" },
@@ -305,7 +305,7 @@ export default async function GrosirLandingPage() {
           </p>
         </div>
         {items.length > 0 ? (
-          <div className="mt-8 grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
+          <div className="mt-8 grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
             {items.map((p) => (
               <ProductCard key={p.id} product={p} />
             ))}

@@ -140,7 +140,7 @@ export default async function HomePage() {
             Lihat semua
           </Link>
         </div>
-        <div className="mt-6 grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
+        <div className="mt-6 grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
           {featured.map((p) => (
             <ProductCard key={p.id} product={p} />
           ))}
@@ -163,7 +163,7 @@ export default async function HomePage() {
               Lihat semua
             </Link>
           </div>
-          <div className="mt-6 grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
+          <div className="mt-6 grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
             {latest.map((p) => (
               <ProductCard key={p.id} product={p} />
             ))}
