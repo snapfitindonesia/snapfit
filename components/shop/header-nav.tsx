@@ -10,10 +10,10 @@ import { cn } from "@/lib/utils";
 import { formatRupiah } from "@/lib/format";
 import { CartButton } from "@/components/shop/cart-button";
 import { useStoreUI } from "@/components/shop/store-ui-provider";
-import type { MegaMenuBrand, ProductListItem } from "@/lib/actions/product";
+import type { MegaMenuBrand, ProductListItem, NavLinkItem } from "@/lib/actions/product";
 import logo from "@/logosnapfit.png";
 
-export function HeaderNav({ menu }: { menu: MegaMenuBrand[] }) {
+export function HeaderNav({ menu, navLinks = [] }: { menu: MegaMenuBrand[]; navLinks?: NavLinkItem[] }) {
   const { authed, openLogin } = useStoreUI();
   const [open, setOpen] = useState(false); // mega-menu desktop
   const [activeBrand, setActiveBrand] = useState(0); // brand aktif di panel kanan
@@ -172,6 +172,17 @@ export function HeaderNav({ menu }: { menu: MegaMenuBrand[] }) {
               >
                 Bantuan
               </Link>
+              {navLinks.map((l) => (
+                <Link
+                  key={l.id}
+                  href={l.url}
+                  target={l.newTab ? "_blank" : undefined}
+                  rel={l.newTab ? "noopener noreferrer" : undefined}
+                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  {l.label}
+                </Link>
+              ))}
             </nav>
 
             <div className="ml-auto flex items-center gap-1">
@@ -299,6 +310,25 @@ export function HeaderNav({ menu }: { menu: MegaMenuBrand[] }) {
                 >
                   Semua Produk
                 </Link>
+                <Link
+                  href="/bantuan"
+                  onClick={closeMobile}
+                  className="block rounded-md px-2 py-2.5 text-sm font-medium hover:bg-accent"
+                >
+                  Bantuan
+                </Link>
+                {navLinks.map((l) => (
+                  <Link
+                    key={l.id}
+                    href={l.url}
+                    target={l.newTab ? "_blank" : undefined}
+                    rel={l.newTab ? "noopener noreferrer" : undefined}
+                    onClick={closeMobile}
+                    className="block rounded-md px-2 py-2.5 text-sm font-medium hover:bg-accent"
+                  >
+                    {l.label}
+                  </Link>
+                ))}
 
                 <p className="mt-3 px-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Kategori

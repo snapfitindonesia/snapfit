@@ -125,3 +125,13 @@ model OrderItem {
   price     Int // snapshot harga saat beli
   qty       Int
 }
+
+model NavLink {
+  id       String  @id @default(cuid())
+  label    String
+  url      String
+  location String  @default("HEADER") // HEADER | FOOTER
+  order    Int     @default(0)
+  newTab   Boolean @default(false)
+  active   Boolean @default(true)
+}

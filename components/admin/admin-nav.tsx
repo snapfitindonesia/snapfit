@@ -11,6 +11,7 @@ import {
   ShoppingBag,
   DownloadCloud,
   FolderTree,
+  Link2,
 } from "lucide-react";
 
 const ITEMS = [
@@ -19,6 +20,7 @@ const ITEMS = [
   { href: "/admin/kategori", label: "Kategori", icon: FolderTree },
   { href: "/admin/ginee/impor", label: "Impor Ginee", icon: DownloadCloud },
   { href: "/admin/banner", label: "Banner", icon: ImageIcon },
+  { href: "/admin/menu", label: "Menu", icon: Link2 },
   { href: "/admin/diskon", label: "Diskon", icon: Percent },
   { href: "/admin/voucher", label: "Voucher", icon: Ticket },
   { href: "/admin/pesanan", label: "Pesanan", icon: ShoppingBag },

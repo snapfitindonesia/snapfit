@@ -65,6 +65,15 @@ export const categorySchema = z.object({
   order: z.coerce.number().int().min(0).default(0),
 });
 
+export const navLinkSchema = z.object({
+  label: z.string().trim().min(1, "Label wajib"),
+  url: z.string().trim().min(1, "URL wajib"),
+  location: z.enum(["HEADER", "FOOTER"]),
+  order: z.coerce.number().int().min(0).default(0),
+  newTab: z.coerce.boolean().default(false),
+  active: z.coerce.boolean().default(true),
+});
+
 export const voucherSchema = z.object({
   code: z
     .string()
@@ -89,6 +98,7 @@ export const orderUpdateSchema = z.object({
 export type ProductInput = z.infer<typeof productSchema>;
 export type BannerInput = z.infer<typeof bannerSchema>;
 export type CategoryInput = z.infer<typeof categorySchema>;
+export type NavLinkInput = z.infer<typeof navLinkSchema>;
 export type DiscountInput = z.infer<typeof discountSchema>;
 export type VoucherInput = z.infer<typeof voucherSchema>;
 export type OrderUpdateInput = z.infer<typeof orderUpdateSchema>;

@@ -8,12 +8,14 @@ import {
   productSchema,
   bannerSchema,
   categorySchema,
+  navLinkSchema,
   discountSchema,
   voucherSchema,
   orderUpdateSchema,
   type ProductInput,
   type BannerInput,
   type CategoryInput,
+  type NavLinkInput,
   type DiscountInput,
   type VoucherInput,
   type OrderUpdateInput,
@@ -452,6 +454,42 @@ export async function deleteCategory(id: string): Promise<Result> {
     if (cat._count.products > 0) return { ok: false, error: "Masih ada produk di kategori ini. Pindahkan dulu." };
     await db.category.delete({ where: { id } });
     revalidatePath("/admin/kategori");
+    revalidateStorefront();
+    return { ok: true };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+// ===== Menu / Link custom (CRUD) =====
+export async function saveNavLink(input: NavLinkInput, id?: string): Promise<Result> {
+  try {
+    await requireAdmin();
+    const data = navLinkSchema.parse(input);
+    const payload = {
+      label: data.label,
+      url: data.url,
+      location: data.location,
+      order: data.order,
+      newTab: data.newTab,
+      active: data.active,
+    };
+    const link = id
+      ? await db.navLink.update({ where: { id }, data: payload })
+      : await db.navLink.create({ data: payload });
+    revalidatePath("/admin/menu");
+    revalidateStorefront();
+    return { ok: true, id: link.id };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+export async function deleteNavLink(id: string): Promise<Result> {
+  try {
+    await requireAdmin();
+    await db.navLink.delete({ where: { id } });
+    revalidatePath("/admin/menu");
     revalidateStorefront();
     return { ok: true };
   } catch (e) {

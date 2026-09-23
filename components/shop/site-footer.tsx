@@ -2,8 +2,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { ShieldCheck, BadgeCheck, RotateCcw } from "lucide-react";
 import logo from "@/logosnapfit.png";
+import { getNavLinks } from "@/lib/actions/product";
 
-const COLUMNS = [
+type FooterLink = { label: string; href: string; newTab?: boolean };
+const COLUMNS: { title: string; links: FooterLink[] }[] = [
   {
     title: "Belanja",
     links: [
@@ -39,7 +41,11 @@ const TRUST = [
   { icon: RotateCcw, label: "7 Hari Pengembalian" },
 ];
 
-export function SiteFooter() {
+export async function SiteFooter() {
+  const custom = await getNavLinks("FOOTER");
+  const columns = custom.length
+    ? [...COLUMNS, { title: "Menu", links: custom.map((l) => ({ label: l.label, href: l.url, newTab: l.newTab })) }]
+    : COLUMNS;
   return (
     <footer className="mt-24 border-t border-border">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
@@ -62,7 +68,7 @@ export function SiteFooter() {
               beres.
             </p>
           </div>
-          {COLUMNS.map((col) => (
+          {columns.map((col) => (
             <div key={col.title}>
               <h3 className="text-sm font-medium">{col.title}</h3>
               <ul className="mt-4 space-y-3">
@@ -70,6 +76,8 @@ export function SiteFooter() {
                   <li key={link.label}>
                     <Link
                       href={link.href}
+                      target={link.newTab ? "_blank" : undefined}
+                      rel={link.newTab ? "noopener noreferrer" : undefined}
                       className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                     >
                       {link.label}
