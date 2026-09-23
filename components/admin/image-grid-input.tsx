@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Loader2, Upload, X, Star } from "lucide-react";
+import { Loader2, Upload, X, ChevronLeft, ChevronRight } from "lucide-react";
 
 const MAX = 9;
 
@@ -55,11 +55,12 @@ export function ImageGridInput({
   function remove(i: number) {
     onChange(photos.filter((_, idx) => idx !== i));
   }
-  function makeMain(i: number) {
-    if (i === 0) return;
+  function move(i: number, dir: -1 | 1) {
+    const j = i + dir;
+    if (j < 0 || j >= photos.length) return;
     const next = [...photos];
-    const [pick] = next.splice(i, 1);
-    onChange([pick, ...next]);
+    [next[i], next[j]] = [next[j], next[i]];
+    onChange(next);
   }
   function addUrl() {
     const u = urlDraft.trim();
@@ -71,24 +72,21 @@ export function ImageGridInput({
 
   return (
     <div>
+      {photos.length > 1 && (
+        <p className="mb-1.5 text-[11px] text-muted-foreground">Foto pertama = cover. Arahkan kursor lalu geser ◀ ▶ untuk mengurutkan.</p>
+      )}
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
         {photos.map((src, i) => (
           <div key={`${src}-${i}`} className="group relative aspect-square overflow-hidden rounded-lg border border-border bg-muted">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={src} alt="" className="size-full object-contain" />
-            {i === 0 ? (
-              <span className="absolute inset-x-0 bottom-0 bg-brand/90 py-0.5 text-center text-[10px] font-medium text-brand-foreground">
-                Foto utama
+
+            {i === 0 && (
+              <span className="absolute left-0 top-0 rounded-br-md bg-brand px-1.5 py-0.5 text-[10px] font-medium text-brand-foreground">
+                Cover
               </span>
-            ) : (
-              <button
-                type="button"
-                onClick={() => makeMain(i)}
-                className="absolute bottom-1 left-1 flex items-center gap-0.5 rounded bg-black/60 px-1.5 py-0.5 text-[10px] text-white opacity-0 transition-opacity group-hover:opacity-100"
-              >
-                <Star className="size-3" /> Jadikan utama
-              </button>
             )}
+
             <button
               type="button"
               onClick={() => remove(i)}
@@ -97,6 +95,28 @@ export function ImageGridInput({
             >
               <X className="size-3" />
             </button>
+
+            {/* Geser urutan — foto pertama = cover */}
+            <div className="absolute inset-x-0 bottom-0 flex justify-between bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+              <button
+                type="button"
+                onClick={() => move(i, -1)}
+                disabled={i === 0}
+                aria-label="Geser ke kiri"
+                className="grid flex-1 place-items-center py-1 text-white hover:bg-white/20 disabled:opacity-30"
+              >
+                <ChevronLeft className="size-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => move(i, 1)}
+                disabled={i === photos.length - 1}
+                aria-label="Geser ke kanan"
+                className="grid flex-1 place-items-center py-1 text-white hover:bg-white/20 disabled:opacity-30"
+              >
+                <ChevronRight className="size-4" />
+              </button>
+            </div>
           </div>
         ))}
 
