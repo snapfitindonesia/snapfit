@@ -4,12 +4,15 @@ import { Button } from "@/components/ui/button";
 import {
   getProducts,
   getDeviceTree,
+  getMainBanners,
   type ProductListItem,
   type DeviceBrand,
+  type MainBanner,
 } from "@/lib/actions/product";
 import { ProductCard } from "@/components/shop/product-card";
 import { DevicePicker } from "@/components/shop/device-picker";
 import { HeroCarousel, type HeroSlide } from "@/components/shop/hero-carousel";
+import { BannerCarousel } from "@/components/shop/banner-carousel";
 
 // ISR: homepage di-cache (cepat), regenerasi tiap 5 menit.
 export const revalidate = 300;
@@ -56,9 +59,24 @@ export default async function HomePage() {
     deviceTree = [];
   }
 
+  let banners: MainBanner[] = [];
+  try {
+    banners = await getMainBanners();
+  } catch {
+    banners = [];
+  }
+
   return (
     <>
-      {/* Hero */}
+      {/* Hero banner besar (1200×600) — dikelola di Admin → Banner (type MAIN) */}
+      {banners.length > 0 && (
+        <section className="mx-auto max-w-6xl px-4 pt-6 sm:px-6">
+          <BannerCarousel banners={banners} />
+        </section>
+      )}
+
+      {/* Hero teks — fallback bila belum ada banner */}
+      {banners.length === 0 && (
       <section className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="grid items-center gap-8 py-12 sm:py-16 md:grid-cols-2 md:gap-12 md:py-24">
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -91,6 +109,7 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+      )}
 
       {/* Pilih tipe HP kamu — drill-down brand → line → model (lihat 02-design-system.md) */}
       <section className="mx-auto max-w-6xl px-4 sm:px-6">

@@ -107,6 +107,22 @@ export async function getDeviceTree(): Promise<DeviceBrand[]> {
   }
 }
 
+export type MainBanner = { id: string; image: string; href: string };
+
+/** Banner utama (hero) — type MAIN & aktif, terurut. Ukuran ideal 1200×600. */
+export async function getMainBanners(): Promise<MainBanner[]> {
+  try {
+    const banners = await db.banner.findMany({
+      where: { type: "MAIN", active: true },
+      orderBy: [{ order: "asc" }],
+      select: { id: true, image: true, targetUrl: true },
+    });
+    return banners.map((b) => ({ id: b.id, image: b.image, href: b.targetUrl || "/produk" }));
+  } catch {
+    return [];
+  }
+}
+
 export type MegaMenuLine = { name: string; slug: string; cover: string | null; models: string[] };
 export type MegaMenuBrand = { name: string; slug: string; lines: MegaMenuLine[] };
 

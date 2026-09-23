@@ -73,6 +73,9 @@ export function BannerManager({ banners }: { banners: Banner[] }) {
           </select>
         </label>
         <div className="block text-sm">Gambar
+          {f.type === "MAIN" && (
+            <p className="mt-0.5 text-xs text-muted-foreground">Ukuran ideal <b>1200×600 px</b> (landscape 2:1).</p>
+          )}
           <div className="mt-1">
             <ImageInput value={f.image} onChange={(url) => setF({ ...f, image: url })} />
           </div>
