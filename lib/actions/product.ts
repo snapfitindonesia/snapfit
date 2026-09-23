@@ -137,7 +137,7 @@ export function getStripBanners() {
   return getBannersByType("ETALASE", 1);
 }
 
-export type NavLinkItem = { id: string; label: string; url: string; newTab: boolean };
+export type NavLinkItem = { id: string; label: string; url: string; newTab: boolean; kind: string };
 
 /** Link menu custom aktif per lokasi (HEADER/FOOTER), terurut. */
 export async function getNavLinks(location: "HEADER" | "FOOTER"): Promise<NavLinkItem[]> {
@@ -145,7 +145,7 @@ export async function getNavLinks(location: "HEADER" | "FOOTER"): Promise<NavLin
     const links = await db.navLink.findMany({
       where: { location, active: true },
       orderBy: [{ order: "asc" }],
-      select: { id: true, label: true, url: true, newTab: true },
+      select: { id: true, label: true, url: true, newTab: true, kind: true },
     });
     return links;
   } catch {

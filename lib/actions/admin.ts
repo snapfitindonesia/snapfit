@@ -468,8 +468,9 @@ export async function saveNavLink(input: NavLinkInput, id?: string): Promise<Res
     const data = navLinkSchema.parse(input);
     const payload = {
       label: data.label,
-      url: data.url,
+      url: data.kind === "MEGA" ? "#" : data.url,
       location: data.location,
+      kind: data.kind,
       order: data.order,
       newTab: data.newTab,
       active: data.active,

@@ -131,6 +131,7 @@ model NavLink {
   label    String
   url      String
   location String  @default("HEADER") // HEADER | FOOTER
+  kind     String  @default("LINK") // LINK | MEGA (dropdown Kategori) — header saja
   order    Int     @default(0)
   newTab   Boolean @default(false)
   active   Boolean @default(true)

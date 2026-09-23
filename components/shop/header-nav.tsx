@@ -138,51 +138,41 @@ export function HeaderNav({ menu, navLinks = [] }: { menu: MegaMenuBrand[]; navL
               />
             </Link>
 
-            {/* Nav tengah (desktop) */}
+            {/* Nav tengah (desktop) — sepenuhnya dari Admin → Menu */}
             <nav className="mx-auto hidden items-center gap-6 md:flex">
-              <Link
-                href="/produk"
-                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-              >
-                Semua Produk
-              </Link>
-              <button
-                type="button"
-                onMouseEnter={() => {
-                  cancelClose();
-                  setSearchOpen(false);
-                  setOpen(true);
-                }}
-                onMouseLeave={scheduleClose}
-                onFocus={() => setOpen(true)}
-                aria-expanded={open}
-                className={cn(
-                  "flex items-center gap-1 text-sm transition-colors",
-                  open ? "text-foreground" : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                Kategori
-                <ChevronDown
-                  className={cn("size-4 transition-transform", open && "rotate-180")}
-                />
-              </button>
-              <Link
-                href="/bantuan"
-                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-              >
-                Bantuan
-              </Link>
-              {navLinks.map((l) => (
-                <Link
-                  key={l.id}
-                  href={l.url}
-                  target={l.newTab ? "_blank" : undefined}
-                  rel={l.newTab ? "noopener noreferrer" : undefined}
-                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  {l.label}
-                </Link>
-              ))}
+              {navLinks.map((l) =>
+                l.kind === "MEGA" ? (
+                  <button
+                    key={l.id}
+                    type="button"
+                    onMouseEnter={() => {
+                      cancelClose();
+                      setSearchOpen(false);
+                      setOpen(true);
+                    }}
+                    onMouseLeave={scheduleClose}
+                    onFocus={() => setOpen(true)}
+                    aria-expanded={open}
+                    className={cn(
+                      "flex items-center gap-1 text-sm transition-colors",
+                      open ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {l.label}
+                    <ChevronDown className={cn("size-4 transition-transform", open && "rotate-180")} />
+                  </button>
+                ) : (
+                  <Link
+                    key={l.id}
+                    href={l.url}
+                    target={l.newTab ? "_blank" : undefined}
+                    rel={l.newTab ? "noopener noreferrer" : undefined}
+                    className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    {l.label}
+                  </Link>
+                ),
+              )}
             </nav>
 
             <div className="ml-auto flex items-center gap-1">
@@ -303,77 +293,67 @@ export function HeaderNav({ menu, navLinks = [] }: { menu: MegaMenuBrand[]; navL
           {mobileOpen && (
             <div className="absolute inset-x-0 top-full z-50 pt-2 md:hidden">
               <div className="animate-in fade-in slide-in-from-top-2 max-h-[75vh] overflow-y-auto rounded-2xl border border-border bg-background p-4 shadow-xl duration-200">
-                <Link
-                  href="/produk"
-                  onClick={closeMobile}
-                  className="block rounded-md px-2 py-2.5 text-sm font-medium hover:bg-accent"
-                >
-                  Semua Produk
-                </Link>
-                <Link
-                  href="/bantuan"
-                  onClick={closeMobile}
-                  className="block rounded-md px-2 py-2.5 text-sm font-medium hover:bg-accent"
-                >
-                  Bantuan
-                </Link>
-                {navLinks.map((l) => (
-                  <Link
-                    key={l.id}
-                    href={l.url}
-                    target={l.newTab ? "_blank" : undefined}
-                    rel={l.newTab ? "noopener noreferrer" : undefined}
-                    onClick={closeMobile}
-                    className="block rounded-md px-2 py-2.5 text-sm font-medium hover:bg-accent"
-                  >
-                    {l.label}
-                  </Link>
-                ))}
-
-                <p className="mt-3 px-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  Kategori
-                </p>
-                <div className="mt-1 space-y-3">
-                  {menu.map((brand) => (
-                    <div key={brand.slug}>
-                      <Link
-                        href={`/produk?tipe=${brand.slug}`}
-                        onClick={closeMobile}
-                        className="block rounded-md px-2 py-1.5 text-sm font-semibold hover:bg-accent"
-                      >
-                        {brand.name}
-                      </Link>
-                      <ul className="ml-2 border-l border-border pl-3">
-                        {brand.lines.map((line) => (
-                          <li key={line.slug}>
+                {navLinks.map((l) =>
+                  l.kind === "MEGA" ? (
+                    <div key={l.id}>
+                      <p className="mt-1 px-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        {l.label}
+                      </p>
+                      <div className="mt-1 space-y-3">
+                        {menu.map((brand) => (
+                          <div key={brand.slug}>
                             <Link
-                              href={`/produk?tipe=${line.slug}`}
+                              href={`/produk?tipe=${brand.slug}`}
                               onClick={closeMobile}
-                              className="block py-1 text-sm font-medium hover:text-foreground"
+                              className="block rounded-md px-2 py-1.5 text-sm font-semibold hover:bg-accent"
                             >
-                              {line.name}
+                              {brand.name}
                             </Link>
-                            {line.models.length > 0 && (
-                              <ul className="mb-1 ml-1 flex flex-wrap gap-1.5">
-                                {line.models.map((m) => (
-                                  <li key={m}>
-                                    <Link
-                                      href={`/produk?tipe=${line.slug}&model=${encodeURIComponent(m)}`}
-                                      onClick={closeMobile}
-                                      className="inline-block rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground"
-                                    >
-                                      {m}
-                                    </Link>
-                                  </li>
-                                ))}
-                              </ul>
-                            )}
-                          </li>
+                            <ul className="ml-2 border-l border-border pl-3">
+                              {brand.lines.map((line) => (
+                                <li key={line.slug}>
+                                  <Link
+                                    href={`/produk?tipe=${line.slug}`}
+                                    onClick={closeMobile}
+                                    className="block py-1 text-sm font-medium hover:text-foreground"
+                                  >
+                                    {line.name}
+                                  </Link>
+                                  {line.models.length > 0 && (
+                                    <ul className="mb-1 ml-1 flex flex-wrap gap-1.5">
+                                      {line.models.map((m) => (
+                                        <li key={m}>
+                                          <Link
+                                            href={`/produk?tipe=${line.slug}&model=${encodeURIComponent(m)}`}
+                                            onClick={closeMobile}
+                                            className="inline-block rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground"
+                                          >
+                                            {m}
+                                          </Link>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  )}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
                         ))}
-                      </ul>
+                      </div>
                     </div>
-                  ))}
-                </div>
+                  ) : (
+                    <Link
+                      key={l.id}
+                      href={l.url}
+                      target={l.newTab ? "_blank" : undefined}
+                      rel={l.newTab ? "noopener noreferrer" : undefined}
+                      onClick={closeMobile}
+                      className="block rounded-md px-2 py-2.5 text-sm font-medium hover:bg-accent"
+                    >
+                      {l.label}
+                    </Link>
+                  ),
+                )}
 
                 <div className="mt-3 border-t border-border pt-3">
                   {authed ? (

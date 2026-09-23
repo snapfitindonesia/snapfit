@@ -67,8 +67,9 @@ export const categorySchema = z.object({
 
 export const navLinkSchema = z.object({
   label: z.string().trim().min(1, "Label wajib"),
-  url: z.string().trim().min(1, "URL wajib"),
+  url: z.string().trim().default("#"),
   location: z.enum(["HEADER", "FOOTER"]),
+  kind: z.enum(["LINK", "MEGA"]).default("LINK"),
   order: z.coerce.number().int().min(0).default(0),
   newTab: z.coerce.boolean().default(false),
   active: z.coerce.boolean().default(true),
