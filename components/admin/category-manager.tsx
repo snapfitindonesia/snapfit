@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Trash2, Pencil, Plus, GripVertical } from "lucide-react";
+import { Loader2, Trash2, Pencil, Plus, GripVertical, ChevronUp, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ImageInput } from "@/components/admin/image-input";
 import { saveCategory, deleteCategory, reorderCategories } from "@/lib/actions/admin";
@@ -57,6 +57,10 @@ export function CategoryManager({ tree, parentOptions }: { tree: CatNode[]; pare
     if (res.ok) router.refresh(); else alert(res.error);
   }
 
+  async function persist(ids: string[]) {
+    await reorderCategories(ids);
+    router.refresh();
+  }
   // Drag reorder dalam satu grup saudara (group = id induk, "root" utk brand).
   async function onDrop(group: string, siblings: CatNode[], targetId: string) {
     if (!drag || drag.group !== group || drag.id === targetId) { setDrag(null); return; }
@@ -66,8 +70,16 @@ export function CategoryManager({ tree, parentOptions }: { tree: CatNode[]; pare
     if (from < 0 || to < 0) { setDrag(null); return; }
     ids.splice(to, 0, ids.splice(from, 1)[0]);
     setDrag(null);
-    await reorderCategories(ids);
-    router.refresh();
+    await persist(ids);
+  }
+  // Naik/turun (andal, tanpa drag).
+  async function move(siblings: CatNode[], id: string, dir: -1 | 1) {
+    const ids = siblings.map((s) => s.id);
+    const i = ids.indexOf(id);
+    const j = i + dir;
+    if (i < 0 || j < 0 || j >= ids.length) return;
+    [ids[i], ids[j]] = [ids[j], ids[i]];
+    await persist(ids);
   }
 
   const Row = ({
@@ -75,12 +87,16 @@ export function CategoryManager({ tree, parentOptions }: { tree: CatNode[]; pare
   }: { n: CatNode; group: string; siblings: CatNode[]; level: 1 | 2 | 3; parentIdForEdit: string }) => (
     <div
       draggable
-      onDragStart={() => setDrag({ id: n.id, group })}
-      onDragOver={(e) => e.preventDefault()}
-      onDrop={() => onDrop(group, siblings, n.id)}
+      onDragStart={(e) => { setDrag({ id: n.id, group }); e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", n.id); }}
+      onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }}
+      onDrop={(e) => { e.preventDefault(); onDrop(group, siblings, n.id); }}
       className={`flex items-center gap-2 rounded-md px-2 py-1.5 ${drag?.id === n.id ? "opacity-40" : ""} ${level === 1 ? "font-semibold" : ""} hover:bg-accent/50`}
     >
       <GripVertical className="size-4 shrink-0 cursor-grab text-muted-foreground" />
+      <span className="flex flex-col">
+        <button type="button" onClick={() => move(siblings, n.id, -1)} disabled={siblings[0]?.id === n.id} aria-label="Naik" className="text-muted-foreground hover:text-foreground disabled:opacity-25"><ChevronUp className="size-3" /></button>
+        <button type="button" onClick={() => move(siblings, n.id, 1)} disabled={siblings[siblings.length - 1]?.id === n.id} aria-label="Turun" className="text-muted-foreground hover:text-foreground disabled:opacity-25"><ChevronDown className="size-3" /></button>
+      </span>
       <span className="grid size-7 shrink-0 place-items-center overflow-hidden rounded border border-border bg-muted">
         {n.image && (
           // eslint-disable-next-line @next/next/no-img-element

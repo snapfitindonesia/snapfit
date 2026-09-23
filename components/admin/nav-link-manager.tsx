@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Trash2, Pencil, ExternalLink, GripVertical } from "lucide-react";
+import { Loader2, Trash2, Pencil, ExternalLink, GripVertical, ChevronUp, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { saveNavLink, deleteNavLink, reorderNavLinks } from "@/lib/actions/admin";
 
@@ -28,6 +28,7 @@ export function NavLinkManager({ rows }: { rows: NavLinkRow[] }) {
   const [saving, setSaving] = useState(false);
   const [drag, setDrag] = useState<{ id: string; loc: string } | null>(null);
 
+  async function persist(ids: string[]) { await reorderNavLinks(ids); router.refresh(); }
   async function onDrop(loc: string, items: NavLinkRow[], targetId: string) {
     if (!drag || drag.loc !== loc || drag.id === targetId) { setDrag(null); return; }
     const ids = items.map((i) => i.id);
@@ -35,8 +36,14 @@ export function NavLinkManager({ rows }: { rows: NavLinkRow[] }) {
     if (from < 0 || to < 0) { setDrag(null); return; }
     ids.splice(to, 0, ids.splice(from, 1)[0]);
     setDrag(null);
-    await reorderNavLinks(ids);
-    router.refresh();
+    await persist(ids);
+  }
+  async function move(items: NavLinkRow[], id: string, dir: -1 | 1) {
+    const ids = items.map((i) => i.id);
+    const i = ids.indexOf(id), j = i + dir;
+    if (i < 0 || j < 0 || j >= ids.length) return;
+    [ids[i], ids[j]] = [ids[j], ids[i]];
+    await persist(ids);
   }
 
   function reset() { setEditId(null); setF({ ...BLANK }); setError(null); }
@@ -72,12 +79,16 @@ export function NavLinkManager({ rows }: { rows: NavLinkRow[] }) {
           <div
             key={r.id}
             draggable
-            onDragStart={() => setDrag({ id: r.id, loc: r.location })}
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={() => onDrop(r.location, items, r.id)}
+            onDragStart={(e) => { setDrag({ id: r.id, loc: r.location }); e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", r.id); }}
+            onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }}
+            onDrop={(e) => { e.preventDefault(); onDrop(r.location, items, r.id); }}
             className={`flex items-center gap-2 rounded-lg border border-border p-2.5 ${drag?.id === r.id ? "opacity-40" : ""}`}
           >
             <GripVertical className="size-4 shrink-0 cursor-grab text-muted-foreground" />
+            <span className="flex flex-col">
+              <button type="button" onClick={() => move(items, r.id, -1)} disabled={items[0]?.id === r.id} aria-label="Naik" className="text-muted-foreground hover:text-foreground disabled:opacity-25"><ChevronUp className="size-3" /></button>
+              <button type="button" onClick={() => move(items, r.id, 1)} disabled={items[items.length - 1]?.id === r.id} aria-label="Turun" className="text-muted-foreground hover:text-foreground disabled:opacity-25"><ChevronDown className="size-3" /></button>
+            </span>
             <span className="text-sm font-medium">{r.label}</span>
             {r.kind === "MEGA" && <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium">Kategori</span>}
             {r.newTab && <ExternalLink className="size-3 text-muted-foreground" />}
