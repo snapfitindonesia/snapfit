@@ -302,7 +302,7 @@ export function ProductForm({ categories, initial }: { categories: { id: string;
             <div className="space-y-5">
               <label className="block">
                 <span className="text-sm font-medium">Deskripsi</span>
-                <textarea className={`mt-1.5 ${input}`} rows={5} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Jelaskan bahan, fitur, kompatibilitas, dan keunggulan produk." />
+                <textarea className={`mt-1.5 min-h-[320px] resize-y leading-relaxed ${input}`} rows={16} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Jelaskan bahan, fitur, kompatibilitas, dan keunggulan produk." />
               </label>
               <label className="block max-w-xs">
                 <span className="text-sm font-medium">Berat paket (gram) <Req /></span>
