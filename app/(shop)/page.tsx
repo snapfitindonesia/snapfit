@@ -5,6 +5,8 @@ import {
   getProducts,
   getDeviceTree,
   getMainBanners,
+  getPromoBanners,
+  getStripBanners,
   type ProductListItem,
   type DeviceBrand,
   type MainBanner,
@@ -13,6 +15,7 @@ import { ProductCard } from "@/components/shop/product-card";
 import { DevicePicker } from "@/components/shop/device-picker";
 import { HeroCarousel, type HeroSlide } from "@/components/shop/hero-carousel";
 import { BannerCarousel } from "@/components/shop/banner-carousel";
+import { PromoBanners, StripBanner } from "@/components/shop/home-banners";
 
 // ISR: homepage di-cache (cepat), regenerasi tiap 5 menit.
 export const revalidate = 300;
@@ -60,10 +63,18 @@ export default async function HomePage() {
   }
 
   let banners: MainBanner[] = [];
+  let promo: MainBanner[] = [];
+  let strip: MainBanner[] = [];
+  let latest: ProductListItem[] = [];
   try {
-    banners = await getMainBanners();
+    [banners, promo, strip, latest] = await Promise.all([
+      getMainBanners(),
+      getPromoBanners(),
+      getStripBanners(),
+      getProducts({ sort: "terbaru", take: 12, skip: 0 }).then((r) => r.items),
+    ]);
   } catch {
-    banners = [];
+    // biarkan default kosong
   }
 
   return (
@@ -136,6 +147,44 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* 2 banner kotak (PROMO, 1000×1000) */}
+      {promo.length > 0 && (
+        <section className="mx-auto max-w-6xl px-4 pb-4 sm:px-6">
+          <PromoBanners banners={promo} />
+        </section>
+      )}
+
+      {/* Produk terbaru (12) + See more */}
+      {latest.length > 0 && (
+        <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+          <div className="flex items-end justify-between">
+            <h2 className="text-xl font-semibold tracking-tight">Produk Terbaru</h2>
+            <Link href="/produk" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+              Lihat semua
+            </Link>
+          </div>
+          <div className="mt-6 grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
+            {latest.map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))}
+          </div>
+          <div className="mt-8 flex justify-center">
+            <Button size="lg" variant="outline" asChild>
+              <Link href="/produk">
+                Lihat semua produk
+                <ArrowRight className="size-4" />
+              </Link>
+            </Button>
+          </div>
+        </section>
+      )}
+
+      {/* Banner strip panjang (ETALASE, 2000×100) */}
+      {strip[0] && (
+        <section className="mx-auto max-w-6xl px-4 pb-14 sm:px-6">
+          <StripBanner banner={strip[0]} />
+        </section>
+      )}
     </>
   );
 }

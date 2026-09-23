@@ -67,15 +67,17 @@ export function BannerManager({ banners }: { banners: Banner[] }) {
         <h2 className="text-sm font-medium">{editId ? "Edit banner" : "Banner baru"}</h2>
         <label className="block text-sm">Tipe
           <select className={`mt-1 ${input}`} value={f.type} onChange={(e) => setF({ ...f, type: e.target.value })}>
-            <option value="MAIN">MAIN (hero)</option>
-            <option value="ETALASE">ETALASE</option>
-            <option value="PROMO">PROMO</option>
+            <option value="MAIN">MAIN — Hero besar (1200×600)</option>
+            <option value="PROMO">PROMO — 2 banner kotak (1000×1000)</option>
+            <option value="ETALASE">ETALASE — Strip panjang (2000×100)</option>
           </select>
         </label>
         <div className="block text-sm">Gambar
-          {f.type === "MAIN" && (
-            <p className="mt-0.5 text-xs text-muted-foreground">Ukuran ideal <b>1200×600 px</b> (landscape 2:1).</p>
-          )}
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {f.type === "MAIN" && <>Hero — ideal <b>1200×600 px</b> (landscape 2:1).</>}
+            {f.type === "PROMO" && <>Banner kotak (2 berdampingan) — ideal <b>1000×1000 px</b> (1:1).</>}
+            {f.type === "ETALASE" && <>Banner strip panjang — ideal <b>2000×100 px</b> (landscape lebar).</>}
+          </p>
           <div className="mt-1">
             <ImageInput value={f.image} onChange={(url) => setF({ ...f, image: url })} />
           </div>

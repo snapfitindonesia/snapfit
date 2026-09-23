@@ -109,18 +109,32 @@ export async function getDeviceTree(): Promise<DeviceBrand[]> {
 
 export type MainBanner = { id: string; image: string; href: string };
 
-/** Banner utama (hero) — type MAIN & aktif, terurut. Ukuran ideal 1200×600. */
-export async function getMainBanners(): Promise<MainBanner[]> {
+/** Ambil banner aktif per tipe (MAIN/PROMO/ETALASE), terurut. */
+async function getBannersByType(type: string, take?: number): Promise<MainBanner[]> {
   try {
     const banners = await db.banner.findMany({
-      where: { type: "MAIN", active: true },
+      where: { type, active: true },
       orderBy: [{ order: "asc" }],
+      ...(take ? { take } : {}),
       select: { id: true, image: true, targetUrl: true },
     });
     return banners.map((b) => ({ id: b.id, image: b.image, href: b.targetUrl || "/produk" }));
   } catch {
     return [];
   }
+}
+
+/** Banner hero (MAIN) — ideal 1200×600. */
+export function getMainBanners() {
+  return getBannersByType("MAIN");
+}
+/** 2 banner kotak (PROMO) — ideal 1000×1000. */
+export function getPromoBanners() {
+  return getBannersByType("PROMO", 2);
+}
+/** Banner strip panjang (ETALASE) — ideal 2000×100 landscape. */
+export function getStripBanners() {
+  return getBannersByType("ETALASE", 1);
 }
 
 export type MegaMenuLine = { name: string; slug: string; cover: string | null; models: string[] };
