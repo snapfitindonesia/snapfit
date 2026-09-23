@@ -70,7 +70,7 @@ export default async function HomePage() {
     <>
       {/* Hero banner besar (1200×600) — dikelola di Admin → Banner (type MAIN) */}
       {banners.length > 0 && (
-        <section className="mx-auto max-w-6xl px-4 pt-6 sm:px-6">
+        <section className="mx-auto max-w-6xl px-4 pb-10 pt-6 sm:px-6 sm:pb-14">
           <BannerCarousel banners={banners} />
         </section>
       )}
