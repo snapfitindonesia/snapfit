@@ -20,7 +20,7 @@ export function PromoBanners({ banners }: { banners: MainBanner[] }) {
   );
 }
 
-/** Banner strip panjang (mis. 2000×100) full-width — mengikuti rasio gambar. */
+/** Banner strip panjang (mis. 2000×400) full-width — mengikuti rasio gambar. */
 export function StripBanner({ banner }: { banner: MainBanner | null }) {
   if (!banner) return null;
   return (

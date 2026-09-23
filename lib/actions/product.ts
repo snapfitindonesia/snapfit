@@ -134,7 +134,7 @@ export function getMainBanners() {
 export function getPromoBanners() {
   return getBannersByType("PROMO", 2);
 }
-/** Banner strip panjang (ETALASE) — ideal 2000×100 landscape. */
+/** Banner strip panjang (ETALASE) — ideal 2000×400 landscape. */
 export function getStripBanners() {
   return getBannersByType("ETALASE", 1);
 }
