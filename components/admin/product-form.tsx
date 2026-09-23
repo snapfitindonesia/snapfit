@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { createProduct, updateProduct } from "@/lib/actions/admin";
 import { ImageInput } from "@/components/admin/image-input";
 import { ImageGridInput } from "@/components/admin/image-grid-input";
+import { CategoryPicker } from "@/components/admin/category-picker";
 
 /* ============================================================
    Editor varian custom (ala Shopee/Tokopedia):
@@ -96,7 +97,7 @@ function Card({ id, title, desc, children }: { id: string; title: string; desc?:
 }
 const Req = () => <span className="text-destructive">*</span>;
 
-export function ProductForm({ categories, initial }: { categories: { id: string; name: string }[]; initial?: Initial }) {
+export function ProductForm({ categories, initial }: { categories: { id: string; name: string; parentId: string | null }[]; initial?: Initial }) {
   const router = useRouter();
   const [slug, setSlug] = useState(initial?.slug ?? "");
   const [name, setName] = useState(initial?.name ?? "");
@@ -280,13 +281,10 @@ export function ProductForm({ categories, initial }: { categories: { id: string;
                 <span className="text-sm font-medium">Slug (URL) <Req /></span>
                 <input className={`mt-1.5 ${input}`} value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="clear-case-iphone-15" required />
               </label>
-              <label className="block">
+              <div className="block">
                 <span className="text-sm font-medium">Kategori</span>
-                <select className={`mt-1.5 ${input}`} value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
-                  <option value="">— tanpa kategori —</option>
-                  {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
-              </label>
+                <CategoryPicker categories={categories} value={categoryId} onChange={setCategoryId} />
+              </div>
               <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-border p-3">
                 <input type="checkbox" checked={isGrosir} onChange={(e) => setIsGrosir(e.target.checked)} className="mt-0.5 size-4 accent-brand" />
                 <span>
