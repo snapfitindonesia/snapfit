@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Star } from "lucide-react";
 import { formatRupiah } from "@/lib/format";
 import type { ProductListItem } from "@/lib/actions/product";
 
@@ -38,6 +39,19 @@ export function ProductCard({ product }: { product: ProductListItem }) {
         <h3 className="line-clamp-2 text-sm font-medium leading-snug">
           {product.name}
         </h3>
+        {product.ratingCount > 0 && (
+          <div className="flex items-center gap-1">
+            <div className="flex gap-0.5">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <Star
+                  key={n}
+                  className={`size-3.5 ${n <= Math.round(product.ratingAvg) ? "fill-amber-400 text-amber-400" : "text-muted-foreground/30"}`}
+                />
+              ))}
+            </div>
+            <span className="text-xs text-muted-foreground">({product.ratingCount})</span>
+          </div>
+        )}
         <div className="flex items-baseline gap-2">
           <span className="text-sm font-semibold">
             {formatRupiah(product.finalPrice)}

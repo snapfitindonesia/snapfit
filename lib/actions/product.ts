@@ -17,6 +17,8 @@ export type ProductListItem = {
   finalPrice: number; // setelah diskon aktif
   discountPercent: number; // 0 jika tak ada
   inStock: boolean;
+  ratingAvg: number; // rata-rata bintang (0 jika belum ada ulasan)
+  ratingCount: number; // jumlah ulasan
 };
 
 export type ProductListResult = {
@@ -234,6 +236,7 @@ export async function getProducts(query: ProductQuery): Promise<ProductListResul
     },
     include: {
       category: { select: { name: true, slug: true } },
+      reviews: { select: { rating: true } },
       variants: {
         select: {
           price: true,
@@ -256,6 +259,8 @@ export async function getProducts(query: ProductQuery): Promise<ProductListResul
       });
       const minPrice = Math.min(...priced.map((x) => x.price));
       const cheapest = priced.reduce((a, b) => (b.final < a.final ? b : a));
+      const ratingCount = p.reviews.length;
+      const ratingAvg = ratingCount ? p.reviews.reduce((s, r) => s + r.rating, 0) / ratingCount : 0;
       return {
         id: p.id,
         slug: p.slug,
@@ -267,6 +272,8 @@ export async function getProducts(query: ProductQuery): Promise<ProductListResul
         finalPrice: cheapest.final, // harga termurah setelah diskon per-varian
         discountPercent: cheapest.pct, // diskon pada varian termurah (utk badge)
         inStock: p.variants.some((v) => v.stock > 0),
+        ratingAvg,
+        ratingCount,
       };
     });
 
