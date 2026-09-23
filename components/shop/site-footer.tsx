@@ -52,7 +52,7 @@ export async function SiteFooter() {
         {/* Trust strip */}
         <div className="grid grid-cols-1 gap-4 border-b border-border py-8 sm:grid-cols-3">
           {TRUST.map(({ icon: Icon, label }) => (
-            <div key={label} className="flex items-center gap-3">
+            <div key={label} className="flex items-center justify-center gap-3">
               <Icon className="size-5 text-foreground" />
               <span className="text-sm font-medium">{label}</span>
             </div>
