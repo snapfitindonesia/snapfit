@@ -75,8 +75,9 @@ export function PdpView({ product, vouchers = [] }: { product: PdpProduct; vouch
   const [variantId, setVariantId] = useState(firstInStock?.id);
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
-  // Foto yang sedang dilihat (override galeri). null = ikut foto varian terpilih.
-  const [heroImage, setHeroImage] = useState<string | null>(null);
+  // Foto yang sedang dilihat (override galeri). Default = cover produk (tampil
+  // pertama); jadi null saat ganti varian → ikut foto varian terpilih.
+  const [heroImage, setHeroImage] = useState<string | null>(product.coverImage || null);
   const [lightbox, setLightbox] = useState(false); // mode zoom layar penuh
   const [zoomed, setZoomed] = useState(false);
   const [drag, setDrag] = useState(0); // offset px saat menyeret gambar utama
@@ -212,7 +213,8 @@ export function PdpView({ product, vouchers = [] }: { product: PdpProduct; vouch
   // Galeri foto (lihat-saja): foto varian terpilih + foto fitur produk (dedupe).
   const baseUrl = (u: string) => u.split("?")[0];
   const photos: string[] = [];
-  for (const src of [variant.image, ...product.gallery]) {
+  // Cover produk tampil PERTAMA, lalu foto varian terpilih, lalu galeri.
+  for (const src of [product.coverImage, variant.image, ...product.gallery]) {
     if (src && !photos.some((p) => baseUrl(p) === baseUrl(src))) photos.push(src);
   }
   const displayImage = heroImage ?? variant.image;
