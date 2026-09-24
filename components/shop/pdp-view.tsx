@@ -279,7 +279,7 @@ export function PdpView({ product, vouchers = [] }: { product: PdpProduct; vouch
                     active ? "border-foreground" : "border-transparent hover:border-border",
                   )}
                 >
-                  <Image src={src} alt="" fill sizes="64px" className="object-cover" />
+                  <Image src={src} alt="" fill sizes="64px" className="object-contain" />
                 </button>
               );
             })}
@@ -314,7 +314,7 @@ export function PdpView({ product, vouchers = [] }: { product: PdpProduct; vouch
                   fill
                   draggable={false}
                   sizes="(max-width: 1024px) 100vw, 55vw"
-                  className="object-cover"
+                  className="object-contain"
                   {...(i === 0 ? { priority: true } : { loading: "eager" as const })}
                 />
               </div>
@@ -375,7 +375,7 @@ export function PdpView({ product, vouchers = [] }: { product: PdpProduct; vouch
                   active ? "border-foreground" : "border-transparent",
                 )}
               >
-                <Image src={src} alt="" fill sizes="56px" className="object-cover" />
+                <Image src={src} alt="" fill sizes="56px" className="object-contain" />
               </button>
             );
           })}
