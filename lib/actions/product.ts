@@ -57,14 +57,15 @@ export async function getCategories() {
   return cats.filter((c) => c._count.children === 0).map(({ id, name, slug }) => ({ id, name, slug }));
 }
 
-export type DeviceModel = { label: string; count: number };
+export type DeviceModel = { label: string; slug: string; count: number };
 export type DeviceLine = { name: string; slug: string; productCount: number; models: DeviceModel[] };
 export type DeviceBrand = { name: string; slug: string; lines: DeviceLine[] };
 
 /**
- * Pohon pemilih perangkat untuk homepage (drill-down 3 tingkat):
- * Brand → Line → Model. Model diturunkan dari variant.type (selalu sinkron).
- * Hanya brand/line yang punya produk yang ditampilkan.
+ * Pohon pemilih perangkat homepage (drill-down 3 tingkat) — MENGIKUTI pohon
+ * kategori yang dikelola di Admin → Kategori (Brand → Seri → Model).
+ * Jumlah produk dihitung lintas-subtree (kategori utama + tambahan). Hanya
+ * kategori yang punya produk yang ditampilkan.
  */
 export async function getDeviceTree(): Promise<DeviceBrand[]> {
   try {
@@ -72,41 +73,63 @@ export async function getDeviceTree(): Promise<DeviceBrand[]> {
       where: { parentId: null },
       orderBy: [{ order: "asc" }, { name: "asc" }],
       select: {
-        name: true,
-        slug: true,
+        id: true, name: true, slug: true,
         children: {
           orderBy: [{ order: "asc" }, { name: "asc" }],
           select: {
-            name: true,
-            slug: true,
-            products: { select: { variants: { select: { type: true } } } },
+            id: true, name: true, slug: true,
+            children: {
+              orderBy: [{ order: "asc" }, { name: "asc" }],
+              select: { id: true, name: true, slug: true },
+            },
           },
         },
       },
     });
+
+    // Peta induk (utk rambat hitung ke leluhur).
+    const parentOf = new Map<string, string | null>();
+    for (const b of brands) {
+      parentOf.set(b.id, null);
+      for (const l of b.children) {
+        parentOf.set(l.id, b.id);
+        for (const m of l.children) parentOf.set(m.id, l.id);
+      }
+    }
+
+    // Hitung produk per kategori: tiap produk menyumbang ke kategori utama +
+    // tambahan DAN semua leluhurnya (dedup per produk).
+    const products = await db.product.findMany({
+      select: { categoryId: true, extraCategories: { select: { id: true } } },
+    });
+    const count = new Map<string, number>();
+    for (const p of products) {
+      const ids = new Set<string>();
+      const seeds = [p.categoryId, ...p.extraCategories.map((e) => e.id)].filter(Boolean) as string[];
+      for (const s of seeds) {
+        let cur: string | null | undefined = s;
+        while (cur) {
+          ids.add(cur);
+          cur = parentOf.get(cur);
+        }
+      }
+      for (const id of ids) count.set(id, (count.get(id) ?? 0) + 1);
+    }
+    const cnt = (id: string) => count.get(id) ?? 0;
 
     return brands
       .map((b) => ({
         name: b.name,
         slug: b.slug,
         lines: b.children
-          .map((l) => {
-            const counts = new Map<string, number>();
-            for (const p of l.products) {
-              const types = new Set(
-                p.variants.map((v) => v.type.trim()).filter(Boolean),
-              );
-              for (const t of types) counts.set(t, (counts.get(t) ?? 0) + 1);
-            }
-            return {
-              name: l.name,
-              slug: l.slug,
-              productCount: l.products.length,
-              models: Array.from(counts.entries())
-                .map(([label, count]) => ({ label, count }))
-                .sort((a, b) => a.label.localeCompare(b.label)),
-            };
-          })
+          .map((l) => ({
+            name: l.name,
+            slug: l.slug,
+            productCount: cnt(l.id),
+            models: l.children
+              .filter((m) => cnt(m.id) > 0)
+              .map((m) => ({ label: m.name, slug: m.slug, count: cnt(m.id) })),
+          }))
           .filter((l) => l.productCount > 0),
       }))
       .filter((b) => b.lines.length > 0);

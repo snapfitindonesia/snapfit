@@ -103,8 +103,8 @@ export function DevicePicker({ tree }: { tree: DeviceBrand[] }) {
             </Link>
             {line.models.map((m) => (
               <Link
-                key={m.label}
-                href={`/produk?tipe=${line.slug}&model=${encodeURIComponent(m.label)}`}
+                key={m.slug}
+                href={`/produk?tipe=${m.slug}`}
                 className={cardBtn}
               >
                 <span>
