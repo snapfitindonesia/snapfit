@@ -8,6 +8,7 @@ import {
 import { PdpView, type PdpProduct } from "@/components/shop/pdp-view";
 import { ProductCard } from "@/components/shop/product-card";
 import { ProductReviews } from "@/components/shop/product-reviews";
+import { getActiveVouchers } from "@/lib/actions/voucher";
 
 // ISR: PDP di-generate on-demand saat request pertama lalu DI-CACHE 5 menit
 // (tak query DB saat build → deploy Vercel aman). Fresh via revalidatePath saat admin edit.
@@ -36,9 +37,10 @@ export default async function ProductDetailPage({
   const product = await getProductBySlug(slug); // RSC: muat awal server-side
   if (!product) notFound();
 
-  const [related, reviews] = await Promise.all([
+  const [related, reviews, vouchers] = await Promise.all([
     getRelatedProducts(product.id, product.category?.slug ?? null),
     getProductReviews(product.id),
+    getActiveVouchers(),
   ]);
 
   // Bentuk data serializable untuk Client Component (tanpa Date dsb.)
@@ -70,7 +72,10 @@ export default async function ProductDetailPage({
       {/* Above-fold: kartu putih mengambang di atas latar abu-abu (ala Nomad) */}
       <section className="bg-muted/40">
         <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
-          <PdpView product={pdpProduct} />
+          <PdpView
+            product={pdpProduct}
+            vouchers={vouchers.map((v) => ({ code: v.code, label: v.label, minPurchase: v.minPurchase }))}
+          />
         </div>
       </section>
 

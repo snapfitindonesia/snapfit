@@ -7,6 +7,14 @@
 /** Ongkir flat saat mode flat (rupiah). Override via env SHIPPING_FLAT_COST. */
 export const FLAT_SHIPPING_COST = Number(process.env.SHIPPING_FLAT_COST ?? 5000);
 
+/** Ambang belanja untuk GRATIS ONGKIR otomatis (rupiah). Override via env FREE_SHIPPING_MIN. 0 = nonaktif. */
+export const FREE_SHIPPING_MIN = Number(process.env.FREE_SHIPPING_MIN ?? 150000);
+
+/** True bila subtotal memenuhi ambang gratis ongkir (mode flat). */
+export function qualifiesFreeShipping(subtotal: number): boolean {
+  return FREE_SHIPPING_MIN > 0 && subtotal >= FREE_SHIPPING_MIN;
+}
+
 /** Rekening tujuan transfer manual. Override via env bila perlu. */
 export const MANUAL_BANK = {
   bank: process.env.MANUAL_BANK_NAME ?? "BCA",

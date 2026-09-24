@@ -12,7 +12,8 @@ import {
 import { getShippingRates } from "@/lib/biteship";
 import { createShipment } from "@/lib/biteship";
 import { createSnapToken, isMidtransMock } from "@/lib/midtrans";
-import { isManualPayment, isFlatShipping, FLAT_SHIPPING_COST, MANUAL_BANK } from "@/lib/payment";
+import { isManualPayment, isFlatShipping, FLAT_SHIPPING_COST, MANUAL_BANK, qualifiesFreeShipping } from "@/lib/payment";
+import { computeVoucherBenefit, type VoucherLike } from "@/lib/voucher";
 import { sendEmail, orderConfirmationEmail } from "@/lib/email";
 import { pushOrderToGinee } from "@/lib/ginee/orders";
 import { isGineeConfigured } from "@/lib/ginee/config";
@@ -36,7 +37,12 @@ function activeDiscountPercent(
  * Hitung ULANG order dari DB (harga varian + diskon + ongkir) — JANGAN percaya
  * angka dari client (lihat docs/04). Mengembalikan rincian tepercaya.
  */
-async function computeOrder(lines: CartLine[], postalCode: string, rateId: string | undefined) {
+async function computeOrder(
+  lines: CartLine[],
+  postalCode: string,
+  rateId: string | undefined,
+  voucherCode?: string,
+) {
   const variants = await db.variant.findMany({
     where: { id: { in: lines.map((l) => l.variantId) } },
     include: {
@@ -63,9 +69,20 @@ async function computeOrder(lines: CartLine[], postalCode: string, rateId: strin
   const subtotal = items.reduce((n, i) => n + i.price * i.qty, 0);
   const totalWeight = items.reduce((n, i) => n + i.weight * i.qty, 0);
 
-  // Ongkir FLAT (Biteship belum aktif) — tak butuh pilih kurir.
+  // Voucher (otoritatif): dihitung ulang dari DB terhadap subtotal & ongkir.
+  async function resolveVoucher(shippingCost: number) {
+    const code = voucherCode?.trim().toUpperCase();
+    if (!code) return { discount: 0, appliedCode: null as string | null };
+    const voucher = await db.voucher.findUnique({ where: { code } });
+    if (!voucher || !voucher.active) return { discount: 0, appliedCode: null };
+    const benefit = computeVoucherBenefit(voucher as VoucherLike, subtotal, shippingCost);
+    if (!benefit.valid || benefit.discount <= 0) return { discount: 0, appliedCode: null };
+    return { discount: benefit.discount, appliedCode: code };
+  }
+
+  // Ongkir FLAT (Biteship belum aktif) — tak butuh pilih kurir. Gratis ongkir bila lolos ambang.
   if (isFlatShipping()) {
-    const shippingCost = FLAT_SHIPPING_COST;
+    const shippingCost = qualifiesFreeShipping(subtotal) ? 0 : FLAT_SHIPPING_COST;
     const rate = {
       id: "flat",
       courier: "flat",
@@ -75,7 +92,9 @@ async function computeOrder(lines: CartLine[], postalCode: string, rateId: strin
       cost: shippingCost,
       etd: "-",
     };
-    return { items, subtotal, shippingCost, total: subtotal + shippingCost, rate, totalWeight };
+    const { discount, appliedCode } = await resolveVoucher(shippingCost);
+    const total = Math.max(0, subtotal + shippingCost - discount);
+    return { items, subtotal, shippingCost, discount, voucherCode: appliedCode, total, rate, totalWeight };
   }
 
   // Ongkir authoritative Biteship: ambil tarif dari server, cocokkan dgn pilihan client
@@ -88,16 +107,18 @@ async function computeOrder(lines: CartLine[], postalCode: string, rateId: strin
   if (!rate) throw new Error("Kurir terpilih tidak valid. Cek ongkir ulang.");
 
   const shippingCost = rate.cost;
-  const total = subtotal + shippingCost;
-  return { items, subtotal, shippingCost, total, rate, totalWeight };
+  const { discount, appliedCode } = await resolveVoucher(shippingCost);
+  const total = Math.max(0, subtotal + shippingCost - discount);
+  return { items, subtotal, shippingCost, discount, voucherCode: appliedCode, total, rate, totalWeight };
 }
 
 export async function createOrder(input: CreateOrderInput) {
   const data = createOrderSchema.parse(input);
-  const { items, subtotal, shippingCost, total, rate } = await computeOrder(
+  const { items, subtotal, shippingCost, discount, total, rate } = await computeOrder(
     data.items,
     data.address.postalCode,
     data.rateId,
+    data.voucherCode,
   );
 
   const midtransOrderId = `SNAP-${Date.now()}-${Math.random()
@@ -110,11 +131,11 @@ export async function createOrder(input: CreateOrderInput) {
       status: "PENDING",
       subtotal,
       shippingCost,
-      discount: 0,
+      discount,
       total,
       midtransOrderId,
       courier: rate.id, // "courier:service" — dipakai saat buat pengiriman
-      address: { ...data.address },
+      address: { ...data.address, ...(data.note ? { note: data.note } : {}) },
       items: {
         create: items.map((i) => ({
           variantId: i.variantId,
@@ -156,6 +177,7 @@ export async function createOrder(input: CreateOrderInput) {
         quantity: i.qty,
       })),
       { id: "shipping", name: `Ongkir ${rate.courierName}`, price: shippingCost, quantity: 1 },
+      ...(discount > 0 ? [{ id: "voucher", name: "Voucher", price: -discount, quantity: 1 }] : []),
     ],
   });
 

@@ -6,6 +6,7 @@ import { StoreUIProvider } from "@/components/shop/store-ui-provider";
 import { CartDrawer } from "@/components/shop/cart-drawer";
 import { LoginModal } from "@/components/shop/login-modal";
 import { AuthToast } from "@/components/shop/auth-toast";
+import { isFlatShipping, FLAT_SHIPPING_COST, FREE_SHIPPING_MIN } from "@/lib/payment";
 import { Suspense } from "react";
 
 // Tetap statis/cepat: status login dideteksi di client (StoreUIProvider),
@@ -25,7 +26,7 @@ export default function ShopLayout({
           <SiteFooter />
           <MobileBottomBar />
         </div>
-        <CartDrawer />
+        <CartDrawer flatShipping={isFlatShipping()} flatCost={FLAT_SHIPPING_COST} freeShippingMin={FREE_SHIPPING_MIN} />
         <LoginModal />
         <Suspense>
           <AuthToast />

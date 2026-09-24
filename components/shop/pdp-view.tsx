@@ -14,6 +14,7 @@ import {
   ChevronRight,
   ZoomIn,
   X,
+  Ticket,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -47,13 +48,26 @@ export type PdpProduct = {
   variants: PdpVariant[];
 };
 
+export type VoucherChip = { code: string; label: string; minPurchase: number };
+
 const NO_COLOR = "Lainnya";
 const colorKey = (v: PdpVariant) => v.color.trim() || NO_COLOR;
 const typeLabel = (v: PdpVariant) => v.type.trim() || v.name;
 
-export function PdpView({ product }: { product: PdpProduct }) {
+export function PdpView({ product, vouchers = [] }: { product: PdpProduct; vouchers?: VoucherChip[] }) {
   const { addItem } = useCart();
   const { openCart } = useStoreUI();
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
+
+  function copyVoucher(code: string) {
+    try {
+      navigator.clipboard?.writeText(code);
+      setCopiedCode(code);
+      setTimeout(() => setCopiedCode((c) => (c === code ? null : c)), 1500);
+    } catch {
+      // abaikan bila clipboard tak tersedia
+    }
+  }
   const router = useRouter();
 
   const firstInStock =
@@ -399,6 +413,29 @@ export function PdpView({ product }: { product: PdpProduct }) {
             </span>
           )}
         </div>
+
+        {/* Voucher tersedia */}
+        {vouchers.length > 0 && (
+          <div className="mt-4">
+            <p className="flex items-center gap-1.5 text-sm font-medium">
+              <Ticket className="size-4 text-brand" /> Voucher tersedia
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {vouchers.map((v) => (
+                <button
+                  key={v.code}
+                  type="button"
+                  onClick={() => copyVoucher(v.code)}
+                  title={`Salin kode ${v.code}${v.minPurchase > 0 ? ` · min. ${formatRupiah(v.minPurchase)}` : ""}`}
+                  className="group flex items-center gap-1.5 rounded-full border border-brand/40 bg-brand/5 px-3 py-1 text-xs font-medium text-brand transition-colors hover:bg-brand/10"
+                >
+                  {copiedCode === v.code ? <Check className="size-3.5" /> : <Ticket className="size-3.5" />}
+                  {copiedCode === v.code ? "Kode disalin" : v.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {product.description && (
           <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">

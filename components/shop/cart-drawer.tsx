@@ -1,18 +1,34 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
+import { Minus, Plus, ShoppingBag, Trash2, X, StickyNote, Truck, Ticket, Loader2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatRupiah } from "@/lib/format";
 import { useCart } from "@/components/shop/cart-provider";
 import { useStoreUI } from "@/components/shop/store-ui-provider";
+import { applyVoucher } from "@/lib/actions/voucher";
 
-export function CartDrawer() {
-  const { items, subtotal, count, setQty, removeItem, hydrated } = useCart();
+type Panel = "note" | "shipping" | "coupon" | null;
+
+export function CartDrawer({
+  flatShipping = true,
+  flatCost = 5000,
+  freeShippingMin = 0,
+}: {
+  flatShipping?: boolean;
+  flatCost?: number;
+  freeShippingMin?: number;
+}) {
+  const { items, subtotal, count, setQty, removeItem, hydrated, voucher, setVoucher, note, setNote } = useCart();
   const { cartOpen, closeCart } = useStoreUI();
+
+  const [panel, setPanel] = useState<Panel>(null);
+  const [code, setCode] = useState("");
+  const [applying, setApplying] = useState(false);
+  const [voucherError, setVoucherError] = useState<string | null>(null);
 
   // Tutup dengan Esc + kunci scroll body saat terbuka.
   useEffect(() => {
@@ -26,6 +42,29 @@ export function CartDrawer() {
       document.body.style.overflow = prev;
     };
   }, [cartOpen, closeCart]);
+
+  const freeShip = freeShippingMin > 0 && subtotal >= freeShippingMin;
+  const baseShipping = flatShipping ? (freeShip ? 0 : flatCost) : 0;
+  const discount = voucher?.discount ?? 0;
+  const total = Math.max(0, subtotal + baseShipping - discount);
+  const remaining = Math.max(0, freeShippingMin - subtotal);
+  const progress = freeShippingMin > 0 ? Math.min(100, Math.round((subtotal / freeShippingMin) * 100)) : 0;
+
+  async function onApply() {
+    setApplying(true);
+    setVoucherError(null);
+    const res = await applyVoucher(code, subtotal);
+    if (res.ok) {
+      setVoucher({ code: res.code, label: res.label, discount: res.discount, freeShipping: res.freeShipping });
+      setCode("");
+      setPanel(null);
+    } else {
+      setVoucherError(res.error);
+    }
+    setApplying(false);
+  }
+
+  const togglePanel = (p: Panel) => setPanel((cur) => (cur === p ? null : p));
 
   return (
     <>
@@ -130,13 +169,109 @@ export function CartDrawer() {
 
         {/* Footer */}
         {items.length > 0 && (
-          <div className="border-t border-border p-4">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Subtotal</span>
-              <span className="text-base font-bold">{formatRupiah(subtotal)}</span>
+          <div className="border-t border-border">
+            {/* Aksi: Catatan · Pengiriman · Voucher */}
+            <div className="grid grid-cols-3 divide-x divide-border border-b border-border">
+              <PanelButton icon={StickyNote} label="Catatan" active={panel === "note"} onClick={() => togglePanel("note")} dot={!!note} />
+              <PanelButton icon={Truck} label="Ongkir" active={panel === "shipping"} onClick={() => togglePanel("shipping")} />
+              <PanelButton icon={Ticket} label="Voucher" active={panel === "coupon"} onClick={() => togglePanel("coupon")} dot={!!voucher} />
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">Ongkir dihitung saat checkout.</p>
-            <div className="mt-3 grid grid-cols-1 gap-2">
+
+            {panel && (
+              <div className="border-b border-border bg-muted/30 px-4 py-3">
+                {panel === "note" && (
+                  <textarea
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    rows={2}
+                    placeholder="Catatan untuk penjual (opsional)…"
+                    className="w-full resize-none rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-foreground"
+                  />
+                )}
+                {panel === "shipping" && (
+                  <p className="text-xs text-muted-foreground">
+                    {flatShipping
+                      ? freeShip
+                        ? "Gratis ongkir untuk pesanan ini 🎉"
+                        : `Ongkir flat ${formatRupiah(flatCost)} ke seluruh Indonesia. Alamat & kurir diisi saat checkout.`
+                      : "Ongkir dihitung berdasar alamat saat checkout."}
+                  </p>
+                )}
+                {panel === "coupon" && (
+                  <div>
+                    {voucher ? (
+                      <div className="flex items-center justify-between rounded-md border border-border bg-background px-3 py-2">
+                        <span className="flex items-center gap-2 text-sm">
+                          <Check className="size-4 text-emerald-600" />
+                          <span className="font-medium">{voucher.code}</span>
+                          <span className="text-xs text-muted-foreground">{voucher.label}</span>
+                        </span>
+                        <button type="button" onClick={() => setVoucher(null)} className="text-xs text-muted-foreground hover:text-destructive">Hapus</button>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex gap-2">
+                          <input
+                            value={code}
+                            onChange={(e) => setCode(e.target.value.toUpperCase())}
+                            onKeyDown={(e) => e.key === "Enter" && onApply()}
+                            placeholder="Kode voucher"
+                            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm uppercase outline-none focus:border-foreground"
+                          />
+                          <Button size="sm" onClick={onApply} disabled={applying || !code.trim()}>
+                            {applying && <Loader2 className="size-4 animate-spin" />}Pakai
+                          </Button>
+                        </div>
+                        {voucherError && <p className="mt-1.5 text-xs text-destructive">{voucherError}</p>}
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Ringkasan */}
+            <div className="space-y-1.5 px-4 pt-3 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Subtotal</span>
+                <span className="font-medium">{formatRupiah(subtotal)}</span>
+              </div>
+              {flatShipping && (
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Ongkir</span>
+                  <span className="font-medium">{baseShipping === 0 ? "GRATIS" : formatRupiah(baseShipping)}</span>
+                </div>
+              )}
+              {discount > 0 && (
+                <div className="flex items-center justify-between text-emerald-600">
+                  <span>Voucher {voucher?.code}</span>
+                  <span className="font-medium">−{formatRupiah(discount)}</span>
+                </div>
+              )}
+              <div className="flex items-center justify-between border-t border-border pt-2 text-base">
+                <span className="font-semibold">Total</span>
+                <span className="font-bold">{formatRupiah(total)}</span>
+              </div>
+            </div>
+
+            {/* Progress gratis ongkir */}
+            {freeShippingMin > 0 && flatShipping && (
+              <div className="px-4 pt-3">
+                <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                  <div className="h-full rounded-full bg-brand transition-all duration-500" style={{ width: `${freeShip ? 100 : progress}%` }} />
+                </div>
+                <p className="mt-1.5 text-center text-xs text-muted-foreground">
+                  {freeShip ? (
+                    <span className="font-medium text-brand">Selamat! Kamu dapat GRATIS ONGKIR 🎉</span>
+                  ) : (
+                    <>Belanja <span className="font-semibold text-brand">{formatRupiah(remaining)}</span> lagi untuk <span className="font-semibold">GRATIS ONGKIR!</span></>
+                  )}
+                </p>
+              </div>
+            )}
+
+            {/* Tombol */}
+            <div className="grid grid-cols-1 gap-2 p-4">
               <Button asChild onClick={closeCart}>
                 <Link href="/checkout">Checkout</Link>
               </Button>
@@ -148,5 +283,26 @@ export function CartDrawer() {
         )}
       </aside>
     </>
+  );
+}
+
+function PanelButton({
+  icon: Icon, label, active, onClick, dot,
+}: {
+  icon: typeof StickyNote; label: string; active: boolean; onClick: () => void; dot?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "relative flex flex-col items-center gap-1 py-2.5 text-xs transition-colors",
+        active ? "bg-muted/50 font-medium text-foreground" : "text-muted-foreground hover:text-foreground",
+      )}
+    >
+      <Icon className="size-4" />
+      {label}
+      {dot && <span className="absolute right-3 top-2 size-1.5 rounded-full bg-brand" />}
+    </button>
   );
 }

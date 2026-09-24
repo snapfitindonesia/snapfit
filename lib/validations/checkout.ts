@@ -27,6 +27,10 @@ export const createOrderSchema = z.object({
   items: z.array(cartLineSchema).min(1),
   // Opsional: hanya dipakai saat ongkir Biteship aktif. Mode flat tak butuh.
   rateId: z.string().optional().or(z.literal("")),
+  // Opsional: kode voucher yang diterapkan pembeli (divalidasi ulang di server).
+  voucherCode: z.string().trim().optional().or(z.literal("")),
+  // Opsional: catatan pembeli untuk penjual.
+  note: z.string().trim().max(500).optional().or(z.literal("")),
 });
 
 export type AddressInput = z.infer<typeof addressSchema>;

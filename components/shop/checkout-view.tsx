@@ -4,13 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { trackBeginCheckout } from "@/lib/tracking";
-import { Loader2, ShoppingBag, Truck } from "lucide-react";
+import { Loader2, ShoppingBag, Truck, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatRupiah } from "@/lib/format";
 import { useCart } from "@/components/shop/cart-provider";
 import { addressSchema } from "@/lib/validations/checkout";
 import { createOrder } from "@/lib/actions/order";
+import { applyVoucher } from "@/lib/actions/voucher";
 import type { ShippingRate } from "@/lib/biteship";
 
 declare global {
@@ -47,14 +48,33 @@ export function CheckoutView({
   flatShipping,
   bank,
   flatCost = 5000,
+  freeShippingMin = 0,
 }: {
   manualPayment: boolean;
   flatShipping: boolean;
   bank: Bank;
   flatCost?: number;
+  freeShippingMin?: number;
 }) {
   const router = useRouter();
-  const { items, subtotal, hydrated, clear } = useCart();
+  const { items, subtotal, hydrated, clear, voucher, setVoucher, note } = useCart();
+
+  const [voucherInput, setVoucherInput] = useState("");
+  const [voucherApplying, setVoucherApplying] = useState(false);
+  const [voucherError, setVoucherError] = useState<string | null>(null);
+
+  async function onApplyVoucher() {
+    setVoucherApplying(true);
+    setVoucherError(null);
+    const res = await applyVoucher(voucherInput, subtotal);
+    if (res.ok) {
+      setVoucher({ code: res.code, label: res.label, discount: res.discount, freeShipping: res.freeShipping });
+      setVoucherInput("");
+    } else {
+      setVoucherError(res.error);
+    }
+    setVoucherApplying(false);
+  }
 
   const [f, setF] = useState<Fields>(EMPTY);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -71,8 +91,10 @@ export function CheckoutView({
 
   const cartLines = items.map((i) => ({ variantId: i.variantId, qty: i.qty }));
   const selectedRate = rates?.find((r) => r.id === rateId) ?? null;
-  const shippingCost = flatShipping ? flatCost : (selectedRate?.cost ?? 0);
-  const total = subtotal + shippingCost;
+  const freeShip = flatShipping && freeShippingMin > 0 && subtotal >= freeShippingMin;
+  const shippingCost = freeShip ? 0 : flatShipping ? flatCost : (selectedRate?.cost ?? 0);
+  const discount = voucher?.discount ?? 0;
+  const total = Math.max(0, subtotal + shippingCost - discount);
 
   const bcFired = useRef(false);
   useEffect(() => {
@@ -148,7 +170,7 @@ export function CheckoutView({
     setErrors({});
     setPlacing(true);
     try {
-      const result = await createOrder({ address: parsed.data, items: cartLines, rateId });
+      const result = await createOrder({ address: parsed.data, items: cartLines, rateId, voucherCode: voucher?.code, note });
       if (result.manual) {
         // Transfer manual: order PENDING → arahkan ke halaman instruksi transfer.
         clear();
@@ -260,13 +282,45 @@ export function CheckoutView({
       <aside className="lg:col-span-1">
         <div className="rounded-lg border border-border p-5 lg:sticky lg:top-24">
           <h2 className="text-base font-medium">Ringkasan</h2>
+
+          {/* Voucher */}
+          <div className="mt-4">
+            {voucher ? (
+              <div className="flex items-center justify-between rounded-md border border-border bg-muted/30 px-3 py-2">
+                <span className="flex items-center gap-2 text-sm">
+                  <Check className="size-4 text-emerald-600" />
+                  <span className="font-medium">{voucher.code}</span>
+                  <span className="text-xs text-muted-foreground">{voucher.label}</span>
+                </span>
+                <button type="button" onClick={() => setVoucher(null)} className="text-xs text-muted-foreground hover:text-destructive">Hapus</button>
+              </div>
+            ) : (
+              <>
+                <div className="flex gap-2">
+                  <input
+                    value={voucherInput}
+                    onChange={(e) => setVoucherInput(e.target.value.toUpperCase())}
+                    onKeyDown={(e) => e.key === "Enter" && onApplyVoucher()}
+                    placeholder="Kode voucher"
+                    className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm uppercase outline-none focus:border-foreground"
+                  />
+                  <Button size="sm" variant="outline" onClick={onApplyVoucher} disabled={voucherApplying || !voucherInput.trim()}>
+                    {voucherApplying && <Loader2 className="size-4 animate-spin" />}Pakai
+                  </Button>
+                </div>
+                {voucherError && <p className="mt-1.5 text-xs text-destructive">{voucherError}</p>}
+              </>
+            )}
+          </div>
+
           <dl className="mt-4 space-y-2 text-sm">
             <Row label={`Subtotal (${items.length} produk)`} value={formatRupiah(subtotal)} />
             <Row
               label="Ongkir"
-              value={flatShipping || selectedRate ? formatRupiah(shippingCost) : "—"}
-              muted={!flatShipping && !selectedRate}
+              value={freeShip ? "GRATIS" : flatShipping || selectedRate ? formatRupiah(shippingCost) : "—"}
+              muted={!freeShip && !flatShipping && !selectedRate}
             />
+            {discount > 0 && <Row label={`Voucher ${voucher?.code ?? ""}`} value={`−${formatRupiah(discount)}`} />}
             <div className="my-2 border-t border-border" />
             <Row label="Total" value={formatRupiah(total)} strong />
           </dl>

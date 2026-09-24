@@ -8,6 +8,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import { applyVoucher } from "@/lib/actions/voucher";
 
 export type CartItem = {
   variantId: string;
@@ -16,6 +17,13 @@ export type CartItem = {
   price: number; // rupiah, integer (snapshot saat ditambah)
   image: string;
   qty: number;
+};
+
+export type AppliedVoucher = {
+  code: string;
+  label: string;
+  discount: number; // estimasi (server hitung ulang saat order)
+  freeShipping: boolean;
 };
 
 type CartContextValue = {
@@ -27,6 +35,11 @@ type CartContextValue = {
   setQty: (variantId: string, qty: number) => void;
   removeItem: (variantId: string) => void;
   clear: () => void;
+  // Voucher & catatan (dibawa ke checkout)
+  voucher: AppliedVoucher | null;
+  setVoucher: (v: AppliedVoucher | null) => void;
+  note: string;
+  setNote: (s: string) => void;
 };
 
 const STORAGE_KEY = "snapfit.cart.v1";
@@ -35,6 +48,8 @@ const CartContext = createContext<CartContextValue | null>(null);
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [hydrated, setHydrated] = useState(false);
+  const [voucher, setVoucher] = useState<AppliedVoucher | null>(null);
+  const [note, setNote] = useState("");
 
   // Muat dari localStorage sekali (client-only, aman untuk SSR)
   useEffect(() => {
@@ -98,13 +113,31 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     [commit],
   );
 
-  const clear = useCallback(() => commit(() => []), [commit]);
+  const clear = useCallback(() => {
+    commit(() => []);
+    setVoucher(null);
+    setNote("");
+  }, [commit]);
+
+  const subtotal = useMemo(() => items.reduce((n, i) => n + i.price * i.qty, 0), [items]);
+
+  // Re-validasi voucher saat subtotal berubah (mis. min belanja tak lagi terpenuhi).
+  useEffect(() => {
+    if (!voucher) return;
+    let cancelled = false;
+    applyVoucher(voucher.code, subtotal).then((r) => {
+      if (cancelled) return;
+      if (r.ok) setVoucher({ code: r.code, label: r.label, discount: r.discount, freeShipping: r.freeShipping });
+      else setVoucher(null);
+    });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subtotal]);
 
   const value = useMemo<CartContextValue>(() => {
     const count = items.reduce((n, i) => n + i.qty, 0);
-    const subtotal = items.reduce((n, i) => n + i.price * i.qty, 0);
-    return { items, count, subtotal, hydrated, addItem, setQty, removeItem, clear };
-  }, [items, hydrated, addItem, setQty, removeItem, clear]);
+    return { items, count, subtotal, hydrated, addItem, setQty, removeItem, clear, voucher, setVoucher, note, setNote };
+  }, [items, subtotal, hydrated, addItem, setQty, removeItem, clear, voucher, note]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }
