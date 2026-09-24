@@ -40,6 +40,10 @@ const input = "w-full rounded-md border border-border bg-background px-3 py-2 te
 const rid = () => Math.random().toString(36).slice(2, 9);
 const combo = (a: string, b: string | null) => `${a}__${b ?? "-"}`;
 
+// Slugify (samakan dgn server): huruf kecil, ganti non-alnum jadi strip.
+const slugify = (s: string) =>
+  s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80);
+
 // Label rantai kategori "Brand › Seri › Model" dari daftar kategori datar.
 function catLabel(cats: { id: string; name: string; parentId: string | null }[], id: string): string {
   const byId = new Map(cats.map((c) => [c.id, c]));
@@ -116,6 +120,8 @@ export function ProductForm({ categories, initial }: { categories: { id: string;
   const [slug, setSlug] = useState(initial?.slug ?? "");
   const [name, setName] = useState(initial?.name ?? "");
   const [brand, setBrand] = useState(initial?.brand ?? "");
+  // Slug ikut judul otomatis, kecuali admin sudah mengedit slug manual.
+  const [slugEdited, setSlugEdited] = useState(false);
   const [description, setDescription] = useState(initial?.description ?? "");
   const [coverImage, setCoverImage] = useState(initial?.coverImage ?? "");
   const [images, setImages] = useState<string[]>(initial?.images ?? []);
@@ -290,7 +296,7 @@ export function ProductForm({ categories, initial }: { categories: { id: string;
               <label className="block">
                 <span className="text-sm font-medium">Nama produk <Req /></span>
                 <div className="relative mt-1.5">
-                  <input className={`${input} pr-14`} maxLength={255} value={name} onChange={(e) => setName(e.target.value)} required placeholder="mis. Case iPhone 15" />
+                  <input className={`${input} pr-14`} maxLength={255} value={name} onChange={(e) => { const v = e.target.value; setName(v); if (!slugEdited) setSlug(slugify(v)); }} required placeholder="mis. Case iPhone 15" />
                   <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{name.length}/255</span>
                 </div>
               </label>
@@ -304,7 +310,8 @@ export function ProductForm({ categories, initial }: { categories: { id: string;
               </label>
               <label className="block">
                 <span className="text-sm font-medium">Slug (URL) <Req /></span>
-                <input className={`mt-1.5 ${input}`} value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="clear-case-iphone-15" required />
+                <input className={`mt-1.5 ${input}`} value={slug} onChange={(e) => { setSlug(e.target.value); setSlugEdited(true); }} placeholder="clear-case-iphone-15" required />
+                <span className="mt-1 block text-xs text-muted-foreground">Otomatis dari judul. Edit manual bila perlu (mengubah URL produk).</span>
               </label>
               <div className="block">
                 <span className="text-sm font-medium">Kategori utama</span>
