@@ -44,7 +44,7 @@ export function BannerManager({ banners }: { banners: Banner[] }) {
     setSaving(true);
     setError(null);
     const res = await saveBanner(
-      { type: f.type as "MAIN" | "ETALASE" | "PROMO", image: f.image, targetUrl: f.targetUrl, order: Number(f.order), active: f.active },
+      { type: f.type as "MAIN" | "ETALASE" | "PROMO" | "POPUP", image: f.image, targetUrl: f.targetUrl, order: Number(f.order), active: f.active },
       editId ?? undefined,
     );
     if (res.ok) {
@@ -70,6 +70,7 @@ export function BannerManager({ banners }: { banners: Banner[] }) {
             <option value="MAIN">MAIN — Hero besar (1200×600)</option>
             <option value="PROMO">PROMO — 2 banner kotak (1000×1000)</option>
             <option value="ETALASE">ETALASE — Strip panjang (2000×400)</option>
+            <option value="POPUP">POPUP — Popup awal masuk (1000×1000)</option>
           </select>
         </label>
         <div className="block text-sm">Gambar
@@ -77,6 +78,7 @@ export function BannerManager({ banners }: { banners: Banner[] }) {
             {f.type === "MAIN" && <>Hero — ideal <b>1200×600 px</b> (landscape 2:1).</>}
             {f.type === "PROMO" && <>Banner kotak (2 berdampingan) — ideal <b>1000×1000 px</b> (1:1).</>}
             {f.type === "ETALASE" && <>Banner strip panjang — ideal <b>2000×400 px</b> (landscape lebar, rasio 5:1).</>}
+            {f.type === "POPUP" && <>Popup saat pengunjung masuk (sekali per 6 jam) — ideal <b>1000×1000 px</b> (1:1).</>}
           </p>
           <div className="mt-1">
             <ImageInput value={f.image} onChange={(url) => setF({ ...f, image: url })} />

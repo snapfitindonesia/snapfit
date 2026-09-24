@@ -141,6 +141,11 @@ export function getPromoBanners() {
 export function getStripBanners() {
   return getBannersByType("ETALASE", 1);
 }
+/** Banner popup awal masuk (POPUP) — ideal 1000×1000. */
+export async function getPopupBanner(): Promise<MainBanner | null> {
+  const banners = await getBannersByType("POPUP", 1);
+  return banners[0] ?? null;
+}
 
 export type NavLinkItem = { id: string; label: string; url: string; newTab: boolean; kind: string };
 

@@ -45,7 +45,7 @@ export const productSchema = z.object({
 });
 
 export const bannerSchema = z.object({
-  type: z.enum(["MAIN", "ETALASE", "PROMO"]),
+  type: z.enum(["MAIN", "ETALASE", "PROMO", "POPUP"]),
   image: url,
   targetUrl: z.string().trim().optional().or(z.literal("")),
   order: z.coerce.number().int().min(0).default(0),
