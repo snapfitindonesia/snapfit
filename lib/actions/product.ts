@@ -47,11 +47,14 @@ function activeDiscountPercent(
 
 /** Kategori "line" (tingkat 2) — dipakai chip filter di halaman /produk. */
 export async function getCategories() {
-  return db.category.findMany({
+  // Hanya kategori PALING SPESIFIK (leaf / tanpa anak) untuk filter — buang
+  // kategori broad seperti "iPhone"/"Galaxy S" yang masih punya sub-kategori.
+  const cats = await db.category.findMany({
     where: { parentId: { not: null } },
     orderBy: [{ parentId: "asc" }, { order: "asc" }],
-    select: { id: true, name: true, slug: true },
+    select: { id: true, name: true, slug: true, _count: { select: { children: true } } },
   });
+  return cats.filter((c) => c._count.children === 0).map(({ id, name, slug }) => ({ id, name, slug }));
 }
 
 export type DeviceModel = { label: string; count: number };
