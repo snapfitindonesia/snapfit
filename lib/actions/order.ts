@@ -266,7 +266,7 @@ export async function handlePaidOrder(
       const gineeItems = items
         .map((it) => {
           const v = variants.find((x) => x.id === it.variantId);
-          if (!v || !v.product.gineeProductId) return null;
+          if (!v || !v.product.gineeProductId || !v.sku) return null;
           return { sku: v.sku, quantity: it.qty, actualPrice: it.price, weight: v.weight };
         })
         .filter((x): x is NonNullable<typeof x> => x !== null);

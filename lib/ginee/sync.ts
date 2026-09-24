@@ -55,6 +55,7 @@ export async function runGineeStockSync(limit = 1000): Promise<StockSyncResult> 
         if (b.sku && b.id) varIdBySku.set(b.sku, b.id);
       }
       for (const v of p.variants) {
+        if (!v.sku) continue; // tanpa SKU → tak bisa dicocokkan ke Ginee
         const gineeVarId = varIdBySku.get(v.sku);
         if (gineeVarId) allVarIds.push(gineeVarId);
         pending.push({

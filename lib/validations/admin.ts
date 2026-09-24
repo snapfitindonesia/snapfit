@@ -8,7 +8,7 @@ export const variantSchema = z.object({
   name: z.string().trim().min(1, "Nama varian wajib"),
   color: z.string().trim().optional().default(""), // dimensi 1 (warna)
   type: z.string().trim().optional().default(""), // dimensi 2 (tipe)
-  sku: z.string().trim().min(1, "SKU wajib"),
+  sku: z.string().trim().optional().or(z.literal("")),
   price: rupiah,
   stock: z.coerce.number().int().min(0),
   weight: z.coerce.number().int().min(1, "Berat minimal 1 gram"),

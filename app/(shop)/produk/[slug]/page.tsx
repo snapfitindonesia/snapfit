@@ -59,7 +59,7 @@ export default async function ProductDetailPage({
       name: v.name,
       color: v.color,
       type: v.type,
-      sku: v.sku,
+      sku: v.sku ?? "",
       price: v.price,
       stock: v.stock,
       image: v.image,

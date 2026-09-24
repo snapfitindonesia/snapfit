@@ -60,11 +60,6 @@ function catLabel(cats: { id: string; name: string; parentId: string | null }[],
 function composeName(v1: string, v2: string) {
   return [v1.trim(), v2.trim()].filter(Boolean).join(" / ") || v1.trim();
 }
-function autoSku(slug: string, a: string, b: string) {
-  return [slug, a, b].filter(Boolean).join("-").toUpperCase()
-    .replace(/[^A-Z0-9-]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").slice(0, 60);
-}
-
 /* ---------- Rekonstruksi state dari produk yang diedit ---------- */
 function buildInitialState(initial?: Initial): { groups: Group[]; cells: Record<string, Cell> } {
   const variants = initial?.variants ?? [];
@@ -206,7 +201,7 @@ export function ProductForm({ categories, initial }: { categories: { id: string;
           id: cell.id,
           name: composeName(has2 ? color : type, has2 ? type : ""),
           color, type,
-          sku: cell.sku.trim() || autoSku(slug, has2 ? color : "", type),
+          sku: cell.sku.trim(), // opsional — kosong = tanpa SKU
           price: Number(cell.price),
           stock: Number(cell.stock || 0),
           weight: Number(weight || 200),
@@ -215,8 +210,8 @@ export function ProductForm({ categories, initial }: { categories: { id: string;
       }
     }
     if (!rows.length) { setError("Isi minimal 1 harga pada tabel Daftar Variasi."); return; }
-    const skus = rows.map((r) => r.sku);
-    if (new Set(skus).size !== skus.length) { setError("Kode Variasi (SKU) bertabrakan. Isi manual agar unik."); return; }
+    const skus = rows.map((r) => r.sku).filter((s) => s !== ""); // hanya cek SKU yang diisi
+    if (new Set(skus).size !== skus.length) { setError("Kode Variasi (SKU) bertabrakan. Isi berbeda atau kosongkan."); return; }
 
     const variantGroups = {
       groups: groups.slice(0, has2 ? 2 : 1).map((g) => ({
@@ -468,7 +463,7 @@ export function ProductForm({ categories, initial }: { categories: { id: string;
                               <span className="text-sm">{o2 ? o2.value : o1.value}</span>
                               <input className={input} type="number" placeholder="Harga" value={cell.price} onChange={(e) => setCell(key, { price: e.target.value })} />
                               <input className={input} type="number" placeholder="Stok" value={cell.stock} onChange={(e) => setCell(key, { stock: e.target.value })} />
-                              <input className={input} placeholder="Kode (auto)" value={cell.sku} onChange={(e) => setCell(key, { sku: e.target.value })} />
+                              <input className={input} placeholder="Kode (opsional)" value={cell.sku} onChange={(e) => setCell(key, { sku: e.target.value })} />
                             </div>
                           );
                         })}

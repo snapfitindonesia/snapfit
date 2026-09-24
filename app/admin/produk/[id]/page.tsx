@@ -46,7 +46,7 @@ export default async function EditProductPage({
               name: v.name,
               color: v.color,
               type: v.type,
-              sku: v.sku,
+              sku: v.sku ?? "",
               price: v.price,
               stock: v.stock,
               weight: v.weight,
