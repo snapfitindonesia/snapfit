@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ShieldCheck, BadgeCheck, RotateCcw } from "lucide-react";
+import { Plane, Headset, RotateCcw, ShieldCheck } from "lucide-react";
 import logo from "@/logosnapfit.png";
 import { getNavLinks } from "@/lib/actions/product";
 
@@ -36,9 +36,10 @@ const COLUMNS: { title: string; links: FooterLink[] }[] = [
 ];
 
 const TRUST = [
-  { icon: ShieldCheck, label: "Garansi Resmi" },
-  { icon: BadgeCheck, label: "100% Original" },
-  { icon: RotateCcw, label: "7 Hari Pengembalian" },
+  { icon: Plane, title: "Gratis Ongkir", desc: "Gratis ongkir min. belanja Rp150rb" },
+  { icon: Headset, title: "Dukungan 24/7", desc: "Bantuan via WhatsApp tiap hari" },
+  { icon: RotateCcw, title: "7 Hari Pengembalian", desc: "Retur mudah untuk produk cacat" },
+  { icon: ShieldCheck, title: "100% Original", desc: "Produk resmi & bergaransi" },
 ];
 
 export async function SiteFooter() {
@@ -49,12 +50,18 @@ export async function SiteFooter() {
   return (
     <footer className="mt-24 border-t border-border">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        {/* Trust strip */}
-        <div className="grid grid-cols-1 gap-4 border-b border-border py-8 sm:grid-cols-3">
-          {TRUST.map(({ icon: Icon, label }) => (
-            <div key={label} className="flex items-center justify-center gap-3">
-              <Icon className="size-5 text-foreground" />
-              <span className="text-sm font-medium">{label}</span>
+        {/* Trust strip — kartu (judul + subjudul kiri, ikon kanan) */}
+        <div className="grid grid-cols-1 gap-4 border-b border-border py-8 sm:grid-cols-2 lg:grid-cols-4">
+          {TRUST.map(({ icon: Icon, title, desc }) => (
+            <div
+              key={title}
+              className="flex items-center justify-between gap-3 rounded-xl border border-border px-5 py-4"
+            >
+              <div className="min-w-0">
+                <p className="text-sm font-semibold uppercase tracking-wide">{title}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{desc}</p>
+              </div>
+              <Icon className="size-6 shrink-0 text-muted-foreground" strokeWidth={1.5} />
             </div>
           ))}
         </div>
