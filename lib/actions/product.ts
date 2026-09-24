@@ -117,20 +117,17 @@ export async function getDeviceTree(): Promise<DeviceBrand[]> {
     }
     const cnt = (id: string) => count.get(id) ?? 0;
 
+    // Tampilkan SEMUA kategori (mirror Admin → Kategori), walau belum ada produk.
     return brands
       .map((b) => ({
         name: b.name,
         slug: b.slug,
-        lines: b.children
-          .map((l) => ({
-            name: l.name,
-            slug: l.slug,
-            productCount: cnt(l.id),
-            models: l.children
-              .filter((m) => cnt(m.id) > 0)
-              .map((m) => ({ label: m.name, slug: m.slug, count: cnt(m.id) })),
-          }))
-          .filter((l) => l.productCount > 0),
+        lines: b.children.map((l) => ({
+          name: l.name,
+          slug: l.slug,
+          productCount: cnt(l.id),
+          models: l.children.map((m) => ({ label: m.name, slug: m.slug, count: cnt(m.id) })),
+        })),
       }))
       .filter((b) => b.lines.length > 0);
   } catch {

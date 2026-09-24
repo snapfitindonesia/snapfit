@@ -89,7 +89,7 @@ export function DevicePicker({ tree }: { tree: DeviceBrand[] }) {
             >
               <span>
                 {l.name}
-                <span className="ml-1 text-xs text-muted-foreground">({l.productCount})</span>
+                {l.productCount > 0 && <span className="ml-1 text-xs text-muted-foreground">({l.productCount})</span>}
               </span>
               <ArrowRight className="size-4 text-muted-foreground" />
             </button>
@@ -109,7 +109,7 @@ export function DevicePicker({ tree }: { tree: DeviceBrand[] }) {
               >
                 <span>
                   {m.label}
-                  <span className="ml-1 text-xs text-muted-foreground">({m.count})</span>
+                  {m.count > 0 && <span className="ml-1 text-xs text-muted-foreground">({m.count})</span>}
                 </span>
                 <ArrowRight className="size-4 text-muted-foreground" />
               </Link>
