@@ -211,7 +211,7 @@ export function ProductListing({
 
           {/* Grid: mobile 2 kolom → desktop 3 kolom (area lebih sempit karena sidebar) */}
           {items.length > 0 ? (
-            <div className="mt-4 grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-3">
+            <div className="mt-4 grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3">
               {items.map((p) => (
                 <ProductCard key={p.id} product={p} />
               ))}

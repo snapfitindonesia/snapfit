@@ -27,6 +27,7 @@ const nextConfig = {
       { protocol: "https", hostname: "images.tokopedia.com" }, // Tokopedia
       { protocol: "https", hostname: "**.static-src.com" }, // Blibli
       { protocol: "https", hostname: "**.bmdstatic.com" }, // Blibli (cadangan)
+      { protocol: "https", hostname: "**.ginee.com" }, // CDN Ginee (cdn-public-prod-oss.ginee.com)
       ...extraHosts.map((hostname) => ({ protocol: "https", hostname })),
     ],
   },
