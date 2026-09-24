@@ -210,8 +210,6 @@ export function ProductForm({ categories, initial }: { categories: { id: string;
       }
     }
     if (!rows.length) { setError("Isi minimal 1 harga pada tabel Daftar Variasi."); return; }
-    const skus = rows.map((r) => r.sku).filter((s) => s !== ""); // hanya cek SKU yang diisi
-    if (new Set(skus).size !== skus.length) { setError("Kode Variasi (SKU) bertabrakan. Isi berbeda atau kosongkan."); return; }
 
     const variantGroups = {
       groups: groups.slice(0, has2 ? 2 : 1).map((g) => ({

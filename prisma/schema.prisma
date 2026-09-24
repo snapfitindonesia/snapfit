@@ -54,7 +54,7 @@ model Variant {
   name      String // mis. "Hitam / iPhone 16 Pro" (display)
   color     String  @default("") // dimensi 1: warna (mis. "Hitam")
   type      String  @default("") // dimensi 2: tipe HP (mis. "iPhone 16 Pro")
-  sku       String? @unique // opsional; unik bila diisi (banyak null diizinkan)
+  sku       String? // opsional & bebas (boleh sama/kosong) — tak lagi wajib unik
   price     Int // rupiah, integer
   stock     Int     @default(0)
   image     String // 1 foto per varian
