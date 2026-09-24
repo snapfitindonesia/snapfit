@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Loader2, Search, X } from "lucide-react";
+import { Loader2, Search, X, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ProductCard } from "@/components/shop/product-card";
@@ -42,6 +42,7 @@ export function ProductListing({
   const [hasMore, setHasMore] = useState(initial.hasMore);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false); // toggle filter kategori di mobile
 
   // Anti race-condition saat filter/sort di-klik cepat
   const reqId = useRef(0);
@@ -101,6 +102,33 @@ export function ProductListing({
   }, [tipe, model, sort, q, fetchList]);
 
   const chips = [{ name: "Semua", slug: "" }, ...categories];
+  const activeName = chips.find((c) => c.slug === tipe)?.name ?? "Semua";
+
+  // Daftar kategori (vertikal) — dipakai sidebar desktop & panel mobile.
+  const CategoryList = (
+    <nav className="flex flex-col gap-0.5" role="group" aria-label="Filter kategori">
+      {chips.map((c) => (
+        <button
+          key={c.slug || "all"}
+          type="button"
+          onClick={() => {
+            setTipe(c.slug);
+            setModel(""); // model terikat ke line tertentu — reset saat ganti filter
+            setFiltersOpen(false);
+          }}
+          aria-pressed={tipe === c.slug}
+          className={cn(
+            "rounded-md px-3 py-1.5 text-left text-sm transition-colors",
+            tipe === c.slug
+              ? "bg-foreground font-medium text-background"
+              : "text-muted-foreground hover:bg-muted hover:text-foreground",
+          )}
+        >
+          {c.name}
+        </button>
+      ))}
+    </nav>
+  );
 
   return (
     <div>
@@ -117,102 +145,109 @@ export function ProductListing({
         />
       </div>
 
-      {/* Kontrol: filter tipe HP + sort */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Filter tipe HP">
-          {chips.map((c) => (
-            <button
-              key={c.slug || "all"}
-              type="button"
-              onClick={() => {
-                setTipe(c.slug);
-                setModel(""); // model terikat ke line tertentu — reset saat ganti filter
-              }}
-              aria-pressed={tipe === c.slug}
-              className={cn(
-                "rounded-full border px-4 py-1.5 text-sm font-medium transition-colors",
-                tipe === c.slug
-                  ? "border-foreground bg-foreground text-background"
-                  : "border-border text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {c.name}
-            </button>
-          ))}
-        </div>
-
-        <label className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span className="sr-only sm:not-sr-only">Urutkan</span>
-          <select
-            value={sort}
-            onChange={(e) => setSort(e.target.value as SortOption)}
-            className="rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground"
-          >
-            {SORT_OPTIONS.map((s) => (
-              <option key={s} value={s}>
-                {SORT_LABEL[s]}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-
-      {/* Filter model aktif (dari picker homepage) — bisa dilepas */}
-      {model && (
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <span className="text-sm text-muted-foreground">Model:</span>
+      <div className="lg:grid lg:grid-cols-[210px_1fr] lg:gap-8">
+        {/* Sidebar kategori */}
+        <aside className="lg:sticky lg:top-24 lg:self-start">
+          {/* Mobile: tombol toggle */}
           <button
             type="button"
-            onClick={() => setModel("")}
-            className="inline-flex items-center gap-1 rounded-full border border-foreground bg-foreground px-3 py-1 text-sm font-medium text-background"
+            onClick={() => setFiltersOpen((v) => !v)}
+            className="flex w-full items-center justify-between rounded-lg border border-border px-4 py-2.5 text-sm font-medium lg:hidden"
           >
-            {model}
-            <X className="size-3.5" />
+            <span className="flex items-center gap-2">
+              <SlidersHorizontal className="size-4" />
+              Kategori: <span className="text-muted-foreground">{activeName}</span>
+            </span>
+            <span className="text-muted-foreground">{filtersOpen ? "▲" : "▼"}</span>
           </button>
+
+          <div className={cn("mt-2 lg:mt-0 lg:block", filtersOpen ? "block" : "hidden")}>
+            <p className="mb-2 hidden px-3 text-xs font-medium uppercase tracking-wide text-muted-foreground lg:block">
+              Kategori
+            </p>
+            <div className="lg:max-h-[calc(100vh-10rem)] lg:overflow-y-auto lg:pr-1">
+              {CategoryList}
+            </div>
+          </div>
+        </aside>
+
+        {/* Konten utama */}
+        <div className="mt-4 lg:mt-0">
+          {/* Bar atas: jumlah + sort */}
+          <div className="flex items-center justify-between gap-4">
+            <p className="text-sm text-muted-foreground" aria-live="polite">
+              {total} produk
+            </p>
+            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span className="sr-only sm:not-sr-only">Urutkan</span>
+              <select
+                value={sort}
+                onChange={(e) => setSort(e.target.value as SortOption)}
+                className="rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground"
+              >
+                {SORT_OPTIONS.map((s) => (
+                  <option key={s} value={s}>
+                    {SORT_LABEL[s]}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          {/* Filter model aktif (dari picker homepage) — bisa dilepas */}
+          {model && (
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <span className="text-sm text-muted-foreground">Model:</span>
+              <button
+                type="button"
+                onClick={() => setModel("")}
+                className="inline-flex items-center gap-1 rounded-full border border-foreground bg-foreground px-3 py-1 text-sm font-medium text-background"
+              >
+                {model}
+                <X className="size-3.5" />
+              </button>
+            </div>
+          )}
+
+          {/* Grid: mobile 2 kolom → desktop 3 kolom (area lebih sempit karena sidebar) */}
+          {items.length > 0 ? (
+            <div className="mt-4 grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-3">
+              {items.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
+          ) : (
+            !loading && (
+              <p className="mt-12 text-center text-sm text-muted-foreground">
+                {q
+                  ? `Tak ada produk cocok dengan "${q}".`
+                  : "Belum ada produk untuk filter ini."}
+              </p>
+            )
+          )}
+
+          {error && (
+            <p className="mt-6 text-center text-sm text-destructive">
+              Gagal memuat. Coba lagi.
+            </p>
+          )}
+
+          {/* Load more (AJAX, tanpa reload) */}
+          {hasMore && (
+            <div className="mt-10 flex justify-center">
+              <Button
+                variant="outline"
+                size="lg"
+                disabled={loading}
+                onClick={() => fetchList({ tipe, model, q, sort, skip: items.length, append: true })}
+              >
+                {loading && <Loader2 className="size-4 animate-spin" />}
+                Muat lebih banyak
+              </Button>
+            </div>
+          )}
         </div>
-      )}
-
-      <p className="mt-4 text-sm text-muted-foreground" aria-live="polite">
-        {total} produk
-      </p>
-
-      {/* Grid: mobile 2 kolom → tablet → desktop 4 kolom */}
-      {items.length > 0 ? (
-        <div className="mt-4 grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
-          {items.map((p) => (
-            <ProductCard key={p.id} product={p} />
-          ))}
-        </div>
-      ) : (
-        !loading && (
-          <p className="mt-12 text-center text-sm text-muted-foreground">
-            {q
-              ? `Tak ada produk cocok dengan "${q}".`
-              : "Belum ada produk untuk filter ini."}
-          </p>
-        )
-      )}
-
-      {error && (
-        <p className="mt-6 text-center text-sm text-destructive">
-          Gagal memuat. Coba lagi.
-        </p>
-      )}
-
-      {/* Load more (AJAX, tanpa reload) */}
-      {hasMore && (
-        <div className="mt-10 flex justify-center">
-          <Button
-            variant="outline"
-            size="lg"
-            disabled={loading}
-            onClick={() => fetchList({ tipe, model, q, sort, skip: items.length, append: true })}
-          >
-            {loading && <Loader2 className="size-4 animate-spin" />}
-            Muat lebih banyak
-          </Button>
-        </div>
-      )}
+      </div>
     </div>
   );
 }
