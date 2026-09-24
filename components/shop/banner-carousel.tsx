@@ -12,6 +12,8 @@ export type Banner = { id: string; image: string; href: string };
 export function BannerCarousel({ banners }: { banners: Banner[] }) {
   const [i, setI] = useState(0);
   const [paused, setPaused] = useState(false);
+  // Geser (swipe) untuk mobile — pengganti panah yang disembunyikan.
+  const [touchX, setTouchX] = useState<number | null>(null);
   const n = banners.length;
 
   useEffect(() => {
@@ -24,8 +26,6 @@ export function BannerCarousel({ banners }: { banners: Banner[] }) {
 
   const go = (d: number) => setI((v) => (v + d + n) % n);
 
-  // Geser (swipe) untuk mobile — pengganti panah yang disembunyikan.
-  const [touchX, setTouchX] = useState<number | null>(null);
   const onTouchEnd = (endX: number) => {
     if (touchX === null) return;
     const dx = endX - touchX;
