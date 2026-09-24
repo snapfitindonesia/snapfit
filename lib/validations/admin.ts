@@ -37,6 +37,8 @@ export const productSchema = z.object({
     .nullable()
     .optional(), // nama & opsi variasi custom (label PDP)
   categoryId: z.string().optional().or(z.literal("")),
+  // Kategori tambahan (produk masuk >1 kategori). Tak termasuk kategori utama.
+  extraCategoryIds: z.array(z.string()).optional().default([]),
   isGrosir: z.coerce.boolean().optional().default(false), // tampil di halaman /grosir
   variants: z.array(variantSchema).min(1, "Minimal 1 varian"),
 });

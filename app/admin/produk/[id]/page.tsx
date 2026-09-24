@@ -13,7 +13,10 @@ export default async function EditProductPage({
   const [product, categories] = await Promise.all([
     db.product.findUnique({
       where: { id },
-      include: { variants: { orderBy: [{ color: "asc" }, { price: "asc" }] } },
+      include: {
+        variants: { orderBy: [{ color: "asc" }, { price: "asc" }] },
+        extraCategories: { select: { id: true } },
+      },
     }),
     db.category.findMany({
       select: { id: true, name: true, parentId: true },
@@ -35,6 +38,7 @@ export default async function EditProductPage({
             variantGroups: (product.variantGroups as { groups: { name: string; options: { value: string; desc: string }[] }[] } | null) ?? null,
             weight: product.variants[0]?.weight ?? 200,
             categoryId: product.categoryId,
+            extraCategoryIds: product.extraCategories.map((c) => c.id),
             isGrosir: product.isGrosir,
             variants: product.variants.map((v) => ({
               id: v.id,

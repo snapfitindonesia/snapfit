@@ -25,6 +25,9 @@ model Product {
   isGrosir    Boolean    @default(false) // true = tampil di halaman /grosir
   categoryId  String?
   category    Category?  @relation(fields: [categoryId], references: [id])
+  // Kategori tambahan (many-to-many) — 1 produk bisa masuk beberapa kategori,
+  // mis. case yang muat Fold 7 & Fold 8. categoryId tetap kategori utama (breadcrumb).
+  extraCategories Category[] @relation("ProductExtraCategories")
   variants    Variant[]
   reviews     Review[]
   createdAt   DateTime   @default(now())
@@ -69,6 +72,7 @@ model Category {
   children Category[] @relation("CatTree")
   order    Int        @default(0) // urutan tampil
   products Product[]
+  extraProducts Product[] @relation("ProductExtraCategories") // produk yang menandai kategori ini sbg tambahan
 }
 
 model Banner {

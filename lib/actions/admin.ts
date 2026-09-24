@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/require-admin";
+import { cleanupOrphanImages } from "@/lib/upload/cleanup";
 import { sendEmail, orderShippedEmail, orderProcessingEmail } from "@/lib/email";
 import {
   productSchema,
@@ -49,6 +50,11 @@ export async function createProduct(input: ProductInput): Promise<Result> {
         images: data.images,
         variantGroups: data.variantGroups ?? undefined,
         categoryId: data.categoryId || null,
+        extraCategories: {
+          connect: data.extraCategoryIds
+            .filter((cid) => cid && cid !== data.categoryId)
+            .map((cid) => ({ id: cid })),
+        },
         isGrosir: data.isGrosir,
         variants: {
           create: data.variants.map((v) => ({
@@ -78,6 +84,12 @@ export async function updateProduct(id: string, input: ProductInput): Promise<Re
     const data = productSchema.parse(input);
     const keepIds = data.variants.filter((v) => v.id).map((v) => v.id as string);
 
+    // Snapshot URL gambar LAMA untuk deteksi orphan setelah update.
+    const old = await db.product.findUnique({
+      where: { id },
+      select: { coverImage: true, images: true, variants: { select: { image: true } } },
+    });
+
     await db.$transaction([
       db.product.update({
         where: { id },
@@ -89,6 +101,11 @@ export async function updateProduct(id: string, input: ProductInput): Promise<Re
           images: data.images,
           variantGroups: data.variantGroups ?? undefined,
           categoryId: data.categoryId || null,
+          extraCategories: {
+            set: data.extraCategoryIds
+              .filter((cid) => cid && cid !== data.categoryId)
+              .map((cid) => ({ id: cid })),
+          },
           isGrosir: data.isGrosir,
         },
       }),
@@ -111,6 +128,11 @@ export async function updateProduct(id: string, input: ProductInput): Promise<Re
     revalidatePath("/admin/produk");
     revalidatePath(`/produk/${data.slug}`);
     revalidateStorefront();
+    // Hapus gambar lama yang kini tak terpakai (cover diganti, foto galeri/varian dibuang).
+    if (old) {
+      const oldGallery = Array.isArray(old.images) ? (old.images as string[]) : [];
+      await cleanupOrphanImages([old.coverImage, ...oldGallery, ...old.variants.map((v) => v.image)]);
+    }
     return { ok: true, id };
   } catch (e) {
     return fail(e);
@@ -120,9 +142,18 @@ export async function updateProduct(id: string, input: ProductInput): Promise<Re
 export async function deleteProduct(id: string): Promise<Result> {
   try {
     await requireAdmin();
+    // Kumpulkan URL gambar sebelum hapus (cover + galeri + foto varian).
+    const before = await db.product.findUnique({
+      where: { id },
+      select: { coverImage: true, images: true, variants: { select: { image: true } } },
+    });
     await db.product.delete({ where: { id } });
     revalidatePath("/admin/produk");
     revalidateStorefront();
+    if (before) {
+      const gallery = Array.isArray(before.images) ? (before.images as string[]) : [];
+      await cleanupOrphanImages([before.coverImage, ...gallery, ...before.variants.map((v) => v.image)]);
+    }
     return { ok: true };
   } catch (e) {
     return fail(e);
@@ -262,11 +293,14 @@ export async function saveBanner(input: BannerInput, id?: string): Promise<Resul
       order: data.order,
       active: data.active,
     };
+    // Snapshot gambar lama saat update (untuk hapus bila diganti).
+    const oldImage = id ? (await db.banner.findUnique({ where: { id }, select: { image: true } }))?.image : null;
     const banner = id
       ? await db.banner.update({ where: { id }, data: payload })
       : await db.banner.create({ data: payload });
     revalidatePath("/admin/banner");
     revalidatePath("/");
+    if (oldImage && oldImage !== data.image) await cleanupOrphanImages([oldImage]);
     return { ok: true, id: banner.id };
   } catch (e) {
     return fail(e);
@@ -276,9 +310,11 @@ export async function saveBanner(input: BannerInput, id?: string): Promise<Resul
 export async function deleteBanner(id: string): Promise<Result> {
   try {
     await requireAdmin();
+    const before = await db.banner.findUnique({ where: { id }, select: { image: true } });
     await db.banner.delete({ where: { id } });
     revalidatePath("/admin/banner");
     revalidatePath("/");
+    if (before?.image) await cleanupOrphanImages([before.image]);
     return { ok: true };
   } catch (e) {
     return fail(e);
@@ -439,11 +475,13 @@ export async function saveCategory(input: CategoryInput, id?: string): Promise<R
     }
 
     const payload = { name: data.name, slug, parentId, image: data.image || null, order: data.order };
+    const oldImage = id ? (await db.category.findUnique({ where: { id }, select: { image: true } }))?.image : null;
     const cat = id
       ? await db.category.update({ where: { id }, data: payload })
       : await db.category.create({ data: payload });
     revalidatePath("/admin/kategori");
     revalidateStorefront();
+    if (oldImage && oldImage !== (data.image || null)) await cleanupOrphanImages([oldImage]);
     return { ok: true, id: cat.id };
   } catch (e) {
     return fail(e);
@@ -455,7 +493,7 @@ export async function deleteCategory(id: string): Promise<Result> {
     await requireAdmin();
     const cat = await db.category.findUnique({
       where: { id },
-      select: { _count: { select: { children: true, products: true } } },
+      select: { image: true, _count: { select: { children: true, products: true } } },
     });
     if (!cat) return { ok: false, error: "Kategori tidak ditemukan." };
     if (cat._count.children > 0) return { ok: false, error: "Masih punya sub-kategori. Hapus/pindahkan dulu." };
@@ -463,6 +501,7 @@ export async function deleteCategory(id: string): Promise<Result> {
     await db.category.delete({ where: { id } });
     revalidatePath("/admin/kategori");
     revalidateStorefront();
+    if (cat.image) await cleanupOrphanImages([cat.image]);
     return { ok: true };
   } catch (e) {
     return fail(e);
@@ -551,10 +590,12 @@ export async function saveReview(input: ReviewInput, id?: string): Promise<Resul
       comment: data.comment,
       ...(data.createdAt ? { createdAt: new Date(data.createdAt) } : {}),
     };
+    const oldImage = id ? (await db.review.findUnique({ where: { id }, select: { image: true } }))?.image : null;
     const review = id
       ? await db.review.update({ where: { id }, data: payload })
       : await db.review.create({ data: payload });
     await revalidateReview(data.productId);
+    if (oldImage && oldImage !== (data.image || null)) await cleanupOrphanImages([oldImage]);
     return { ok: true, id: review.id };
   } catch (e) {
     return fail(e);
@@ -566,6 +607,7 @@ export async function deleteReview(id: string): Promise<Result> {
     await requireAdmin();
     const review = await db.review.delete({ where: { id } });
     await revalidateReview(review.productId);
+    if (review.image) await cleanupOrphanImages([review.image]);
     return { ok: true };
   } catch (e) {
     return fail(e);

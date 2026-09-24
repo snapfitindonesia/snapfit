@@ -222,9 +222,14 @@ export async function getProducts(query: ProductQuery): Promise<ProductListResul
       ...(tipe
         ? {
             OR: [
+              // kategori utama (produk atau induknya, 3 tingkat)
               { category: { slug: tipe } },
               { category: { parent: { slug: tipe } } },
               { category: { parent: { parent: { slug: tipe } } } },
+              // kategori tambahan (multi-kategori) — juga sampai 3 tingkat
+              { extraCategories: { some: { slug: tipe } } },
+              { extraCategories: { some: { parent: { slug: tipe } } } },
+              { extraCategories: { some: { parent: { parent: { slug: tipe } } } } },
             ],
           }
         : {}),

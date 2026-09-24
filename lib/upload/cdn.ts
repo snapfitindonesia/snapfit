@@ -73,6 +73,43 @@ export async function uploadToR2(buffer: Buffer, filename: string): Promise<stri
   return `${cfg.publicUrl}/${filename}`;
 }
 
+/** Hapus objek dari Cloudflare R2. True bila sukses / memang tak ada (404). */
+export async function deleteFromR2(filename: string): Promise<boolean> {
+  const cfg = r2Config();
+  if (!cfg) return false;
+  const client = new AwsClient({
+    accessKeyId: cfg.accessKeyId,
+    secretAccessKey: cfg.secretAccessKey,
+    service: "s3",
+    region: "auto",
+  });
+  const endpoint = `https://${cfg.accountId}.r2.cloudflarestorage.com/${cfg.bucket}/${filename}`;
+  const res = await client.fetch(endpoint, { method: "DELETE" });
+  return res.ok || res.status === 404;
+}
+
+/** Hapus file dari cPanel via FTPS. */
+export async function deleteFromCdn(filename: string): Promise<boolean> {
+  const cfg = cdnConfig();
+  if (!cfg) return false;
+  const client = new FtpClient(20_000);
+  client.ftp.verbose = false;
+  try {
+    await client.access({
+      host: cfg.host, port: cfg.port, user: cfg.user, password: cfg.password, secure: cfg.secure,
+      secureOptions: { rejectUnauthorized: false },
+    });
+    const path =
+      cfg.remoteDir && cfg.remoteDir !== "/"
+        ? `${cfg.remoteDir.replace(/\/$/, "")}/${filename}`
+        : filename;
+    await client.remove(path);
+    return true;
+  } finally {
+    client.close();
+  }
+}
+
 /** Upload buffer WebP ke cPanel via FTPS. Kembalikan public URL, atau null bila belum dikonfigurasi. */
 export async function uploadToCdn(buffer: Buffer, filename: string): Promise<string | null> {
   const cfg = cdnConfig();

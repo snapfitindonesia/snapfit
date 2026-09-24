@@ -32,12 +32,26 @@ type VariantGroups = { groups: { name: string; options: { value: string; desc: s
 type Initial = {
   id: string; slug: string; name: string; description: string | null;
   coverImage: string; images: string[]; categoryId: string | null;
+  extraCategoryIds?: string[];
   isGrosir: boolean; variants: InitVariant[]; variantGroups: VariantGroups; weight: number;
 };
 
 const input = "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand";
 const rid = () => Math.random().toString(36).slice(2, 9);
 const combo = (a: string, b: string | null) => `${a}__${b ?? "-"}`;
+
+// Label rantai kategori "Brand › Seri › Model" dari daftar kategori datar.
+function catLabel(cats: { id: string; name: string; parentId: string | null }[], id: string): string {
+  const byId = new Map(cats.map((c) => [c.id, c]));
+  const parts: string[] = [];
+  let cur = byId.get(id);
+  let guard = 0;
+  while (cur && guard++ < 5) {
+    parts.unshift(cur.name);
+    cur = cur.parentId ? byId.get(cur.parentId) : undefined;
+  }
+  return parts.join(" › ") || "—";
+}
 
 function composeName(v1: string, v2: string) {
   return [v1.trim(), v2.trim()].filter(Boolean).join(" / ") || v1.trim();
@@ -105,6 +119,8 @@ export function ProductForm({ categories, initial }: { categories: { id: string;
   const [coverImage, setCoverImage] = useState(initial?.coverImage ?? "");
   const [images, setImages] = useState<string[]>(initial?.images ?? []);
   const [categoryId, setCategoryId] = useState(initial?.categoryId ?? "");
+  const [extraCategoryIds, setExtraCategoryIds] = useState<string[]>(initial?.extraCategoryIds ?? []);
+  const [pendingExtra, setPendingExtra] = useState("");
   const [isGrosir, setIsGrosir] = useState(initial?.isGrosir ?? false);
   const [weight, setWeight] = useState(String(initial?.weight ?? 200));
 
@@ -203,7 +219,7 @@ export function ProductForm({ categories, initial }: { categories: { id: string;
     };
 
     setSaving(true);
-    const payload = { slug, name, description, coverImage, images, variantGroups, categoryId, isGrosir, variants: rows };
+    const payload = { slug, name, description, coverImage, images, variantGroups, categoryId, extraCategoryIds, isGrosir, variants: rows };
     const res = initial ? await updateProduct(initial.id, payload) : await createProduct(payload);
     if (res.ok) { router.push("/admin/produk"); router.refresh(); }
     else { setError(res.error ?? "Gagal menyimpan."); setSaving(false); }
@@ -282,9 +298,52 @@ export function ProductForm({ categories, initial }: { categories: { id: string;
                 <input className={`mt-1.5 ${input}`} value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="clear-case-iphone-15" required />
               </label>
               <div className="block">
-                <span className="text-sm font-medium">Kategori</span>
+                <span className="text-sm font-medium">Kategori utama</span>
                 <CategoryPicker categories={categories} value={categoryId} onChange={setCategoryId} />
               </div>
+
+              {/* Kategori tambahan — 1 produk bisa masuk beberapa kategori (mis. Fold 7 & Fold 8) */}
+              <div className="block">
+                <span className="text-sm font-medium">Kategori tambahan</span>
+                <span className="mt-0.5 block text-xs text-muted-foreground">
+                  Opsional. Agar produk muncul di lebih dari satu kategori menu.
+                </span>
+                {extraCategoryIds.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {extraCategoryIds.map((cid) => (
+                      <span key={cid} className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2.5 py-1 text-xs">
+                        {catLabel(categories, cid)}
+                        <button
+                          type="button"
+                          aria-label="Hapus"
+                          onClick={() => setExtraCategoryIds((ids) => ids.filter((x) => x !== cid))}
+                          className="text-muted-foreground hover:text-destructive"
+                        >
+                          <X className="size-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <div className="mt-2 flex items-end gap-2">
+                  <div className="flex-1">
+                    <CategoryPicker categories={categories} value={pendingExtra} onChange={setPendingExtra} />
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={!pendingExtra || pendingExtra === categoryId || extraCategoryIds.includes(pendingExtra)}
+                    onClick={() => {
+                      setExtraCategoryIds((ids) => [...ids, pendingExtra]);
+                      setPendingExtra("");
+                    }}
+                  >
+                    <Plus className="size-4" /> Tambah
+                  </Button>
+                </div>
+              </div>
+
               <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-border p-3">
                 <input type="checkbox" checked={isGrosir} onChange={(e) => setIsGrosir(e.target.checked)} className="mt-0.5 size-4 accent-brand" />
                 <span>
