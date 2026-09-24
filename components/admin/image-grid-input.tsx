@@ -21,6 +21,8 @@ export function ImageGridInput({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [urlDraft, setUrlDraft] = useState("");
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [overIdx, setOverIdx] = useState<number | null>(null);
 
   const photos = value.filter(Boolean);
   const canAdd = photos.length < MAX;
@@ -62,6 +64,14 @@ export function ImageGridInput({
     [next[i], next[j]] = [next[j], next[i]];
     onChange(next);
   }
+  // Drag & drop: pindahkan foto dari posisi `from` ke `to` (sisip, bukan tukar).
+  function reorder(from: number, to: number) {
+    if (from === to || from < 0 || to < 0 || from >= photos.length || to >= photos.length) return;
+    const next = [...photos];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    onChange(next);
+  }
   function addUrl() {
     const u = urlDraft.trim();
     if (!u) return;
@@ -73,13 +83,24 @@ export function ImageGridInput({
   return (
     <div>
       {photos.length > 1 && (
-        <p className="mb-1.5 text-[11px] text-muted-foreground">Foto pertama = cover. Arahkan kursor lalu geser ◀ ▶ untuk mengurutkan.</p>
+        <p className="mb-1.5 text-[11px] text-muted-foreground">Foto pertama = cover. <b>Seret</b> untuk mengurutkan (atau geser ◀ ▶). </p>
       )}
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
         {photos.map((src, i) => (
-          <div key={`${src}-${i}`} className="group relative aspect-square overflow-hidden rounded-lg border border-border bg-muted">
+          <div
+            key={`${src}-${i}`}
+            draggable
+            onDragStart={(e) => { setDragIdx(i); e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", String(i)); }}
+            onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; if (overIdx !== i) setOverIdx(i); }}
+            onDragLeave={() => setOverIdx((v) => (v === i ? null : v))}
+            onDrop={(e) => { e.preventDefault(); if (dragIdx !== null) reorder(dragIdx, i); setDragIdx(null); setOverIdx(null); }}
+            onDragEnd={() => { setDragIdx(null); setOverIdx(null); }}
+            className={`group relative aspect-square cursor-move overflow-hidden rounded-lg border bg-muted transition-all ${
+              dragIdx === i ? "opacity-40" : overIdx === i ? "border-brand ring-2 ring-brand/40" : "border-border"
+            }`}
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={src} alt="" className="size-full object-contain" />
+            <img src={src} alt="" draggable={false} className="size-full object-contain" />
 
             {i === 0 && (
               <span className="absolute left-0 top-0 rounded-br-md bg-brand px-1.5 py-0.5 text-[10px] font-medium text-brand-foreground">
