@@ -24,11 +24,22 @@ export function BannerCarousel({ banners }: { banners: Banner[] }) {
 
   const go = (d: number) => setI((v) => (v + d + n) % n);
 
+  // Geser (swipe) untuk mobile — pengganti panah yang disembunyikan.
+  const [touchX, setTouchX] = useState<number | null>(null);
+  const onTouchEnd = (endX: number) => {
+    if (touchX === null) return;
+    const dx = endX - touchX;
+    if (Math.abs(dx) > 40) go(dx < 0 ? 1 : -1);
+    setTouchX(null);
+  };
+
   return (
     <div
       className="relative aspect-[2/1] w-full overflow-hidden rounded-2xl border border-border bg-muted"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
+      onTouchStart={(e) => setTouchX(e.touches[0].clientX)}
+      onTouchEnd={(e) => onTouchEnd(e.changedTouches[0].clientX)}
     >
       {banners.map((b, idx) => (
         <Link
@@ -59,7 +70,7 @@ export function BannerCarousel({ banners }: { banners: Banner[] }) {
             type="button"
             onClick={() => go(-1)}
             aria-label="Sebelumnya"
-            className="absolute left-3 top-1/2 z-10 grid size-9 -translate-y-1/2 place-items-center rounded-full bg-background/80 text-foreground shadow backdrop-blur transition-colors hover:bg-background"
+            className="absolute left-3 top-1/2 z-10 hidden size-9 -translate-y-1/2 place-items-center rounded-full bg-background/80 text-foreground shadow backdrop-blur transition-colors hover:bg-background sm:grid"
           >
             <ChevronLeft className="size-5" />
           </button>
@@ -67,7 +78,7 @@ export function BannerCarousel({ banners }: { banners: Banner[] }) {
             type="button"
             onClick={() => go(1)}
             aria-label="Berikutnya"
-            className="absolute right-3 top-1/2 z-10 grid size-9 -translate-y-1/2 place-items-center rounded-full bg-background/80 text-foreground shadow backdrop-blur transition-colors hover:bg-background"
+            className="absolute right-3 top-1/2 z-10 hidden size-9 -translate-y-1/2 place-items-center rounded-full bg-background/80 text-foreground shadow backdrop-blur transition-colors hover:bg-background sm:grid"
           >
             <ChevronRight className="size-5" />
           </button>
