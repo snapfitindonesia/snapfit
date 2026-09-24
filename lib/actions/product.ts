@@ -10,6 +10,7 @@ export type ProductListItem = {
   id: string;
   slug: string;
   name: string;
+  brand: string | null;
   coverImage: string;
   categoryName: string | null;
   categorySlug: string | null;
@@ -270,6 +271,7 @@ export async function getProducts(query: ProductQuery): Promise<ProductListResul
         id: p.id,
         slug: p.slug,
         name: p.name,
+        brand: p.brand ?? null,
         coverImage: p.coverImage,
         categoryName: p.category?.name ?? null,
         categorySlug: p.category?.slug ?? null,

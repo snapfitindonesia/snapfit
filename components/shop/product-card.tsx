@@ -20,8 +20,13 @@ export function ProductCard({ product }: { product: ProductListItem }) {
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
           className="object-contain p-3 transition-transform duration-300 group-hover:scale-105"
         />
+        {product.brand && (
+          <span className="absolute left-0 top-2 rounded-r-md bg-brand px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white shadow-sm">
+            {product.brand}
+          </span>
+        )}
         {hasDiscount && (
-          <span className="absolute left-2 top-2 rounded-full bg-primary px-2 py-0.5 text-[11px] font-semibold text-primary-foreground">
+          <span className="absolute right-2 top-2 rounded-full bg-primary px-2 py-0.5 text-[11px] font-semibold text-primary-foreground">
             -{product.discountPercent}%
           </span>
         )}

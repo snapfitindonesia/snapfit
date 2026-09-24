@@ -45,6 +45,7 @@ export async function createProduct(input: ProductInput): Promise<Result> {
       data: {
         slug: data.slug,
         name: data.name,
+        brand: data.brand || null,
         description: data.description || null,
         coverImage: data.coverImage,
         images: data.images,
@@ -96,6 +97,7 @@ export async function updateProduct(id: string, input: ProductInput): Promise<Re
         data: {
           slug: data.slug,
           name: data.name,
+          brand: data.brand || null,
           description: data.description || null,
           coverImage: data.coverImage,
           images: data.images,

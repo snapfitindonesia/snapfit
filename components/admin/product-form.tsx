@@ -30,7 +30,7 @@ type InitVariant = {
 type VariantGroups = { groups: { name: string; options: { value: string; desc: string }[] }[] } | null;
 
 type Initial = {
-  id: string; slug: string; name: string; description: string | null;
+  id: string; slug: string; name: string; brand?: string | null; description: string | null;
   coverImage: string; images: string[]; categoryId: string | null;
   extraCategoryIds?: string[];
   isGrosir: boolean; variants: InitVariant[]; variantGroups: VariantGroups; weight: number;
@@ -115,6 +115,7 @@ export function ProductForm({ categories, initial }: { categories: { id: string;
   const router = useRouter();
   const [slug, setSlug] = useState(initial?.slug ?? "");
   const [name, setName] = useState(initial?.name ?? "");
+  const [brand, setBrand] = useState(initial?.brand ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [coverImage, setCoverImage] = useState(initial?.coverImage ?? "");
   const [images, setImages] = useState<string[]>(initial?.images ?? []);
@@ -219,7 +220,7 @@ export function ProductForm({ categories, initial }: { categories: { id: string;
     };
 
     setSaving(true);
-    const payload = { slug, name, description, coverImage, images, variantGroups, categoryId, extraCategoryIds, isGrosir, variants: rows };
+    const payload = { slug, name, brand, description, coverImage, images, variantGroups, categoryId, extraCategoryIds, isGrosir, variants: rows };
     const res = initial ? await updateProduct(initial.id, payload) : await createProduct(payload);
     if (res.ok) { router.push("/admin/produk"); router.refresh(); }
     else { setError(res.error ?? "Gagal menyimpan."); setSaving(false); }
@@ -292,6 +293,14 @@ export function ProductForm({ categories, initial }: { categories: { id: string;
                   <input className={`${input} pr-14`} maxLength={255} value={name} onChange={(e) => setName(e.target.value)} required placeholder="mis. Case iPhone 15" />
                   <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{name.length}/255</span>
                 </div>
+              </label>
+              <label className="block">
+                <span className="text-sm font-medium">Brand</span>
+                <input className={`mt-1.5 ${input}`} maxLength={40} value={brand} onChange={(e) => setBrand(e.target.value)} placeholder="mis. Ringke, Spigen, SNAPFIT" list="brand-list" />
+                <datalist id="brand-list">
+                  {["SNAPFIT","Ringke","Spigen","Supcase","Araree","VRS Design","Benwis","Octagoods"].map((b) => <option key={b} value={b} />)}
+                </datalist>
+                <span className="mt-1 block text-xs text-muted-foreground">Tampil sebagai badge di kartu produk. Kosongkan bila tak perlu.</span>
               </label>
               <label className="block">
                 <span className="text-sm font-medium">Slug (URL) <Req /></span>

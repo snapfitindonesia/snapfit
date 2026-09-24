@@ -32,6 +32,7 @@ export default async function EditProductPage({
             id: product.id,
             slug: product.slug,
             name: product.name,
+            brand: product.brand,
             description: product.description,
             coverImage: product.coverImage,
             images: Array.isArray(product.images) ? (product.images as string[]) : [],

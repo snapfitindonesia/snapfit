@@ -22,6 +22,7 @@ export const productSchema = z.object({
     .min(1)
     .regex(/^[a-z0-9-]+$/, "Slug hanya huruf kecil, angka, strip"),
   name: z.string().trim().min(1, "Nama produk wajib"),
+  brand: z.string().trim().max(40).optional().or(z.literal("")),
   description: z.string().trim().optional().or(z.literal("")),
   coverImage: url,
   images: z.array(url).optional().default([]), // galeri foto tambahan (PDP)
