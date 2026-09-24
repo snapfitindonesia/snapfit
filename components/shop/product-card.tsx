@@ -3,15 +3,14 @@ import Link from "next/link";
 import { Star } from "lucide-react";
 import { formatRupiah } from "@/lib/format";
 import type { ProductListItem } from "@/lib/actions/product";
+import { AddToCartButton } from "@/components/shop/add-to-cart-button";
 
 export function ProductCard({ product }: { product: ProductListItem }) {
   const hasDiscount = product.discountPercent > 0;
 
   return (
-    <Link
-      href={`/produk/${product.slug}`}
-      className="group block animate-in fade-in slide-in-from-bottom-3 duration-500"
-    >
+    <div className="group flex flex-col animate-in fade-in slide-in-from-bottom-3 duration-500">
+      <Link href={`/produk/${product.slug}`} className="block">
       <div className="relative aspect-square w-full overflow-hidden rounded-lg border border-border bg-muted">
         <Image
           src={product.coverImage}
@@ -68,6 +67,8 @@ export function ProductCard({ product }: { product: ProductListItem }) {
           )}
         </div>
       </div>
-    </Link>
+      </Link>
+      <AddToCartButton product={product} />
+    </div>
   );
 }

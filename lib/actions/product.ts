@@ -20,6 +20,8 @@ export type ProductListItem = {
   inStock: boolean;
   ratingAvg: number; // rata-rata bintang (0 jika belum ada ulasan)
   ratingCount: number; // jumlah ulasan
+  variantCount: number; // jumlah varian in-stock (utk tombol add-to-cart di kartu)
+  defaultVariant: { id: string; name: string; image: string; price: number } | null; // varian termurah in-stock
 };
 
 export type ProductListResult = {
@@ -245,6 +247,9 @@ export async function getProducts(query: ProductQuery): Promise<ProductListResul
       reviews: { select: { rating: true } },
       variants: {
         select: {
+          id: true,
+          name: true,
+          image: true,
           price: true,
           stock: true,
           discounts: { select: { percent: true, active: true, startAt: true, endAt: true } },
@@ -261,10 +266,14 @@ export async function getProducts(query: ProductQuery): Promise<ProductListResul
       // Diskon per-varian: harga akhir tiap varian dihitung sendiri.
       const priced = p.variants.map((v) => {
         const pct = activeDiscountPercent(v.discounts);
-        return { price: v.price, final: applyDiscount(v.price, pct), pct };
+        return { v, price: v.price, final: applyDiscount(v.price, pct), pct };
       });
       const minPrice = Math.min(...priced.map((x) => x.price));
       const cheapest = priced.reduce((a, b) => (b.final < a.final ? b : a));
+      // Varian in-stock termurah → default untuk tombol add-to-cart di kartu.
+      const inStockPriced = priced.filter((x) => x.v.stock > 0);
+      const cheapestInStock = (inStockPriced.length ? inStockPriced : priced).reduce((a, b) => (b.final < a.final ? b : a));
+      const variantCount = p.variants.filter((v) => v.stock > 0).length;
       const ratingCount = p.reviews.length;
       const ratingAvg = ratingCount ? p.reviews.reduce((s, r) => s + r.rating, 0) / ratingCount : 0;
       return {
@@ -281,6 +290,13 @@ export async function getProducts(query: ProductQuery): Promise<ProductListResul
         inStock: p.variants.some((v) => v.stock > 0),
         ratingAvg,
         ratingCount,
+        variantCount,
+        defaultVariant: {
+          id: cheapestInStock.v.id,
+          name: cheapestInStock.v.name,
+          image: cheapestInStock.v.image,
+          price: cheapestInStock.final,
+        },
       };
     });
 
