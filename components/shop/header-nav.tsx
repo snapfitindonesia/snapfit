@@ -10,13 +10,15 @@ import { cn } from "@/lib/utils";
 import { formatRupiah } from "@/lib/format";
 import { CartButton } from "@/components/shop/cart-button";
 import { useStoreUI } from "@/components/shop/store-ui-provider";
-import type { MegaMenuBrand, ProductListItem, NavLinkItem } from "@/lib/actions/product";
+import type { MegaMenuBrand, MerekMenuItem, ProductListItem, NavLinkItem } from "@/lib/actions/product";
 import logo from "@/logosnapfit.png";
 
-export function HeaderNav({ menu, navLinks = [] }: { menu: MegaMenuBrand[]; navLinks?: NavLinkItem[] }) {
+export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaMenuBrand[]; merekMenu?: MerekMenuItem[]; navLinks?: NavLinkItem[] }) {
   const { authed, openLogin } = useStoreUI();
-  const [open, setOpen] = useState(false); // mega-menu desktop
+  const [open, setOpen] = useState(false); // mega-menu kategori desktop
+  const [merekOpen, setMerekOpen] = useState(false); // mega-menu merek desktop
   const [activeBrand, setActiveBrand] = useState(0); // brand aktif di panel kanan
+  const [activeMerek, setActiveMerek] = useState(0); // merek aktif di panel kanan
   const [mobileOpen, setMobileOpen] = useState(false); // drawer mobile
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -25,7 +27,7 @@ export function HeaderNav({ menu, navLinks = [] }: { menu: MegaMenuBrand[]; navL
   };
   const scheduleClose = () => {
     cancelClose();
-    timer.current = setTimeout(() => setOpen(false), 150);
+    timer.current = setTimeout(() => { setOpen(false); setMerekOpen(false); }, 150);
   };
   const closeMobile = () => setMobileOpen(false);
 
@@ -148,6 +150,7 @@ export function HeaderNav({ menu, navLinks = [] }: { menu: MegaMenuBrand[]; navL
                     onMouseEnter={() => {
                       cancelClose();
                       setSearchOpen(false);
+                      setMerekOpen(false);
                       setOpen(true);
                     }}
                     onMouseLeave={scheduleClose}
@@ -160,6 +163,27 @@ export function HeaderNav({ menu, navLinks = [] }: { menu: MegaMenuBrand[]; navL
                   >
                     {l.label}
                     <ChevronDown className={cn("size-4 transition-transform", open && "rotate-180")} />
+                  </button>
+                ) : l.kind === "MEREK" ? (
+                  <button
+                    key={l.id}
+                    type="button"
+                    onMouseEnter={() => {
+                      cancelClose();
+                      setSearchOpen(false);
+                      setOpen(false);
+                      setMerekOpen(true);
+                    }}
+                    onMouseLeave={scheduleClose}
+                    onFocus={() => setMerekOpen(true)}
+                    aria-expanded={merekOpen}
+                    className={cn(
+                      "flex items-center gap-1 text-sm transition-colors",
+                      merekOpen ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {l.label}
+                    <ChevronDown className={cn("size-4 transition-transform", merekOpen && "rotate-180")} />
                   </button>
                 ) : (
                   <Link
@@ -289,6 +313,70 @@ export function HeaderNav({ menu, navLinks = [] }: { menu: MegaMenuBrand[]; navL
             </div>
           )}
 
+          {/* Mega-menu Merek/Brands (desktop) */}
+          {merekOpen && merekMenu.length > 0 && (
+            <div
+              className="absolute inset-x-0 top-full z-50 hidden pt-2 md:block"
+              onMouseEnter={cancelClose}
+              onMouseLeave={scheduleClose}
+            >
+              <div className="animate-in fade-in slide-in-from-top-1 flex max-h-[70vh] overflow-hidden rounded-2xl border border-border bg-background shadow-xl duration-200">
+                {/* Kiri: daftar merek */}
+                <div className="w-48 shrink-0 overflow-y-auto border-r border-border bg-muted/30 p-2">
+                  {merekMenu.map((m, i) => (
+                    <button
+                      key={m.name}
+                      type="button"
+                      onMouseEnter={() => setActiveMerek(i)}
+                      onFocus={() => setActiveMerek(i)}
+                      className={cn(
+                        "flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors",
+                        activeMerek === i ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:bg-background/60",
+                      )}
+                    >
+                      {m.name}
+                      <ChevronDown className="size-4 -rotate-90" />
+                    </button>
+                  ))}
+                </div>
+
+                {/* Kanan: produk dari merek aktif */}
+                <div className="flex-1 overflow-y-auto p-5">
+                  {merekMenu[activeMerek] && (
+                    <>
+                      <div className="mb-3 flex items-center justify-between">
+                        <h3 className="text-sm font-semibold">Produk · {merekMenu[activeMerek].name}</h3>
+                        <Link
+                          href={`/produk?brand=${encodeURIComponent(merekMenu[activeMerek].name)}`}
+                          onClick={() => setMerekOpen(false)}
+                          className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
+                        >
+                          Lihat semua {merekMenu[activeMerek].name}
+                        </Link>
+                      </div>
+                      <div className="grid grid-cols-3 gap-4 lg:grid-cols-5">
+                        {merekMenu[activeMerek].products.map((p) => (
+                          <Link
+                            key={p.id}
+                            href={`/produk/${p.slug}`}
+                            onClick={() => setMerekOpen(false)}
+                            className="group/mp block"
+                          >
+                            <span className="block aspect-square overflow-hidden rounded-lg border border-border bg-muted">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={p.coverImage} alt="" className="size-full object-contain p-1 transition-transform group-hover/mp:scale-105" />
+                            </span>
+                            <span className="mt-1.5 line-clamp-2 block text-xs text-muted-foreground group-hover/mp:text-foreground">{p.name}</span>
+                          </Link>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Drawer menu (mobile) */}
           {mobileOpen && (
             <div className="absolute inset-x-0 top-full z-50 pt-2 md:hidden">
@@ -338,6 +426,24 @@ export function HeaderNav({ menu, navLinks = [] }: { menu: MegaMenuBrand[]; navL
                               ))}
                             </ul>
                           </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : l.kind === "MEREK" ? (
+                    <div key={l.id}>
+                      <p className="mt-1 px-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        {l.label}
+                      </p>
+                      <div className="mt-1 flex flex-wrap gap-1.5 px-2">
+                        {merekMenu.map((m) => (
+                          <Link
+                            key={m.name}
+                            href={`/produk?brand=${encodeURIComponent(m.name)}`}
+                            onClick={closeMobile}
+                            className="inline-block rounded-full border border-border px-3 py-1 text-sm text-muted-foreground hover:text-foreground"
+                          >
+                            {m.name}
+                          </Link>
                         ))}
                       </div>
                     </div>

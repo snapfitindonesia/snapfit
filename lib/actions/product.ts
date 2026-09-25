@@ -256,6 +256,36 @@ export async function getMegaMenu(): Promise<MegaMenuBrand[]> {
   }
 }
 
+// Mega menu Merek/Brands: daftar merek + beberapa produk per merek (utk panel kanan).
+export type MerekMenuProduct = { id: string; slug: string; name: string; coverImage: string };
+export type MerekMenuItem = { name: string; products: MerekMenuProduct[] };
+
+export async function getMerekMenu(perMerek = 8): Promise<MerekMenuItem[]> {
+  try {
+    const merek = await db.merek.findMany({ orderBy: [{ order: "asc" }, { name: "asc" }], select: { name: true } });
+    if (!merek.length) return [];
+    const names = merek.map((m) => m.name);
+    const products = await db.product.findMany({
+      where: { brand: { in: names }, variants: { some: { stock: { gt: 0 } } } },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, slug: true, name: true, coverImage: true, brand: true },
+      take: 600,
+    });
+    const byBrand = new Map<string, MerekMenuProduct[]>();
+    for (const p of products) {
+      if (!p.brand) continue;
+      const arr = byBrand.get(p.brand) ?? [];
+      if (arr.length < perMerek) arr.push({ id: p.id, slug: p.slug, name: p.name, coverImage: p.coverImage });
+      byBrand.set(p.brand, arr);
+    }
+    return merek
+      .map((m) => ({ name: m.name, products: byBrand.get(m.name) ?? [] }))
+      .filter((m) => m.products.length > 0);
+  } catch {
+    return [];
+  }
+}
+
 export async function getProducts(query: ProductQuery): Promise<ProductListResult> {
   const { tipe, model, perangkat, brands, minPrice: priceMin, maxPrice: priceMax, grosir, featured, q, sort, skip, take } = query;
 

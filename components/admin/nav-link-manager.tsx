@@ -11,14 +11,14 @@ export type NavLinkRow = {
   label: string;
   url: string;
   location: "HEADER" | "FOOTER";
-  kind: "LINK" | "MEGA";
+  kind: "LINK" | "MEGA" | "MEREK";
   order: number;
   newTab: boolean;
   active: boolean;
 };
 
 const input = "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-foreground";
-const BLANK = { label: "", url: "", location: "HEADER" as "HEADER" | "FOOTER", kind: "LINK" as "LINK" | "MEGA", order: "0", newTab: false, active: true };
+const BLANK = { label: "", url: "", location: "HEADER" as "HEADER" | "FOOTER", kind: "LINK" as "LINK" | "MEGA" | "MEREK", order: "0", newTab: false, active: true };
 
 export function NavLinkManager({ rows }: { rows: NavLinkRow[] }) {
   const router = useRouter();
@@ -91,8 +91,9 @@ export function NavLinkManager({ rows }: { rows: NavLinkRow[] }) {
             </span>
             <span className="text-sm font-medium">{r.label}</span>
             {r.kind === "MEGA" && <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium">Kategori</span>}
+            {r.kind === "MEREK" && <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium">Merek</span>}
             {r.newTab && <ExternalLink className="size-3 text-muted-foreground" />}
-            <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">{r.kind === "MEGA" ? "dropdown kategori" : r.url}</span>
+            <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">{r.kind === "MEGA" ? "dropdown kategori" : r.kind === "MEREK" ? "dropdown merek" : r.url}</span>
             {!r.active && <span className="text-[10px] text-muted-foreground">nonaktif</span>}
             <button onClick={() => edit(r)} className="text-muted-foreground hover:text-foreground"><Pencil className="size-4" /></button>
             <button onClick={() => del(r.id)} className="text-muted-foreground hover:text-destructive"><Trash2 className="size-4" /></button>
@@ -111,9 +112,10 @@ export function NavLinkManager({ rows }: { rows: NavLinkRow[] }) {
           <input className={`mt-1 ${input}`} value={f.label} onChange={(e) => setF({ ...f, label: e.target.value })} placeholder="mis. Promo, Blog, Kontak" required />
         </label>
         <label className="block text-sm">Jenis
-          <select className={`mt-1 ${input}`} value={f.kind} onChange={(e) => setF({ ...f, kind: e.target.value as "LINK" | "MEGA" })}>
+          <select className={`mt-1 ${input}`} value={f.kind} onChange={(e) => setF({ ...f, kind: e.target.value as "LINK" | "MEGA" | "MEREK" })}>
             <option value="LINK">Link biasa</option>
             <option value="MEGA">Dropdown Kategori (mega menu)</option>
+            <option value="MEREK">Dropdown Merek / Brands</option>
           </select>
         </label>
         {f.kind === "LINK" && (
@@ -124,6 +126,11 @@ export function NavLinkManager({ rows }: { rows: NavLinkRow[] }) {
         {f.kind === "MEGA" && (
           <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
             Menampilkan dropdown Kategori (brand → seri → model) otomatis. Hanya untuk Header.
+          </p>
+        )}
+        {f.kind === "MEREK" && (
+          <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+            Menampilkan dropdown Merek (daftar merek + produk) otomatis dari Admin → Merek. Hanya untuk Header.
           </p>
         )}
         <label className="block text-sm">Lokasi

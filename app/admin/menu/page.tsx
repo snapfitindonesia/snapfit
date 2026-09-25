@@ -10,7 +10,7 @@ export default async function AdminMenuPage() {
     label: l.label,
     url: l.url,
     location: l.location as "HEADER" | "FOOTER",
-    kind: l.kind as "LINK" | "MEGA",
+    kind: l.kind as "LINK" | "MEGA" | "MEREK",
     order: l.order,
     newTab: l.newTab,
     active: l.active,
