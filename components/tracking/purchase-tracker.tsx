@@ -11,10 +11,14 @@ export function PurchaseTracker({
   transactionId,
   value,
   items,
+  email,
+  phone,
 }: {
   transactionId: string;
   value: number;
   items: Item[];
+  email?: string;
+  phone?: string;
 }) {
   const fired = useRef(false);
   useEffect(() => {
@@ -27,8 +31,8 @@ export function PurchaseTracker({
       // storage tak tersedia — tetap lanjut fire
     }
     fired.current = true;
-    trackPurchase(transactionId, value, items);
-  }, [transactionId, value, items]);
+    trackPurchase(transactionId, value, items, { email, phone });
+  }, [transactionId, value, items, email, phone]);
 
   return null;
 }

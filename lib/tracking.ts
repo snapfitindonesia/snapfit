@@ -23,10 +23,32 @@ function push(payload: Record<string, unknown>) {
   window.dataLayer.push(payload);
 }
 
-// Kirim event standar ke Facebook Pixel (aman bila Pixel tak dimuat).
-function fbTrack(event: string, params?: Record<string, unknown>) {
+type Pii = { email?: string; phone?: string };
+
+// Kirim event ke Facebook Pixel (browser) + Conversions API (server) dengan
+// event_id yang SAMA → Meta dedup otomatis. Aman bila Pixel/CAPI tak aktif.
+function fbTrack(event: string, params?: Record<string, unknown>, pii?: Pii) {
   if (typeof window === "undefined") return;
-  window.fbq?.("track", event, params);
+  const eventId =
+    window.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  window.fbq?.("track", event, params, { eventID: eventId });
+  try {
+    fetch("/api/fb-capi", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      keepalive: true, // tetap terkirim walau halaman berpindah (mis. Purchase)
+      body: JSON.stringify({
+        eventName: event,
+        eventId,
+        eventSourceUrl: window.location.href,
+        customData: params,
+        email: pii?.email,
+        phone: pii?.phone,
+      }),
+    }).catch(() => {});
+  } catch {
+    // abaikan
+  }
 }
 
 // Kirim event e-commerce ke GA4 (aman bila gtag tak dimuat).
@@ -66,7 +88,7 @@ export function trackAddToCart(item: Item) {
   gaTrack("add_to_cart", { currency: "IDR", value, items: [item] });
 }
 
-export function trackBeginCheckout(value: number, items: Item[]) {
+export function trackBeginCheckout(value: number, items: Item[], pii?: Pii) {
   push({
     event: "begin_checkout",
     ecommerce: { currency: "IDR", value, items },
@@ -77,11 +99,11 @@ export function trackBeginCheckout(value: number, items: Item[]) {
     num_items: items.reduce((n, i) => n + (i.quantity ?? 1), 0),
     value,
     currency: "IDR",
-  });
+  }, pii);
   gaTrack("begin_checkout", { currency: "IDR", value, items });
 }
 
-export function trackPurchase(transactionId: string, value: number, items: Item[]) {
+export function trackPurchase(transactionId: string, value: number, items: Item[], pii?: Pii) {
   push({
     event: "purchase",
     ecommerce: { transaction_id: transactionId, currency: "IDR", value, items },
@@ -92,6 +114,6 @@ export function trackPurchase(transactionId: string, value: number, items: Item[
     num_items: items.reduce((n, i) => n + (i.quantity ?? 1), 0),
     value,
     currency: "IDR",
-  });
+  }, pii);
   gaTrack("purchase", { transaction_id: transactionId, currency: "IDR", value, items });
 }

@@ -30,6 +30,7 @@ export default async function CheckoutSuccessPage({
   }
 
   const awaitingPayment = order.status === "PENDING" && isManualPayment();
+  const addr = (order.address ?? {}) as { email?: string; phone?: string };
 
   return (
     <div className="mx-auto max-w-lg px-4 py-12 sm:px-6 sm:py-16">
@@ -44,6 +45,8 @@ export default async function CheckoutSuccessPage({
             price: it.price,
             quantity: it.qty,
           }))}
+          email={addr.email}
+          phone={addr.phone}
         />
       )}
 
