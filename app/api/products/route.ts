@@ -6,9 +6,15 @@ import { productQuerySchema } from "@/lib/validations/product";
 // dari Client Component tanpa reload halaman (lihat docs/01-arsitektur.md).
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
+  const perangkat = searchParams.getAll("perangkat");
+  const brands = searchParams.getAll("brand");
   const parsed = productQuerySchema.safeParse({
     tipe: searchParams.get("tipe") ?? undefined,
     model: searchParams.get("model") ?? undefined,
+    perangkat: perangkat.length ? perangkat : undefined,
+    brands: brands.length ? brands : undefined,
+    minPrice: searchParams.get("minPrice") ?? undefined,
+    maxPrice: searchParams.get("maxPrice") ?? undefined,
     grosir: searchParams.get("grosir") ?? undefined,
     q: searchParams.get("q") ?? undefined,
     sort: searchParams.get("sort") ?? undefined,

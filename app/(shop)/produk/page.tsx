@@ -1,4 +1,4 @@
-import { getCategories, getProducts } from "@/lib/actions/product";
+import { getCategories, getProducts, getBrandFacets } from "@/lib/actions/product";
 import { productQuerySchema } from "@/lib/validations/product";
 import { ProductListing } from "@/components/shop/product-listing";
 
@@ -16,8 +16,9 @@ export default async function ProductListPage({
   // Muat awal via RSC (cepat + SEO); interaksi berikutnya via AJAX di client.
   const query = productQuerySchema.parse({ tipe: sp.tipe, model: sp.model, sort: sp.sort, q: sp.q });
 
-  const [categories, initial] = await Promise.all([
+  const [categories, brandFacets, initial] = await Promise.all([
     getCategories(),
+    getBrandFacets(),
     getProducts(query),
   ]);
 
@@ -33,7 +34,9 @@ export default async function ProductListPage({
       </header>
 
       <ProductListing
-        categories={categories.map((c) => ({ name: c.name, slug: c.slug }))}
+        devices={categories.map((c) => ({ name: c.name, slug: c.slug }))}
+        brands={brandFacets.brands}
+        hasNoBrand={brandFacets.hasNoBrand}
         initial={initial}
         initialTipe={query.tipe ?? ""}
         initialModel={query.model ?? ""}

@@ -57,6 +57,22 @@ export async function getCategories() {
   return cats.filter((c) => c._count.children === 0).map(({ id, name, slug }) => ({ id, name, slug }));
 }
 
+/** Daftar brand (untuk facet filter) + apakah ada produk tanpa brand. */
+export async function getBrandFacets(): Promise<{ brands: string[]; hasNoBrand: boolean }> {
+  try {
+    const rows = await db.product.findMany({ select: { brand: true } });
+    const set = new Set<string>();
+    let hasNoBrand = false;
+    for (const r of rows) {
+      if (r.brand) set.add(r.brand);
+      else hasNoBrand = true;
+    }
+    return { brands: [...set].sort((a, b) => a.localeCompare(b)), hasNoBrand };
+  } catch {
+    return { brands: [], hasNoBrand: false };
+  }
+}
+
 export type DeviceModel = { label: string; slug: string; count: number };
 export type DeviceLine = { name: string; slug: string; productCount: number; models: DeviceModel[] };
 export type DeviceBrand = { name: string; slug: string; lines: DeviceLine[] };
@@ -244,25 +260,42 @@ export async function getMegaMenu(): Promise<MegaMenuBrand[]> {
 }
 
 export async function getProducts(query: ProductQuery): Promise<ProductListResult> {
-  const { tipe, model, grosir, featured, q, sort, skip, take } = query;
+  const { tipe, model, perangkat, brands, minPrice: priceMin, maxPrice: priceMax, grosir, featured, q, sort, skip, take } = query;
+
+  // Gabungan slug perangkat: dari facet "perangkat" + tipe (link masuk).
+  const deviceSlugs = [...new Set([...(perangkat ?? []), ...(tipe ? [tipe] : [])])];
+  const deviceWhere = deviceSlugs.length
+    ? {
+        OR: [
+          { category: { slug: { in: deviceSlugs } } },
+          { category: { parent: { slug: { in: deviceSlugs } } } },
+          { category: { parent: { parent: { slug: { in: deviceSlugs } } } } },
+          { extraCategories: { some: { slug: { in: deviceSlugs } } } },
+          { extraCategories: { some: { parent: { slug: { in: deviceSlugs } } } } },
+          { extraCategories: { some: { parent: { parent: { slug: { in: deviceSlugs } } } } } },
+        ],
+      }
+    : null;
+
+  // Filter brand (OR antar brand); "__none__" = produk tanpa brand.
+  const brandNames = (brands ?? []).filter((b) => b !== "__none__");
+  const wantNoBrand = (brands ?? []).includes("__none__");
+  const brandWhere =
+    brands && brands.length
+      ? {
+          OR: [
+            ...(brandNames.length ? [{ brand: { in: brandNames } }] : []),
+            ...(wantNoBrand ? [{ brand: null }] : []),
+          ],
+        }
+      : null;
 
   const products = await db.product.findMany({
     where: {
-      // tipe cocok bila slug = line ITU atau slug = brand induknya (brand → semua line-nya)
-      // cocok bila slug = kategori produk ATAU salah satu induknya (brand/seri) — 3 tingkat
-      ...(tipe
-        ? {
-            OR: [
-              // kategori utama (produk atau induknya, 3 tingkat)
-              { category: { slug: tipe } },
-              { category: { parent: { slug: tipe } } },
-              { category: { parent: { parent: { slug: tipe } } } },
-              // kategori tambahan (multi-kategori) — juga sampai 3 tingkat
-              { extraCategories: { some: { slug: tipe } } },
-              { extraCategories: { some: { parent: { slug: tipe } } } },
-              { extraCategories: { some: { parent: { parent: { slug: tipe } } } } },
-            ],
-          }
+      // Facet perangkat + brand digabung dengan AND (antar-facet = irisan;
+      // dalam facet = OR, sudah dibungkus di deviceWhere/brandWhere).
+      ...((deviceWhere || brandWhere)
+        ? { AND: [...(deviceWhere ? [deviceWhere] : []), ...(brandWhere ? [brandWhere] : [])] }
         : {}),
       // model tingkat 3: produk punya varian dengan type persis
       ...(model ? { variants: { some: { type: model } } } : {}),
@@ -330,12 +363,17 @@ export async function getProducts(query: ProductQuery): Promise<ProductListResul
       };
     });
 
-  if (sort === "termurah") mapped.sort((a, b) => a.finalPrice - b.finalPrice);
-  else if (sort === "termahal") mapped.sort((a, b) => b.finalPrice - a.finalPrice);
+  // Filter harga (pada harga akhir termurah yang ditampilkan).
+  const priceFiltered = mapped.filter(
+    (p) => (priceMin == null || p.finalPrice >= priceMin) && (priceMax == null || p.finalPrice <= priceMax),
+  );
+
+  if (sort === "termurah") priceFiltered.sort((a, b) => a.finalPrice - b.finalPrice);
+  else if (sort === "termahal") priceFiltered.sort((a, b) => b.finalPrice - a.finalPrice);
   // "terbaru" sudah terurut createdAt desc dari DB
 
-  const total = mapped.length;
-  const items = mapped.slice(skip, skip + take);
+  const total = priceFiltered.length;
+  const items = priceFiltered.slice(skip, skip + take);
   return { items, total, hasMore: skip + take < total };
 }
 

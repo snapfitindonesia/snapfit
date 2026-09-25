@@ -1,14 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, Search, X, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ProductCard } from "@/components/shop/product-card";
-import { SORT_OPTIONS, type SortOption } from "@/lib/validations/product";
+import { SORT_OPTIONS, type SortOption, NO_BRAND } from "@/lib/validations/product";
 import type { ProductListItem, ProductListResult } from "@/lib/actions/product";
 
-const TAKE = 8;
+const TAKE = 12;
 
 const SORT_LABEL: Record<SortOption, string> = {
   terbaru: "Terbaru",
@@ -16,59 +16,75 @@ const SORT_LABEL: Record<SortOption, string> = {
   termahal: "Harga termahal",
 };
 
-type Category = { name: string; slug: string };
+type Device = { name: string; slug: string };
 
 export function ProductListing({
-  categories,
+  devices,
+  brands,
+  hasNoBrand,
   initial,
   initialTipe = "",
   initialModel = "",
   initialSort = "terbaru",
   initialQ = "",
 }: {
-  categories: Category[];
+  devices: Device[];
+  brands: string[];
+  hasNoBrand: boolean;
   initial: ProductListResult;
   initialTipe?: string;
   initialModel?: string;
   initialSort?: SortOption;
   initialQ?: string;
 }) {
-  const [tipe, setTipe] = useState(initialTipe);
-  const [model, setModel] = useState(initialModel);
-  const [sort, setSort] = useState<SortOption>(initialSort);
   const [q, setQ] = useState(initialQ);
+  const [sort, setSort] = useState<SortOption>(initialSort);
+  const [selDevices, setSelDevices] = useState<Set<string>>(() => new Set(initialTipe ? [initialTipe] : []));
+  const [selBrands, setSelBrands] = useState<Set<string>>(new Set());
+  const [minInput, setMinInput] = useState("");
+  const [maxInput, setMaxInput] = useState("");
+  const [priceMin, setPriceMin] = useState<number | null>(null);
+  const [priceMax, setPriceMax] = useState<number | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
   const [items, setItems] = useState<ProductListItem[]>(initial.items);
   const [total, setTotal] = useState(initial.total);
   const [hasMore, setHasMore] = useState(initial.hasMore);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
-  const [filtersOpen, setFiltersOpen] = useState(false); // toggle filter kategori di mobile
 
-  // Anti race-condition saat filter/sort di-klik cepat
   const reqId = useRef(0);
   const firstRender = useRef(true);
+  const model = initialModel;
+
+  const buildParams = useCallback(
+    (skip: number) => {
+      const p = new URLSearchParams();
+      selDevices.forEach((s) => p.append("perangkat", s));
+      selBrands.forEach((b) => p.append("brand", b));
+      if (priceMin != null) p.set("minPrice", String(priceMin));
+      if (priceMax != null) p.set("maxPrice", String(priceMax));
+      if (model) p.set("model", model);
+      if (q.trim()) p.set("q", q.trim());
+      if (sort !== "terbaru") p.set("sort", sort);
+      p.set("skip", String(skip));
+      p.set("take", String(TAKE));
+      return p;
+    },
+    [selDevices, selBrands, priceMin, priceMax, model, q, sort],
+  );
 
   const fetchList = useCallback(
-    async (opts: { tipe: string; model: string; q: string; sort: SortOption; skip: number; append: boolean }) => {
+    async (skip: number, append: boolean) => {
       const id = ++reqId.current;
       setLoading(true);
       setError(false);
       try {
-        const params = new URLSearchParams({
-          sort: opts.sort,
-          skip: String(opts.skip),
-          take: String(TAKE),
-        });
-        if (opts.tipe) params.set("tipe", opts.tipe);
-        if (opts.model) params.set("model", opts.model);
-        if (opts.q) params.set("q", opts.q);
-
-        const res = await fetch(`/api/products?${params.toString()}`);
+        const res = await fetch(`/api/products?${buildParams(skip).toString()}`);
         if (!res.ok) throw new Error("gagal");
         const data: ProductListResult = await res.json();
-        if (id !== reqId.current) return; // hasil basi, abaikan
-
-        setItems((prev) => (opts.append ? [...prev, ...data.items] : data.items));
+        if (id !== reqId.current) return;
+        setItems((prev) => (append ? [...prev, ...data.items] : data.items));
         setTotal(data.total);
         setHasMore(data.hasMore);
       } catch {
@@ -77,62 +93,110 @@ export function ProductListing({
         if (id === reqId.current) setLoading(false);
       }
     },
-    [],
+    [buildParams],
   );
 
-  // Saat filter/sort berubah → reset & fetch dari awal (skip 0). Lewati render pertama
-  // (data awal sudah dari RSC). Sinkronkan URL tanpa memicu navigasi/reload.
   useEffect(() => {
     if (firstRender.current) {
       firstRender.current = false;
       return;
     }
-    // Debounce (mengetik search & klik cepat): tunggu 250ms sebelum fetch
     const t = setTimeout(() => {
-      const params = new URLSearchParams();
-      if (tipe) params.set("tipe", tipe);
-      if (model) params.set("model", model);
-      if (q) params.set("q", q);
-      if (sort !== "terbaru") params.set("sort", sort);
-      const qs = params.toString();
+      const p = buildParams(0);
+      p.delete("skip");
+      p.delete("take");
+      const qs = p.toString();
       window.history.replaceState(null, "", qs ? `/produk?${qs}` : "/produk");
-      fetchList({ tipe, model, q, sort, skip: 0, append: false });
+      fetchList(0, false);
     }, 250);
     return () => clearTimeout(t);
-  }, [tipe, model, sort, q, fetchList]);
+  }, [selDevices, selBrands, priceMin, priceMax, sort, q, buildParams, fetchList]);
 
-  const chips = [{ name: "Semua", slug: "" }, ...categories];
-  const activeName = chips.find((c) => c.slug === tipe)?.name ?? "Semua";
+  function toggleDevice(slug: string) {
+    setSelDevices((s) => { const n = new Set(s); if (n.has(slug)) n.delete(slug); else n.add(slug); return n; });
+  }
+  function toggleBrand(b: string) {
+    setSelBrands((s) => { const n = new Set(s); if (n.has(b)) n.delete(b); else n.add(b); return n; });
+  }
+  function applyPrice() {
+    setPriceMin(minInput.trim() ? Math.max(0, Number(minInput)) : null);
+    setPriceMax(maxInput.trim() ? Math.max(0, Number(maxInput)) : null);
+  }
+  function resetAll() {
+    setQ("");
+    setSort("terbaru");
+    setSelDevices(new Set());
+    setSelBrands(new Set());
+    setMinInput(""); setMaxInput(""); setPriceMin(null); setPriceMax(null);
+    setFiltersOpen(false);
+  }
 
-  // Daftar kategori (vertikal) — dipakai sidebar desktop & panel mobile.
-  const CategoryList = (
-    <nav className="flex flex-col gap-0.5" role="group" aria-label="Filter kategori">
-      {chips.map((c) => (
-        <button
-          key={c.slug || "all"}
-          type="button"
-          onClick={() => {
-            setTipe(c.slug);
-            setModel(""); // model terikat ke line tertentu — reset saat ganti filter
-            setFiltersOpen(false);
-          }}
-          aria-pressed={tipe === c.slug}
-          className={cn(
-            "rounded-md px-3 py-1.5 text-left text-sm transition-colors",
-            tipe === c.slug
-              ? "bg-foreground font-medium text-background"
-              : "text-muted-foreground hover:bg-muted hover:text-foreground",
-          )}
-        >
-          {c.name}
+  const activeCount = selDevices.size + selBrands.size + (priceMin != null || priceMax != null ? 1 : 0);
+  const brandOptions = useMemo(
+    () => [...brands.map((b) => ({ key: b, label: b })), ...(hasNoBrand ? [{ key: NO_BRAND, label: "Tanpa Brand" }] : [])],
+    [brands, hasNoBrand],
+  );
+
+  const Facet = ({ title, children }: { title: string; children: React.ReactNode }) => (
+    <div className="border-t border-border pt-4 first:border-t-0 first:pt-0">
+      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{title}</p>
+      {children}
+    </div>
+  );
+  const Check = ({ checked, onChange, label }: { checked: boolean; onChange: () => void; label: string }) => (
+    <label className="flex cursor-pointer items-center gap-2 py-1 text-sm">
+      <input type="checkbox" checked={checked} onChange={onChange} className="size-4 shrink-0 accent-foreground" />
+      <span className="min-w-0 leading-snug">{label}</span>
+    </label>
+  );
+
+  const sidebar = (
+    <div className="space-y-4">
+      {/* Harga */}
+      <Facet title="Harga (IDR)">
+        <div className="flex items-center gap-2">
+          <input inputMode="numeric" value={minInput} onChange={(e) => setMinInput(e.target.value.replace(/\D/g, ""))} placeholder="Min"
+            className="w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-sm outline-none focus:border-foreground" />
+          <span className="text-muted-foreground">–</span>
+          <input inputMode="numeric" value={maxInput} onChange={(e) => setMaxInput(e.target.value.replace(/\D/g, ""))} placeholder="Max"
+            className="w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-sm outline-none focus:border-foreground" />
+        </div>
+        <Button size="sm" className="mt-2 w-full" onClick={applyPrice}>Terapkan harga</Button>
+      </Facet>
+
+      {/* Brand */}
+      {brandOptions.length > 0 && (
+        <Facet title="Brand">
+          <div className="max-h-56 overflow-y-auto pr-1">
+            {brandOptions.map((b) => (
+              <Check key={b.key} checked={selBrands.has(b.key)} onChange={() => toggleBrand(b.key)} label={b.label} />
+            ))}
+          </div>
+        </Facet>
+      )}
+
+      {/* Perangkat */}
+      {devices.length > 0 && (
+        <Facet title="Perangkat">
+          <div className="max-h-72 overflow-y-auto pr-1">
+            {devices.map((d) => (
+              <Check key={d.slug} checked={selDevices.has(d.slug)} onChange={() => toggleDevice(d.slug)} label={d.name} />
+            ))}
+          </div>
+        </Facet>
+      )}
+
+      {activeCount > 0 && (
+        <button onClick={resetAll} className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground">
+          Hapus semua filter
         </button>
-      ))}
-    </nav>
+      )}
+    </div>
   );
 
   return (
     <div>
-      {/* Kotak pencarian */}
+      {/* Pencarian */}
       <div className="relative mb-4">
         <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <input
@@ -145,102 +209,59 @@ export function ProductListing({
         />
       </div>
 
-      <div className="lg:grid lg:grid-cols-[210px_1fr] lg:gap-8">
-        {/* Sidebar kategori */}
+      <div className="lg:grid lg:grid-cols-[230px_1fr] lg:gap-8">
+        {/* Sidebar filter */}
         <aside className="lg:sticky lg:top-24 lg:self-start">
-          {/* Mobile: tombol toggle */}
           <button
             type="button"
             onClick={() => setFiltersOpen((v) => !v)}
             className="flex w-full items-center justify-between rounded-lg border border-border px-4 py-2.5 text-sm font-medium lg:hidden"
           >
-            <span className="flex items-center gap-2">
-              <SlidersHorizontal className="size-4" />
-              Kategori: <span className="text-muted-foreground">{activeName}</span>
-            </span>
+            <span className="flex items-center gap-2"><SlidersHorizontal className="size-4" /> Filter{activeCount > 0 && <span className="rounded-full bg-foreground px-1.5 text-xs text-background">{activeCount}</span>}</span>
             <span className="text-muted-foreground">{filtersOpen ? "▲" : "▼"}</span>
           </button>
-
-          <div className={cn("mt-2 lg:mt-0 lg:block", filtersOpen ? "block" : "hidden")}>
-            <p className="mb-2 hidden px-3 text-xs font-medium uppercase tracking-wide text-muted-foreground lg:block">
-              Kategori
-            </p>
-            <div className="lg:max-h-[calc(100vh-10rem)] lg:overflow-y-auto lg:pr-1">
-              {CategoryList}
-            </div>
+          <div className={cn("mt-3 rounded-xl border border-border p-4 lg:mt-0 lg:block", filtersOpen ? "block" : "hidden")}>
+            {sidebar}
           </div>
         </aside>
 
-        {/* Konten utama */}
+        {/* Konten */}
         <div className="mt-4 lg:mt-0">
-          {/* Bar atas: jumlah + sort */}
           <div className="flex items-center justify-between gap-4">
-            <p className="text-sm text-muted-foreground" aria-live="polite">
-              {total} produk
-            </p>
+            <p className="text-sm text-muted-foreground" aria-live="polite">{total} produk</p>
             <label className="flex items-center gap-2 text-sm text-muted-foreground">
               <span className="sr-only sm:not-sr-only">Urutkan</span>
-              <select
-                value={sort}
-                onChange={(e) => setSort(e.target.value as SortOption)}
-                className="rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground"
-              >
-                {SORT_OPTIONS.map((s) => (
-                  <option key={s} value={s}>
-                    {SORT_LABEL[s]}
-                  </option>
-                ))}
+              <select value={sort} onChange={(e) => setSort(e.target.value as SortOption)}
+                className="rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground">
+                {SORT_OPTIONS.map((s) => <option key={s} value={s}>{SORT_LABEL[s]}</option>)}
               </select>
             </label>
           </div>
 
-          {/* Filter model aktif (dari picker homepage) — bisa dilepas */}
           {model && (
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <span className="text-sm text-muted-foreground">Model:</span>
-              <button
-                type="button"
-                onClick={() => setModel("")}
-                className="inline-flex items-center gap-1 rounded-full border border-foreground bg-foreground px-3 py-1 text-sm font-medium text-background"
-              >
-                {model}
-                <X className="size-3.5" />
-              </button>
+              <span className="inline-flex items-center gap-1 rounded-full border border-foreground bg-foreground px-3 py-1 text-sm font-medium text-background">{model}</span>
             </div>
           )}
 
-          {/* Grid: mobile 2 kolom → desktop 3 kolom (area lebih sempit karena sidebar) */}
           {items.length > 0 ? (
             <div className="mt-4 grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3">
-              {items.map((p) => (
-                <ProductCard key={p.id} product={p} />
-              ))}
+              {items.map((p) => <ProductCard key={p.id} product={p} />)}
             </div>
           ) : (
             !loading && (
               <p className="mt-12 text-center text-sm text-muted-foreground">
-                {q
-                  ? `Tak ada produk cocok dengan "${q}".`
-                  : "Belum ada produk untuk filter ini."}
+                {q ? `Tak ada produk cocok dengan "${q}".` : "Tidak ada produk untuk filter ini."}
               </p>
             )
           )}
 
-          {error && (
-            <p className="mt-6 text-center text-sm text-destructive">
-              Gagal memuat. Coba lagi.
-            </p>
-          )}
+          {error && <p className="mt-6 text-center text-sm text-destructive">Gagal memuat. Coba lagi.</p>}
 
-          {/* Load more (AJAX, tanpa reload) */}
           {hasMore && (
             <div className="mt-10 flex justify-center">
-              <Button
-                variant="outline"
-                size="lg"
-                disabled={loading}
-                onClick={() => fetchList({ tipe, model, q, sort, skip: items.length, append: true })}
-              >
+              <Button variant="outline" size="lg" disabled={loading} onClick={() => fetchList(items.length, true)}>
                 {loading && <Loader2 className="size-4 animate-spin" />}
                 Muat lebih banyak
               </Button>
