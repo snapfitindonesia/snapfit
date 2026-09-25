@@ -24,6 +24,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "SNAPFIT",
   description: "SNAPFIT — toko online",
+  // Verifikasi domain Facebook/Meta (Business Manager → Brand Safety → Domains).
+  other: {
+    "facebook-domain-verification": "si7g62hg0l0tbbdq6gz6u6wdxfmai2",
+  },
 };
 
 export default function RootLayout({
