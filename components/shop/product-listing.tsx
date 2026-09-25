@@ -164,9 +164,9 @@ export function ProductListing({
         <Button size="sm" className="mt-2 w-full" onClick={applyPrice}>Terapkan harga</Button>
       </Facet>
 
-      {/* Brand */}
+      {/* Merek */}
       {brandOptions.length > 0 && (
-        <Facet title="Brand">
+        <Facet title="Merek">
           <div className="max-h-56 overflow-y-auto pr-1">
             {brandOptions.map((b) => (
               <Check key={b.key} checked={selBrands.has(b.key)} onChange={() => toggleBrand(b.key)} label={b.label} />

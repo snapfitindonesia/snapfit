@@ -10,7 +10,7 @@ export default async function EditProductPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [product, categories] = await Promise.all([
+  const [product, categories, mereks] = await Promise.all([
     db.product.findUnique({
       where: { id },
       include: {
@@ -22,12 +22,14 @@ export default async function EditProductPage({
       select: { id: true, name: true, parentId: true },
       orderBy: [{ order: "asc" }, { name: "asc" }],
     }),
+    db.merek.findMany({ orderBy: [{ order: "asc" }, { name: "asc" }], select: { name: true } }),
   ]);
   if (!product) notFound();
 
   return (
     <ProductForm
       categories={categories}
+      mereks={mereks.map((m) => m.name)}
       initial={{
             id: product.id,
             slug: product.slug,

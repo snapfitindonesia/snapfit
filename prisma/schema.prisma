@@ -77,6 +77,14 @@ model Category {
   extraProducts Product[] @relation("ProductExtraCategories") // produk yang menandai kategori ini sbg tambahan
 }
 
+// Merek aksesori (SNAPFIT, Ringke, Araree, dst) — daftar terkelola untuk
+// dropdown di form produk. Product.brand menyimpan NAMA merek terpilih.
+model Merek {
+  id    String @id @default(cuid())
+  name  String @unique
+  order Int    @default(0)
+}
+
 model Banner {
   id        String  @id @default(cuid())
   type      String // MAIN | ETALASE | PROMO

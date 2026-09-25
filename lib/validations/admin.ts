@@ -79,6 +79,11 @@ export const navLinkSchema = z.object({
   active: z.coerce.boolean().default(true),
 });
 
+export const merekSchema = z.object({
+  name: z.string().trim().min(1, "Nama merek wajib").max(40),
+  order: z.coerce.number().int().min(0).default(0),
+});
+
 export const reviewSchema = z.object({
   productId: z.string().min(1, "Pilih produk"),
   author: z.string().trim().min(1, "Nama pengulas wajib"),
@@ -114,6 +119,7 @@ export type BannerInput = z.infer<typeof bannerSchema>;
 export type CategoryInput = z.infer<typeof categorySchema>;
 export type NavLinkInput = z.infer<typeof navLinkSchema>;
 export type ReviewInput = z.infer<typeof reviewSchema>;
+export type MerekInput = z.infer<typeof merekSchema>;
 export type DiscountInput = z.infer<typeof discountSchema>;
 export type VoucherInput = z.infer<typeof voucherSchema>;
 export type OrderUpdateInput = z.infer<typeof orderUpdateSchema>;

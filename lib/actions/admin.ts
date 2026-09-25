@@ -12,6 +12,7 @@ import {
   navLinkSchema,
   discountSchema,
   voucherSchema,
+  merekSchema,
   reviewSchema,
   orderUpdateSchema,
   type ProductInput,
@@ -20,6 +21,7 @@ import {
   type NavLinkInput,
   type DiscountInput,
   type VoucherInput,
+  type MerekInput,
   type ReviewInput,
   type OrderUpdateInput,
 } from "@/lib/validations/admin";
@@ -156,6 +158,52 @@ export async function deleteProduct(id: string): Promise<Result> {
       const gallery = Array.isArray(before.images) ? (before.images as string[]) : [];
       await cleanupOrphanImages([before.coverImage, ...gallery, ...before.variants.map((v) => v.image)]);
     }
+    return { ok: true };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+/* ============================ MEREK ============================ */
+
+export async function saveMerek(input: MerekInput, id?: string): Promise<Result> {
+  try {
+    await requireAdmin();
+    const data = merekSchema.parse(input);
+    const name = data.name.trim();
+    const dup = await db.merek.findFirst({ where: { name, ...(id ? { id: { not: id } } : {}) }, select: { id: true } });
+    if (dup) return { ok: false, error: `Merek "${name}" sudah ada.` };
+
+    if (id) {
+      const old = await db.merek.findUnique({ where: { id }, select: { name: true } });
+      const merek = await db.merek.update({ where: { id }, data: { name, order: data.order } });
+      // Rename → ikut ubah brand produk yang memakai nama lama.
+      if (old && old.name !== name) {
+        await db.product.updateMany({ where: { brand: old.name }, data: { brand: name } });
+        revalidateStorefront();
+      }
+      revalidatePath("/admin/merek");
+      return { ok: true, id: merek.id };
+    }
+    const merek = await db.merek.create({ data: { name, order: data.order } });
+    revalidatePath("/admin/merek");
+    return { ok: true, id: merek.id };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+export async function deleteMerek(id: string): Promise<Result> {
+  try {
+    await requireAdmin();
+    const merek = await db.merek.findUnique({ where: { id }, select: { name: true } });
+    await db.merek.delete({ where: { id } });
+    // Lepas merek dari produk yang memakainya (jadi "Tanpa Merek").
+    if (merek) {
+      await db.product.updateMany({ where: { brand: merek.name }, data: { brand: null } });
+      revalidateStorefront();
+    }
+    revalidatePath("/admin/merek");
     return { ok: true };
   } catch (e) {
     return fail(e);

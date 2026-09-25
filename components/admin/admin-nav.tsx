@@ -14,6 +14,7 @@ import {
   Link2,
   Star,
   Sparkles,
+  Tag,
 } from "lucide-react";
 
 const ITEMS = [
@@ -21,6 +22,7 @@ const ITEMS = [
   { href: "/admin/produk", label: "Produk", icon: Package },
   { href: "/admin/unggulan", label: "Unggulan", icon: Sparkles },
   { href: "/admin/kategori", label: "Kategori", icon: FolderTree },
+  { href: "/admin/merek", label: "Merek", icon: Tag },
   { href: "/admin/ginee/impor", label: "Impor Ginee", icon: DownloadCloud },
   { href: "/admin/banner", label: "Banner", icon: ImageIcon },
   { href: "/admin/menu", label: "Menu", icon: Link2 },

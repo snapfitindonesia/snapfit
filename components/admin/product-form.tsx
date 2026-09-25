@@ -110,7 +110,7 @@ function Card({ id, title, desc, children }: { id: string; title: string; desc?:
 }
 const Req = () => <span className="text-destructive">*</span>;
 
-export function ProductForm({ categories, initial }: { categories: { id: string; name: string; parentId: string | null }[]; initial?: Initial }) {
+export function ProductForm({ categories, mereks = [], initial }: { categories: { id: string; name: string; parentId: string | null }[]; mereks?: string[]; initial?: Initial }) {
   const router = useRouter();
   const [slug, setSlug] = useState(initial?.slug ?? "");
   const [name, setName] = useState(initial?.name ?? "");
@@ -294,12 +294,16 @@ export function ProductForm({ categories, initial }: { categories: { id: string;
                 </div>
               </label>
               <label className="block">
-                <span className="text-sm font-medium">Brand</span>
-                <input className={`mt-1.5 ${input}`} maxLength={40} value={brand} onChange={(e) => setBrand(e.target.value)} placeholder="mis. Ringke, Spigen, SNAPFIT" list="brand-list" />
-                <datalist id="brand-list">
-                  {["SNAPFIT","Ringke","Spigen","Supcase","Araree","VRS Design","Benwis","Octagoods"].map((b) => <option key={b} value={b} />)}
-                </datalist>
-                <span className="mt-1 block text-xs text-muted-foreground">Tampil sebagai badge di kartu produk. Kosongkan bila tak perlu.</span>
+                <span className="text-sm font-medium">Merek</span>
+                <select className={`mt-1.5 ${input}`} value={brand} onChange={(e) => setBrand(e.target.value)}>
+                  <option value="">— Tanpa Merek —</option>
+                  {mereks.map((m) => <option key={m} value={m}>{m}</option>)}
+                  {/* Nilai lama yang belum ada di daftar merek tetap tampil agar tak hilang saat edit */}
+                  {brand && !mereks.includes(brand) && <option value={brand}>{brand}</option>}
+                </select>
+                <span className="mt-1 block text-xs text-muted-foreground">
+                  Pilih dari daftar. Kelola merek di <b>Admin → Merek</b>. Tampil sebagai badge di kartu produk.
+                </span>
               </label>
               <label className="block">
                 <span className="text-sm font-medium">Slug (URL) <Req /></span>
