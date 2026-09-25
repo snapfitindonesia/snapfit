@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import Image from "@/components/ui/image";
 import { useRouter } from "next/navigation";
 import { Search, ChevronDown, Menu, X, User, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";

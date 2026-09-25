@@ -6,8 +6,10 @@ const extraHosts = (process.env.NEXT_PUBLIC_IMAGE_HOSTS ?? "")
 
 const nextConfig = {
   images: {
-    // AVIF (lebih kecil ~30-50%) lalu WebP → hemat bandwidth di mobile.
-    formats: ["image/avif", "image/webp"],
+    // Foto marketplace dilayani langsung dari CDN-nya via components/ui/image.tsx
+    // (JANGAN loader custom global — mematikan /_next/image di Vercel).
+    // WebP saja (AVIF menggandakan jumlah transformasi per gambar).
+    formats: ["image/webp"],
     // Cache hasil optimasi lebih lama (gambar produk jarang berubah).
     minimumCacheTTL: 2678400, // 31 hari
     // Domain yang boleh dioptimasi next/image (lihat docs/07-deployment-dns.md).

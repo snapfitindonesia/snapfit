@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
+import Image from "@/components/ui/image";
 import Link from "next/link";
 import { Minus, Plus, ShoppingBag, Trash2, X, StickyNote, Truck, Ticket, Loader2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";

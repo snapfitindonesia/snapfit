@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Image from "next/image";
+import Image from "@/components/ui/image";
 import { Plane, Headset, RotateCcw, ShieldCheck } from "lucide-react";
 import logo from "@/logosnapfit.png";
 import { getNavLinks } from "@/lib/actions/product";
