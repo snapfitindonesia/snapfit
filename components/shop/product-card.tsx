@@ -20,7 +20,7 @@ export function ProductCard({ product }: { product: ProductListItem }) {
           className="object-contain p-3 transition-transform duration-300 group-hover:scale-105"
         />
         {product.brand && (
-          <span className="absolute left-0 top-2 rounded-r-md bg-brand px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white shadow-sm">
+          <span className="absolute left-3 top-3 z-10 rounded-lg bg-neutral-800 px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm">
             {product.brand}
           </span>
         )}
