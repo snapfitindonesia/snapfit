@@ -3,9 +3,9 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronDown, ChevronUp, Search } from "lucide-react";
+import { ChevronDown, ChevronUp, Search, Trash2, Loader2 } from "lucide-react";
 import { formatRupiah } from "@/lib/format";
-import { deleteProduct } from "@/lib/actions/admin";
+import { deleteProduct, deleteProducts } from "@/lib/actions/admin";
 
 export type AdminVariant = {
   id: string;
@@ -37,6 +37,9 @@ function variantLabel(v: AdminVariant) {
 function totalStock(p: AdminProduct) {
   return p.variants.reduce((n, v) => n + v.stock, 0);
 }
+function minPrice(p: AdminProduct) {
+  return p.variants.length ? Math.min(...p.variants.map((v) => v.price)) : 0;
+}
 function priceRange(p: AdminProduct) {
   if (!p.variants.length) return formatRupiah(0);
   const prices = p.variants.map((v) => v.price);
@@ -45,6 +48,15 @@ function priceRange(p: AdminProduct) {
 }
 
 type Tab = "semua" | "aktif" | "habis" | "grosir";
+type SortKey = "terbaru" | "nama" | "harga-asc" | "harga-desc" | "stok-desc" | "terjual";
+const SORT_LABEL: Record<SortKey, string> = {
+  terbaru: "Terbaru",
+  nama: "Nama A–Z",
+  "harga-asc": "Harga termurah",
+  "harga-desc": "Harga termahal",
+  "stok-desc": "Stok terbanyak",
+  terjual: "Terlaris",
+};
 
 export function ProductTable({ products }: { products: AdminProduct[] }) {
   const router = useRouter();
@@ -54,6 +66,15 @@ export function ProductTable({ products }: { products: AdminProduct[] }) {
   const [page, setPage] = useState(1);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [cat, setCat] = useState("");
+  const [sort, setSort] = useState<SortKey>("terbaru");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
+
+  const categories = useMemo(
+    () => [...new Set(products.map((p) => p.category).filter((c): c is string => !!c))].sort((a, b) => a.localeCompare(b)),
+    [products],
+  );
 
   const counts = useMemo(() => ({
     semua: products.length,
@@ -67,6 +88,7 @@ export function ProductTable({ products }: { products: AdminProduct[] }) {
     if (tab === "aktif") list = list.filter((p) => totalStock(p) > 0);
     else if (tab === "habis") list = list.filter((p) => totalStock(p) === 0);
     else if (tab === "grosir") list = list.filter((p) => p.isGrosir);
+    if (cat) list = list.filter((p) => p.category === cat);
     const q = query.trim().toLowerCase();
     if (q) {
       list = list.filter((p) =>
@@ -77,21 +99,58 @@ export function ProductTable({ products }: { products: AdminProduct[] }) {
       );
     }
     return list;
-  }, [products, tab, query]);
+  }, [products, tab, cat, query]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+  const sorted = useMemo(() => {
+    const arr = [...filtered];
+    switch (sort) {
+      case "nama": arr.sort((a, b) => a.name.localeCompare(b.name)); break;
+      case "harga-asc": arr.sort((a, b) => minPrice(a) - minPrice(b)); break;
+      case "harga-desc": arr.sort((a, b) => minPrice(b) - minPrice(a)); break;
+      case "stok-desc": arr.sort((a, b) => totalStock(b) - totalStock(a)); break;
+      case "terjual": arr.sort((a, b) => b.sold - a.sold); break;
+      // "terbaru": urutan bawaan (createdAt desc dari server)
+    }
+    return arr;
+  }, [filtered, sort]);
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PER_PAGE));
   const pageClamped = Math.min(page, totalPages);
-  const pageItems = filtered.slice((pageClamped - 1) * PER_PAGE, pageClamped * PER_PAGE);
+  const pageItems = sorted.slice((pageClamped - 1) * PER_PAGE, pageClamped * PER_PAGE);
 
   function applySearch() { setQuery(rawQuery); setPage(1); }
-  function reset() { setRawQuery(""); setQuery(""); setTab("semua"); setPage(1); }
+  function reset() { setRawQuery(""); setQuery(""); setTab("semua"); setCat(""); setSort("terbaru"); setPage(1); setSelected(new Set()); }
 
   async function onDelete(p: AdminProduct) {
-    if (!confirm(`Hilangkan produk "${p.name}"? Tindakan ini tak bisa dibatalkan.`)) return;
+    if (!confirm(`Hapus produk "${p.name}"? Tindakan ini tak bisa dibatalkan.`)) return;
     setBusyId(p.id);
     const res = await deleteProduct(p.id);
-    if (res.ok) router.refresh();
+    if (res.ok) { setSelected((s) => { const n = new Set(s); n.delete(p.id); return n; }); router.refresh(); }
     else { alert(res.error ?? "Gagal menghapus."); setBusyId(null); }
+  }
+
+  // ---- Pilih massal ----
+  const allSelected = filtered.length > 0 && filtered.every((p) => selected.has(p.id));
+  function toggle(id: string) {
+    setSelected((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  }
+  function toggleAll() {
+    setSelected((s) => {
+      if (filtered.every((p) => s.has(p.id))) {
+        const n = new Set(s); filtered.forEach((p) => n.delete(p.id)); return n;
+      }
+      const n = new Set(s); filtered.forEach((p) => n.add(p.id)); return n;
+    });
+  }
+  async function onBulkDelete() {
+    const ids = [...selected];
+    if (!ids.length) return;
+    if (!confirm(`Hapus ${ids.length} produk terpilih? Tindakan ini tak bisa dibatalkan.`)) return;
+    setBulkBusy(true);
+    const res = await deleteProducts(ids);
+    if (res.ok) { setSelected(new Set()); router.refresh(); }
+    else alert(res.error ?? "Gagal menghapus.");
+    setBulkBusy(false);
   }
 
   const tabs: { key: Tab; label: string }[] = [
@@ -133,18 +192,51 @@ export function ProductTable({ products }: { products: AdminProduct[] }) {
         <button onClick={applySearch} className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-brand-foreground hover:opacity-90">
           Cari
         </button>
+        <select
+          value={cat}
+          onChange={(e) => { setCat(e.target.value); setPage(1); }}
+          className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none"
+        >
+          <option value="">Semua kategori</option>
+          {categories.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+        <select
+          value={sort}
+          onChange={(e) => { setSort(e.target.value as SortKey); setPage(1); }}
+          className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none"
+        >
+          {(Object.keys(SORT_LABEL) as SortKey[]).map((k) => <option key={k} value={k}>{SORT_LABEL[k]}</option>)}
+        </select>
         <button onClick={reset} className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted">
           Atur ulang
         </button>
       </div>
 
-      <div className="px-3 pb-2 text-sm text-muted-foreground">{filtered.length} Produk</div>
+      {/* Bar aksi massal */}
+      {selected.size > 0 ? (
+        <div className="flex flex-wrap items-center gap-3 border-y border-border bg-brand/5 px-3 py-2 text-sm">
+          <span className="font-medium">{selected.size} produk dipilih</span>
+          <button
+            onClick={onBulkDelete}
+            disabled={bulkBusy}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-destructive px-3 py-1.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+          >
+            {bulkBusy ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />} Hapus terpilih
+          </button>
+          <button onClick={() => setSelected(new Set())} className="text-muted-foreground hover:text-foreground">Batal</button>
+        </div>
+      ) : (
+        <div className="px-3 pb-2 text-sm text-muted-foreground">{filtered.length} Produk</div>
+      )}
 
       {/* Tabel */}
       <div className="overflow-x-auto">
         <table className="w-full min-w-[720px] text-sm">
           <thead>
             <tr className="border-y border-border bg-muted/40 text-left text-xs text-muted-foreground">
+              <th className="px-3 py-2.5">
+                <input type="checkbox" checked={allSelected} onChange={toggleAll} aria-label="Pilih semua" className="size-4 accent-brand align-middle" />
+              </th>
               <th className="px-4 py-2.5 font-medium">Produk</th>
               <th className="px-4 py-2.5 font-medium">Harga</th>
               <th className="px-4 py-2.5 font-medium">Stok</th>
@@ -159,7 +251,10 @@ export function ProductTable({ products }: { products: AdminProduct[] }) {
               return (
                 <tbody key={p.id} className="border-b-4 border-muted/50">
                   {/* Baris produk induk */}
-                  <tr className="bg-card">
+                  <tr className={selected.has(p.id) ? "bg-brand/5" : "bg-card"}>
+                    <td className="px-3 py-3 align-top">
+                      <input type="checkbox" checked={selected.has(p.id)} onChange={() => toggle(p.id)} aria-label={`Pilih ${p.name}`} className="mt-1 size-4 accent-brand" />
+                    </td>
                     <td className="px-4 py-3">
                       <div className="flex gap-3">
                         <img
@@ -193,7 +288,7 @@ export function ProductTable({ products }: { products: AdminProduct[] }) {
                           disabled={busyId === p.id}
                           className="text-muted-foreground hover:text-destructive disabled:opacity-50"
                         >
-                          Hilangkan
+                          Hapus
                         </button>
                       </div>
                     </td>
@@ -202,6 +297,7 @@ export function ProductTable({ products }: { products: AdminProduct[] }) {
                   {/* Baris varian */}
                   {shown.map((v) => (
                     <tr key={v.id} className="bg-muted/20 text-xs">
+                      <td className="px-3 py-2" />
                       <td className="py-2 pl-8 pr-4">
                         <div className="flex items-center gap-2.5">
                           <img
@@ -226,7 +322,7 @@ export function ProductTable({ products }: { products: AdminProduct[] }) {
 
                   {hasMore && (
                     <tr className="bg-muted/20">
-                      <td colSpan={5} className="px-8 py-2">
+                      <td colSpan={6} className="px-8 py-2">
                         <button
                           onClick={() => setExpanded((e) => ({ ...e, [p.id]: !e[p.id] }))}
                           className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
@@ -246,7 +342,7 @@ export function ProductTable({ products }: { products: AdminProduct[] }) {
           {pageItems.length === 0 && (
             <tbody>
               <tr>
-                <td colSpan={5} className="px-4 py-12 text-center text-muted-foreground">Tidak ada produk.</td>
+                <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">Tidak ada produk.</td>
               </tr>
             </tbody>
           )}

@@ -162,6 +162,29 @@ export async function deleteProduct(id: string): Promise<Result> {
   }
 }
 
+export async function deleteProducts(ids: string[]): Promise<Result> {
+  try {
+    await requireAdmin();
+    if (!ids.length) return { ok: true };
+    const before = await db.product.findMany({
+      where: { id: { in: ids } },
+      select: { coverImage: true, images: true, variants: { select: { image: true } } },
+    });
+    await db.product.deleteMany({ where: { id: { in: ids } } });
+    revalidatePath("/admin/produk");
+    revalidateStorefront();
+    const urls = before.flatMap((p) => [
+      p.coverImage,
+      ...(Array.isArray(p.images) ? (p.images as string[]) : []),
+      ...p.variants.map((v) => v.image),
+    ]);
+    await cleanupOrphanImages(urls);
+    return { ok: true };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
 /* ---------- Impor massal (CSV) ---------- */
 
 export type BulkRow = {
