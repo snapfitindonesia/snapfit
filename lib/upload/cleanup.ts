@@ -62,17 +62,19 @@ async function deleteStoredImage(url: string): Promise<void> {
   }
 }
 
-/** True bila URL masih dipakai di produk/varian/banner/kategori/ulasan mana pun. */
+/** True bila URL masih dipakai di produk/varian/banner/kategori/ulasan/linktree mana pun. */
 async function isImageReferenced(url: string): Promise<boolean> {
-  const [cover, gallery, variant, banner, category, review] = await Promise.all([
+  const [cover, gallery, variant, banner, category, review, bioLink, bioProfile] = await Promise.all([
     db.product.findFirst({ where: { coverImage: url }, select: { id: true } }),
     db.product.findFirst({ where: { images: { array_contains: url } }, select: { id: true } }),
     db.variant.findFirst({ where: { image: url }, select: { id: true } }),
     db.banner.findFirst({ where: { image: url }, select: { id: true } }),
     db.category.findFirst({ where: { image: url }, select: { id: true } }),
     db.review.findFirst({ where: { image: url }, select: { id: true } }),
+    db.bioLink.findFirst({ where: { image: url }, select: { id: true } }),
+    db.bioProfile.findFirst({ where: { avatar: url }, select: { id: true } }),
   ]);
-  return !!(cover || gallery || variant || banner || category || review);
+  return !!(cover || gallery || variant || banner || category || review || bioLink || bioProfile);
 }
 
 /**

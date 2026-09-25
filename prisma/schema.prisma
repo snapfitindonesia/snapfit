@@ -156,6 +156,32 @@ model OrderItem {
   qty       Int
 }
 
+// Halaman link-in-bio (/links) — profil tunggal (id "main") + daftar tombol.
+model BioProfile {
+  id        String  @id @default("main")
+  title     String  @default("SNAPFIT")
+  bio       String?
+  avatar    String?
+  instagram String?
+  tiktok    String?
+  whatsapp  String? // nomor (62…) atau URL wa.me
+  shopee    String?
+  tokopedia String?
+  youtube   String?
+  facebook  String?
+}
+
+model BioLink {
+  id        String  @id @default(cuid())
+  title     String
+  url       String
+  image     String? // thumbnail kecil di kiri tombol (opsional)
+  highlight Boolean @default(false) // tombol ditonjolkan (hitam)
+  order     Int     @default(0)
+  active    Boolean @default(true)
+  clicks    Int     @default(0)
+}
+
 model NavLink {
   id       String  @id @default(cuid())
   label    String

@@ -15,6 +15,7 @@ import {
   Star,
   Sparkles,
   Tag,
+  ListTree,
 } from "lucide-react";
 
 const ITEMS = [
@@ -26,6 +27,7 @@ const ITEMS = [
   { href: "/admin/ginee/impor", label: "Impor Ginee", icon: DownloadCloud },
   { href: "/admin/banner", label: "Banner", icon: ImageIcon },
   { href: "/admin/menu", label: "Menu", icon: Link2 },
+  { href: "/admin/linktree", label: "Linktree", icon: ListTree },
   { href: "/admin/diskon", label: "Diskon", icon: Percent },
   { href: "/admin/voucher", label: "Voucher", icon: Ticket },
   { href: "/admin/ulasan", label: "Ulasan", icon: Star },
