@@ -13,11 +13,13 @@ import {
   FolderTree,
   Link2,
   Star,
+  Sparkles,
 } from "lucide-react";
 
 const ITEMS = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/produk", label: "Produk", icon: Package },
+  { href: "/admin/unggulan", label: "Unggulan", icon: Sparkles },
   { href: "/admin/kategori", label: "Kategori", icon: FolderTree },
   { href: "/admin/ginee/impor", label: "Impor Ginee", icon: DownloadCloud },
   { href: "/admin/banner", label: "Banner", icon: ImageIcon },

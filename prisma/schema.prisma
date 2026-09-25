@@ -24,6 +24,7 @@ model Product {
   variantGroups Json? // nama & opsi variasi custom: { groups: [{name, options:[{value,desc}]}] }
   gineeProductId String? // id master produk Ginee (diisi saat impor) — utk sinkron stok
   isGrosir    Boolean    @default(false) // true = tampil di halaman /grosir
+  featured    Boolean    @default(false) // true = tampil di "Produk Unggulan" homepage
   categoryId  String?
   category    Category?  @relation(fields: [categoryId], references: [id])
   // Kategori tambahan (many-to-many) — 1 produk bisa masuk beberapa kategori,

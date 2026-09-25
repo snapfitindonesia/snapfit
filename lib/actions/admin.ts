@@ -162,6 +162,18 @@ export async function deleteProduct(id: string): Promise<Result> {
   }
 }
 
+export async function setProductFeatured(id: string, featured: boolean): Promise<Result> {
+  try {
+    await requireAdmin();
+    await db.product.update({ where: { id }, data: { featured } });
+    revalidatePath("/admin/unggulan");
+    revalidatePath("/"); // homepage "Produk Unggulan"
+    return { ok: true };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
 export async function deleteProducts(ids: string[]): Promise<Result> {
   try {
     await requireAdmin();

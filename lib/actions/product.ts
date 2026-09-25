@@ -244,7 +244,7 @@ export async function getMegaMenu(): Promise<MegaMenuBrand[]> {
 }
 
 export async function getProducts(query: ProductQuery): Promise<ProductListResult> {
-  const { tipe, model, grosir, q, sort, skip, take } = query;
+  const { tipe, model, grosir, featured, q, sort, skip, take } = query;
 
   const products = await db.product.findMany({
     where: {
@@ -268,6 +268,8 @@ export async function getProducts(query: ProductQuery): Promise<ProductListResul
       ...(model ? { variants: { some: { type: model } } } : {}),
       // hanya produk yang ditandai untuk halaman grosir
       ...(grosir ? { isGrosir: true } : {}),
+      // hanya produk unggulan (homepage)
+      ...(featured ? { featured: true } : {}),
       ...(q ? { name: { contains: q, mode: "insensitive" as const } } : {}),
     },
     include: {
@@ -342,6 +344,18 @@ export async function getGrosirProducts(take = 12): Promise<ProductListItem[]> {
   try {
     const { items } = await getProducts({ grosir: true, sort: "terbaru", skip: 0, take });
     return items;
+  } catch {
+    return [];
+  }
+}
+
+/** Produk unggulan (dipilih admin). Fallback ke produk terbaru bila belum ada yang dipilih. */
+export async function getFeaturedProducts(take = 8): Promise<ProductListItem[]> {
+  try {
+    const { items } = await getProducts({ featured: true, sort: "terbaru", skip: 0, take });
+    if (items.length) return items;
+    const fallback = await getProducts({ sort: "terbaru", skip: 0, take: 4 });
+    return fallback.items;
   } catch {
     return [];
   }

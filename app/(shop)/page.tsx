@@ -3,6 +3,7 @@ import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   getProducts,
+  getFeaturedProducts,
   getDeviceTree,
   getMainBanners,
   getPromoBanners,
@@ -50,7 +51,7 @@ export default async function HomePage() {
   // ISR akan mengisi produk unggulan saat request pertama.
   let featured: ProductListItem[] = [];
   try {
-    featured = (await getProducts({ sort: "terbaru", take: 4, skip: 0 })).items;
+    featured = await getFeaturedProducts(8);
   } catch {
     featured = [];
   }
