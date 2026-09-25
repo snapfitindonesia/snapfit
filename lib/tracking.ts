@@ -12,6 +12,7 @@ declare global {
   interface Window {
     dataLayer?: Record<string, unknown>[];
     fbq?: (...args: unknown[]) => void;
+    gtag?: (...args: unknown[]) => void;
   }
 }
 
@@ -28,6 +29,12 @@ function fbTrack(event: string, params?: Record<string, unknown>) {
   window.fbq?.("track", event, params);
 }
 
+// Kirim event e-commerce ke GA4 (aman bila gtag tak dimuat).
+function gaTrack(event: string, params: Record<string, unknown>) {
+  if (typeof window === "undefined") return;
+  window.gtag?.("event", event, params);
+}
+
 export function trackViewItem(item: Item) {
   push({
     event: "view_item",
@@ -40,6 +47,7 @@ export function trackViewItem(item: Item) {
     value: item.price,
     currency: "IDR",
   });
+  gaTrack("view_item", { currency: "IDR", value: item.price, items: [item] });
 }
 
 export function trackAddToCart(item: Item) {
@@ -55,6 +63,7 @@ export function trackAddToCart(item: Item) {
     value,
     currency: "IDR",
   });
+  gaTrack("add_to_cart", { currency: "IDR", value, items: [item] });
 }
 
 export function trackBeginCheckout(value: number, items: Item[]) {
@@ -69,6 +78,7 @@ export function trackBeginCheckout(value: number, items: Item[]) {
     value,
     currency: "IDR",
   });
+  gaTrack("begin_checkout", { currency: "IDR", value, items });
 }
 
 export function trackPurchase(transactionId: string, value: number, items: Item[]) {
@@ -83,4 +93,5 @@ export function trackPurchase(transactionId: string, value: number, items: Item[
     value,
     currency: "IDR",
   });
+  gaTrack("purchase", { transaction_id: transactionId, currency: "IDR", value, items });
 }
