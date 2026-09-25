@@ -238,12 +238,9 @@ export async function getMegaMenu(): Promise<MegaMenuBrand[]> {
         name: b.name,
         slug: b.slug,
         lines: b.children.map((l) => {
-          // Level-3 kategori manual bila ada; jika tidak, fallback ke variant.type.
-          const models: MegaMenuModel[] = l.children.length
-            ? l.children.map((c) => ({ label: c.name, slug: c.slug }))
-            : [...new Set(l.products.flatMap((p) => p.variants.map((v) => v.type.trim()).filter(Boolean)))]
-                .sort((a, z) => a.localeCompare(z, "id", { numeric: true }))
-                .map((label) => ({ label, slug: null }));
+          // Model = HANYA kategori tingkat-3 manual (kelola di Admin → Kategori).
+          // Tak lagi fallback ke variant.type (menghindari nama warna/finish muncul).
+          const models: MegaMenuModel[] = l.children.map((c) => ({ label: c.name, slug: c.slug }));
           return {
             name: l.name,
             slug: l.slug,
