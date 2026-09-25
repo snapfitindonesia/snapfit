@@ -59,6 +59,7 @@ export async function createProduct(input: ProductInput): Promise<Result> {
             .map((cid) => ({ id: cid })),
         },
         isGrosir: data.isGrosir,
+        syncLocked: data.syncLocked,
         variants: {
           create: data.variants.map((v) => ({
             name: v.name,
@@ -111,6 +112,7 @@ export async function updateProduct(id: string, input: ProductInput): Promise<Re
               .map((cid) => ({ id: cid })),
           },
           isGrosir: data.isGrosir,
+          syncLocked: data.syncLocked,
         },
       }),
       // hapus varian yang dibuang di form
@@ -243,6 +245,90 @@ export async function deleteProducts(ids: string[]): Promise<Result> {
   } catch (e) {
     return fail(e);
   }
+}
+
+/* ---------- Edit massal (CSV/Excel) ---------- */
+
+export type BulkEditRow = {
+  variantId?: string;
+  productId?: string;
+  nama_produk?: string;
+  brand?: string;
+  sku?: string;
+  harga?: string;
+  stok?: string;
+  berat?: string;
+};
+
+const toInt = (s?: string) => {
+  if (s === undefined) return undefined;
+  const t = s.replace(/[^\d]/g, "");
+  if (t === "") return undefined;
+  const n = Number(t);
+  return Number.isNaN(n) ? undefined : n;
+};
+
+/** Update massal varian (harga/stok/sku/berat) + produk (nama/brand) by ID. */
+export async function bulkUpdateProducts(
+  rows: BulkEditRow[],
+): Promise<{ ok: boolean; variantsUpdated: number; productsUpdated: number; skipped: number; errors: string[] }> {
+  try {
+    await requireAdmin();
+  } catch {
+    return { ok: false, variantsUpdated: 0, productsUpdated: 0, skipped: 0, errors: ["Tidak diizinkan."] };
+  }
+
+  let variantsUpdated = 0;
+  let skipped = 0;
+  const errors: string[] = [];
+  const productFields = new Map<string, { name?: string; brand?: string | null }>();
+
+  for (const r of rows) {
+    const vid = r.variantId?.trim();
+    if (!vid) { skipped++; continue; }
+    const data: { sku?: string | null; price?: number; stock?: number; weight?: number } = {};
+    if (r.sku !== undefined) data.sku = r.sku.trim() || null;
+    const price = toInt(r.harga); if (price !== undefined) data.price = Math.max(0, price);
+    const stock = toInt(r.stok); if (stock !== undefined) data.stock = Math.max(0, stock);
+    const weight = toInt(r.berat); if (weight !== undefined && weight > 0) data.weight = weight;
+
+    if (Object.keys(data).length) {
+      try {
+        await db.variant.update({ where: { id: vid }, data });
+        variantsUpdated++;
+      } catch {
+        skipped++;
+        errors.push(`Varian ${vid.slice(0, 12)} gagal / tak ditemukan.`);
+        continue;
+      }
+    }
+    const pid = r.productId?.trim();
+    if (pid) {
+      const pf = productFields.get(pid) ?? {};
+      if (r.nama_produk !== undefined && r.nama_produk.trim() !== "") pf.name = r.nama_produk.trim();
+      if (r.brand !== undefined) pf.brand = r.brand.trim() || null;
+      productFields.set(pid, pf);
+    }
+  }
+
+  let productsUpdated = 0;
+  for (const [pid, pf] of productFields) {
+    const d: { name?: string; brand?: string | null } = {};
+    if (pf.name !== undefined) d.name = pf.name;
+    if (pf.brand !== undefined) d.brand = pf.brand;
+    if (Object.keys(d).length) {
+      try {
+        await db.product.update({ where: { id: pid }, data: d });
+        productsUpdated++;
+      } catch {
+        errors.push(`Produk ${pid.slice(0, 12)} gagal.`);
+      }
+    }
+  }
+
+  revalidatePath("/admin/produk");
+  revalidateStorefront();
+  return { ok: true, variantsUpdated, productsUpdated, skipped, errors };
 }
 
 /* ---------- Impor massal (CSV) ---------- */

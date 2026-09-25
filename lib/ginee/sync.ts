@@ -28,7 +28,7 @@ export async function runGineeStockSync(limit = 1000): Promise<StockSyncResult> 
   }
 
   const products = await db.product.findMany({
-    where: { gineeProductId: { not: null } },
+    where: { gineeProductId: { not: null }, syncLocked: false }, // lewati produk yg dikunci manual
     select: { id: true, name: true, variants: { select: { id: true, sku: true, stock: true, price: true } } },
     take: limit,
   });

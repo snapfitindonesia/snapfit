@@ -41,6 +41,7 @@ export const productSchema = z.object({
   // Kategori tambahan (produk masuk >1 kategori). Tak termasuk kategori utama.
   extraCategoryIds: z.array(z.string()).optional().default([]),
   isGrosir: z.coerce.boolean().optional().default(false), // tampil di halaman /grosir
+  syncLocked: z.coerce.boolean().optional().default(false), // kunci dari sinkron Ginee
   variants: z.array(variantSchema).min(1, "Minimal 1 varian"),
 });
 

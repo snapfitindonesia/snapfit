@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, Upload, DownloadCloud } from "lucide-react";
+import { Plus, Upload, DownloadCloud, FileSpreadsheet } from "lucide-react";
 import { db } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { ProductTable, type AdminProduct } from "@/components/admin/product-table";
@@ -58,6 +58,11 @@ export default async function AdminProductsPage() {
           <Button asChild size="sm" variant="outline">
             <Link href="/admin/produk/impor">
               <Upload className="size-4" /> Impor CSV
+            </Link>
+          </Button>
+          <Button asChild size="sm" variant="outline">
+            <Link href="/admin/produk/edit-massal">
+              <FileSpreadsheet className="size-4" /> Edit Massal
             </Link>
           </Button>
           <Button asChild size="sm">

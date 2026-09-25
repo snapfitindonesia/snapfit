@@ -43,6 +43,7 @@ export default async function EditProductPage({
             categoryId: product.categoryId,
             extraCategoryIds: product.extraCategories.map((c) => c.id),
             isGrosir: product.isGrosir,
+            syncLocked: product.syncLocked,
             variants: product.variants.map((v) => ({
               id: v.id,
               name: v.name,

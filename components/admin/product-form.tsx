@@ -33,7 +33,7 @@ type Initial = {
   id: string; slug: string; name: string; brand?: string | null; description: string | null;
   coverImage: string; images: string[]; categoryId: string | null;
   extraCategoryIds?: string[];
-  isGrosir: boolean; variants: InitVariant[]; variantGroups: VariantGroups; weight: number;
+  isGrosir: boolean; syncLocked?: boolean; variants: InitVariant[]; variantGroups: VariantGroups; weight: number;
 };
 
 const input = "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand";
@@ -124,6 +124,7 @@ export function ProductForm({ categories, mereks = [], initial }: { categories: 
   const [extraCategoryIds, setExtraCategoryIds] = useState<string[]>(initial?.extraCategoryIds ?? []);
   const [pendingExtra, setPendingExtra] = useState("");
   const [isGrosir, setIsGrosir] = useState(initial?.isGrosir ?? false);
+  const [syncLocked, setSyncLocked] = useState(initial?.syncLocked ?? false);
   const [weight, setWeight] = useState(String(initial?.weight ?? 200));
 
   const photos = [coverImage, ...images].filter(Boolean);
@@ -219,7 +220,7 @@ export function ProductForm({ categories, mereks = [], initial }: { categories: 
     };
 
     setSaving(true);
-    const payload = { slug, name, brand, description, coverImage, images, variantGroups, categoryId, extraCategoryIds, isGrosir, variants: rows };
+    const payload = { slug, name, brand, description, coverImage, images, variantGroups, categoryId, extraCategoryIds, isGrosir, syncLocked, variants: rows };
     const res = initial ? await updateProduct(initial.id, payload) : await createProduct(payload);
     if (res.ok) { router.push("/admin/produk"); router.refresh(); }
     else { setError(res.error ?? "Gagal menyimpan."); setSaving(false); }
@@ -362,6 +363,14 @@ export function ProductForm({ categories, mereks = [], initial }: { categories: 
                 <span>
                   <span className="text-sm font-medium">Tampilkan di halaman Grosir</span>
                   <span className="mt-0.5 block text-xs text-muted-foreground">Centang agar produk ini muncul di landing page /grosir.</span>
+                </span>
+              </label>
+
+              <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-border p-3">
+                <input type="checkbox" checked={syncLocked} onChange={(e) => setSyncLocked(e.target.checked)} className="mt-0.5 size-4 accent-brand" />
+                <span>
+                  <span className="text-sm font-medium">Kunci dari sinkron Ginee</span>
+                  <span className="mt-0.5 block text-xs text-muted-foreground">Centang bila stok &amp; harga diatur manual — sinkron Ginee tak akan menimpanya.</span>
                 </span>
               </label>
             </div>
