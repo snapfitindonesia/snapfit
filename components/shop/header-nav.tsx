@@ -358,8 +358,8 @@ export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaM
                           Lihat semua {merekMenu[activeMerek].name}
                         </Link>
                       </div>
-                      <div className="grid grid-cols-3 gap-4 lg:grid-cols-5">
-                        {merekMenu[activeMerek].products.map((p) => (
+                      <div className="grid grid-cols-4 gap-4 lg:grid-cols-5 [&>*:nth-child(5)]:hidden lg:[&>*:nth-child(5)]:block">
+                        {merekMenu[activeMerek].products.slice(0, 5).map((p) => (
                           <Link
                             key={p.id}
                             href={`/produk/${p.slug}`}
