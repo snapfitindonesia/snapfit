@@ -21,6 +21,14 @@ const input =
 
 const BLANK = { type: "MAIN", image: "", targetUrl: "", order: "0", active: true };
 
+// Rasio pratinjau per tipe (samakan dgn tampilan storefront).
+const ASPECT: Record<string, string> = {
+  MAIN: "aspect-[2/1]",
+  PROMO: "aspect-square",
+  ETALASE: "aspect-[5/1]",
+  POPUP: "aspect-square",
+};
+
 export function BannerManager({ banners }: { banners: Banner[] }) {
   const router = useRouter();
   const [editId, setEditId] = useState<string | null>(null);
@@ -83,6 +91,16 @@ export function BannerManager({ banners }: { banners: Banner[] }) {
           <div className="mt-1">
             <ImageInput value={f.image} onChange={(url) => setF({ ...f, image: url })} />
           </div>
+          {/* Live preview */}
+          {f.image && (
+            <div className="mt-2">
+              <p className="mb-1 text-xs text-muted-foreground">Pratinjau ({f.type})</p>
+              <div className={`w-full overflow-hidden rounded-lg border border-border bg-muted ${ASPECT[f.type] ?? "aspect-square"}`}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={f.image} alt="" className="size-full object-contain" />
+              </div>
+            </div>
+          )}
         </div>
         <label className="block text-sm">Target link (opsional)
           <input className={`mt-1 ${input}`} value={f.targetUrl} onChange={(e) => setF({ ...f, targetUrl: e.target.value })} placeholder="/produk?tipe=iphone" />
@@ -107,7 +125,9 @@ export function BannerManager({ banners }: { banners: Banner[] }) {
       <div className="space-y-2">
         {banners.map((b) => (
           <div key={b.id} className="flex items-center gap-3 rounded-lg border border-border p-3">
-            <span className="rounded bg-muted px-2 py-0.5 text-xs font-medium">{b.type}</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={b.image} alt="" className="size-12 shrink-0 rounded border border-border bg-muted object-contain" />
+            <span className="shrink-0 rounded bg-muted px-2 py-0.5 text-xs font-medium">{b.type}</span>
             <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">{b.image}</span>
             {!b.active && <span className="text-xs text-muted-foreground">nonaktif</span>}
             <button onClick={() => edit(b)} className="text-muted-foreground hover:text-foreground"><Pencil className="size-4" /></button>
