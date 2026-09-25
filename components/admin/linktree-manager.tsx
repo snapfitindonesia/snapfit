@@ -37,6 +37,139 @@ const SOCIALS: { key: keyof BioProfileInput; label: string; placeholder: string 
   { key: "facebook", label: "Facebook", placeholder: "https://facebook.com/…" },
 ];
 
+type BgMode = "DEFAULT" | "COLOR" | "GRADIENT" | "IMAGE";
+
+const BG_MODES: { value: BgMode; label: string }[] = [
+  { value: "DEFAULT", label: "Default" },
+  { value: "COLOR", label: "Warna" },
+  { value: "GRADIENT", label: "Gradien" },
+  { value: "IMAGE", label: "Gambar" },
+];
+
+const PRESETS: { c1: string; c2?: string; light: boolean }[] = [
+  { c1: "#ffffff", light: false },
+  { c1: "#0a0a0a", light: true },
+  { c1: "#f5f0e8", light: false },
+  { c1: "#1e3a5f", light: true },
+  { c1: "#0a0a0a", c2: "#525252", light: true },
+  { c1: "#fdfbfb", c2: "#ebedee", light: false },
+  { c1: "#667eea", c2: "#764ba2", light: true },
+  { c1: "#f093fb", c2: "#f5576c", light: true },
+  { c1: "#43e97b", c2: "#38f9d7", light: false },
+  { c1: "#fa709a", c2: "#fee140", light: false },
+];
+
+function bgModeOf(p: BioProfileInput): BgMode {
+  if (p.bgImage) return "IMAGE";
+  if (p.bgColor && p.bgColor2) return "GRADIENT";
+  if (p.bgColor) return "COLOR";
+  return "DEFAULT";
+}
+
+function bgStyle(p: BioProfileInput): React.CSSProperties {
+  if (p.bgImage) return { backgroundImage: `url("${p.bgImage}")`, backgroundSize: "cover", backgroundPosition: "center" };
+  if (p.bgColor && p.bgColor2) return { backgroundImage: `linear-gradient(160deg, ${p.bgColor}, ${p.bgColor2})` };
+  if (p.bgColor) return { backgroundColor: p.bgColor };
+  return {};
+}
+
+function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <label className="block text-sm">{label}
+      <div className="mt-1 flex items-center gap-2">
+        <input type="color" value={value || "#ffffff"} onChange={(e) => onChange(e.target.value)} className="h-9 w-12 cursor-pointer rounded border border-border bg-background p-0.5" />
+        <input className={input} value={value} onChange={(e) => onChange(e.target.value)} placeholder="#ffffff" />
+      </div>
+    </label>
+  );
+}
+
+function BackgroundSettings({ p, setP }: { p: BioProfileInput; setP: (p: BioProfileInput) => void }) {
+  const mode = bgModeOf(p);
+  // Mode dipilih eksplisit supaya "Gradien"/"Gambar" tetap aktif walau field masih kosong.
+  const [picked, setPicked] = useState<BgMode>(mode);
+
+  function setMode(m: BgMode) {
+    setPicked(m);
+    if (m === "DEFAULT") setP({ ...p, bgColor: "", bgColor2: "", bgImage: "", textLight: false });
+    if (m === "COLOR") setP({ ...p, bgColor: p.bgColor || "#ffffff", bgColor2: "", bgImage: "" });
+    if (m === "GRADIENT") setP({ ...p, bgColor: p.bgColor || "#667eea", bgColor2: p.bgColor2 || "#764ba2", bgImage: "" });
+    if (m === "IMAGE") setP({ ...p, bgColor: "", bgColor2: "" });
+  }
+
+  const tone = p.textLight ? "text-white" : "text-neutral-900";
+
+  return (
+    <div className="space-y-3 border-t border-border pt-4">
+      <h3 className="text-sm font-medium">Latar belakang</h3>
+      <div className="grid gap-4 lg:grid-cols-[1fr_200px]">
+        <div className="space-y-3">
+          <div className="flex flex-wrap gap-1.5">
+            {BG_MODES.map((m) => (
+              <button
+                key={m.value}
+                type="button"
+                onClick={() => setMode(m.value)}
+                className={`rounded-full border px-3 py-1 text-xs font-medium ${picked === m.value ? "border-foreground bg-foreground text-background" : "border-border hover:bg-muted"}`}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
+
+          {(picked === "COLOR" || picked === "GRADIENT") && (
+            <>
+              <div className="flex flex-wrap gap-2">
+                {PRESETS.filter((s) => (picked === "GRADIENT" ? !!s.c2 : !s.c2)).map((s, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    title="Pakai preset"
+                    onClick={() => setP({ ...p, bgColor: s.c1, bgColor2: s.c2 ?? "", bgImage: "", textLight: s.light })}
+                    className="size-8 rounded-full ring-1 ring-border"
+                    style={{ background: s.c2 ? `linear-gradient(160deg, ${s.c1}, ${s.c2})` : s.c1 }}
+                  />
+                ))}
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <ColorField label={picked === "GRADIENT" ? "Warna atas" : "Warna"} value={p.bgColor ?? ""} onChange={(v) => setP({ ...p, bgColor: v })} />
+                {picked === "GRADIENT" && <ColorField label="Warna bawah" value={p.bgColor2 ?? ""} onChange={(v) => setP({ ...p, bgColor2: v })} />}
+              </div>
+            </>
+          )}
+
+          {picked === "IMAGE" && (
+            <div className="text-sm">Gambar latar (disarankan potret, mis. 1080×1920)
+              <div className="mt-1"><ImageInput value={p.bgImage ?? ""} onChange={(v) => setP({ ...p, bgImage: v })} /></div>
+            </div>
+          )}
+
+          {picked !== "DEFAULT" && (
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={p.textLight} onChange={(e) => setP({ ...p, textLight: e.target.checked })} />
+              Teks putih (centang bila latar gelap)
+            </label>
+          )}
+        </div>
+
+        {/* Preview mini */}
+        <div className="mx-auto w-[180px] overflow-hidden rounded-2xl border border-border bg-neutral-50 shadow-sm" style={bgStyle(p)}>
+          <div className={`relative flex flex-col items-center px-3 py-5 text-center ${tone}`}>
+            {p.bgImage && <div className="absolute inset-0 bg-black/10" />}
+            <div className="relative flex size-10 items-center justify-center rounded-full bg-neutral-900 text-sm font-bold text-white">{(p.title || "S").charAt(0)}</div>
+            <p className="relative mt-2 text-xs font-bold">{p.title || "SNAPFIT"}</p>
+            {p.bio && <p className={`relative mt-0.5 line-clamp-2 text-[9px] ${p.textLight ? "text-white/80" : "text-neutral-500"}`}>{p.bio}</p>}
+            <div className="relative mt-3 w-full space-y-1.5">
+              <div className="rounded-md bg-neutral-900 py-1.5 text-[9px] font-semibold text-white">Tombol utama</div>
+              <div className="rounded-md bg-white py-1.5 text-[9px] font-semibold text-neutral-900 ring-1 ring-neutral-200">Tombol</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const emptyLink: BioLinkInput = { title: "", url: "", image: "", highlight: false, active: true };
 
 export function LinktreeManager({ profile, links }: { profile: BioProfileInput; links: BioLinkRow[] }) {
@@ -141,6 +274,7 @@ export function LinktreeManager({ profile, links }: { profile: BioProfileInput; 
             <p className="text-xs text-muted-foreground sm:col-span-2">Ikon sosial media tampil di bawah bio. Kosongkan yang tidak dipakai.</p>
           </div>
         </div>
+        <BackgroundSettings p={p} setP={setP} />
         <div className="flex items-center gap-3">
           <Button type="submit" size="sm" disabled={pSaving}>{pSaving && <Loader2 className="size-4 animate-spin" />}Simpan profil</Button>
           {pMsg && <span className="text-sm text-muted-foreground">{pMsg}</span>}

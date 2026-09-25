@@ -169,6 +169,11 @@ model BioProfile {
   tokopedia String?
   youtube   String?
   facebook  String?
+  // Latar: warna solid (bgColor), gradien (bgColor → bgColor2), atau gambar (bgImage).
+  bgColor   String?
+  bgColor2  String?
+  bgImage   String?
+  textLight Boolean @default(false) // teks judul/bio putih (untuk latar gelap)
 }
 
 model BioLink {

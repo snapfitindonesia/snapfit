@@ -74,8 +74,18 @@ export default async function LinksPage() {
     { href: profile?.facebook, label: "Facebook", Icon: FacebookIcon },
   ].filter((s): s is typeof s & { href: string } => !!s.href);
 
+  const bg: React.CSSProperties = profile?.bgImage
+    ? { backgroundImage: `url("${profile.bgImage}")`, backgroundSize: "cover", backgroundPosition: "center" }
+    : profile?.bgColor && profile.bgColor2
+      ? { backgroundImage: `linear-gradient(160deg, ${profile.bgColor}, ${profile.bgColor2})` }
+      : profile?.bgColor
+        ? { backgroundColor: profile.bgColor }
+        : {};
+  const light = !!profile?.textLight && (!!profile.bgImage || !!profile.bgColor);
+  const muted = light ? "text-white/80" : "text-muted-foreground";
+
   return (
-    <main className="min-h-dvh bg-muted/40 px-4 py-12">
+    <main className={`min-h-dvh bg-muted/40 px-4 py-12 ${light ? "text-white" : ""}`} style={bg}>
       <div className="mx-auto flex max-w-md flex-col items-center text-center">
         {profile?.avatar ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -86,7 +96,7 @@ export default async function LinksPage() {
           </div>
         )}
         <h1 className="mt-4 text-xl font-bold tracking-tight">{title}</h1>
-        {profile?.bio && <p className="mt-1.5 whitespace-pre-line text-sm text-muted-foreground">{profile.bio}</p>}
+        {profile?.bio && <p className={`mt-1.5 whitespace-pre-line text-sm ${muted}`}>{profile.bio}</p>}
 
         {socials.length > 0 && (
           <div className="mt-4 flex flex-wrap justify-center gap-3">
@@ -114,7 +124,7 @@ export default async function LinksPage() {
                 key={l.id}
                 href={`/links/go/${l.id}`}
                 {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                className={`relative flex min-h-14 items-center justify-center rounded-xl px-14 py-3 text-sm font-semibold shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
+                className={`relative flex min-h-14 items-center justify-center rounded-xl py-3 text-sm ${l.image ? "px-14" : "px-5"} font-semibold shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
                   l.highlight
                     ? "bg-foreground text-background"
                     : "bg-background text-foreground ring-1 ring-border"
@@ -128,10 +138,10 @@ export default async function LinksPage() {
               </a>
             );
           })}
-          {links.length === 0 && <p className="text-sm text-muted-foreground">Belum ada link.</p>}
+          {links.length === 0 && <p className={`text-sm ${muted}`}>Belum ada link.</p>}
         </div>
 
-        <Link href="/" className="mt-12 text-xs font-semibold tracking-widest text-muted-foreground hover:text-foreground">
+        <Link href="/" className={`mt-12 text-xs font-semibold tracking-widest hover:opacity-100 ${light ? "text-white/70" : "text-muted-foreground"}`}>
           SNAPFIT.ID
         </Link>
       </div>

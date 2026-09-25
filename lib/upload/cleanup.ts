@@ -72,7 +72,7 @@ async function isImageReferenced(url: string): Promise<boolean> {
     db.category.findFirst({ where: { image: url }, select: { id: true } }),
     db.review.findFirst({ where: { image: url }, select: { id: true } }),
     db.bioLink.findFirst({ where: { image: url }, select: { id: true } }),
-    db.bioProfile.findFirst({ where: { avatar: url }, select: { id: true } }),
+    db.bioProfile.findFirst({ where: { OR: [{ avatar: url }, { bgImage: url }] }, select: { id: true } }),
   ]);
   return !!(cover || gallery || variant || banner || category || review || bioLink || bioProfile);
 }

@@ -40,6 +40,10 @@ export default async function AdminLinktreePage() {
             tokopedia: profile?.tokopedia ?? "",
             youtube: profile?.youtube ?? "",
             facebook: profile?.facebook ?? "",
+            bgColor: profile?.bgColor ?? "",
+            bgColor2: profile?.bgColor2 ?? "",
+            bgImage: profile?.bgImage ?? "",
+            textLight: profile?.textLight ?? false,
           }}
         />
       </div>

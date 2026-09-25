@@ -31,6 +31,10 @@ const profileSchema = z.object({
   tokopedia: opt,
   youtube: opt,
   facebook: opt,
+  bgColor: opt,
+  bgColor2: opt,
+  bgImage: opt,
+  textLight: z.boolean().default(false),
 });
 export type BioProfileInput = z.infer<typeof profileSchema>;
 
@@ -53,7 +57,7 @@ export async function saveBioProfile(input: BioProfileInput): Promise<Result> {
   try {
     await requireAdmin();
     const d = profileSchema.parse(input);
-    const before = await db.bioProfile.findUnique({ where: { id: "main" }, select: { avatar: true } });
+    const before = await db.bioProfile.findUnique({ where: { id: "main" }, select: { avatar: true, bgImage: true } });
     const data = {
       title: d.title,
       bio: blank(d.bio),
@@ -65,10 +69,17 @@ export async function saveBioProfile(input: BioProfileInput): Promise<Result> {
       tokopedia: blank(d.tokopedia),
       youtube: blank(d.youtube),
       facebook: blank(d.facebook),
+      bgColor: blank(d.bgColor),
+      bgColor2: blank(d.bgColor2),
+      bgImage: blank(d.bgImage),
+      textLight: d.textLight,
     };
     await db.bioProfile.upsert({ where: { id: "main" }, create: { id: "main", ...data }, update: data });
     revalidateLinks();
-    if (before?.avatar && before.avatar !== data.avatar) await cleanupOrphanImages([before.avatar]);
+    await cleanupOrphanImages([
+      before?.avatar !== data.avatar ? before?.avatar : null,
+      before?.bgImage !== data.bgImage ? before?.bgImage : null,
+    ]);
     return { ok: true };
   } catch (e) {
     return fail(e);
