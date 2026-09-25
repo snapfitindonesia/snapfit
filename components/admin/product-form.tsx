@@ -146,8 +146,29 @@ export function ProductForm({ categories, mereks = [], initial }: { categories: 
   /* ---- mutasi grup/opsi ---- */
   const setGroup = (gi: number, patch: Partial<Group>) =>
     setGroups((gs) => gs.map((g, i) => (i === gi ? { ...g, ...patch } : g)));
-  const setOpt = (gi: number, oi: number, patch: Partial<Opt>) =>
+  const setOpt = (gi: number, oi: number, patch: Partial<Opt>) => {
+    // Bila NILAI opsi diubah → pindahkan sel matriks (harga/stok/id) ke key baru
+    // agar data varian tidak hilang saat ganti nama opsi (mis. "Magsafe" → "MagSafe").
+    if (patch.value !== undefined) {
+      const oldVal = groups[gi]?.options[oi]?.value;
+      const newVal = patch.value;
+      if (oldVal !== undefined && oldVal !== newVal) {
+        setCells((prev) => {
+          const next: Record<string, Cell> = {};
+          for (const [k, cell] of Object.entries(prev)) {
+            const sep = k.indexOf("__");
+            const a = k.slice(0, sep);
+            const b = k.slice(sep + 2);
+            const na = gi === 0 && a === oldVal ? newVal : a;
+            const nb = gi === 1 && b === oldVal ? newVal : b;
+            next[`${na}__${nb}`] = cell;
+          }
+          return next;
+        });
+      }
+    }
     setGroups((gs) => gs.map((g, i) => i === gi ? { ...g, options: g.options.map((o, j) => (j === oi ? { ...o, ...patch } : o)) } : g));
+  };
   const addOpt = (gi: number) =>
     setGroups((gs) => gs.map((g, i) => i === gi ? { ...g, options: [...g.options, { key: rid(), value: "", desc: "", image: "" }] } : g));
   const removeOpt = (gi: number, oi: number) =>
