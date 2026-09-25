@@ -20,6 +20,10 @@ export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaM
   const [activeBrand, setActiveBrand] = useState(0); // brand aktif di panel kanan
   const [activeMerek, setActiveMerek] = useState(0); // merek aktif di panel kanan
   const [mobileOpen, setMobileOpen] = useState(false); // drawer mobile
+  const [openMenuIds, setOpenMenuIds] = useState<Set<string>>(new Set()); // accordion menu mobile
+  const [openBrandKeys, setOpenBrandKeys] = useState<Set<string>>(new Set()); // accordion brand mobile
+  const toggleMenu = (id: string) => setOpenMenuIds((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  const toggleBrand = (k: string) => setOpenBrandKeys((s) => { const n = new Set(s); if (n.has(k)) n.delete(k); else n.add(k); return n; });
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const cancelClose = () => {
@@ -380,93 +384,110 @@ export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaM
           {/* Drawer menu (mobile) */}
           {mobileOpen && (
             <div className="absolute inset-x-0 top-full z-50 pt-2 md:hidden">
-              <div className="animate-in fade-in slide-in-from-top-2 max-h-[75vh] overflow-y-auto rounded-2xl border border-border bg-background p-4 shadow-xl duration-200">
-                {navLinks.map((l) =>
-                  l.kind === "MEGA" ? (
-                    <div key={l.id}>
-                      <p className="mt-1 px-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                        {l.label}
-                      </p>
-                      <div className="mt-1 space-y-3">
-                        {menu.map((brand) => (
-                          <div key={brand.slug}>
-                            <Link
-                              href={`/produk?tipe=${brand.slug}`}
-                              onClick={closeMobile}
-                              className="block rounded-md px-2 py-1.5 text-sm font-semibold hover:bg-accent"
-                            >
-                              {brand.name}
-                            </Link>
-                            <ul className="ml-2 border-l border-border pl-3">
-                              {brand.lines.map((line) => (
-                                <li key={line.slug}>
-                                  <Link
-                                    href={`/produk?tipe=${line.slug}`}
-                                    onClick={closeMobile}
-                                    className="block py-1 text-sm font-medium hover:text-foreground"
-                                  >
-                                    {line.name}
-                                  </Link>
-                                  {line.models.length > 0 && (
-                                    <ul className="mb-1 ml-1 flex flex-wrap gap-1.5">
-                                      {line.models.map((m) => (
-                                        <li key={m.slug ?? m.label}>
-                                          <Link
-                                            href={m.slug ? `/produk?tipe=${m.slug}` : `/produk?tipe=${line.slug}&model=${encodeURIComponent(m.label)}`}
-                                            onClick={closeMobile}
-                                            className="inline-block rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground"
-                                          >
-                                            {m.label}
+              <div className="animate-in fade-in slide-in-from-top-2 max-h-[75vh] divide-y divide-border overflow-y-auto rounded-2xl border border-border bg-background shadow-xl duration-200">
+                {navLinks.map((l) => {
+                  if (l.kind === "MEGA") {
+                    const openM = openMenuIds.has(l.id);
+                    return (
+                      <div key={l.id}>
+                        <button type="button" onClick={() => toggleMenu(l.id)} className="flex w-full items-center justify-between px-4 py-3 text-sm font-semibold">
+                          {l.label}
+                          <ChevronDown className={cn("size-4 text-muted-foreground transition-transform", openM && "rotate-180")} />
+                        </button>
+                        {openM && (
+                          <div className="pb-1">
+                            {menu.map((brand) => {
+                              const openB = openBrandKeys.has(brand.slug);
+                              return (
+                                <div key={brand.slug}>
+                                  <div className="flex items-center">
+                                    <Link href={`/produk?tipe=${brand.slug}`} onClick={closeMobile} className="flex-1 py-2 pl-6 pr-2 text-sm font-medium">
+                                      {brand.name}
+                                    </Link>
+                                    {brand.lines.length > 0 && (
+                                      <button type="button" onClick={() => toggleBrand(brand.slug)} aria-label="Buka" className="px-4 py-2 text-muted-foreground">
+                                        <ChevronDown className={cn("size-4 transition-transform", openB && "rotate-180")} />
+                                      </button>
+                                    )}
+                                  </div>
+                                  {openB && brand.lines.length > 0 && (
+                                    <ul className="pb-1">
+                                      {brand.lines.map((line) => (
+                                        <li key={line.slug}>
+                                          <Link href={`/produk?tipe=${line.slug}`} onClick={closeMobile} className="block py-1.5 pl-10 pr-3 text-sm text-muted-foreground">
+                                            {line.name}
                                           </Link>
+                                          {line.models.length > 0 && (
+                                            <div className="flex flex-wrap gap-1.5 px-10 pb-2 pt-0.5">
+                                              {line.models.map((m) => (
+                                                <Link
+                                                  key={m.slug ?? m.label}
+                                                  href={m.slug ? `/produk?tipe=${m.slug}` : `/produk?tipe=${line.slug}&model=${encodeURIComponent(m.label)}`}
+                                                  onClick={closeMobile}
+                                                  className="inline-block rounded-full border border-border px-2.5 py-0.5 text-xs text-muted-foreground"
+                                                >
+                                                  {m.label}
+                                                </Link>
+                                              ))}
+                                            </div>
+                                          )}
                                         </li>
                                       ))}
                                     </ul>
                                   )}
-                                </li>
-                              ))}
-                            </ul>
+                                </div>
+                              );
+                            })}
                           </div>
-                        ))}
+                        )}
                       </div>
-                    </div>
-                  ) : l.kind === "MEREK" ? (
-                    <div key={l.id}>
-                      <p className="mt-1 px-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                        {l.label}
-                      </p>
-                      <div className="mt-1 flex flex-wrap gap-1.5 px-2">
-                        {merekMenu.map((m) => (
-                          <Link
-                            key={m.name}
-                            href={`/produk?brand=${encodeURIComponent(m.name)}`}
-                            onClick={closeMobile}
-                            className="inline-block rounded-full border border-border px-3 py-1 text-sm text-muted-foreground hover:text-foreground"
-                          >
-                            {m.name}
-                          </Link>
-                        ))}
+                    );
+                  }
+                  if (l.kind === "MEREK") {
+                    const openM = openMenuIds.has(l.id);
+                    return (
+                      <div key={l.id}>
+                        <button type="button" onClick={() => toggleMenu(l.id)} className="flex w-full items-center justify-between px-4 py-3 text-sm font-semibold">
+                          {l.label}
+                          <ChevronDown className={cn("size-4 text-muted-foreground transition-transform", openM && "rotate-180")} />
+                        </button>
+                        {openM && (
+                          <div className="flex flex-wrap gap-1.5 px-4 pb-3">
+                            {merekMenu.map((m) => (
+                              <Link
+                                key={m.name}
+                                href={`/produk?brand=${encodeURIComponent(m.name)}`}
+                                onClick={closeMobile}
+                                className="inline-block rounded-full border border-border px-3 py-1 text-sm text-muted-foreground"
+                              >
+                                {m.name}
+                              </Link>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  ) : (
+                    );
+                  }
+                  return (
                     <Link
                       key={l.id}
                       href={l.url}
                       target={l.newTab ? "_blank" : undefined}
                       rel={l.newTab ? "noopener noreferrer" : undefined}
                       onClick={closeMobile}
-                      className="block rounded-md px-2 py-2.5 text-sm font-medium hover:bg-accent"
+                      className="block px-4 py-3 text-sm font-semibold hover:bg-accent"
                     >
                       {l.label}
                     </Link>
-                  ),
-                )}
+                  );
+                })}
 
-                <div className="mt-3 border-t border-border pt-3">
+                <div>
                   {authed ? (
                     <Link
                       href="/akun"
                       onClick={closeMobile}
-                      className="flex items-center gap-2 rounded-md px-2 py-2.5 text-sm font-medium hover:bg-accent"
+                      className="flex items-center gap-2 px-4 py-3 text-sm font-semibold hover:bg-accent"
                     >
                       <User className="size-4" /> Akun
                     </Link>
@@ -477,7 +498,7 @@ export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaM
                         closeMobile();
                         openLogin();
                       }}
-                      className="flex w-full items-center gap-2 rounded-md px-2 py-2.5 text-sm font-medium hover:bg-accent"
+                      className="flex w-full items-center gap-2 px-4 py-3 text-sm font-semibold hover:bg-accent"
                     >
                       <User className="size-4" /> Masuk / Daftar
                     </button>
