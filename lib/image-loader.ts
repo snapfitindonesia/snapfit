@@ -19,10 +19,11 @@ const DIRECT = [/(^|\.)ibyteimg\.com$/, /(^|\.)tiktokcdn\.com$/, /(^|\.)ginee\.c
 const tag = (url: string, width: number) => `${url}#w=${width}`;
 
 const shopeeLoader: ImageLoader = ({ src, width }) =>
-  // Sufiks _tn = thumbnail 320px (~20KB vs ~130KB asli).
-  tag(width <= 384 && /\/file\/[^/_]+$/.test(new URL(src).pathname) ? `${src}_tn` : src, width);
+  // Sufiks _tn = thumbnail 320px (~20KB vs ~130KB asli) — hanya bila tak perlu diperbesar.
+  tag(width <= 320 &&/\/file\/[^/_]+$/.test(new URL(src).pathname) ? `${src}_tn` : src, width);
 
 const tokopediaLoader: ImageLoader = ({ src, width }) => {
+  // Tak pernah di bawah lebar yang diminta → tidak ada pembesaran (tak blur).
   const size = width <= 300 ? 300 : width <= 500 ? 500 : 700;
   return tag(src.replace(/\/img\/cache\/[^/]+\//, `/img/cache/${size}/`), width);
 };
