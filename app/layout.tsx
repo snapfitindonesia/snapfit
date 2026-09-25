@@ -6,6 +6,8 @@ import {
   GoogleTagManager,
   GoogleTagManagerNoScript,
 } from "@/components/tracking/gtm";
+import { FacebookPixel } from "@/components/tracking/facebook-pixel";
+import { Suspense } from "react";
 
 const geistSans = Geist({
   variable: "--font-sans",
@@ -37,6 +39,9 @@ export default function RootLayout({
         <NextTopLoader color="#171717" height={3} showSpinner={false} shadow="0 0 8px #171717" />
         <GoogleTagManager />
         <GoogleTagManagerNoScript />
+        <Suspense>
+          <FacebookPixel />
+        </Suspense>
         {children}
       </body>
     </html>
