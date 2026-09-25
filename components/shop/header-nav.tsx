@@ -144,8 +144,8 @@ export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaM
               />
             </Link>
 
-            {/* Nav tengah (desktop) — sepenuhnya dari Admin → Menu */}
-            <nav className="mx-auto hidden items-center gap-6 md:flex">
+            {/* Nav tengah (desktop) — absolut di tengah header agar benar-benar center */}
+            <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-6 md:flex">
               {navLinks.map((l) =>
                 l.kind === "MEGA" ? (
                   <button
