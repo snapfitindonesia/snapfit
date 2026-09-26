@@ -29,7 +29,8 @@ export async function generateMetadata({
     .replace(/<[^>]+>/g, " ")
     .replace(/[•▪●◆★✓✔\-–]\s*/g, "")
     .replace(/\s+/g, " ")
-    .trim();
+    .trim()
+    .replace(/^(features?|fitur|deskripsi( produk)?|description|spesifikasi|highlights?)\s*:\s*/i, "");
   const suffix = " Original & garansi resmi di SNAPFIT Indonesia.";
   const body = clean.length > 158 - suffix.length ? `${clean.slice(0, 155 - suffix.length).replace(/\s+\S*$/, "")}…` : clean;
   const description = body
