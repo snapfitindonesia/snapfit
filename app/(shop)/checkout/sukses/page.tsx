@@ -7,7 +7,7 @@ import { isManualPayment, MANUAL_BANK } from "@/lib/payment";
 import { PurchaseTracker } from "@/components/tracking/purchase-tracker";
 
 export const metadata = {
-  title: "Pesanan Berhasil — SNAPFIT",
+  title: "Pesanan Berhasil",
 };
 
 export default async function CheckoutSuccessPage({

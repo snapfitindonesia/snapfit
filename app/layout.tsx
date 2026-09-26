@@ -24,8 +24,23 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.snapfit.id"),
-  title: "SNAPFIT",
-  description: "SNAPFIT — toko online",
+  title: {
+    default: "SNAPFIT Indonesia - Aksesoris Gadget Premium",
+    template: "%s | SNAPFIT Indonesia",
+  },
+  description:
+    "Toko resmi aksesoris gadget premium: case HP, tablet & AirPods original Ringke, VRS Design, Araree, Supcase & SNAPFIT. Garansi resmi, gratis ongkir min. Rp150rb.",
+  applicationName: "SNAPFIT Indonesia",
+  keywords: [
+    "case hp", "casing hp premium", "aksesoris gadget", "case iphone", "case samsung",
+    "Ringke Indonesia", "VRS Design", "Araree", "Supcase", "SNAPFIT",
+  ],
+  openGraph: {
+    type: "website",
+    siteName: "SNAPFIT Indonesia",
+    locale: "id_ID",
+  },
+  twitter: { card: "summary_large_image" },
   // Verifikasi domain Facebook/Meta (Business Manager → Brand Safety → Domains).
   other: {
     "facebook-domain-verification": "si7g62hg0l0tbbdq6gz6u6wdxfmai2",

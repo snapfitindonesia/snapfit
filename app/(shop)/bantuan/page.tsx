@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 
 export const metadata = {
-  title: "Bantuan — SNAPFIT",
+  title: "Bantuan",
   description:
     "Pusat bantuan SNAPFIT: cara pesan, pengiriman, pengembalian, dan cara menghubungi kami.",
 };

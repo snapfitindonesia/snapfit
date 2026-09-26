@@ -6,7 +6,7 @@ import { SignOutButton } from "@/components/auth/sign-out-button";
 import { ChangePasswordForm } from "@/components/auth/change-password-form";
 import { DeleteAccountButton } from "@/components/auth/delete-account-button";
 
-export const metadata = { title: "Akun — SNAPFIT" };
+export const metadata = { title: "Akun" };
 
 export default async function AccountPage() {
   const user = await getCurrentUser();

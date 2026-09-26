@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,36 @@ import { PromoBanners, StripBanner } from "@/components/shop/home-banners";
 
 // ISR: homepage di-cache (cepat), regenerasi tiap 5 menit.
 export const revalidate = 300;
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
+
+const SITE = "https://www.snapfit.id";
+const SITE_JSON_LD = [
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "SNAPFIT Indonesia",
+    alternateName: ["SNAPFIT", "snapfit.id"],
+    url: `${SITE}/`,
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "OnlineStore",
+    name: "SNAPFIT Indonesia",
+    url: `${SITE}/`,
+    logo: `${SITE}/logo.png`,
+    description:
+      "Toko resmi aksesoris gadget premium: case HP, tablet & AirPods original Ringke, VRS Design, Araree, Supcase & SNAPFIT.",
+    contactPoint: {
+      "@type": "ContactPoint",
+      telephone: "+62-851-7977-9770",
+      contactType: "customer service",
+      availableLanguage: ["Indonesian"],
+    },
+  },
+];
 
 // Hero banner: produk device terbaru dari brand mitra (authorized reseller).
 const HERO_SLIDES: HeroSlide[] = [
@@ -80,6 +111,14 @@ export default async function HomePage() {
 
   return (
     <>
+      {/* SEO: nama situs & organisasi untuk Google (nama situs di hasil pencarian) */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(SITE_JSON_LD) }}
+      />
+      {/* H1 utama halaman (visual diwakili banner) */}
+      {banners.length > 0 && <h1 className="sr-only">SNAPFIT Indonesia - Aksesoris Gadget Premium</h1>}
+
       {/* Hero banner besar (1200×600) — dikelola di Admin → Banner (type MAIN) */}
       {banners.length > 0 && (
         <section className="mx-auto max-w-6xl px-4 pb-10 pt-6 sm:px-6 sm:pb-14">

@@ -2,7 +2,7 @@ import { AuthForm } from "@/components/auth/auth-form";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { OAuthButtons } from "@/components/auth/oauth-buttons";
 
-export const metadata = { title: "Masuk — SNAPFIT" };
+export const metadata = { title: "Masuk" };
 
 export default async function LoginPage({
   searchParams,

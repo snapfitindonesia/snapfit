@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Syarat & Ketentuan — SNAPFIT",
+  title: "Syarat & Ketentuan",
   description: "Syarat dan ketentuan penggunaan situs serta pembelian di SNAPFIT.",
 };
 

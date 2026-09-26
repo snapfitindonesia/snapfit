@@ -3,8 +3,8 @@ import { productQuerySchema } from "@/lib/validations/product";
 import { ProductListing } from "@/components/shop/product-listing";
 
 export const metadata = {
-  title: "Semua Produk — SNAPFIT",
-  description: "Case & pelindung untuk iPhone, Samsung, iPad, dan tablet.",
+  title: "Semua Produk - Case HP, Tablet & AirPods Original",
+  description: "Belanja case HP, tablet & AirPods original Ringke, VRS Design, Araree, Supcase & SNAPFIT. Filter sesuai tipe HP-mu, garansi resmi, gratis ongkir min. Rp150rb.",
 };
 
 export default async function ProductListPage({

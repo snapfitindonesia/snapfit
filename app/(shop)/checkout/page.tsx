@@ -3,7 +3,7 @@ import { SnapScript } from "@/components/shop/snap-script";
 import { isManualPayment, isFlatShipping, MANUAL_BANK, FLAT_SHIPPING_COST, FREE_SHIPPING_MIN } from "@/lib/payment";
 
 export const metadata = {
-  title: "Checkout — SNAPFIT",
+  title: "Checkout",
 };
 
 export default function CheckoutPage() {

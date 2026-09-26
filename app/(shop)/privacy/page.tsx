@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Kebijakan Privasi — SNAPFIT",
+  title: "Kebijakan Privasi",
   description: "Kebijakan privasi SNAPFIT: data apa yang kami kumpulkan dan bagaimana kami menggunakannya.",
 };
 

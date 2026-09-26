@@ -6,7 +6,7 @@ import { getCurrentUser } from "@/lib/supabase/server";
 import { formatRupiah } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Pesanan Saya — SNAPFIT" };
+export const metadata = { title: "Pesanan Saya" };
 
 const STATUS: Record<string, { label: string; cls: string }> = {
   PENDING: { label: "Menunggu Pembayaran", cls: "bg-amber-100 text-amber-700" },

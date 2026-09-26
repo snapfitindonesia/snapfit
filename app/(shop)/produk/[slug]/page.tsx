@@ -22,12 +22,20 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const product = await getProductBySlug(slug);
-  if (!product) return { title: "Produk tidak ditemukan — SNAPFIT" };
-  const title = `${product.name} — SNAPFIT`;
-  const description = product.description ?? `Beli ${product.name} di SNAPFIT.`;
+  if (!product) return { title: "Produk tidak ditemukan" };
+  const title = `${product.name} | SNAPFIT Indonesia`;
+  // Deskripsi meta: ringkas (±155 karakter), tanpa bullet/baris baru dari teks marketplace.
+  const clean = (product.description ?? "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/[•▪●◆★✓✔\-–]\s*/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  const intro = `Beli ${product.name} original di SNAPFIT Indonesia. Garansi resmi, gratis ongkir min. Rp150rb.`;
+  const raw = clean ? `${intro} ${clean}` : intro;
+  const description = raw.length > 158 ? `${raw.slice(0, 155).replace(/\s+\S*$/, "")}…` : raw;
   const image = product.coverImage;
   return {
-    title,
+    title: product.name, // + template "| SNAPFIT Indonesia" dari layout
     description,
     alternates: { canonical: `/produk/${product.slug}` },
     openGraph: {

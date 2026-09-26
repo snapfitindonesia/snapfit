@@ -1,7 +1,7 @@
 import { CartView } from "@/components/shop/cart-view";
 
 export const metadata = {
-  title: "Keranjang — SNAPFIT",
+  title: "Keranjang",
 };
 
 export default function CartPage() {
