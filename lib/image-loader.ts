@@ -3,6 +3,7 @@
  *
  * Foto marketplace (Shopee/Tokopedia/TikTok) dilayani LANGSUNG dari CDN mereka,
  * pakai varian ukuran bawaan CDN tsb (sudah JPEG terkompres) → 0 transformasi.
+ * Foto upload admin ada di cdn.snapfit.id (R2 + Cloudflare) → juga langsung.
  * Host lain (mis. r2.dev yang DIBLOKIR sebagian ISP Indonesia) tetap lewat
  * /_next/image Vercel (loader default) supaya tetap tampil.
  *
@@ -12,7 +13,8 @@
  */
 import type { ImageLoader } from "next/image";
 
-const DIRECT = [/(^|\.)ibyteimg\.com$/, /(^|\.)tiktokcdn\.com$/, /(^|\.)ginee\.com$/, /^cdn\.shopify\.com$/, /^placehold\.co$/];
+// cdn.snapfit.id = bucket R2 kita via Cloudflare (sudah WebP 1200px terkompres saat upload).
+const DIRECT = [/^cdn\.snapfit\.id$/, /(^|\.)ibyteimg\.com$/, /(^|\.)tiktokcdn\.com$/, /(^|\.)ginee\.com$/, /^cdn\.shopify\.com$/, /^placehold\.co$/];
 
 // Tanda #w=… beda per lebar agar srcset valid & dev tak memperingatkan
 // "loader does not implement width"; fragmen tak dikirim ke server → cache CDN utuh.
