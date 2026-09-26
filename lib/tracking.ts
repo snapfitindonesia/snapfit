@@ -105,6 +105,13 @@ export function trackBeginCheckout(value: number, items: Item[], pii?: Pii) {
   gaTrack("begin_checkout", { currency: "IDR", value, items });
 }
 
+/** Klik tombol WhatsApp — `source`: floating / pdp / pdp-stok-habis. */
+export function trackContact(source: string, productName?: string) {
+  push({ event: "contact_whatsapp", source, product: productName });
+  fbTrack("Contact", { content_name: productName ?? source, content_category: source });
+  gaTrack("contact_whatsapp", { source, item_name: productName });
+}
+
 export function trackPurchase(transactionId: string, value: number, items: Item[], pii?: Pii) {
   push({
     event: "purchase",

@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { db } from "@/lib/db";
+import { listLandingPages } from "@/lib/seo-pages";
 
 const SITE = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.snapfit.id").replace(/\/$/, "");
 
@@ -33,5 +34,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // DB tak terjangkau saat build → sitemap tetap terbit dgn halaman statis.
   }
 
-  return [...staticPages, ...productPages];
+  // Halaman landing SEO kategori & merek (hanya yang punya produk tersedia).
+  let landingPages: MetadataRoute.Sitemap = [];
+  try {
+    const { categories, mereks } = await listLandingPages();
+    landingPages = [
+      ...categories.map((slug) => ({ url: `${SITE}/kategori/${slug}`, lastModified: now, changeFrequency: "daily" as const, priority: 0.85 })),
+      ...mereks.map((slug) => ({ url: `${SITE}/merek/${slug}`, lastModified: now, changeFrequency: "daily" as const, priority: 0.85 })),
+    ];
+  } catch {
+    // abaikan — sitemap tetap terbit
+  }
+
+  return [...staticPages, ...landingPages, ...productPages];
 }

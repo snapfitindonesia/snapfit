@@ -7,6 +7,7 @@ import { CartDrawer } from "@/components/shop/cart-drawer";
 import { LoginModal } from "@/components/shop/login-modal";
 import { AuthToast } from "@/components/shop/auth-toast";
 import { PopupBanner } from "@/components/shop/popup-banner";
+import { WhatsAppFloat } from "@/components/shop/whatsapp-float";
 import { getPopupBanner } from "@/lib/actions/product";
 import { isFlatShipping, FLAT_SHIPPING_COST, FREE_SHIPPING_MIN } from "@/lib/payment";
 import { Suspense } from "react";
@@ -32,6 +33,7 @@ export default async function ShopLayout({
         </div>
         <CartDrawer flatShipping={isFlatShipping()} flatCost={FLAT_SHIPPING_COST} freeShippingMin={FREE_SHIPPING_MIN} />
         <PopupBanner banner={popupBanner} />
+        <WhatsAppFloat />
         <LoginModal />
         <Suspense>
           <AuthToast />

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { preconnect } from "react-dom";
+import { slugify } from "@/lib/seo-pages";
 import type { Metadata } from "next";
 import {
   getProductBySlug,
@@ -87,6 +88,9 @@ export default async function ProductDetailPage({
     description: product.description,
     coverImage: product.coverImage,
     categoryName: product.category?.name ?? null,
+    categorySlug: product.category?.slug ?? null,
+    brand: product.brand ?? null,
+    brandSlug: product.brand ? slugify(product.brand) : null,
     discountPercent: product.discountPercent,
     group1Name: (product.variantGroups as { groups?: { name?: string }[] } | null)?.groups?.[0]?.name || null,
     group2Name: (product.variantGroups as { groups?: { name?: string }[] } | null)?.groups?.[1]?.name || null,

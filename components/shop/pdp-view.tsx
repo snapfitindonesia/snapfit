@@ -21,7 +21,10 @@ import { cn } from "@/lib/utils";
 import { formatRupiah, applyDiscount } from "@/lib/format";
 import { useCart } from "@/components/shop/cart-provider";
 import { useStoreUI } from "@/components/shop/store-ui-provider";
-import { trackViewItem, trackAddToCart } from "@/lib/tracking";
+import { trackViewItem, trackAddToCart, trackContact } from "@/lib/tracking";
+import { waChatUrl } from "@/lib/contact";
+import { WhatsAppIcon } from "@/components/shop/whatsapp-float";
+import Link from "next/link";
 
 export type PdpVariant = {
   id: string;
@@ -41,6 +44,9 @@ export type PdpProduct = {
   description: string | null;
   coverImage: string;
   categoryName: string | null;
+  categorySlug: string | null;
+  brand: string | null;
+  brandSlug: string | null;
   discountPercent: number;
   group1Name: string | null;
   group2Name: string | null;
@@ -418,8 +424,16 @@ export function PdpView({ product, vouchers = [] }: { product: PdpProduct; vouch
         </div>
 
         {/* Judul */}
-        {product.categoryName && (
-          <p className="mt-3 text-sm text-muted-foreground">{product.categoryName}</p>
+        {(product.categoryName || product.brand) && (
+          <p className="mt-3 flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
+            {product.brand && product.brandSlug && (
+              <Link href={`/merek/${product.brandSlug}`} className="font-medium text-foreground hover:underline">{product.brand}</Link>
+            )}
+            {product.brand && product.categoryName && <span aria-hidden>·</span>}
+            {product.categoryName && product.categorySlug && (
+              <Link href={`/kategori/${product.categorySlug}`} className="hover:text-foreground hover:underline">{product.categoryName}</Link>
+            )}
+          </p>
         )}
         <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-[28px] sm:leading-tight">
           {product.name}
@@ -577,6 +591,31 @@ export function PdpView({ product, vouchers = [] }: { product: PdpProduct; vouch
         <p className="mt-3 text-center text-xs text-muted-foreground">
           Garansi Resmi · 100% Original · 7 Hari Pengembalian
         </p>
+
+        {/* Tanya via WhatsApp — pesan terisi nama produk + varian + link */}
+        <a
+          href={waChatUrl(
+            [
+              "Halo SNAPFIT, saya mau tanya produk ini:",
+              product.name,
+              `Varian: ${variant.name}`,
+              ...(outOfStock ? ["(stok di web habis — apakah masih ada?)"] : []),
+              `https://www.snapfit.id/produk/${product.slug}`,
+            ].join("\n"),
+          )}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => trackContact(outOfStock ? "pdp-stok-habis" : "pdp", product.name)}
+          className={cn(
+            "mt-4 flex w-full items-center justify-center gap-2 rounded-md border px-4 py-2.5 text-sm font-medium transition-colors",
+            outOfStock
+              ? "border-[#25D366] bg-[#25D366] text-white hover:bg-[#1fb957]"
+              : "border-border text-foreground hover:border-[#25D366] hover:text-[#128C7E]",
+          )}
+        >
+          <WhatsAppIcon className={cn("size-4", !outOfStock && "text-[#25D366]")} />
+          {outOfStock ? "Stok habis? Tanya ketersediaan via WhatsApp" : "Tanya stok / tipe HP via WhatsApp"}
+        </a>
 
         {/* Deskripsi di BAWAH varian & tombol beli — deskripsi panjang tak lagi
             mendorong pilihan warna/tipe ke bawah layar. */}
