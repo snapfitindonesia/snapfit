@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { STORE_WA } from "@/lib/contact";
 import {
   ShoppingCart,
   Truck,
@@ -16,7 +17,7 @@ export const metadata = {
     "Pusat bantuan SNAPFIT: cara pesan, pengiriman, pengembalian, dan cara menghubungi kami.",
 };
 
-const WA = "6285179779770";
+const WA = STORE_WA;
 const WA_LINK = `https://wa.me/${WA}?text=${encodeURIComponent("Halo SNAPFIT, saya mau bertanya:")}`;
 const EMAIL = "snapfitindonesia@gmail.com";
 const SHOPEE = "https://id.shp.ee/KcnkDw66";

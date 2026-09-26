@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { formatRupiah } from "@/lib/format";
 import { getGrosirProducts, type ProductListItem } from "@/lib/actions/product";
 import { ProductCard } from "@/components/shop/product-card";
+import { STORE_WA } from "@/lib/contact";
 import { EvergreenCountdown } from "@/components/shop/evergreen-countdown";
 
 export const revalidate = 300;
@@ -32,7 +33,7 @@ export const metadata: Metadata = {
    KONFIG — ganti dengan data ASLI-mu.
    ============================================================ */
 const OFFER = {
-  waNumber: "6285179779770",
+  waNumber: STORE_WA,
   shopeeUrl: "https://id.shp.ee/KcnkDw66", // etalase grosir Shopee (short link)
   countdownMinutes: 15, // durasi countdown FOMO tiap pengunjung
   priceFrom: 45000, // harga grosir mulai (anchoring)

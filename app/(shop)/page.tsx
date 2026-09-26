@@ -17,6 +17,7 @@ import { ProductCard } from "@/components/shop/product-card";
 import { DevicePicker } from "@/components/shop/device-picker";
 import { HeroCarousel, type HeroSlide } from "@/components/shop/hero-carousel";
 import { BannerCarousel } from "@/components/shop/banner-carousel";
+import { STORE_WA_DISPLAY } from "@/lib/contact";
 import { PromoBanners, StripBanner } from "@/components/shop/home-banners";
 
 // ISR: homepage di-cache (cepat), regenerasi tiap 5 menit.
@@ -45,7 +46,7 @@ const SITE_JSON_LD = [
       "Toko resmi aksesoris gadget premium: case HP, tablet & AirPods original Ringke, VRS Design, Araree, Supcase & SNAPFIT.",
     contactPoint: {
       "@type": "ContactPoint",
-      telephone: "+62-851-7977-9770",
+      telephone: STORE_WA_DISPLAY,
       contactType: "customer service",
       availableLanguage: ["Indonesian"],
     },
