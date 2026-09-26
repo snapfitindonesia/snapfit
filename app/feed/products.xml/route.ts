@@ -50,7 +50,9 @@ export async function GET() {
       const label = [v.color, v.type].filter(Boolean).join(" ").trim();
       const title = (label ? `${p.name} - ${label}` : p.name).slice(0, 150);
       const avail = v.stock > 0 ? "in_stock" : "out_of_stock";
-      const extraImgs = gallery
+      // Gambar tambahan: COVER dulu (disimpan terpisah dari galeri), lalu galeri.
+      // Gambar utama tetap foto varian (warna sesuai; cover sering berisi teks promo).
+      const extraImgs = [...new Set([p.coverImage, ...gallery])]
         .filter((u) => u && u !== img)
         .slice(0, 10)
         .map((u) => `<g:additional_image_link>${esc(u)}</g:additional_image_link>`)
