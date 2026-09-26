@@ -77,7 +77,7 @@ export default function BantuanPage() {
             <ShoppingCart className="size-5 text-brand" /> Cara Pesan
           </h2>
           <ol className="mt-3 list-decimal space-y-2 pl-5">
-            <li>Cari produk lewat menu <Link href="/produk" className="font-medium text-brand hover:underline">Semua Produk</Link> atau kolom pencarian.</li>
+            <li>Cari produk lewat menu <Link href="/produk" className="font-medium text-brand-ink hover:underline">Semua Produk</Link> atau kolom pencarian.</li>
             <li>Buka produk, pilih <b>tipe HP/tablet</b> dan varian (warna/model) yang sesuai.</li>
             <li>Klik <b>Tambah ke Keranjang</b>, lalu buka keranjang saat siap.</li>
             <li>Klik <b>Checkout</b>, isi alamat & data penerima. Ongkir dihitung otomatis.</li>
@@ -85,7 +85,7 @@ export default function BantuanPage() {
           </ol>
           <p className="mt-3 text-muted-foreground">
             Sudah punya akun? Cek status di{" "}
-            <Link href="/akun/pesanan" className="font-medium text-brand hover:underline">Pesanan Saya</Link>.
+            <Link href="/akun/pesanan" className="font-medium text-brand-ink hover:underline">Pesanan Saya</Link>.
           </p>
         </section>
 
@@ -98,7 +98,7 @@ export default function BantuanPage() {
             <li>Pesanan dikirim melalui kurir tepercaya (JNE, J&T, SiCepat, dll.) sesuai pilihan saat checkout.</li>
             <li>Ongkos kirim dihitung otomatis berdasarkan alamat & berat paket.</li>
             <li>Pesanan diproses 1×24 jam kerja setelah pembayaran terkonfirmasi.</li>
-            <li>Cek status & nomor resi kapan saja di <Link href="/lacak" className="font-medium text-brand hover:underline">Lacak Pesanan</Link> — cukup nomor pesanan + email/nomor HP, tanpa login.</li>
+            <li>Cek status & nomor resi kapan saja di <Link href="/lacak" className="font-medium text-brand-ink hover:underline">Lacak Pesanan</Link> — cukup nomor pesanan + email/nomor HP, tanpa login.</li>
           </ul>
         </section>
 

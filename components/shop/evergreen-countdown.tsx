@@ -53,7 +53,7 @@ export function EvergreenCountdown({
   // Varian ringkas untuk sticky bar (satu baris "MM:SS")
   if (variant === "bar") {
     return (
-      <span className="rounded-md bg-brand px-2 py-0.5 font-bold tabular-nums text-brand-foreground">
+      <span className="rounded-md bg-foreground px-2 py-0.5 font-bold tabular-nums text-background">
         {left == null ? "--:--" : `${hh > 0 ? pad(hh) + ":" : ""}${pad(mm)}:${pad(ss)}`}
       </span>
     );

@@ -86,7 +86,7 @@ function BuyButtons({ className }: { className?: string }) {
     "inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3.5 text-sm font-semibold shadow-sm transition-transform hover:-translate-y-0.5 active:translate-y-0";
   return (
     <div className={cn("flex w-full flex-col gap-3 sm:w-auto sm:flex-row", className)}>
-      <a href={OFFER.shopeeUrl} target="_blank" rel="noopener noreferrer" className={cn(base, "bg-[#ee4d2d] px-8 text-base text-white")}>
+      <a href={OFFER.shopeeUrl} target="_blank" rel="noopener noreferrer" className={cn(base, "bg-[#d63b1c] px-8 text-base text-white")}>
         <ShoppingBag className="size-5" /> Beli di Shopee
       </a>
       <a href={waLink} target="_blank" rel="noopener noreferrer" className={cn(base, "bg-[#25d366] px-8 text-base text-white")}>
@@ -103,7 +103,7 @@ export default async function GrosirLandingPage() {
   return (
     <div className="pb-28 md:pb-16">
       {/* ===== Bar urgensi (sticky) ===== */}
-      <div className="sticky top-0 z-30 bg-brand text-brand-foreground">
+      <div className="sticky top-0 z-30 bg-brand-ink text-brand-foreground">
         <div className="mx-auto flex max-w-6xl items-center justify-center gap-2 px-4 py-2 text-center text-sm font-semibold sm:px-6">
           <Flame className="size-4 shrink-0" />
           <span>Harga promo naik lagi dalam</span>
@@ -144,7 +144,7 @@ export default async function GrosirLandingPage() {
                   {formatRupiah(OFFER.priceFrom)}
                   <span className="text-base font-bold">/pcs</span>
                 </span>
-                <span className="rounded-full bg-brand px-2.5 py-1 text-xs font-bold text-brand-foreground">
+                <span className="rounded-full bg-brand-ink px-2.5 py-1 text-xs font-bold text-brand-foreground">
                   HEMAT {savePercent}%
                 </span>
               </div>
@@ -202,7 +202,7 @@ export default async function GrosirLandingPage() {
             ].map((t, i, arr) => (
               <div key={t.label} className={`relative rounded-2xl border bg-background p-4 text-center sm:p-6 ${i === arr.length - 1 ? "border-brand ring-1 ring-brand" : "border-border"}`}>
                 {i === arr.length - 1 && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-brand px-3 py-0.5 text-xs font-semibold text-brand-foreground">Paling Hemat</span>
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-brand-ink px-3 py-0.5 text-xs font-semibold text-brand-foreground">Paling Hemat</span>
                 )}
                 <p className="text-sm font-medium text-muted-foreground">{t.label}</p>
                 <p className="mt-2 text-2xl font-bold text-brand sm:text-3xl">-{t.off}</p>
@@ -251,7 +251,7 @@ export default async function GrosirLandingPage() {
               </ul>
             </div>
             <div className="bg-foreground p-5 text-background sm:p-6">
-              <p className="text-sm font-semibold text-brand">Case Original SNAPFIT</p>
+              <p className="text-sm font-semibold text-brand-ink">Case Original SNAPFIT</p>
               <ul className="mt-4 space-y-3 text-sm">
                 {["100% original bergaransi", "Material premium tahan lama", "Garansi / uang kembali", "Proteksi teruji anti-jatuh"].map((x) => (
                   <li key={x} className="flex items-start gap-2">
@@ -319,7 +319,7 @@ export default async function GrosirLandingPage() {
             href={OFFER.shopeeUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#ee4d2d] px-8 py-4 text-base font-semibold text-white shadow-sm transition-transform hover:-translate-y-0.5"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#d63b1c] px-8 py-4 text-base font-semibold text-white shadow-sm transition-transform hover:-translate-y-0.5"
           >
             <ShoppingBag className="size-5" /> Lihat Semua di Shopee <ArrowRight className="size-5" />
           </a>
@@ -337,7 +337,7 @@ export default async function GrosirLandingPage() {
             {TESTIMONI.map((t, i) => (
               <div key={i} className="flex h-full flex-col rounded-2xl border border-border bg-background p-5">
                 <div className="flex items-center gap-3">
-                  <span className="grid size-9 shrink-0 place-items-center rounded-full bg-brand/10 text-sm font-bold text-brand">
+                  <span className="grid size-9 shrink-0 place-items-center rounded-full bg-brand/10 text-sm font-bold text-brand-ink">
                     {t.nama.charAt(0).toUpperCase()}
                   </span>
                   <div className="min-w-0">
@@ -363,7 +363,7 @@ export default async function GrosirLandingPage() {
             ))}
           </div>
           <div className="mt-8 text-center">
-            <a href={OFFER.shopeeUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-brand underline underline-offset-4 hover:opacity-80">
+            <a href={OFFER.shopeeUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-brand-ink underline underline-offset-4 hover:opacity-80">
               Lihat semua ulasan di Shopee →
             </a>
           </div>
@@ -417,7 +417,7 @@ export default async function GrosirLandingPage() {
           <EvergreenCountdown minutes={OFFER.countdownMinutes} variant="bar" />
         </div>
         <div className="flex gap-2">
-          <a href={OFFER.shopeeUrl} target="_blank" rel="noopener noreferrer" className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#ee4d2d] px-3 py-3 text-sm font-semibold text-white">
+          <a href={OFFER.shopeeUrl} target="_blank" rel="noopener noreferrer" className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#d63b1c] px-3 py-3 text-sm font-semibold text-white">
             <ShoppingBag className="size-4" /> Beli di Shopee
           </a>
           <a href={waLink} target="_blank" rel="noopener noreferrer" className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#25d366] px-3 py-3 text-sm font-semibold text-white">
