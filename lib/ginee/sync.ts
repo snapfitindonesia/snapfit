@@ -24,6 +24,8 @@ export type StockSyncResult = {
   productsChecked: number;
   stockUpdated: number;
   priceUpdated: number;
+  archived?: number; // produk disembunyikan krn sudah dihapus di Ginee
+  restored?: number; // produk terarsip yang muncul lagi di Ginee
   errors: string[];
 };
 
@@ -125,5 +127,64 @@ export async function runGineeStockSync(limit = 5000): Promise<StockSyncResult> 
   const missing = skus.length - [...skus].filter((s) => inv.has(s)).length;
   if (missing > 0) errors.push(`${missing} SKU tidak ditemukan di gudang Ginee (stoknya tidak diubah).`);
 
-  return { ok: true, productsChecked: products.size, stockUpdated, priceUpdated, errors };
+  // Produk yang sudah DIHAPUS di Ginee → arsipkan (sembunyikan dari toko/feed).
+  let archived = 0;
+  let restored = 0;
+  try {
+    const a = await syncArchivedFromGinee();
+    archived = a.archived;
+    restored = a.restored;
+    if (a.note) errors.push(a.note);
+  } catch (e) {
+    errors.push(`Cek produk terhapus gagal: ${e instanceof Error ? e.message : "?"}`);
+  }
+
+  return { ok: true, productsChecked: products.size, stockUpdated, priceUpdated, archived, restored, errors };
+}
+
+/**
+ * Arsipkan produk yang master-nya sudah TIDAK ADA di Ginee (respons tegas
+ * code DATA_NOT_EXISTED), dan pulihkan bila muncul lagi. Aman:
+ *  - error jaringan/lainnya → produk TIDAK disentuh
+ *  - produk dikunci (syncLocked) dilewati
+ *  - bila >30% produk tiba-tiba "hilang" (anomali API) → batal, tak ada yang diarsipkan
+ */
+export async function syncArchivedFromGinee(): Promise<{ archived: number; restored: number; checked: number; note?: string }> {
+  const products = await db.product.findMany({
+    where: { gineeProductId: { not: null }, syncLocked: false },
+    select: { id: true, gineeProductId: true, archived: true },
+  });
+  const missing: string[] = [];
+  const present: string[] = [];
+  let failed = 0;
+  let i = 0;
+  async function worker() {
+    while (i < products.length) {
+      const p = products[i++];
+      try {
+        const r = await gineeRequest<{ productId?: string }>("GET", "/openapi/product/master/v1/get", { productId: p.gineeProductId });
+        if (String(r.code) === "DATA_NOT_EXISTED") missing.push(p.id);
+        else if (r.data?.productId) present.push(p.id);
+        else failed++;
+      } catch {
+        failed++;
+      }
+    }
+  }
+  await Promise.all(Array.from({ length: 4 }, worker));
+
+  const checked = products.length - failed;
+  if (checked > 10 && missing.length / checked > 0.3) {
+    return { archived: 0, restored: 0, checked, note: `${missing.length}/${checked} produk tak ditemukan di Ginee — terlalu banyak (anomali?), pengarsipan dibatalkan.` };
+  }
+  const toArchive = products.filter((p) => missing.includes(p.id) && !p.archived).map((p) => p.id);
+  const toRestore = products.filter((p) => present.includes(p.id) && p.archived).map((p) => p.id);
+  if (toArchive.length) await db.product.updateMany({ where: { id: { in: toArchive } }, data: { archived: true } });
+  if (toRestore.length) await db.product.updateMany({ where: { id: { in: toRestore } }, data: { archived: false } });
+  return {
+    archived: toArchive.length,
+    restored: toRestore.length,
+    checked,
+    note: failed ? `${failed} produk gagal dicek di Ginee (tidak diubah).` : undefined,
+  };
 }

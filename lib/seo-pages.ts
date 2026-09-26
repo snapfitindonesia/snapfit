@@ -83,7 +83,7 @@ export async function listLandingPages(): Promise<{ categories: string[]; mereks
   const up = { select: { slug: true, parent: { select: { slug: true, parent: { select: { slug: true } } } } } };
   const [products, mereks] = await Promise.all([
     db.product.findMany({
-      where: { variants: { some: { stock: { gt: 0 } } } },
+      where: { archived: false, variants: { some: { stock: { gt: 0 } } } },
       select: { brand: true, category: up, extraCategories: up },
     }),
     db.merek.findMany({ select: { name: true } }),

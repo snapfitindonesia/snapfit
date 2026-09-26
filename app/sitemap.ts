@@ -20,6 +20,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let productPages: MetadataRoute.Sitemap = [];
   try {
     const products = await db.product.findMany({
+      where: { archived: false },
       select: { slug: true, createdAt: true },
       orderBy: { createdAt: "desc" },
       take: 5000,

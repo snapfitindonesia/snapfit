@@ -99,6 +99,7 @@ export async function GET() {
 
 function fetchProducts() {
   return db.product.findMany({
+    where: { archived: false },
     orderBy: { createdAt: "desc" },
     select: {
       id: true, slug: true, name: true, description: true, brand: true, coverImage: true, images: true,

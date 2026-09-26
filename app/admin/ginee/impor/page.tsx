@@ -5,6 +5,8 @@ import { GineeSyncButton } from "@/components/admin/ginee-sync-button";
 import { isGineeConfigured } from "@/lib/ginee/config";
 
 export const dynamic = "force-dynamic";
+// Impor menyalin foto ke CDN per produk → beri waktu cukup (server action ikut batas halaman ini).
+export const maxDuration = 300;
 export const metadata = { title: "Impor dari Ginee — Admin SNAPFIT" };
 
 export default function GineeImportPage() {

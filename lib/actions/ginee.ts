@@ -12,7 +12,10 @@ import {
   mapGineeFromBriefs,
   type GineeVariationBrief,
 } from "@/lib/ginee/products";
-import { runGineeStockSync, type StockSyncResult } from "@/lib/ginee/sync";
+import { runGineeStockSync, getWarehouseStockBySku, type StockSyncResult } from "@/lib/ginee/sync";
+import { getDefaultWarehouseId } from "@/lib/ginee/orders";
+import { guessMerek } from "@/lib/brand-guess";
+import { mirrorImages } from "@/lib/upload/mirror";
 
 type SearchItem = ReturnType<typeof summarizeGinee> & {
   imported: boolean;
@@ -57,8 +60,13 @@ type ImportInput = { productId: string; name: string; variations: GineeVariation
 type ImportResult = { ok: boolean; created: number; skipped: number; errors: string[] };
 
 /**
- * Impor PENUH & OTOMATIS dari Ginee: harga per-varian (list-price by variationIds),
- * stok & varian (variationBriefs search), foto & deskripsi (product detail).
+ * Impor PENUH & "LANGSUNG SIAP JUAL" dari Ginee:
+ *  - varian (variationBriefs search), foto & deskripsi (product detail)
+ *  - harga = harga jual toko Shopee Snapfit Indonesia (placeholder → tersembunyi)
+ *  - stok  = inventori GUDANG Ginee (bukan stok master yang selalu 0)
+ *  - merek = ditebak dari judul (hanya merek terdaftar)
+ *  - foto  = disalin ke cdn.snapfit.id (WebP), bukan hotlink marketplace
+ * UI memanggil per 3 produk agar tak kena batas waktu.
  */
 export async function importGineeProducts(inputs: ImportInput[]): Promise<ImportResult> {
   try {
@@ -72,6 +80,8 @@ export async function importGineeProducts(inputs: ImportInput[]): Promise<Import
   const errors: string[] = [];
   let created = 0;
   let skipped = 0;
+  const merekNames = (await db.merek.findMany({ select: { name: true } })).map((m) => m.name);
+  const warehouseId = await getDefaultWarehouseId().catch(() => null);
 
   for (const input of inputs) {
     const label = input.name?.slice(0, 40) ?? input.productId;
@@ -117,19 +127,36 @@ export async function importGineeProducts(inputs: ImportInput[]): Promise<Import
         continue;
       }
 
+      // Stok dari gudang Ginee (stok master selalu 0).
+      if (warehouseId) {
+        try {
+          const inv = await getWarehouseStockBySku(mapped.variants.map((v) => v.sku), warehouseId);
+          for (const v of mapped.variants) {
+            const row = inv.get(v.sku);
+            if (row) v.stock = row.stock;
+          }
+        } catch (e) {
+          errors.push(`"${label}": stok gudang gagal dibaca (${e instanceof Error ? e.message : "?"}) — stok 0, akan terisi saat sinkron harian.`);
+        }
+      }
+      // Foto → CDN sendiri (gagal = tetap pakai URL asli).
+      const mirror = await mirrorImages([mapped.coverImage, ...mapped.images, ...mapped.variants.map((v) => v.image)]);
+      const cdn = (u: string) => mirror.get(u) ?? u;
+
       await db.product.create({
         data: {
           slug,
           name: mapped.name,
+          brand: guessMerek(mapped.name, merekNames),
           description: mapped.description || null,
-          coverImage: mapped.coverImage,
-          images: mapped.images,
+          coverImage: cdn(mapped.coverImage),
+          images: mapped.images.map(cdn),
           variantGroups: mapped.variantGroups,
           gineeProductId: mapped.gineeProductId,
           variants: {
             create: mapped.variants.map((v) => ({
               name: v.name, color: v.color, type: v.type,
-              sku: v.sku, price: v.price, stock: v.stock, weight: v.weight, image: v.image,
+              sku: v.sku, price: v.price, stock: v.stock, weight: v.weight, image: cdn(v.image),
             })),
           },
         },

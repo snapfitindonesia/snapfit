@@ -5,6 +5,7 @@ import { formatRupiah } from "@/lib/format";
 import { getOrderSummary } from "@/lib/actions/order";
 import { isManualPayment, MANUAL_BANK } from "@/lib/payment";
 import { PurchaseTracker } from "@/components/tracking/purchase-tracker";
+import { GoogleCustomerReviews } from "@/components/tracking/google-customer-reviews";
 
 export const metadata = {
   title: "Pesanan Berhasil",
@@ -48,6 +49,10 @@ export default async function CheckoutSuccessPage({
           email={addr.email}
           phone={addr.phone}
         />
+      )}
+      {/* Google Customer Reviews: tawarkan survei hanya untuk pesanan yang sudah dibayar */}
+      {["PAID", "PROCESSING", "SHIPPED", "DONE"].includes(order.status) && (
+        <GoogleCustomerReviews orderId={order.midtransOrderId ?? order.id} email={addr.email} />
       )}
 
       <div className="flex flex-col items-center text-center">

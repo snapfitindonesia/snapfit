@@ -24,6 +24,7 @@ export type AdminProduct = {
   coverImage: string | null;
   category: string | null;
   isGrosir: boolean;
+  archived?: boolean; // disembunyikan dari toko (dihapus di Ginee)
   sold: number;
   variants: AdminVariant[];
 };
@@ -267,6 +268,9 @@ export function ProductTable({ products }: { products: AdminProduct[] }) {
                           <p className="mt-0.5 text-xs text-muted-foreground">ID Produk: {p.id.slice(0, 10)}</p>
                           <p className="text-xs text-muted-foreground">Kode: {p.slug}</p>
                           <div className="mt-1 flex flex-wrap gap-1">
+                            {p.archived && (
+                              <span title="Produk ini sudah dihapus di Ginee — disembunyikan dari toko, feed & sitemap. Otomatis tampil lagi bila produknya ada lagi di Ginee." className="rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] font-medium text-destructive">Diarsipkan · dihapus di Ginee</span>
+                            )}
                             {p.category && (
                               <span className="rounded border border-border px-1.5 py-0.5 text-[10px] text-muted-foreground">{p.category}</span>
                             )}

@@ -61,7 +61,7 @@ export async function getCategories() {
 /** Daftar brand (untuk facet filter) + apakah ada produk tanpa brand. */
 export async function getBrandFacets(): Promise<{ brands: string[]; hasNoBrand: boolean }> {
   try {
-    const rows = await db.product.findMany({ select: { brand: true } });
+    const rows = await db.product.findMany({ where: { archived: false }, select: { brand: true } });
     const set = new Set<string>();
     let hasNoBrand = false;
     for (const r of rows) {
@@ -117,6 +117,7 @@ export async function getDeviceTree(): Promise<DeviceBrand[]> {
     // Hitung produk per kategori: tiap produk menyumbang ke kategori utama +
     // tambahan DAN semua leluhurnya (dedup per produk).
     const products = await db.product.findMany({
+      where: { archived: false },
       select: { categoryId: true, extraCategories: { select: { id: true } } },
     });
     const count = new Map<string, number>();
@@ -267,7 +268,7 @@ export async function getMerekMenu(perMerek = 8): Promise<MerekMenuItem[]> {
     if (!merek.length) return [];
     const names = merek.map((m) => m.name);
     const products = await db.product.findMany({
-      where: { brand: { in: names }, variants: { some: { stock: { gt: 0 } } } },
+      where: { archived: false, brand: { in: names }, variants: { some: { stock: { gt: 0 } } } },
       orderBy: { createdAt: "desc" },
       select: { id: true, slug: true, name: true, coverImage: true, brand: true },
       take: 600,
@@ -320,6 +321,7 @@ export async function getProducts(query: ProductQuery): Promise<ProductListResul
 
   const products = await db.product.findMany({
     where: {
+      archived: false, // produk diarsipkan (mis. dihapus di Ginee) tak tampil
       // Facet perangkat + brand digabung dengan AND (antar-facet = irisan;
       // dalam facet = OR, sudah dibungkus di deviceWhere/brandWhere).
       ...((deviceWhere || brandWhere)
@@ -440,7 +442,7 @@ export async function getProductBySlug(slug: string) {
       },
     },
   });
-  if (!product) return null;
+  if (!product || product.archived) return null; // diarsipkan → 404
 
   // Diskon PER-VARIAN → tiap varian bawa discountPercent-nya sendiri.
   const variants = product.variants.map((v) => ({

@@ -80,9 +80,22 @@ export function GineeImport() {
     setImporting(true);
     setMsg(null);
     setErrList([]);
-    const res = await importGineeProducts(inputs);
+    // Per 3 produk: tiap produk menyalin foto ke CDN → dipecah agar tak kena batas waktu server.
+    const res = { created: 0, skipped: 0, errors: [] as string[] };
+    for (let i = 0; i < inputs.length; i += 3) {
+      setMsg(`Mengimpor ${Math.min(i + 3, inputs.length)}/${inputs.length} produk… (stok gudang, harga Shopee, merek & foto CDN)`);
+      try {
+        const r = await importGineeProducts(inputs.slice(i, i + 3));
+        res.created += r.created;
+        res.skipped += r.skipped;
+        res.errors.push(...r.errors);
+      } catch (e) {
+        res.skipped += inputs.slice(i, i + 3).length;
+        res.errors.push(`Batch ${i / 3 + 1}: ${e instanceof Error ? e.message : "gagal"}`);
+      }
+    }
     setImporting(false);
-    setMsg(`Impor selesai: ${res.created} dibuat, ${res.skipped} dilewati. Harga, stok, varian, foto & deskripsi otomatis dari Ginee.`);
+    setMsg(`Impor selesai: ${res.created} dibuat, ${res.skipped} dilewati. Stok dari gudang Ginee, harga Shopee Snapfit, merek & foto CDN sudah otomatis.`);
     setErrList(res.errors.slice(0, 10));
     if (res.created > 0) {
       setChecked({});

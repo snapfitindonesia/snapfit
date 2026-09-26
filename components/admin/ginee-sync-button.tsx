@@ -20,7 +20,7 @@ export function GineeSyncButton() {
       setMsg(res.errors[0] ?? "Gagal sinkron.");
       return;
     }
-    setMsg(`Sinkron selesai dari ${res.productsChecked} produk: stok ${res.stockUpdated} varian, harga ${res.priceUpdated} varian diperbarui.`);
+    setMsg(`Sinkron selesai dari ${res.productsChecked} produk: stok ${res.stockUpdated} varian, harga ${res.priceUpdated} varian diperbarui${res.archived ? `, ${res.archived} produk diarsipkan (dihapus di Ginee)` : ""}${res.restored ? `, ${res.restored} dipulihkan` : ""}.`);
     router.refresh();
   }
 

@@ -38,6 +38,7 @@ export default async function AdminProductsPage() {
     coverImage: p.coverImage,
     category: p.category?.name ?? null,
     isGrosir: p.isGrosir,
+    archived: p.archived,
     sold: soldByName.get(p.name) ?? 0,
     variants: p.variants,
   }));
