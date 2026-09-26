@@ -1,6 +1,6 @@
 import { formatRupiah } from "@/lib/format";
 
-const FROM = process.env.EMAIL_FROM || "SNAPFIT <no-reply@snapfit.id>";
+const FROM = process.env.EMAIL_FROM || "SNAPFIT Indonesia <no-reply@snapfit.id>";
 // Balasan pembeli diarahkan ke inbox yang dibaca (bukan no-reply).
 const REPLY_TO = process.env.EMAIL_REPLY_TO || "admin@snapfit.id";
 const SITE = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.snapfit.id").replace(/\/$/, "");
