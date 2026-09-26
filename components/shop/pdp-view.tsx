@@ -451,12 +451,6 @@ export function PdpView({ product, vouchers = [] }: { product: PdpProduct; vouch
           </div>
         )}
 
-        {product.description && (
-          <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
-            {product.description}
-          </p>
-        )}
-
         {/* ===== Selector varian (label kiri · pil kanan, ala referensi) ===== */}
         <div className="mt-6 space-y-4">
           {/* Level 1: WARNA — pil dengan foto kecil + teks */}
@@ -574,6 +568,14 @@ export function PdpView({ product, vouchers = [] }: { product: PdpProduct; vouch
         <p className="mt-3 text-center text-xs text-muted-foreground">
           Garansi Resmi · 100% Original · 7 Hari Pengembalian
         </p>
+
+        {/* Deskripsi di BAWAH varian & tombol beli — deskripsi panjang tak lagi
+            mendorong pilihan warna/tipe ke bawah layar. */}
+        {product.description && (
+          <p className="mt-6 whitespace-pre-line border-t border-border pt-5 text-sm leading-relaxed text-muted-foreground">
+            {product.description}
+          </p>
+        )}
 
         {/* Accordion Overview / More Info (di dalam kartu, ala Nomad) */}
         <div className="mt-6 divide-y divide-border border-t border-border">
