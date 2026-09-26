@@ -5,8 +5,9 @@ const extraHosts = (process.env.NEXT_PUBLIC_IMAGE_HOSTS ?? "")
   .filter(Boolean);
 
 const nextConfig = {
-  // CSS (±14KB) disisipkan ke HTML → tak ada request CSS yang menahan tampilan pertama.
-  experimental: { inlineCss: true },
+  // `radix-ui` adalah barrel: tanpa ini `import { Slot }` (tombol) ikut menarik
+  // Dialog/DropdownMenu/Popover (±70KB gzip) ke setiap halaman toko.
+  experimental: { optimizePackageImports: ["radix-ui"] },
   images: {
     // Foto marketplace dilayani langsung dari CDN-nya via components/ui/image.tsx
     // (JANGAN loader custom global — mematikan /_next/image di Vercel).

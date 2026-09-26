@@ -245,6 +245,8 @@ export function ProductListing({
             </div>
           )}
 
+          {/* Judul kartu = h3 → perlu h2 agar urutan heading runtut (aksesibilitas). */}
+          <h2 className="sr-only">Daftar produk</h2>
           {items.length > 0 ? (
             <div className="mt-4 grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3">
               {items.map((p, i) => <ProductCard key={p.id} product={p} priority={i < 4} />)}

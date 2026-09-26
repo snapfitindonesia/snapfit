@@ -149,7 +149,7 @@ export async function runGineeStockSync(limit = 5000): Promise<StockSyncResult> 
  *  - produk dikunci (syncLocked) dilewati
  *  - bila >30% produk tiba-tiba "hilang" (anomali API) → batal, tak ada yang diarsipkan
  */
-export async function syncArchivedFromGinee(): Promise<{ archived: number; restored: number; checked: number; note?: string }> {
+async function syncArchivedFromGinee(): Promise<{ archived: number; restored: number; checked: number; note?: string }> {
   const products = await db.product.findMany({
     where: { gineeProductId: { not: null }, syncLocked: false },
     select: { id: true, gineeProductId: true, archived: true },

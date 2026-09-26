@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 function GoogleIcon() {
   return (
@@ -29,9 +28,12 @@ export function OAuthButtons({ next = "/" }: { next?: string }) {
 
   async function google() {
     setError(null);
-    const supabase = createSupabaseBrowserClient();
-    if (!supabase) { setError("Auth belum dikonfigurasi."); return; }
     setLoading("google");
+    // supabase-js (±55KB gzip) baru diunduh saat tombol diklik — modal login ada di
+    // setiap halaman toko, jadi jangan dimuat di awal.
+    const { createSupabaseBrowserClient } = await import("@/lib/supabase/client");
+    const supabase = createSupabaseBrowserClient();
+    if (!supabase) { setError("Auth belum dikonfigurasi."); setLoading(null); return; }
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}` },

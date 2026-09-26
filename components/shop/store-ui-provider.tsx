@@ -1,8 +1,15 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { Check } from "lucide-react";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+
+// Status login cukup dibaca dari cookie sesi Supabase (`sb-<ref>-auth-token`,
+// bisa terpecah `.0`, `.1`) — TANPA memuat supabase-js (±55KB gzip) di tiap halaman.
+// Token kedaluwarsa disegarkan middleware pada navigasi berikutnya.
+function hasSessionCookie(): boolean {
+  return /(?:^|;\s*)sb-[^=;]+-auth-token(?:\.0)?=/.test(document.cookie);
+}
 
 type StoreUI = {
   authed: boolean;
@@ -31,34 +38,19 @@ export function StoreUIProvider({ children }: { children: React.ReactNode }) {
     toastTimer.current = setTimeout(() => setToast(null), 3200);
   }, []);
 
-  // Cek ulang sesi dari cookie (tanpa network) — dipanggil setelah login modal
-  // dan saat tab kembali fokus, karena login via server-action tak memicu
-  // onAuthStateChange di browser client.
-  const refreshAuth = useCallback(() => {
-    const supabase = createSupabaseBrowserClient();
-    if (!supabase) return;
-    supabase.auth.getSession().then(({ data }) => setAuthed(Boolean(data.session)));
-  }, []);
+  // Cek ulang sesi dari cookie — saat mount & pindah halaman (mis. setelah logout
+  // → /masuk), setelah login modal (server-action), dan saat tab kembali fokus.
+  const pathname = usePathname();
+  const refreshAuth = useCallback(() => setAuthed(hasSessionCookie()), []);
 
-  // Deteksi sesi di client, ikuti perubahan login/logout, dan re-cek saat fokus.
+  useEffect(() => refreshAuth(), [pathname, refreshAuth]);
+
   useEffect(() => {
-    const supabase = createSupabaseBrowserClient();
-    if (!supabase) return;
-    let active = true;
-    supabase.auth.getSession().then(({ data }) => {
-      if (active) setAuthed(Boolean(data.session));
-    });
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      setAuthed(Boolean(session));
-    });
-    const onFocus = () => refreshAuth();
-    window.addEventListener("focus", onFocus);
-    document.addEventListener("visibilitychange", onFocus);
+    window.addEventListener("focus", refreshAuth);
+    document.addEventListener("visibilitychange", refreshAuth);
     return () => {
-      active = false;
-      sub.subscription.unsubscribe();
-      window.removeEventListener("focus", onFocus);
-      document.removeEventListener("visibilitychange", onFocus);
+      window.removeEventListener("focus", refreshAuth);
+      document.removeEventListener("visibilitychange", refreshAuth);
     };
   }, [refreshAuth]);
 

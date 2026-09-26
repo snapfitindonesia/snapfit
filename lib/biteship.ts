@@ -14,7 +14,7 @@ export type ShippingRate = {
   etd: string; // estimasi
 };
 
-export function isBiteshipMock(): boolean {
+function isBiteshipMock(): boolean {
   return !process.env.BITESHIP_API_KEY;
 }
 

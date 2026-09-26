@@ -5,7 +5,7 @@ const FROM = process.env.EMAIL_FROM || "SNAPFIT Indonesia <no-reply@snapfit.id>"
 const REPLY_TO = process.env.EMAIL_REPLY_TO || "admin@snapfit.id";
 const SITE = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.snapfit.id").replace(/\/$/, "");
 
-export function isEmailConfigured(): boolean {
+function isEmailConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY);
 }
 

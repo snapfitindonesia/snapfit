@@ -3,6 +3,7 @@
 import Script from "next/script";
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
+import { useDeferredLoad } from "./use-deferred-load";
 
 declare global {
   interface Window {
@@ -20,6 +21,7 @@ const GA_ID = process.env.NEXT_PUBLIC_GA_ID || "G-H34K2TJPJP";
 export function GoogleAnalytics() {
   const pathname = usePathname();
   const first = useRef(true);
+  const load = useDeferredLoad();
 
   useEffect(() => {
     if (!GA_ID) return;
@@ -31,9 +33,9 @@ export function GoogleAnalytics() {
 
   return (
     <>
-      {/* gtag.js (±170KB) dimuat setelah halaman tampil; perintah di dataLayer
-          (config + event) sudah diantrekan lebih dulu oleh ga-init → tak hilang. */}
-      <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} strategy="lazyOnload" />
+      {/* gtag.js (±170KB) dimuat saat interaksi pertama / 5 dtk (useDeferredLoad);
+          perintah di dataLayer (config + event) sudah diantrekan oleh ga-init → tak hilang. */}
+      {load && <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} strategy="afterInteractive" />}
       <Script id="ga-init" strategy="afterInteractive">
         {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA_ID}');`}
       </Script>

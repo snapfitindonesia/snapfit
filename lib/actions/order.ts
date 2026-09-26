@@ -324,17 +324,6 @@ export async function handlePaidOrder(
   return { alreadyProcessed: false, orderId: updated.id, status: updated.status };
 }
 
-/**
- * DEV: simulasikan pembayaran sukses tanpa Midtrans/webhook (webhook tak bisa
- * menjangkau localhost). HANYA aktif saat mode mock (belum ada MIDTRANS_SERVER_KEY).
- */
-export async function simulatePaymentSuccess(midtransOrderId: string) {
-  if (!isMidtransMock()) {
-    throw new Error("Simulasi hanya untuk mode mock (tanpa key Midtrans).");
-  }
-  return handlePaidOrder(midtransOrderId, "settlement-mock");
-}
-
 export async function getOrderSummary(midtransOrderId: string) {
   const order = await db.order.findUnique({
     where: { midtransOrderId },

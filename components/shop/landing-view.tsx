@@ -97,6 +97,7 @@ export function LandingView({
         </Link>
       </div>
 
+      <h2 className="sr-only">Daftar produk</h2>
       {items.length > 0 ? (
         <div className="grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-3 lg:grid-cols-4">
           {items.map((p, i) => (

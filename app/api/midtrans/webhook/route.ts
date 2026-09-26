@@ -9,7 +9,7 @@ import { db } from "@/lib/db";
 
 // Webhook Midtrans — SUMBER KEBENARAN status bayar (bukan callback browser).
 // Verifikasi signature dulu, baru update order (lihat docs/04).
-// Catatan: tak bisa dites dari localhost; pakai simulatePaymentSuccess saat dev.
+// Catatan: tak bisa dites dari localhost (Midtrans tak bisa menjangkaunya).
 export async function POST(request: Request) {
   let payload: MidtransNotification;
   try {

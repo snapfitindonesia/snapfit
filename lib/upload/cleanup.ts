@@ -18,7 +18,7 @@ function filenameFromUrl(url: string): string | null {
 }
 
 /** True bila URL adalah file di storage KITA (R2 / CDN / Supabase bucket), bukan URL eksternal. */
-export function isOurImage(url: string): boolean {
+function isOurImage(url: string): boolean {
   if (!url) return false;
   const r2 = process.env.R2_PUBLIC_URL;
   const cdn = process.env.CDN_BASE_URL;

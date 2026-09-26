@@ -3,7 +3,7 @@ import { z } from "zod";
 const url = z.string().trim().url("URL gambar tidak valid");
 const rupiah = z.coerce.number().int().min(0);
 
-export const variantSchema = z.object({
+const variantSchema = z.object({
   id: z.string().optional(), // ada = update, kosong = baru
   name: z.string().trim().min(1, "Nama varian wajib"),
   color: z.string().trim().optional().default(""), // dimensi 1 (warna)

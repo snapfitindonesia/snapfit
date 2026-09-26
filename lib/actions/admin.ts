@@ -1,5 +1,6 @@
 "use server";
 
+import { productSlug, skuify } from "@/lib/slug";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/require-admin";
@@ -342,10 +343,7 @@ export type BulkRow = {
 };
 type BulkResult = { ok: boolean; created: number; skipped: number; errors: string[] };
 
-const slugify = (s: string) =>
-  s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80);
-const skuify = (parts: (string | undefined)[]) =>
-  parts.filter(Boolean).join("-").toUpperCase().replace(/[^A-Z0-9-]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").slice(0, 60);
+const skuFromParts = (parts: (string | undefined)[]) => skuify(parts.filter(Boolean).join("-"));
 
 export async function bulkImportProducts(rows: BulkRow[]): Promise<BulkResult> {
   const errors: string[] = [];
@@ -364,7 +362,7 @@ export async function bulkImportProducts(rows: BulkRow[]): Promise<BulkResult> {
   // Kelompokkan baris per slug (produk).
   const groups = new Map<string, BulkRow[]>();
   for (const r of rows) {
-    const slug = slugify(r.slug || r.name || "");
+    const slug = productSlug(r.slug || r.name || "");
     if (!slug) { errors.push("Baris tanpa slug/nama dilewati."); continue; }
     (groups.get(slug) ?? groups.set(slug, []).get(slug)!).push(r);
   }
@@ -399,7 +397,7 @@ export async function bulkImportProducts(rows: BulkRow[]): Promise<BulkResult> {
           return {
             name: [has2 ? color : type, has2 ? type : ""].filter(Boolean).join(" / ") || type || "Default",
             color, type,
-            sku: (r.sku ?? "").trim() || skuify([slug, has2 ? color : "", type]),
+            sku: (r.sku ?? "").trim() || skuFromParts([slug, has2 ? color : "", type]),
             price: Math.max(0, Math.round(Number(r.harga) || 0)),
             stock: Math.max(0, Math.round(Number(r.stok) || 0)),
             weight,
@@ -622,7 +620,7 @@ export async function saveCategory(input: CategoryInput, id?: string): Promise<R
   try {
     await requireAdmin();
     const data = categorySchema.parse(input);
-    const slug = slugify(data.slug || data.name);
+    const slug = productSlug(data.slug || data.name);
     if (!slug) return { ok: false, error: "Nama/slug tidak valid." };
 
     // Slug harus unik (kecuali dirinya sendiri saat edit).
