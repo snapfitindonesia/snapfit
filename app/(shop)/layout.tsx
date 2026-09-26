@@ -20,10 +20,11 @@ export default async function ShopLayout({
   return (
     <CartProvider>
       <StoreUIProvider>
-        <div className="flex min-h-dvh flex-col">
+        {/* pb mobile: ruang untuk sticky bottom bar + safe-area di PALING BAWAH
+            (setelah footer) — kalau di <main>, baris terakhir footer tertutup bar. */}
+        <div className="flex min-h-dvh flex-col pb-[calc(4rem+var(--mobile-extra-bar,0px)+env(safe-area-inset-bottom))] md:pb-0">
           <SiteHeader />
-          {/* pb mobile: ruang untuk sticky bottom bar + safe-area (lihat 02-design-system.md) */}
-          <main className="flex-1 pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
+          <main className="flex-1">
             {children}
           </main>
           <SiteFooter />

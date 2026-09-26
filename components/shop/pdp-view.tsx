@@ -81,6 +81,15 @@ export function PdpView({ product, vouchers = [] }: { product: PdpProduct; vouch
   // Foto galeri selain yang pertama baru dimuat setelah halaman selesai load —
   // tak berebut jaringan dengan foto utama (LCP), tetap siap sebelum digeser.
   const [galleryWarm, setGalleryWarm] = useState(false);
+  // Sticky bar "Beli Langsung" (mobile) menambah tinggi penutup bawah → beri tahu
+  // layout agar ruang bawah halaman ikut bertambah (footer tak tertutup).
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty("--mobile-extra-bar", "4.5rem");
+    return () => {
+      root.style.removeProperty("--mobile-extra-bar");
+    };
+  }, []);
   useEffect(() => {
     let t: ReturnType<typeof setTimeout>;
     const warm = () => { t = setTimeout(() => setGalleryWarm(true), 1000); };
