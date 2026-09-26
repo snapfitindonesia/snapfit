@@ -6,7 +6,7 @@
 // HARGA: harga JUAL toko Shopee "Snapfit Indonesia" (channelPriceVOList di list-price),
 // BUKAN harga master Ginee (placeholder Rp999.999 / seragam 87rb). Varian tanpa harga
 // toko acuan → harga web dibiarkan. Mode (env GINEE_SYNC_PRICE):
-//   "placeholder" (default) — hanya perbaiki harga web yang placeholder (≥900rb / 99.999)
+//   "placeholder" (default) — hanya perbaiki harga web yang placeholder (99.999 / 999.999)
 //   "all"                   — samakan SEMUA harga web dengan harga jual Shopee
 //   "false"                 — jangan ubah harga
 //
