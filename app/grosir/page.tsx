@@ -89,7 +89,7 @@ function BuyButtons({ className }: { className?: string }) {
       <a href={OFFER.shopeeUrl} target="_blank" rel="noopener noreferrer" className={cn(base, "bg-[#d63b1c] px-8 text-base text-white")}>
         <ShoppingBag className="size-5" /> Beli di Shopee
       </a>
-      <a href={waLink} target="_blank" rel="noopener noreferrer" className={cn(base, "bg-[#25d366] px-8 text-base text-white")}>
+      <a href={waLink} target="_blank" rel="noopener noreferrer" className={cn(base, "bg-[#1a7f4b] px-8 text-base text-white")}>
         <MessageCircle className="size-5" /> Chat WhatsApp
       </a>
     </div>
@@ -251,7 +251,7 @@ export default async function GrosirLandingPage() {
               </ul>
             </div>
             <div className="bg-foreground p-5 text-background sm:p-6">
-              <p className="text-sm font-semibold text-brand-ink">Case Original SNAPFIT</p>
+              <p className="text-sm font-semibold text-brand">Case Original SNAPFIT</p>
               <ul className="mt-4 space-y-3 text-sm">
                 {["100% original bergaransi", "Material premium tahan lama", "Garansi / uang kembali", "Proteksi teruji anti-jatuh"].map((x) => (
                   <li key={x} className="flex items-start gap-2">
@@ -349,7 +349,7 @@ export default async function GrosirLandingPage() {
                     </div>
                   </div>
                 </div>
-                <span className="mt-3 inline-flex w-fit rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+                <span className="mt-3 inline-flex w-fit rounded-full bg-muted px-2 py-0.5 text-[11px] text-foreground/70">
                   {t.variasi}
                 </span>
                 <p className="mt-3 line-clamp-4 min-h-[5rem] text-sm leading-relaxed text-muted-foreground">
@@ -420,7 +420,7 @@ export default async function GrosirLandingPage() {
           <a href={OFFER.shopeeUrl} target="_blank" rel="noopener noreferrer" className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#d63b1c] px-3 py-3 text-sm font-semibold text-white">
             <ShoppingBag className="size-4" /> Beli di Shopee
           </a>
-          <a href={waLink} target="_blank" rel="noopener noreferrer" className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#25d366] px-3 py-3 text-sm font-semibold text-white">
+          <a href={waLink} target="_blank" rel="noopener noreferrer" className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#1a7f4b] px-3 py-3 text-sm font-semibold text-white">
             <MessageCircle className="size-4" /> WhatsApp
           </a>
         </div>

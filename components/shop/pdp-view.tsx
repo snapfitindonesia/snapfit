@@ -609,7 +609,7 @@ export function PdpView({ product, vouchers = [] }: { product: PdpProduct; vouch
           className={cn(
             "mt-4 flex w-full items-center justify-center gap-2 rounded-md border px-4 py-2.5 text-sm font-medium transition-colors",
             outOfStock
-              ? "border-[#25D366] bg-[#25D366] text-white hover:bg-[#1fb957]"
+              ? "border-[#1a7f4b] bg-[#1a7f4b] text-white hover:bg-[#166b3f]"
               : "border-border text-foreground hover:border-[#25D366] hover:text-[#128C7E]",
           )}
         >
