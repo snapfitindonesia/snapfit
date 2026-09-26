@@ -187,6 +187,7 @@ model BioLink {
   url       String
   image     String? // thumbnail kecil di kiri tombol (opsional)
   highlight Boolean @default(false) // tombol ditonjolkan (hitam)
+  newTab    Boolean @default(false) // buka di tab baru
   order     Int     @default(0)
   active    Boolean @default(true)
   clicks    Int     @default(0)

@@ -133,12 +133,11 @@ export default async function LinksPage() {
                 </div>
               );
             }
-            const external = !l.url.startsWith("/");
             return (
               <a
                 key={l.id}
                 href={`/links/go/${l.id}`}
-                {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                {...(l.newTab ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                 className={`relative flex min-h-14 items-center justify-center rounded-xl py-3 text-sm ${l.image ? "px-14" : "px-5"} font-semibold shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
                   l.highlight
                     ? "bg-foreground text-background"

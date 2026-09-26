@@ -16,6 +16,7 @@ export default async function AdminLinktreePage() {
     url: l.url,
     image: l.image,
     highlight: l.highlight,
+    newTab: l.newTab,
     active: l.active,
     clicks: l.clicks,
   }));

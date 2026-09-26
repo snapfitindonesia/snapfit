@@ -22,6 +22,7 @@ export type BioLinkRow = {
   url: string;
   image: string | null;
   highlight: boolean;
+  newTab: boolean;
   active: boolean;
   clicks: number;
 };
@@ -171,7 +172,7 @@ function BackgroundSettings({ p, setP }: { p: BioProfileInput; setP: (p: BioProf
   );
 }
 
-const emptyLink: BioLinkInput = { kind: "LINK", title: "", url: "", image: "", highlight: false, active: true };
+const emptyLink: BioLinkInput = { kind: "LINK", title: "", url: "", image: "", highlight: false, newTab: true, active: true };
 
 export function LinktreeManager({ profile, links }: { profile: BioProfileInput; links: BioLinkRow[] }) {
   const router = useRouter();
@@ -205,7 +206,7 @@ export function LinktreeManager({ profile, links }: { profile: BioProfileInput; 
   function resetLink() { setEditId(null); setL(emptyLink); setLError(null); }
   function editLink(r: BioLinkRow) {
     setEditId(r.id);
-    setL({ kind: r.kind === "DIVIDER" ? "DIVIDER" : "LINK", title: r.title, url: r.url, image: r.image ?? "", highlight: r.highlight, active: r.active });
+    setL({ kind: r.kind === "DIVIDER" ? "DIVIDER" : "LINK", title: r.title, url: r.url, image: r.image ?? "", highlight: r.highlight, newTab: r.newTab, active: r.active });
     setLError(null);
   }
 
@@ -321,6 +322,10 @@ export function LinktreeManager({ profile, links }: { profile: BioProfileInput; 
                 <input type="checkbox" checked={l.highlight} onChange={(e) => setL({ ...l, highlight: e.target.checked })} />
                 Tonjolkan (tombol hitam)
               </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={l.newTab} onChange={(e) => setL({ ...l, newTab: e.target.checked })} />
+                Buka di tab baru
+              </label>
             </>
           )}
           <label className="flex items-center gap-2 text-sm">
@@ -368,7 +373,7 @@ export function LinktreeManager({ profile, links }: { profile: BioProfileInput; 
                     {r.title}
                     {r.highlight && <span className="ml-2 rounded bg-foreground px-1.5 py-0.5 text-[10px] font-semibold text-background no-underline">UTAMA</span>}
                   </p>
-                  <p className="truncate text-xs text-muted-foreground">{r.url} · {r.clicks} klik</p>
+                  <p className="truncate text-xs text-muted-foreground">{r.url} · {r.clicks} klik{r.newTab ? " · tab baru ↗" : ""}</p>
                 </div>
               )}
               <label className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground" title="Tampilkan">

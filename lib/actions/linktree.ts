@@ -48,6 +48,7 @@ const linkSchema = z
     url: z.string().trim().default(""),
     image: opt,
     highlight: z.boolean().default(false),
+    newTab: z.boolean().default(false),
     active: z.boolean().default(true),
   })
   .superRefine((d, ctx) => {
@@ -104,6 +105,7 @@ export async function saveBioLink(input: BioLinkInput, id?: string): Promise<Res
       url: divider ? "" : d.url,
       image: divider ? null : blank(d.image),
       highlight: divider ? false : d.highlight,
+      newTab: divider ? false : d.newTab,
       active: d.active,
     };
     if (id) {
