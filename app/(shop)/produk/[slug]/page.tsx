@@ -30,9 +30,11 @@ export async function generateMetadata({
     .replace(/[•▪●◆★✓✔\-–]\s*/g, "")
     .replace(/\s+/g, " ")
     .trim();
-  const intro = `Beli ${product.name} original di SNAPFIT Indonesia. Garansi resmi, gratis ongkir min. Rp150rb.`;
-  const raw = clean ? `${intro} ${clean}` : intro;
-  const description = raw.length > 158 ? `${raw.slice(0, 155).replace(/\s+\S*$/, "")}…` : raw;
+  const suffix = " Original & garansi resmi di SNAPFIT Indonesia.";
+  const body = clean.length > 158 - suffix.length ? `${clean.slice(0, 155 - suffix.length).replace(/\s+\S*$/, "")}…` : clean;
+  const description = body
+    ? `${body}${suffix}`
+    : `Beli ${product.name} original di SNAPFIT Indonesia. Garansi resmi, gratis ongkir min. Rp150rb.`;
   const image = product.coverImage;
   return {
     title: product.name, // + template "| SNAPFIT Indonesia" dari layout
