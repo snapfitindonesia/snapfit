@@ -81,21 +81,37 @@ export const getMerekLanding = cache(async (slug: string): Promise<MerekLanding 
   return { name: m.name, slug, items: list.items, total: list.total };
 });
 
-/** Semua halaman landing yang punya produk — untuk sitemap. */
+/**
+ * Semua halaman landing yang punya produk tersedia — untuk sitemap.
+ * SATU query (bukan per kategori/merek): puluhan query paralel melebihi batas
+ * koneksi DB serverless saat build → sitemap kosong.
+ */
 export async function listLandingPages(): Promise<{ categories: string[]; mereks: string[] }> {
-  const [cats, mereks] = await Promise.all([
-    db.category.findMany({ select: { slug: true } }),
+  const up = { select: { slug: true, parent: { select: { slug: true, parent: { select: { slug: true } } } } } };
+  const [products, mereks] = await Promise.all([
+    db.product.findMany({
+      where: { variants: { some: { stock: { gt: 0 } } } },
+      select: { brand: true, category: up, extraCategories: up },
+    }),
     db.merek.findMany({ select: { name: true } }),
   ]);
-  const catCounts = await Promise.all(cats.map(async (c) => [c.slug, await countFor(c.slug)] as const));
-  const merekCounts = await Promise.all(
-    mereks
-      .filter((m) => !HIDDEN_MEREK.has(slugify(m.name)))
-      .map(async (m) => [slugify(m.name), (await getProducts({ brands: [m.name], sort: "terbaru", skip: 0, take: 1 })).total] as const),
-  );
+  type C = { slug: string; parent: { slug: string; parent: { slug: string } | null } | null } | null;
+  const cats = new Set<string>();
+  const add = (c: C) => {
+    if (!c) return;
+    cats.add(c.slug);
+    if (c.parent) cats.add(c.parent.slug);
+    if (c.parent?.parent) cats.add(c.parent.parent.slug);
+  };
+  const brands = new Set<string>();
+  for (const p of products) {
+    add(p.category);
+    p.extraCategories.forEach(add);
+    if (p.brand) brands.add(p.brand);
+  }
   return {
-    categories: catCounts.filter(([, n]) => n > 0).map(([s]) => s),
-    mereks: merekCounts.filter(([, n]) => n > 0).map(([s]) => s),
+    categories: [...cats],
+    mereks: mereks.filter((m) => brands.has(m.name) && !HIDDEN_MEREK.has(slugify(m.name))).map((m) => slugify(m.name)),
   };
 }
 
