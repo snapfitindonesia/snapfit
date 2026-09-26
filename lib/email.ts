@@ -172,6 +172,80 @@ function shell(opts: { preheader: string; greeting: string; intro: string; body:
 </body></html>`;
 }
 
+type Bank = { bank: string; accountNumber: string; accountName: string };
+
+/** Kotak rekening tujuan transfer + jumlah. */
+function bankBox(bank: Bank, total: number): string {
+  return `
+  <tr><td style="padding:20px 0 6px;font-size:14px;font-weight:700;color:${C.ink}">Transfer ke rekening</td></tr>
+  <tr><td style="padding:0 0 10px;font-size:12px;color:${C.muted}">Transfer tepat sejumlah total agar pembayaran mudah kami cocokkan.</td></tr>
+  <tr><td style="background:${C.soft};border-radius:6px;padding:16px 18px">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+      <tr><td style="font-size:12px;color:${C.muted}">${esc(bank.bank)}</td></tr>
+      <tr><td style="font-size:22px;font-weight:700;letter-spacing:1px;color:${C.ink};padding:2px 0">${esc(bank.accountNumber)}</td></tr>
+      <tr><td style="font-size:13px;color:${C.ink};padding-bottom:12px">a/n ${esc(bank.accountName)}</td></tr>
+      <tr><td style="border-top:1px solid #f5d9c4;padding-top:12px;font-size:13px;color:${C.muted}">Jumlah transfer</td></tr>
+      <tr><td style="font-size:22px;font-weight:700;color:${C.brand}">${formatRupiah(total)}</td></tr>
+    </table>
+  </td></tr>`;
+}
+
+/** Ke pembeli, sesaat setelah checkout (transfer manual): instruksi bayar. */
+export function orderPlacedEmail(order: OrderLike, items: ItemLike[], bank: Bank) {
+  return {
+    subject: `[SNAPFIT] Selesaikan pembayaran pesanan ${order.midtransOrderId}`,
+    html: shell({
+      preheader: `Transfer ${formatRupiah(order.total)} ke ${bank.bank} ${bank.accountNumber} untuk memproses pesananmu.`,
+      greeting: `Halo ${firstName(order)}`,
+      intro: `Terima kasih, pesananmu <strong>sudah kami terima</strong>. Selesaikan pembayaran via transfer di bawah ini — pesanan segera kami proses setelah pembayaran terverifikasi.`,
+      body:
+        bankBox(bank, order.total) +
+        details(order, items, { withTotals: true }) +
+        `<tr><td style="padding:16px 0 0;font-size:13px;line-height:1.6;color:${C.ink}">Sudah transfer? <strong>Balas email ini dengan bukti transfer</strong> (sertakan nomor pesanan) agar lebih cepat kami proses.</td></tr>` +
+        button("Lihat Pesanan", orderUrl(order)),
+    }),
+  };
+}
+
+/** Ke pembeli, pesanan belum dibayar beberapa jam setelah checkout. */
+export function paymentReminderEmail(order: OrderLike, items: ItemLike[], bank: Bank) {
+  return {
+    subject: `Pesananmu menunggu pembayaran ⏳ — ${order.midtransOrderId}`,
+    html: shell({
+      preheader: `Pesananmu masih kami simpan. Transfer ${formatRupiah(order.total)} untuk memprosesnya.`,
+      greeting: `Halo ${firstName(order)}`,
+      intro: `Kami lihat pesananmu <strong>belum dibayar</strong>. Produknya masih kami simpan untukmu — selesaikan transfer agar pesanan bisa segera dikirim. Abaikan email ini jika kamu sudah membayar.`,
+      body:
+        bankBox(bank, order.total) +
+        details(order, items) +
+        `<tr><td style="padding:16px 0 0;font-size:13px;line-height:1.6;color:${C.ink}">Ada kendala atau ingin mengubah pesanan? Cukup balas email ini.</td></tr>` +
+        button("Lihat Pesanan", orderUrl(order)),
+    }),
+  };
+}
+
+/** Ke admin, setiap ada pesanan baru. */
+export function adminNewOrderEmail(order: OrderLike, items: ItemLike[], opts: { manual: boolean; waUrl?: string }) {
+  const a = addr(order);
+  return {
+    subject: `🛒 Pesanan baru ${formatRupiah(order.total)} — ${a.name ?? "Pembeli"} (${order.midtransOrderId})`,
+    html: shell({
+      preheader: `${items.reduce((n, i) => n + i.qty, 0)} item · ${formatRupiah(order.total)} · ${opts.manual ? "menunggu transfer" : "via Midtrans"}`,
+      greeting: "Ada pesanan baru! 🎉",
+      intro: opts.manual
+        ? `Pesanan baru masuk dan <strong>menunggu transfer</strong>. Cek mutasi rekening, lalu tandai <em>Sudah Dibayar</em> di dashboard agar pembeli menerima konfirmasi.`
+        : `Pesanan baru masuk via Midtrans. Status akan otomatis berubah saat pembayaran berhasil.`,
+      body:
+        highlight("Total pesanan", formatRupiah(order.total)) +
+        details(order, items, { withTotals: true }) +
+        (a.phone && opts.waUrl
+          ? `<tr><td style="padding:20px 0 0"><a href="${esc(opts.waUrl)}" style="display:inline-block;background:#25D366;color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;padding:12px 22px;border-radius:6px">Chat pembeli di WhatsApp</a></td></tr>`
+          : "") +
+        button("Buka di Dashboard", `${SITE}/admin/pesanan`),
+    }),
+  };
+}
+
 export function orderConfirmationEmail(order: OrderLike, items: ItemLike[]) {
   return {
     subject: `[SNAPFIT] Pembayaran pesanan ${order.midtransOrderId} berhasil ✓`,

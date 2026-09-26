@@ -14,7 +14,8 @@ import { createShipment } from "@/lib/biteship";
 import { createSnapToken, isMidtransMock } from "@/lib/midtrans";
 import { isManualPayment, isFlatShipping, FLAT_SHIPPING_COST, MANUAL_BANK, qualifiesFreeShipping } from "@/lib/payment";
 import { computeVoucherBenefit, type VoucherLike } from "@/lib/voucher";
-import { sendEmail, orderConfirmationEmail } from "@/lib/email";
+import { sendEmail, orderConfirmationEmail, orderPlacedEmail, adminNewOrderEmail } from "@/lib/email";
+import { waLink } from "@/lib/wa";
 import { pushOrderToGinee } from "@/lib/ginee/orders";
 import { isGineeConfigured } from "@/lib/ginee/config";
 
@@ -112,6 +113,23 @@ async function computeOrder(
   return { items, subtotal, shippingCost, discount, voucherCode: appliedCode, total, rate, totalWeight };
 }
 
+// Email pesanan baru: notifikasi ke admin + (transfer manual) instruksi bayar ke
+// pembeli. Paralel & best-effort — gagal email tak menggagalkan checkout.
+async function notifyNewOrder(
+  order: Parameters<typeof adminNewOrderEmail>[0],
+  items: { name: string; price: number; qty: number }[],
+  manual: boolean,
+) {
+  const a = (order.address ?? {}) as { name?: string; phone?: string; email?: string };
+  const admins = (process.env.ADMIN_NOTIFY_EMAIL || "admin@snapfit.id").split(",").map((s) => s.trim()).filter(Boolean);
+  const waUrl = waLink(a.phone, `Halo ${a.name ?? ""}, terima kasih sudah berbelanja di SNAPFIT 🙏 Pesanan ${order.midtransOrderId} sudah kami terima.`);
+  const jobs: Promise<unknown>[] = admins.map((to) => sendEmail({ to, ...adminNewOrderEmail(order, items, { manual, waUrl }) }));
+  if (manual && a.email) jobs.push(sendEmail({ to: a.email, ...orderPlacedEmail(order, items, MANUAL_BANK) }));
+  for (const r of await Promise.allSettled(jobs)) {
+    if (r.status === "rejected") console.error("Email pesanan baru gagal:", r.reason);
+  }
+}
+
 export async function createOrder(input: CreateOrderInput) {
   const data = createOrderSchema.parse(input);
   const { items, subtotal, shippingCost, discount, total, rate } = await computeOrder(
@@ -146,6 +164,8 @@ export async function createOrder(input: CreateOrderInput) {
       },
     },
   });
+
+  await notifyNewOrder(order, items, isManualPayment());
 
   // Mode TRANSFER MANUAL (Midtrans belum aktif): tak buat Snap token.
   // Order PENDING → pembeli transfer → admin konfirmasi (markOrderPaid).

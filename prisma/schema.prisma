@@ -136,6 +136,9 @@ model Order {
   address    Json // snapshot alamat pengiriman
   shippedAt  DateTime? // diisi saat status → SHIPPED (basis timer ajakan ulas)
 
+  // pengingat bayar (transfer manual) — diisi saat email pengingat terkirim (anti-kirim ulang)
+  paymentReminderAt DateTime?
+
   // after-sales
   reviewRequestedAt DateTime? // diisi saat email ajakan ulas terkirim (anti-kirim ulang)
 
