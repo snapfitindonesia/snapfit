@@ -14,7 +14,9 @@
 import type { ImageLoader } from "next/image";
 
 // cdn.snapfit.id = bucket R2 kita via Cloudflare (sudah WebP 1200px terkompres saat upload).
-const DIRECT = [/^cdn\.snapfit\.id$/, /(^|\.)ibyteimg\.com$/, /(^|\.)tiktokcdn\.com$/, /(^|\.)ginee\.com$/, /^cdn\.shopify\.com$/, /^placehold\.co$/];
+// SEMENTARA lewat Vercel (26 Sep 2026): DNS ISP sebagian pembeli belum kenal cdn.snapfit.id
+// (propagasi nameserver ke Cloudflare). Mulai ±29 Sep tambahkan /^cdn\.snapfit\.id$/ ke DIRECT.
+const DIRECT = [/(^|\.)ibyteimg\.com$/, /(^|\.)tiktokcdn\.com$/, /(^|\.)ginee\.com$/, /^cdn\.shopify\.com$/, /^placehold\.co$/];
 
 // Tanda #w=… beda per lebar agar srcset valid & dev tak memperingatkan
 // "loader does not implement width"; fragmen tak dikirim ke server → cache CDN utuh.
