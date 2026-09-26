@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { applyDiscount } from "@/lib/format";
+import { isPlaceholderPrice } from "@/lib/price-guard";
 
 // Feed produk (Google RSS 2.0 + namespace g:) — dipakai Meta Catalog (Data feed)
 // & Google Merchant Center sekaligus. Per-VARIAN, dikelompokkan item_group_id.
@@ -43,7 +44,7 @@ export async function GET() {
     const desc = (p.description || p.name).slice(0, 4000);
     for (const v of p.variants) {
       const img = v.image || p.coverImage;
-      if (!img) continue;
+      if (!img || isPlaceholderPrice(v.price)) continue; // harga placeholder → jangan diiklankan
       const pct = activePct(v.discounts);
       const finalP = applyDiscount(v.price, pct);
       const label = [v.color, v.type].filter(Boolean).join(" ").trim();

@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { applyDiscount } from "@/lib/format";
+import { isPlaceholderPrice, sellableStock } from "@/lib/price-guard";
 import type { ProductQuery } from "@/lib/validations/product";
 
 // Catatan: harga produk = harga varian termurah. Dataset dev kecil, jadi sort by harga
@@ -350,6 +351,8 @@ export async function getProducts(query: ProductQuery): Promise<ProductListResul
   });
 
   const mapped: ProductListItem[] = products
+    // Varian berharga placeholder (Rp999.999 dst) dianggap tak tersedia.
+    .map((p) => ({ ...p, variants: p.variants.filter((v) => !isPlaceholderPrice(v.price)) }))
     // Sembunyikan produk stok habis dari daftar (semua varian stok 0).
     .filter((p) => p.variants.some((v) => v.stock > 0))
     .map((p) => {
@@ -442,6 +445,7 @@ export async function getProductBySlug(slug: string) {
   // Diskon PER-VARIAN → tiap varian bawa discountPercent-nya sendiri.
   const variants = product.variants.map((v) => ({
     ...v,
+    stock: sellableStock(v), // harga placeholder → tampil "habis" (tak bisa dibeli)
     discountPercent: activeDiscountPercent(v.discounts),
   }));
   const maxPercent = variants.reduce((m, v) => Math.max(m, v.discountPercent), 0);

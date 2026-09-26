@@ -16,6 +16,7 @@ import { isManualPayment, isFlatShipping, FLAT_SHIPPING_COST, MANUAL_BANK, quali
 import { computeVoucherBenefit, type VoucherLike } from "@/lib/voucher";
 import { sendEmail, orderConfirmationEmail, orderPlacedEmail, adminNewOrderEmail } from "@/lib/email";
 import { waLink } from "@/lib/wa";
+import { isPlaceholderPrice } from "@/lib/price-guard";
 import { pushOrderToGinee } from "@/lib/ginee/orders";
 import { isGineeConfigured } from "@/lib/ginee/config";
 
@@ -55,6 +56,7 @@ async function computeOrder(
   const items = lines.map((line) => {
     const v = variants.find((x) => x.id === line.variantId);
     if (!v) throw new Error("Varian tidak ditemukan / sudah tidak tersedia.");
+    if (isPlaceholderPrice(v.price)) throw new Error(`"${v.name}" sedang tidak tersedia.`);
     if (line.qty > v.stock) throw new Error(`Stok "${v.name}" tidak cukup.`);
     const percent = activeDiscountPercent(v.discounts);
     const unit = applyDiscount(v.price, percent);

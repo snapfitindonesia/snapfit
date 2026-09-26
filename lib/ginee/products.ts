@@ -1,4 +1,5 @@
 // Ambil & petakan Master Produk Ginee → bentuk siap-impor ke schema web.
+import { isPlaceholderPrice } from "@/lib/price-guard";
 import { gineeRequest } from "./client";
 
 export type GineeVariation = {
@@ -63,20 +64,47 @@ export type GineeVariationBrief = {
   stock?: number; // availableStock
 };
 
-/** Harga (+ foto) per varian — TERFILTER benar via masterVariationIds. */
+// Toko acuan harga web: harga JUAL (setelah diskon) toko ini di Shopee. Akun Ginee
+// terhubung ke beberapa toko (Primary…, Toko Cares…), jadi harus dipilih yang benar.
+const PRICE_SHOP = (process.env.GINEE_PRICE_SHOP_NAME || "Snapfit Indonesia").toLowerCase();
+const PRICE_CHANNEL = process.env.GINEE_PRICE_CHANNEL || "SHOPEE_ID";
+
+type ChannelPrice = {
+  shopName?: string;
+  channel?: string;
+  channelPrice?: { amount?: number };
+  channelSellingPrice?: { amount?: number };
+};
+
+/**
+ * Harga (+ foto) per varian — TERFILTER benar via masterVariationIds.
+ * `price` = harga jual toko acuan (Shopee "Snapfit Indonesia"); bila tak ada,
+ * harga master Ginee asalkan wajar (< Rp900rb); selain itu 0 (= jangan dipakai).
+ */
 export async function getGineeVariationPrices(
   variationIds: string[],
-): Promise<Map<string, { price: number; image?: string }>> {
-  const map = new Map<string, { price: number; image?: string }>();
+): Promise<Map<string, { price: number; image?: string; source: "shop" | "master" | "none" }>> {
+  const map = new Map<string, { price: number; image?: string; source: "shop" | "master" | "none" }>();
   if (!variationIds.length) return map;
-  type Row = { variationId: string; masterPrice?: { amount?: number }; image?: string };
+  type Row = { variationId: string; masterPrice?: { amount?: number }; image?: string; channelPriceVOList?: ChannelPrice[] };
   const res = await gineeRequest<{ content?: Row[] }>(
     "POST",
     "/openapi/product/variation/v1/list-price",
     { page: 0, size: Math.min(200, variationIds.length), masterVariationIds: variationIds },
   );
   for (const r of res.data?.content ?? []) {
-    map.set(r.variationId, { price: Math.max(0, Math.round(r.masterPrice?.amount ?? 0)), image: r.image });
+    const shop = (r.channelPriceVOList ?? []).find(
+      (c) => c.channel === PRICE_CHANNEL && (c.shopName ?? "").toLowerCase() === PRICE_SHOP,
+    );
+    const shopPrice = Math.round(shop?.channelSellingPrice?.amount ?? shop?.channelPrice?.amount ?? 0);
+    const master = Math.round(r.masterPrice?.amount ?? 0);
+    const entry =
+      !isPlaceholderPrice(shopPrice)
+        ? { price: shopPrice, source: "shop" as const }
+        : !isPlaceholderPrice(master)
+          ? { price: master, source: "master" as const }
+          : { price: 0, source: "none" as const };
+    map.set(r.variationId, { ...entry, image: r.image });
   }
   return map;
 }

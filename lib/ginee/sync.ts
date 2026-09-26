@@ -1,9 +1,22 @@
 // Sinkron STOK + HARGA Ginee → web (pull). Dipakai server action (tombol admin) & cron.
-// Sumber kebenaran = Ginee. 2 tahap agar hemat panggilan:
-//  Tahap 1 (per produk): ListMasterProduct by sku → stok per sku + peta variationId↔sku.
-//  Tahap 2 (batch): list-price by SEMUA variationIds sekaligus (chunk 200) → harga.
+//
+// STOK diambil dari INVENTORI GUDANG (warehouse-inventory/sku/list, availableStock) —
+// BUKAN dari produk master: stok di master (variationBriefs.stock) selalu 0 karena
+// stok Ginee tercatat per gudang. Dicari per 50 SKU sekaligus (±18 panggilan / 900 SKU).
+// HARGA: harga JUAL toko Shopee "Snapfit Indonesia" (channelPriceVOList di list-price),
+// BUKAN harga master Ginee (placeholder Rp999.999 / seragam 87rb). Varian tanpa harga
+// toko acuan → harga web dibiarkan. Mode (env GINEE_SYNC_PRICE):
+//   "placeholder" (default) — hanya perbaiki harga web yang placeholder (≥900rb / 99.999)
+//   "all"                   — samakan SEMUA harga web dengan harga jual Shopee
+//   "false"                 — jangan ubah harga
+//
+// Cakupan: semua varian ber-SKU di produk yang TIDAK dikunci (syncLocked) — SKU web
+// dicocokkan persis dengan master SKU Ginee. SKU tak ditemukan di gudang → dibiarkan.
 import { db } from "@/lib/db";
-import { getGineeProductBySku, getGineeVariationPrices } from "./products";
+import { gineeRequest } from "./client";
+import { getGineeVariationPrices } from "./products";
+import { isPlaceholderPrice } from "@/lib/price-guard";
+import { getDefaultWarehouseId } from "./orders";
 import { isGineeConfigured } from "./config";
 
 export type StockSyncResult = {
@@ -14,89 +27,103 @@ export type StockSyncResult = {
   errors: string[];
 };
 
-type Pending = {
-  variantId: string;
-  currentStock: number;
-  currentPrice: number;
-  nextStock?: number;
-  gineeVarId?: string;
+type InventoryRow = {
+  warehouseInventory?: { availableStock?: number };
+  masterVariation?: { id?: string; masterSku?: string };
 };
 
-export async function runGineeStockSync(limit = 1000): Promise<StockSyncResult> {
+/** Stok tersedia per master SKU di gudang (+ id variasi untuk harga). */
+export async function getWarehouseStockBySku(
+  skus: string[],
+  warehouseId: string,
+): Promise<Map<string, { stock: number; variationId?: string }>> {
+  const map = new Map<string, { stock: number; variationId?: string }>();
+  for (let i = 0; i < skus.length; i += 50) {
+    const chunk = skus.slice(i, i + 50);
+    const res = await gineeRequest<{ content?: InventoryRow[] }>(
+      "POST",
+      "/openapi/warehouse-inventory/v1/sku/list",
+      { warehouseId, masterSkuList: chunk, page: 0, size: 50 },
+    );
+    for (const r of res.data?.content ?? []) {
+      const sku = r.masterVariation?.masterSku;
+      if (!sku) continue;
+      map.set(sku, {
+        stock: Math.max(0, Math.floor(r.warehouseInventory?.availableStock ?? 0)),
+        variationId: r.masterVariation?.id,
+      });
+    }
+  }
+  return map;
+}
+
+export async function runGineeStockSync(limit = 5000): Promise<StockSyncResult> {
   if (!isGineeConfigured()) {
     return { ok: false, productsChecked: 0, stockUpdated: 0, priceUpdated: 0, errors: ["Ginee belum dikonfigurasi."] };
   }
 
-  const products = await db.product.findMany({
-    where: { gineeProductId: { not: null }, syncLocked: false }, // lewati produk yg dikunci manual
-    select: { id: true, name: true, variants: { select: { id: true, sku: true, stock: true, price: true } } },
-    take: limit,
-  });
-
   const errors: string[] = [];
-  const pending: Pending[] = [];
-  const allVarIds: string[] = [];
-
-  // Tahap 1: stok + peta variationId per produk
-  for (const p of products) {
-    const firstSku = p.variants.find((v) => v.sku)?.sku;
-    if (!firstSku) continue;
-    try {
-      const mp = await getGineeProductBySku(firstSku);
-      if (!mp) {
-        errors.push(`"${p.name.slice(0, 30)}": tak ditemukan di Ginee.`);
-        continue;
-      }
-      const briefs = mp.variationBriefs ?? [];
-      const stockBySku = new Map<string, number>();
-      const varIdBySku = new Map<string, string>();
-      for (const b of briefs) {
-        if (b.sku) stockBySku.set(b.sku, Math.max(0, b.stock?.availableStock ?? 0));
-        if (b.sku && b.id) varIdBySku.set(b.sku, b.id);
-      }
-      for (const v of p.variants) {
-        if (!v.sku) continue; // tanpa SKU → tak bisa dicocokkan ke Ginee
-        const gineeVarId = varIdBySku.get(v.sku);
-        if (gineeVarId) allVarIds.push(gineeVarId);
-        pending.push({
-          variantId: v.id,
-          currentStock: v.stock,
-          currentPrice: v.price,
-          nextStock: stockBySku.get(v.sku),
-          gineeVarId,
-        });
-      }
-    } catch (e) {
-      errors.push(`"${p.name.slice(0, 30)}": ${e instanceof Error ? e.message : "gagal"}.`);
-    }
+  const warehouseId = await getDefaultWarehouseId().catch(() => null);
+  if (!warehouseId) {
+    return { ok: false, productsChecked: 0, stockUpdated: 0, priceUpdated: 0, errors: ["Gudang Ginee tidak ditemukan."] };
   }
 
-  // Tahap 2: harga per variationId (batch 200)
+  const variants = await db.variant.findMany({
+    where: { sku: { not: null }, product: { syncLocked: false } }, // lewati produk yg dikunci manual
+    select: { id: true, sku: true, stock: true, price: true, productId: true },
+    take: limit,
+  });
+  const skus = [...new Set(variants.map((v) => v.sku!).filter(Boolean))];
+
+  // 1) Stok gudang per SKU
+  let inv = new Map<string, { stock: number; variationId?: string }>();
+  try {
+    inv = await getWarehouseStockBySku(skus, warehouseId);
+  } catch (e) {
+    return { ok: false, productsChecked: 0, stockUpdated: 0, priceUpdated: 0, errors: [`Stok gudang gagal: ${e instanceof Error ? e.message : "?"}`] };
+  }
+
+  // 2) Harga per variationId (batch 200) — hanya bila diaktifkan
+  const priceMode = process.env.GINEE_SYNC_PRICE || "placeholder";
+  const syncPrice = priceMode !== "false";
+  const varIds = [...new Set([...inv.values()].map((x) => x.variationId).filter((x): x is string => !!x))];
   const priceByVarId = new Map<string, number>();
-  for (let i = 0; i < allVarIds.length; i += 200) {
-    const chunk = allVarIds.slice(i, i + 200);
+  for (let i = 0; syncPrice && i < varIds.length; i += 200) {
     try {
-      const map = await getGineeVariationPrices(chunk);
-      for (const [id, p] of map) if (p.price > 0) priceByVarId.set(id, p.price);
+      const map = await getGineeVariationPrices(varIds.slice(i, i + 200));
+      for (const [id, p] of map) if (p.source === "shop") priceByVarId.set(id, p.price);
     } catch (e) {
       errors.push(`Harga batch gagal: ${e instanceof Error ? e.message : "?"}.`);
     }
   }
 
-  // Update
+  // 3) Update varian yang berubah
   let stockUpdated = 0;
   let priceUpdated = 0;
-  for (const pen of pending) {
+  const updates: { id: string; data: { stock?: number; price?: number } }[] = [];
+  const products = new Set<string>();
+  for (const v of variants) {
+    const row = inv.get(v.sku!);
+    if (!row) continue; // SKU tak ada di gudang Ginee (mis. produk impor CSV) → biarkan
+    products.add(v.productId);
     const data: { stock?: number; price?: number } = {};
-    if (pen.nextStock !== undefined && pen.nextStock !== pen.currentStock) data.stock = pen.nextStock;
-    const nextPrice = pen.gineeVarId ? priceByVarId.get(pen.gineeVarId) : undefined;
-    if (nextPrice !== undefined && nextPrice !== pen.currentPrice) data.price = nextPrice;
+    if (row.stock !== v.stock) data.stock = row.stock;
+    const nextPrice = row.variationId ? priceByVarId.get(row.variationId) : undefined;
+    const priceAllowed = priceMode === "all" || isPlaceholderPrice(v.price);
+    if (nextPrice !== undefined && nextPrice !== v.price && priceAllowed) data.price = nextPrice;
     if (data.stock !== undefined || data.price !== undefined) {
-      await db.variant.update({ where: { id: pen.variantId }, data });
+      updates.push({ id: v.id, data });
       if (data.stock !== undefined) stockUpdated++;
       if (data.price !== undefined) priceUpdated++;
     }
   }
+  // Tulis berkelompok (1 transaksi / 50 varian) — jauh lebih cepat dari update satu-satu.
+  for (let i = 0; i < updates.length; i += 50) {
+    await db.$transaction(updates.slice(i, i + 50).map((u) => db.variant.update({ where: { id: u.id }, data: u.data })));
+  }
 
-  return { ok: true, productsChecked: products.length, stockUpdated, priceUpdated, errors };
+  const missing = skus.length - [...skus].filter((s) => inv.has(s)).length;
+  if (missing > 0) errors.push(`${missing} SKU tidak ditemukan di gudang Ginee (stoknya tidak diubah).`);
+
+  return { ok: true, productsChecked: products.size, stockUpdated, priceUpdated, errors };
 }
