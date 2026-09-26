@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { Loader2, Upload, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Loader2, Upload, X, ChevronLeft, ChevronRight, ClipboardPaste } from "lucide-react";
+import { uploadImageFile, importImageUrl, readPastedImages, hasPastedImages } from "@/lib/upload/client";
 
 const MAX = 9;
 
@@ -9,6 +10,8 @@ const MAX = 9;
  * Grid foto produk ala Tokopedia/Shopee.
  * value[0] = foto utama (cover), sisanya = galeri.
  * Bisa upload banyak sekaligus, hapus, dan set "Jadikan utama".
+ * Tempel (Ctrl+V) di mana saja di halaman: gambar dari clipboard ("Salin gambar"
+ * di Shopee dll) atau alamat gambar → langsung diunggah ke CDN.
  */
 export function ImageGridInput({
   value,
@@ -27,14 +30,44 @@ export function ImageGridInput({
   const photos = value.filter(Boolean);
   const canAdd = photos.length < MAX;
 
-  async function uploadOne(file: File): Promise<string> {
-    const form = new FormData();
-    form.append("file", file);
-    const res = await fetch("/api/admin/upload", { method: "POST", body: form });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error ?? "Upload gagal");
-    return data.url as string;
+  const uploadOne = uploadImageFile;
+
+  // Tambah foto dari file / alamat gambar (maks sisa slot), berurutan.
+  const photosRef = useRef(photos);
+  photosRef.current = photos;
+  async function addSources(files: File[], urls: string[]) {
+    const slots = MAX - photosRef.current.length;
+    if (slots <= 0) { setError(`Maksimal ${MAX} foto.`); return; }
+    setUploading(true);
+    setError(null);
+    const added: string[] = [];
+    const fails: string[] = [];
+    for (const f of files.slice(0, slots)) {
+      try { added.push(await uploadImageFile(f)); } catch (e) { fails.push(e instanceof Error ? e.message : "gagal"); }
+    }
+    for (const u of urls.slice(0, slots - added.length)) {
+      try { added.push(await importImageUrl(u)); } catch (e) { fails.push(e instanceof Error ? e.message : "gagal"); }
+    }
+    if (added.length) onChange([...photosRef.current, ...added]);
+    if (fails.length) setError(fails[0]);
+    setUploading(false);
   }
+
+  // Ctrl+V di mana saja di halaman (kecuali saat mengetik di kolom teks lain).
+  const addRef = useRef(addSources);
+  addRef.current = addSources;
+  useEffect(() => {
+    function onPaste(e: ClipboardEvent) {
+      const t = e.target as HTMLElement | null;
+      if (t && (t.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName)) && !t.dataset.imagePaste) return;
+      const p = readPastedImages(e.clipboardData);
+      if (!hasPastedImages(p)) return;
+      e.preventDefault();
+      void addRef.current(p.files, p.urls);
+    }
+    document.addEventListener("paste", onPaste);
+    return () => document.removeEventListener("paste", onPaste);
+  }, []);
 
   async function onFiles(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
@@ -72,12 +105,12 @@ export function ImageGridInput({
     next.splice(to, 0, moved);
     onChange(next);
   }
-  function addUrl() {
+  // Alamat gambar diunduh server lalu disimpan di CDN sendiri (bukan numpang hotlink).
+  async function addUrl() {
     const u = urlDraft.trim();
     if (!u) return;
-    if (photos.length >= MAX) { setError(`Maksimal ${MAX} foto.`); return; }
-    onChange([...photos, u]);
     setUrlDraft("");
+    await addSources([], [u]);
   }
 
   return (
@@ -157,13 +190,19 @@ export function ImageGridInput({
 
       <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={onFiles} />
 
-      {/* Fallback tempel URL */}
+      <p className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+        <ClipboardPaste className="size-3.5 shrink-0" />
+        <span><b>Tempel langsung:</b> klik kanan foto di Shopee → <i>Salin gambar</i>, lalu tekan <b>Ctrl+V</b> di halaman ini.</span>
+      </p>
+
+      {/* Tempel alamat gambar (diunduh ke CDN) */}
       <div className="mt-2 flex gap-2">
         <input
+          data-image-paste="1"
           value={urlDraft}
           onChange={(e) => setUrlDraft(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addUrl())}
-          placeholder="atau tempel URL gambar…"
+          placeholder="atau tempel alamat gambar (https://…)"
           className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-xs outline-none focus:border-brand"
         />
         <button type="button" onClick={addUrl} className="shrink-0 rounded-md border border-border px-3 text-xs hover:bg-muted">

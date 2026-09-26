@@ -2,15 +2,19 @@
 
 import { useRef, useState } from "react";
 import { Loader2, Upload } from "lucide-react";
+import { uploadImageFile, importImageUrl, readPastedImages, hasPastedImages } from "@/lib/upload/client";
 
 const input =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-foreground";
 
-/** Field URL gambar + tombol upload ke Supabase Storage. Fallback: tempel URL manual. */
+/**
+ * Field gambar: upload file, atau klik kolom lalu Ctrl+V — gambar dari clipboard
+ * ("Salin gambar") maupun alamat gambar langsung diunggah ke CDN.
+ */
 export function ImageInput({
   value,
   onChange,
-  placeholder = "https://… atau upload",
+  placeholder = "Tempel gambar (Ctrl+V) atau upload",
 }: {
   value: string;
   onChange: (url: string) => void;
@@ -20,24 +24,30 @@ export function ImageInput({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  async function run(task: () => Promise<string>) {
     setUploading(true);
     setError(null);
     try {
-      const form = new FormData();
-      form.append("file", file);
-      const res = await fetch("/api/admin/upload", { method: "POST", body: form });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Upload gagal");
-      onChange(data.url);
+      onChange(await task());
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload gagal");
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
     }
+  }
+
+  function onFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) void run(() => uploadImageFile(file));
+  }
+
+  // Ctrl+V di kolom: gambar dari clipboard / alamat gambar → unggah ke CDN.
+  function onPaste(e: React.ClipboardEvent<HTMLInputElement>) {
+    const p = readPastedImages(e.clipboardData);
+    if (!hasPastedImages(p)) return;
+    e.preventDefault();
+    void run(() => (p.files[0] ? uploadImageFile(p.files[0]) : importImageUrl(p.urls[0])));
   }
 
   return (
@@ -47,7 +57,9 @@ export function ImageInput({
           className={input}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
+          onPaste={onPaste}
+          disabled={uploading}
+          placeholder={uploading ? "Mengunggah…" : placeholder}
         />
         <button
           type="button"
