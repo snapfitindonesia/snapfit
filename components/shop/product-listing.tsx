@@ -247,7 +247,7 @@ export function ProductListing({
 
           {items.length > 0 ? (
             <div className="mt-4 grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3">
-              {items.map((p) => <ProductCard key={p.id} product={p} />)}
+              {items.map((p, i) => <ProductCard key={p.id} product={p} priority={i < 4} />)}
             </div>
           ) : (
             !loading && (

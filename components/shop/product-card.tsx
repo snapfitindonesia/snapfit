@@ -5,11 +5,12 @@ import { formatRupiah } from "@/lib/format";
 import type { ProductListItem } from "@/lib/actions/product";
 import { AddToCartButton } from "@/components/shop/add-to-cart-button";
 
-export function ProductCard({ product }: { product: ProductListItem }) {
+/** `priority`: kartu di layar pertama — foto dimuat segera & tanpa animasi masuk (cepatkan LCP). */
+export function ProductCard({ product, priority = false }: { product: ProductListItem; priority?: boolean }) {
   const hasDiscount = product.discountPercent > 0;
 
   return (
-    <div className="group flex flex-col animate-in fade-in slide-in-from-bottom-3 duration-500">
+    <div className={`group flex flex-col ${priority ? "" : "animate-in fade-in slide-in-from-bottom-3 duration-500"}`}>
       <Link href={`/produk/${product.slug}`} className="block">
       <div className="relative aspect-square w-full overflow-hidden rounded-lg border border-border bg-muted">
         <Image
@@ -17,6 +18,7 @@ export function ProductCard({ product }: { product: ProductListItem }) {
           alt={product.name}
           fill
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+          priority={priority}
           className="object-contain p-3 transition-transform duration-300 group-hover:scale-105"
         />
         {product.brand && (
