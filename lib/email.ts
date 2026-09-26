@@ -1,6 +1,8 @@
 import { formatRupiah } from "@/lib/format";
 
 const FROM = process.env.EMAIL_FROM || "SNAPFIT <no-reply@snapfit.id>";
+// Balasan pembeli diarahkan ke inbox yang dibaca (bukan no-reply).
+const REPLY_TO = process.env.EMAIL_REPLY_TO || "admin@snapfit.id";
 
 export function isEmailConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY);
@@ -22,9 +24,9 @@ export async function sendEmail(input: {
       Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ from: FROM, to: input.to, subject: input.subject, html: input.html }),
+    body: JSON.stringify({ from: FROM, to: input.to, reply_to: REPLY_TO, subject: input.subject, html: input.html }),
   });
-  if (!res.ok) throw new Error(`Resend gagal: ${res.status}`);
+  if (!res.ok) throw new Error(`Resend gagal: ${res.status} ${(await res.text().catch(() => "")).slice(0, 200)}`);
   return { mock: false };
 }
 
