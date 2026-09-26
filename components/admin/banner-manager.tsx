@@ -103,7 +103,7 @@ export function BannerManager({ banners }: { banners: Banner[] }) {
           )}
         </div>
         <label className="block text-sm">Target link (opsional)
-          <input className={`mt-1 ${input}`} value={f.targetUrl} onChange={(e) => setF({ ...f, targetUrl: e.target.value })} placeholder="/produk?tipe=iphone" />
+          <input className={`mt-1 ${input}`} value={f.targetUrl} onChange={(e) => setF({ ...f, targetUrl: e.target.value })} placeholder="/kategori/iphone-18-series" />
         </label>
         <label className="block text-sm">Urutan
           <input type="number" className={`mt-1 ${input}`} value={f.order} onChange={(e) => setF({ ...f, order: e.target.value })} />
