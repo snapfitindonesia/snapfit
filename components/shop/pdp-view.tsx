@@ -78,6 +78,16 @@ export function PdpView({ product, vouchers = [] }: { product: PdpProduct; vouch
   // Foto yang sedang dilihat (override galeri). Default = cover produk (tampil
   // pertama); jadi null saat ganti varian → ikut foto varian terpilih.
   const [heroImage, setHeroImage] = useState<string | null>(product.coverImage || null);
+  // Foto galeri selain yang pertama baru dimuat setelah halaman selesai load —
+  // tak berebut jaringan dengan foto utama (LCP), tetap siap sebelum digeser.
+  const [galleryWarm, setGalleryWarm] = useState(false);
+  useEffect(() => {
+    let t: ReturnType<typeof setTimeout>;
+    const warm = () => { t = setTimeout(() => setGalleryWarm(true), 1000); };
+    if (document.readyState === "complete") warm();
+    else window.addEventListener("load", warm, { once: true });
+    return () => { clearTimeout(t); window.removeEventListener("load", warm); };
+  }, []);
   const [lightbox, setLightbox] = useState(false); // mode zoom layar penuh
   const [zoomed, setZoomed] = useState(false);
   const [drag, setDrag] = useState(0); // offset px saat menyeret gambar utama
@@ -315,7 +325,9 @@ export function PdpView({ product, vouchers = [] }: { product: PdpProduct; vouch
                   draggable={false}
                   sizes="(max-width: 1024px) 100vw, 55vw"
                   className="object-contain"
-                  {...(i === 0 ? { priority: true } : { loading: "eager" as const })}
+                  {...(i === 0
+                    ? { priority: true }
+                    : { loading: galleryWarm || i === photoIndex ? ("eager" as const) : ("lazy" as const) })}
                 />
               </div>
             ))}

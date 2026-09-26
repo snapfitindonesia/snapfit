@@ -9,6 +9,7 @@ import {
 import { FacebookPixel } from "@/components/tracking/facebook-pixel";
 import { GoogleAnalytics } from "@/components/tracking/google-analytics";
 import { Suspense } from "react";
+import { preconnect } from "react-dom";
 
 const geistSans = Geist({
   variable: "--font-sans",
@@ -50,6 +51,9 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  // Koneksi awal ke skrip pihak ketiga (Pixel & GA4) — hemat ±300 md di HP.
+  preconnect("https://connect.facebook.net");
+  preconnect("https://www.googletagmanager.com");
   return (
     <html
       lang="id"

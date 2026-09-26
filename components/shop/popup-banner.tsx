@@ -25,15 +25,32 @@ export function PopupBanner({ banner }: { banner: MainBanner | null }) {
       last = 0;
     }
     if (Date.now() - last < SIX_HOURS) return; // sudah tampil dalam 6 jam terakhir
-    const t = setTimeout(() => {
+
+    // Tampil setelah pengunjung mulai scroll (atau 15 dtk) — BUKAN langsung saat
+    // halaman dibuka: popup instan menutupi konten, dihitung Google sebagai LCP
+    // (skor kecepatan anjlok) & dinilai "intrusive interstitial" di mobile.
+    let done = false;
+    const show = () => {
+      if (done) return;
+      done = true;
+      cleanup();
       setOpen(true);
       try {
         localStorage.setItem(KEY, String(Date.now()));
       } catch {
         // abaikan bila storage tak tersedia
       }
-    }, 700);
-    return () => clearTimeout(t);
+    };
+    const onScroll = () => {
+      if (window.scrollY > 300) show();
+    };
+    const t = setTimeout(show, 15_000);
+    function cleanup() {
+      clearTimeout(t);
+      window.removeEventListener("scroll", onScroll);
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return cleanup;
   }, [banner]);
 
   useEffect(() => {

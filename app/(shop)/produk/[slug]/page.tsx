@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { preconnect } from "react-dom";
 import type { Metadata } from "next";
 import {
   getProductBySlug,
@@ -65,6 +66,13 @@ export default async function ProductDetailPage({
   const { slug } = await params;
   const product = await getProductBySlug(slug); // RSC: muat awal server-side
   if (!product) notFound();
+
+  // Buka koneksi ke server foto lebih awal (foto utama = LCP halaman ini).
+  try {
+    if (product.coverImage) preconnect(new URL(product.coverImage).origin);
+  } catch {
+    // URL relatif / tak valid — abaikan
+  }
 
   const [related, reviews, vouchers] = await Promise.all([
     getRelatedProducts(product.id, product.category?.slug ?? null),
