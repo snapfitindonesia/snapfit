@@ -27,6 +27,7 @@ export function LoginModal() {
   return (
     <div
       aria-hidden={!loginOpen}
+      inert={!loginOpen} // tertutup: isi modal tak bisa difokus/di-tab (aksesibilitas)
       className={cn(
         "fixed inset-0 z-[60] flex items-center justify-center p-4 transition-opacity duration-200",
         loginOpen ? "opacity-100" : "pointer-events-none opacity-0",

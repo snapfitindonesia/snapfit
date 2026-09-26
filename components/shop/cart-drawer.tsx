@@ -83,6 +83,8 @@ export function CartDrawer({
         role="dialog"
         aria-label="Keranjang"
         aria-modal={cartOpen}
+        aria-hidden={!cartOpen}
+        inert={!cartOpen} // tertutup: tak bisa difokus/di-tab (aksesibilitas)
         className={cn(
           "fixed inset-y-0 right-0 z-50 flex w-3/4 max-w-sm flex-col bg-background shadow-2xl transition-transform duration-300 ease-out",
           cartOpen ? "translate-x-0" : "translate-x-full",

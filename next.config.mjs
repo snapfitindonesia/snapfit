@@ -5,6 +5,8 @@ const extraHosts = (process.env.NEXT_PUBLIC_IMAGE_HOSTS ?? "")
   .filter(Boolean);
 
 const nextConfig = {
+  // CSS (±14KB) disisipkan ke HTML → tak ada request CSS yang menahan tampilan pertama.
+  experimental: { inlineCss: true },
   images: {
     // Foto marketplace dilayani langsung dari CDN-nya via components/ui/image.tsx
     // (JANGAN loader custom global — mematikan /_next/image di Vercel).

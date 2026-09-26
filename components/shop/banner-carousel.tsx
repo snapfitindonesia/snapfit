@@ -46,7 +46,7 @@ export function BannerCarousel({ banners }: { banners: Banner[] }) {
           key={b.id}
           href={b.href}
           aria-hidden={idx !== i}
-          tabIndex={idx === i ? 0 : -1}
+          inert={idx !== i}
           className={cn(
             "absolute inset-0 transition-opacity duration-700",
             idx === i ? "opacity-100" : "pointer-events-none opacity-0",
@@ -54,11 +54,12 @@ export function BannerCarousel({ banners }: { banners: Banner[] }) {
         >
           <Image
             src={b.image}
-            alt=""
+            alt={`Promo SNAPFIT ${idx + 1}`}
             fill
             sizes="(max-width: 1024px) 100vw, 1200px"
             className="object-cover"
             priority={idx === 0}
+            {...(idx === 0 ? { fetchPriority: "high" as const } : {})}
           />
         </Link>
       ))}
@@ -84,7 +85,8 @@ export function BannerCarousel({ banners }: { banners: Banner[] }) {
           </button>
 
           {/* Titik */}
-          <div className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 gap-1.5">
+          {/* Titik: tampilan kecil, area sentuh 24px (standar ukuran target jari) */}
+          <div className="absolute bottom-2 left-1/2 z-10 flex -translate-x-1/2">
             {banners.map((_, idx) => (
               <button
                 key={idx}
@@ -92,11 +94,15 @@ export function BannerCarousel({ banners }: { banners: Banner[] }) {
                 onClick={() => setI(idx)}
                 aria-label={`Slide ${idx + 1}`}
                 aria-current={idx === i}
-                className={cn(
-                  "h-2 rounded-full transition-all",
-                  idx === i ? "w-6 bg-background" : "w-2 bg-background/50 hover:bg-background/80",
-                )}
-              />
+                className="group grid h-6 min-w-6 place-items-center px-0.5"
+              >
+                <span
+                  className={cn(
+                    "block h-2 rounded-full transition-all",
+                    idx === i ? "w-6 bg-background" : "w-2 bg-background/50 group-hover:bg-background/80",
+                  )}
+                />
+              </button>
             ))}
           </div>
         </>

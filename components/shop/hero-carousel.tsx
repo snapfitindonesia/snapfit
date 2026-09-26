@@ -37,7 +37,7 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
           key={s.image}
           href={s.href}
           aria-hidden={idx !== i}
-          tabIndex={idx === i ? 0 : -1}
+          inert={idx !== i}
           className={cn(
             "absolute inset-0 transition-opacity duration-700",
             idx === i ? "opacity-100" : "pointer-events-none opacity-0",
