@@ -17,6 +17,7 @@ import {
 
 export type BioLinkRow = {
   id: string;
+  kind: string; // LINK | DIVIDER
   title: string;
   url: string;
   image: string | null;
@@ -170,7 +171,7 @@ function BackgroundSettings({ p, setP }: { p: BioProfileInput; setP: (p: BioProf
   );
 }
 
-const emptyLink: BioLinkInput = { title: "", url: "", image: "", highlight: false, active: true };
+const emptyLink: BioLinkInput = { kind: "LINK", title: "", url: "", image: "", highlight: false, active: true };
 
 export function LinktreeManager({ profile, links }: { profile: BioProfileInput; links: BioLinkRow[] }) {
   const router = useRouter();
@@ -204,7 +205,7 @@ export function LinktreeManager({ profile, links }: { profile: BioProfileInput; 
   function resetLink() { setEditId(null); setL(emptyLink); setLError(null); }
   function editLink(r: BioLinkRow) {
     setEditId(r.id);
-    setL({ title: r.title, url: r.url, image: r.image ?? "", highlight: r.highlight, active: r.active });
+    setL({ kind: r.kind === "DIVIDER" ? "DIVIDER" : "LINK", title: r.title, url: r.url, image: r.image ?? "", highlight: r.highlight, active: r.active });
     setLError(null);
   }
 
@@ -216,7 +217,7 @@ export function LinktreeManager({ profile, links }: { profile: BioProfileInput; 
     setLSaving(false);
   }
   async function removeLink(r: BioLinkRow) {
-    if (!confirm(`Hapus tombol "${r.title}"?`)) return;
+    if (!confirm(r.kind === "DIVIDER" ? `Hapus pemisah${r.title ? ` "${r.title}"` : ""}?` : `Hapus tombol "${r.title}"?`)) return;
     const res = await deleteBioLink(r.id);
     if (res.ok) { if (editId === r.id) resetLink(); router.refresh(); } else alert(res.error);
   }
@@ -284,20 +285,44 @@ export function LinktreeManager({ profile, links }: { profile: BioProfileInput; 
       {/* TOMBOL */}
       <div className="grid gap-8 lg:grid-cols-2">
         <form onSubmit={submitLink} className="h-fit space-y-3 rounded-lg border border-border p-4">
-          <h2 className="text-sm font-medium">{editId ? "Edit tombol" : "Tambah tombol"}</h2>
-          <label className="block text-sm">Judul tombol
-            <input className={`mt-1 ${input}`} value={l.title} onChange={(e) => setL({ ...l, title: e.target.value })} placeholder="mis. Belanja di Website — Gratis Ongkir" required />
-          </label>
-          <label className="block text-sm">URL tujuan
-            <input className={`mt-1 ${input}`} value={l.url} onChange={(e) => setL({ ...l, url: e.target.value })} placeholder="https://… atau /produk" required />
-          </label>
-          <div className="text-sm">Thumbnail (opsional)
-            <div className="mt-1"><ImageInput value={l.image ?? ""} onChange={(v) => setL({ ...l, image: v })} /></div>
+          <h2 className="text-sm font-medium">{editId ? "Edit item" : "Tambah item"}</h2>
+          {/* Jenis: tombol link / pemisah bagian */}
+          <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1 text-sm">
+            {([["LINK", "Tombol link"], ["DIVIDER", "Pemisah bagian"]] as const).map(([k, label]) => (
+              <button
+                key={k}
+                type="button"
+                onClick={() => setL({ ...l, kind: k })}
+                className={`rounded-md py-1.5 font-medium transition-colors ${l.kind === k ? "bg-background shadow-sm" : "text-muted-foreground"}`}
+              >
+                {label}
+              </button>
+            ))}
           </div>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={l.highlight} onChange={(e) => setL({ ...l, highlight: e.target.checked })} />
-            Tonjolkan (tombol hitam)
-          </label>
+          {l.kind === "DIVIDER" ? (
+            <>
+              <label className="block text-sm">Judul bagian (opsional)
+                <input className={`mt-1 ${input}`} value={l.title} onChange={(e) => setL({ ...l, title: e.target.value })} placeholder="mis. Belanja · Layanan Pelanggan — kosongkan untuk garis saja" />
+              </label>
+              <p className="text-xs text-muted-foreground">Tampil sebagai garis tipis pemisah, dengan judul kecil di tengah bila diisi.</p>
+            </>
+          ) : (
+            <>
+              <label className="block text-sm">Judul tombol
+                <input className={`mt-1 ${input}`} value={l.title} onChange={(e) => setL({ ...l, title: e.target.value })} placeholder="mis. Belanja di Website — Gratis Ongkir" required />
+              </label>
+              <label className="block text-sm">URL tujuan
+                <input className={`mt-1 ${input}`} value={l.url} onChange={(e) => setL({ ...l, url: e.target.value })} placeholder="https://… atau /produk" required />
+              </label>
+              <div className="text-sm">Thumbnail (opsional)
+                <div className="mt-1"><ImageInput value={l.image ?? ""} onChange={(v) => setL({ ...l, image: v })} /></div>
+              </div>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={l.highlight} onChange={(e) => setL({ ...l, highlight: e.target.checked })} />
+                Tonjolkan (tombol hitam)
+              </label>
+            </>
+          )}
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={l.active} onChange={(e) => setL({ ...l, active: e.target.checked })} />
             Tampilkan
@@ -331,13 +356,21 @@ export function LinktreeManager({ profile, links }: { profile: BioProfileInput; 
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={r.image} alt="" className="size-8 shrink-0 rounded object-cover" />
               )}
-              <div className="min-w-0 flex-1">
-                <p className={`truncate text-sm font-medium ${r.active ? "" : "text-muted-foreground line-through"}`}>
-                  {r.title}
-                  {r.highlight && <span className="ml-2 rounded bg-foreground px-1.5 py-0.5 text-[10px] font-semibold text-background no-underline">UTAMA</span>}
-                </p>
-                <p className="truncate text-xs text-muted-foreground">{r.url} · {r.clicks} klik</p>
-              </div>
+              {r.kind === "DIVIDER" ? (
+                <div className={`flex min-w-0 flex-1 items-center gap-2 text-xs text-muted-foreground ${r.active ? "" : "line-through"}`}>
+                  <span className="h-px flex-1 bg-border" />
+                  <span className="shrink-0 font-semibold uppercase tracking-wider">{r.title || "Pemisah"}</span>
+                  <span className="h-px flex-1 bg-border" />
+                </div>
+              ) : (
+                <div className="min-w-0 flex-1">
+                  <p className={`truncate text-sm font-medium ${r.active ? "" : "text-muted-foreground line-through"}`}>
+                    {r.title}
+                    {r.highlight && <span className="ml-2 rounded bg-foreground px-1.5 py-0.5 text-[10px] font-semibold text-background no-underline">UTAMA</span>}
+                  </p>
+                  <p className="truncate text-xs text-muted-foreground">{r.url} · {r.clicks} klik</p>
+                </div>
+              )}
               <label className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground" title="Tampilkan">
                 <input type="checkbox" checked={r.active} onChange={() => toggleActive(r)} />
               </label>

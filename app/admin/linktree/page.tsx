@@ -11,6 +11,7 @@ export default async function AdminLinktreePage() {
 
   const rows: BioLinkRow[] = links.map((l) => ({
     id: l.id,
+    kind: l.kind,
     title: l.title,
     url: l.url,
     image: l.image,

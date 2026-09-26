@@ -38,17 +38,24 @@ const profileSchema = z.object({
 });
 export type BioProfileInput = z.infer<typeof profileSchema>;
 
-const linkSchema = z.object({
-  title: z.string().trim().min(1, "Judul tombol wajib").max(80),
-  url: z
-    .string()
-    .trim()
-    .min(1, "URL wajib")
-    .refine((v) => v.startsWith("/") || /^(https?:|mailto:|tel:)/i.test(v), "URL harus diawali https://, / , mailto: atau tel:"),
-  image: opt,
-  highlight: z.boolean().default(false),
-  active: z.boolean().default(true),
-});
+const validUrl = (v: string) => v.startsWith("/") || /^(https?:|mailto:|tel:)/i.test(v);
+
+// LINK = tombol (judul + URL wajib) · DIVIDER = pemisah bagian (judul opsional, tanpa URL).
+const linkSchema = z
+  .object({
+    kind: z.enum(["LINK", "DIVIDER"]).default("LINK"),
+    title: z.string().trim().max(80).default(""),
+    url: z.string().trim().default(""),
+    image: opt,
+    highlight: z.boolean().default(false),
+    active: z.boolean().default(true),
+  })
+  .superRefine((d, ctx) => {
+    if (d.kind === "DIVIDER") return;
+    if (!d.title) ctx.addIssue({ code: "custom", message: "Judul tombol wajib", path: ["title"] });
+    if (!d.url) ctx.addIssue({ code: "custom", message: "URL wajib", path: ["url"] });
+    else if (!validUrl(d.url)) ctx.addIssue({ code: "custom", message: "URL harus diawali https://, / , mailto: atau tel:", path: ["url"] });
+  });
 export type BioLinkInput = z.infer<typeof linkSchema>;
 
 const blank = (v?: string) => (v && v.trim() ? v.trim() : null);
@@ -90,7 +97,15 @@ export async function saveBioLink(input: BioLinkInput, id?: string): Promise<Res
   try {
     await requireAdmin();
     const d = linkSchema.parse(input);
-    const data = { title: d.title, url: d.url, image: blank(d.image), highlight: d.highlight, active: d.active };
+    const divider = d.kind === "DIVIDER";
+    const data = {
+      kind: d.kind,
+      title: d.title,
+      url: divider ? "" : d.url,
+      image: divider ? null : blank(d.image),
+      highlight: divider ? false : d.highlight,
+      active: d.active,
+    };
     if (id) {
       const before = await db.bioLink.findUnique({ where: { id }, select: { image: true } });
       await db.bioLink.update({ where: { id }, data });

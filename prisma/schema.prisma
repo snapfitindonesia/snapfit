@@ -182,6 +182,7 @@ model BioProfile {
 
 model BioLink {
   id        String  @id @default(cuid())
+  kind      String  @default("LINK") // LINK = tombol · DIVIDER = pemisah bagian (judul opsional, tanpa URL)
   title     String
   url       String
   image     String? // thumbnail kecil di kiri tombol (opsional)

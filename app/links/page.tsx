@@ -118,6 +118,21 @@ export default async function LinksPage() {
 
         <div className="mt-8 flex w-full flex-col gap-3">
           {links.map((l) => {
+            // Pemisah bagian: garis tipis + judul kecil di tengah (opsional)
+            if (l.kind === "DIVIDER") {
+              const line = light ? "bg-white/40" : "bg-foreground/15";
+              return (
+                <div key={l.id} role="separator" aria-label={l.title || undefined} className="mt-3 flex items-center gap-3 first:mt-0">
+                  <span className={`h-px flex-1 ${line}`} />
+                  {l.title && (
+                    <span className={`shrink-0 text-[11px] font-semibold uppercase tracking-[0.18em] ${light ? "text-white/85" : "text-muted-foreground"}`}>
+                      {l.title}
+                    </span>
+                  )}
+                  <span className={`h-px flex-1 ${line}`} />
+                </div>
+              );
+            }
             const external = !l.url.startsWith("/");
             return (
               <a

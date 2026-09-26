@@ -5,8 +5,8 @@ import { db } from "@/lib/db";
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const link = await db.bioLink
-    .update({ where: { id }, data: { clicks: { increment: 1 } }, select: { url: true, active: true } })
+    .update({ where: { id }, data: { clicks: { increment: 1 } }, select: { url: true, active: true, kind: true } })
     .catch(() => null);
-  if (!link || !link.active) return NextResponse.redirect(new URL("/links", req.url));
+  if (!link || !link.active || link.kind === "DIVIDER" || !link.url) return NextResponse.redirect(new URL("/links", req.url));
   return NextResponse.redirect(new URL(link.url, req.url), 302);
 }
