@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { db } from "@/lib/db";
 import { getProducts, type ProductListItem } from "@/lib/actions/product";
+import { slugify, HIDDEN_MEREK } from "@/lib/slug";
 
 /**
  * Halaman landing SEO:
@@ -9,16 +10,8 @@ import { getProducts, type ProductListItem } from "@/lib/actions/product";
  * Isi produk memakai getProducts (sudah menyaring stok habis).
  */
 
-export function slugify(s: string): string {
-  return s
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
+export { slugify };
 
-const HIDDEN_MEREK = new Set(["tidak-ada-merek", "tanpa-merek"]);
 const MAX_ITEMS = 200;
 
 export type Crumb = { name: string; href: string };

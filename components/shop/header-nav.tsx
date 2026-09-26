@@ -11,6 +11,7 @@ import { formatRupiah } from "@/lib/format";
 import { CartButton } from "@/components/shop/cart-button";
 import { useStoreUI } from "@/components/shop/store-ui-provider";
 import type { MegaMenuBrand, MerekMenuItem, ProductListItem, NavLinkItem } from "@/lib/actions/product";
+import { merekHref } from "@/lib/slug";
 import logo from "@/logosnapfit.png";
 
 export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaMenuBrand[]; merekMenu?: MerekMenuItem[]; navLinks?: NavLinkItem[] }) {
@@ -269,7 +270,7 @@ export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaM
                       <div className="mb-3 flex items-center justify-between">
                         <h3 className="text-sm font-semibold">{menu[activeBrand].name}</h3>
                         <Link
-                          href={`/produk?tipe=${menu[activeBrand].slug}`}
+                          href={`/kategori/${menu[activeBrand].slug}`}
                           onClick={() => setOpen(false)}
                           className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
                         >
@@ -280,7 +281,7 @@ export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaM
                         {menu[activeBrand].lines.map((line) => (
                           <div key={line.slug}>
                             <Link
-                              href={`/produk?tipe=${line.slug}`}
+                              href={`/kategori/${line.slug}`}
                               onClick={() => setOpen(false)}
                               className="flex items-center gap-2 font-semibold text-sm hover:underline"
                             >
@@ -297,7 +298,7 @@ export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaM
                                 {line.models.map((m) => (
                                   <li key={m.slug ?? m.label}>
                                     <Link
-                                      href={m.slug ? `/produk?tipe=${m.slug}` : `/produk?tipe=${line.slug}&model=${encodeURIComponent(m.label)}`}
+                                      href={m.slug ? `/kategori/${m.slug}` : `/produk?tipe=${line.slug}&model=${encodeURIComponent(m.label)}`}
                                       onClick={() => setOpen(false)}
                                       className="block text-sm text-muted-foreground transition-colors hover:text-foreground"
                                     >
@@ -351,7 +352,7 @@ export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaM
                       <div className="mb-3 flex items-center justify-between">
                         <h3 className="text-sm font-semibold">Produk · {merekMenu[activeMerek].name}</h3>
                         <Link
-                          href={`/produk?brand=${encodeURIComponent(merekMenu[activeMerek].name)}`}
+                          href={merekHref(merekMenu[activeMerek].name)}
                           onClick={() => setMerekOpen(false)}
                           className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
                         >
@@ -401,7 +402,7 @@ export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaM
                               return (
                                 <div key={brand.slug}>
                                   <div className="flex items-center">
-                                    <Link href={`/produk?tipe=${brand.slug}`} onClick={closeMobile} className="flex-1 py-2 pl-6 pr-2 text-sm font-medium">
+                                    <Link href={`/kategori/${brand.slug}`} onClick={closeMobile} className="flex-1 py-2 pl-6 pr-2 text-sm font-medium">
                                       {brand.name}
                                     </Link>
                                     {brand.lines.length > 0 && (
@@ -414,7 +415,7 @@ export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaM
                                     <ul className="pb-1">
                                       {brand.lines.map((line) => (
                                         <li key={line.slug}>
-                                          <Link href={`/produk?tipe=${line.slug}`} onClick={closeMobile} className="block py-1.5 pl-10 pr-3 text-sm text-muted-foreground">
+                                          <Link href={`/kategori/${line.slug}`} onClick={closeMobile} className="block py-1.5 pl-10 pr-3 text-sm text-muted-foreground">
                                             {line.name}
                                           </Link>
                                           {line.models.length > 0 && (
@@ -422,7 +423,7 @@ export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaM
                                               {line.models.map((m) => (
                                                 <Link
                                                   key={m.slug ?? m.label}
-                                                  href={m.slug ? `/produk?tipe=${m.slug}` : `/produk?tipe=${line.slug}&model=${encodeURIComponent(m.label)}`}
+                                                  href={m.slug ? `/kategori/${m.slug}` : `/produk?tipe=${line.slug}&model=${encodeURIComponent(m.label)}`}
                                                   onClick={closeMobile}
                                                   className="inline-block rounded-full border border-border px-2.5 py-0.5 text-xs text-muted-foreground"
                                                 >
@@ -456,7 +457,7 @@ export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaM
                             {merekMenu.map((m) => (
                               <Link
                                 key={m.name}
-                                href={`/produk?brand=${encodeURIComponent(m.name)}`}
+                                href={merekHref(m.name)}
                                 onClick={closeMobile}
                                 className="inline-block rounded-full border border-border px-3 py-1 text-sm text-muted-foreground"
                               >

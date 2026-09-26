@@ -84,7 +84,7 @@ export function DevicePicker({ tree }: { tree: DeviceBrand[] }) {
             <button
               key={l.slug}
               type="button"
-              onClick={() => (l.models.length > 0 ? setLine(l) : router.push(`/produk?tipe=${l.slug}`))}
+              onClick={() => (l.models.length > 0 ? setLine(l) : router.push(`/kategori/${l.slug}`))}
               className={cardBtn}
             >
               <span>
@@ -97,14 +97,14 @@ export function DevicePicker({ tree }: { tree: DeviceBrand[] }) {
 
         {step === "model" && line && (
           <>
-            <Link href={`/produk?tipe=${line.slug}`} className={cn(cardBtn, "border-dashed")}>
+            <Link href={`/kategori/${line.slug}`} className={cn(cardBtn, "border-dashed")}>
               Semua {line.name}
               <ArrowRight className="size-4 text-muted-foreground" />
             </Link>
             {line.models.map((m) => (
               <Link
                 key={m.slug}
-                href={`/produk?tipe=${m.slug}`}
+                href={`/kategori/${m.slug}`}
                 className={cardBtn}
               >
                 <span>

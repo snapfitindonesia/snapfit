@@ -66,7 +66,7 @@ const HERO_SLIDES: HeroSlide[] = [
       "https://cdn.shopify.com/s/files/1/1696/1045/files/SUPCASE_iPhone_16_Pro_Max_Unicorn_Beetle_XT_MagSafe_phone_case_Ruddy_1x1_2c1bd284-d24a-4dff-a6ab-f918e0b46c95.png?v=1724767101",
     brand: "Supcase",
     caption: "iPhone 16 Pro Max · Unicorn Beetle MagSafe",
-    href: "/produk?tipe=apple",
+    href: "/kategori/apple",
   },
   {
     image:
