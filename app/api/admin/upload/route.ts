@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { compressToWebp, uploadToCdn, cdnConfig, uploadToR2, r2Config } from "@/lib/upload/cdn";
+import { compressToWebp, uploadToR2, r2Config } from "@/lib/upload/cdn";
 
 export const runtime = "nodejs";
 const BUCKET = "product-images";
@@ -43,26 +43,15 @@ export async function POST(request: Request) {
       const url = await uploadToR2(webp, filename);
       if (url) return NextResponse.json({ url, via: "r2" });
     } catch (e) {
-      console.error("Upload R2 gagal, coba fallback:", e instanceof Error ? e.message : e);
+      console.error("Upload R2 gagal, fallback Supabase:", e instanceof Error ? e.message : e);
     }
   }
 
-  // 2) CDN cPanel via FTPS (bila dikonfigurasi)
-  if (cdnConfig()) {
-    try {
-      const url = await uploadToCdn(webp, filename);
-      if (url) return NextResponse.json({ url, via: "cdn" });
-    } catch (e) {
-      // jangan gagal total — coba fallback Supabase
-      console.error("Upload CDN gagal, fallback Supabase:", e instanceof Error ? e.message : e);
-    }
-  }
-
-  // 3) Fallback Supabase Storage
+  // 2) Fallback Supabase Storage
   const supabase = createSupabaseAdminClient();
   if (!supabase) {
     return NextResponse.json(
-      { error: "Storage belum dikonfigurasi (CDN & Supabase). Tempel URL manual dulu." },
+      { error: "Storage belum dikonfigurasi (R2 & Supabase). Tempel URL manual dulu." },
       { status: 501 },
     );
   }

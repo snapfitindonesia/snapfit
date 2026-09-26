@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { r2Config, cdnConfig, deleteFromR2, deleteFromCdn } from "@/lib/upload/cdn";
+import { r2Config, deleteFromR2 } from "@/lib/upload/cdn";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 const SUPABASE_BUCKET = "product-images";
@@ -17,14 +17,12 @@ function filenameFromUrl(url: string): string | null {
   }
 }
 
-/** True bila URL adalah file di storage KITA (R2 / CDN / Supabase bucket), bukan URL eksternal. */
+/** True bila URL adalah file di storage KITA (R2 / Supabase bucket), bukan URL eksternal. */
 function isOurImage(url: string): boolean {
   if (!url) return false;
   const r2 = process.env.R2_PUBLIC_URL;
-  const cdn = process.env.CDN_BASE_URL;
   const supa = process.env.NEXT_PUBLIC_SUPABASE_URL;
   if (r2 && url.startsWith(noSlash(r2))) return true;
-  if (cdn && url.startsWith(noSlash(cdn))) return true;
   if (supa && url.startsWith(noSlash(supa)) && url.includes(`/${SUPABASE_BUCKET}/`)) return true;
   return false;
 }
@@ -36,7 +34,6 @@ async function deleteStoredImage(url: string): Promise<void> {
   if (!filename) return;
 
   const r2 = process.env.R2_PUBLIC_URL;
-  const cdn = process.env.CDN_BASE_URL;
   const supa = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
   // Supabase Storage
@@ -50,15 +47,9 @@ async function deleteStoredImage(url: string): Promise<void> {
     return;
   }
 
-  // R2 dan/atau CDN cPanel bisa berbagi domain yang sama (cdn.snapfit.id) — coba
-  // keduanya bila dikonfigurasi & prefix cocok, best-effort.
-  const matchR2 = r2 && url.startsWith(noSlash(r2));
-  const matchCdn = cdn && url.startsWith(noSlash(cdn));
-  if (matchR2 && r2Config()) {
+  // R2 (cdn.snapfit.id)
+  if (r2 && url.startsWith(noSlash(r2)) && r2Config()) {
     try { await deleteFromR2(filename); } catch (e) { console.error("Hapus R2 gagal:", e instanceof Error ? e.message : e); }
-  }
-  if (matchCdn && cdnConfig()) {
-    try { await deleteFromCdn(filename); } catch (e) { console.error("Hapus CDN gagal:", e instanceof Error ? e.message : e); }
   }
 }
 

@@ -2,10 +2,6 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import NextTopLoader from "nextjs-toploader";
 import "@/styles/globals.css";
-import {
-  GoogleTagManager,
-  GoogleTagManagerNoScript,
-} from "@/components/tracking/gtm";
 import { FacebookPixel } from "@/components/tracking/facebook-pixel";
 import { GoogleAnalytics } from "@/components/tracking/google-analytics";
 import { Suspense } from "react";
@@ -62,8 +58,6 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         {/* Progress bar navigasi — feedback instan tiap klik pindah halaman */}
         <NextTopLoader color="#171717" height={3} showSpinner={false} shadow="0 0 8px #171717" />
-        <GoogleTagManager />
-        <GoogleTagManagerNoScript />
         <Suspense>
           <FacebookPixel />
         </Suspense>

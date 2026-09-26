@@ -37,6 +37,7 @@
   --color-primary: var(--primary);
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
+  --color-brand-ink: var(--brand-ink);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
@@ -61,6 +62,8 @@
   --primary-foreground: oklch(0.985 0 0);
   --brand: #f26522; /* oranye brand SNAPFIT (aksen) */
   --brand-foreground: #ffffff;
+  /* Oranye gelap utk TEKS kecil di latar terang (kontras ≥4.5:1; --brand hanya ±3:1). */
+  --brand-ink: #b93f0e;
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);

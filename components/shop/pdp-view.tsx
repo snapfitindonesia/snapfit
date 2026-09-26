@@ -464,7 +464,7 @@ export function PdpView({ product, vouchers = [] }: { product: PdpProduct; vouch
                   type="button"
                   onClick={() => copyVoucher(v.code)}
                   title={`Salin kode ${v.code}${v.minPurchase > 0 ? ` · min. ${formatRupiah(v.minPurchase)}` : ""}`}
-                  className="group flex items-center gap-1.5 rounded-full border border-brand/40 bg-brand/5 px-3 py-1 text-xs font-medium text-brand transition-colors hover:bg-brand/10"
+                  className="group flex items-center gap-1.5 rounded-full border border-brand/40 bg-brand/5 px-3 py-1 text-xs font-medium text-brand-ink transition-colors hover:bg-brand/10"
                 >
                   {copiedCode === v.code ? <Check className="size-3.5" /> : <Ticket className="size-3.5" />}
                   {copiedCode === v.code ? "Kode disalin" : v.label}

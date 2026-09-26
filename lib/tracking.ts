@@ -1,5 +1,5 @@
-// Push event e-commerce ke dataLayer (dikonsumsi GTM → Pixel/GA4, docs/08).
-// Aman dipanggil walau GTM belum dimuat: dataLayer hanya array biasa.
+// Event e-commerce → GA4 (gtag), Meta Pixel (browser) + Conversions API (server).
+// Aman dipanggil sebelum script analitik termuat: gtag/fbq berupa stub antrean.
 
 type Item = {
   item_id: string;
@@ -10,17 +10,9 @@ type Item = {
 
 declare global {
   interface Window {
-    dataLayer?: Record<string, unknown>[];
     fbq?: (...args: unknown[]) => void;
     gtag?: (...args: unknown[]) => void;
   }
-}
-
-function push(payload: Record<string, unknown>) {
-  if (typeof window === "undefined") return;
-  window.dataLayer = window.dataLayer || [];
-  window.dataLayer.push({ ecommerce: null }); // bersihkan objek sebelumnya (GA4)
-  window.dataLayer.push(payload);
 }
 
 type Pii = { email?: string; phone?: string };
@@ -60,10 +52,6 @@ function gaTrack(event: string, params: Record<string, unknown>) {
 }
 
 export function trackViewItem(item: Item) {
-  push({
-    event: "view_item",
-    ecommerce: { currency: "IDR", value: item.price, items: [item] },
-  });
   fbTrack("ViewContent", {
     content_ids: [item.item_id],
     content_name: item.item_name,
@@ -76,10 +64,6 @@ export function trackViewItem(item: Item) {
 
 export function trackAddToCart(item: Item) {
   const value = item.price * (item.quantity ?? 1);
-  push({
-    event: "add_to_cart",
-    ecommerce: { currency: "IDR", value, items: [item] },
-  });
   fbTrack("AddToCart", {
     content_ids: [item.item_id],
     content_name: item.item_name,
@@ -91,10 +75,6 @@ export function trackAddToCart(item: Item) {
 }
 
 export function trackBeginCheckout(value: number, items: Item[], pii?: Pii) {
-  push({
-    event: "begin_checkout",
-    ecommerce: { currency: "IDR", value, items },
-  });
   fbTrack("InitiateCheckout", {
     content_ids: items.map((i) => i.item_id),
     content_type: "product",
@@ -107,16 +87,11 @@ export function trackBeginCheckout(value: number, items: Item[], pii?: Pii) {
 
 /** Klik tombol WhatsApp — `source`: floating / pdp / pdp-stok-habis. */
 export function trackContact(source: string, productName?: string) {
-  push({ event: "contact_whatsapp", source, product: productName });
   fbTrack("Contact", { content_name: productName ?? source, content_category: source });
   gaTrack("contact_whatsapp", { source, item_name: productName });
 }
 
 export function trackPurchase(transactionId: string, value: number, items: Item[], pii?: Pii) {
-  push({
-    event: "purchase",
-    ecommerce: { transaction_id: transactionId, currency: "IDR", value, items },
-  });
   fbTrack("Purchase", {
     content_ids: items.map((i) => i.item_id),
     content_type: "product",

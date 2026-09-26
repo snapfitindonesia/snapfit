@@ -1,42 +1,28 @@
-# Snapfit Website — Dokumentasi Proyek
+# Dokumentasi SNAPFIT
 
-Toko e-commerce single-brand untuk **Snapfit** (aksesori HP/tablet), dibangun sendiri
-sebagai proyek belajar web dev. Dokumentasi ini dipecah per-concern supaya rapi dan
-gampang diserahkan ke Claude Code satu per satu.
+Dokumentasi sistem **yang sedang berjalan** di www.snapfit.id. Mulai dari 01 untuk
+gambaran besar, lalu buka dokumen sesuai kebutuhan.
 
-> **Cara pakai:** baca `01-arsitektur.md` dulu untuk gambaran besar, lalu buka file
-> sesuai fitur yang lagi dikerjakan. Tiap file berdiri sendiri — bisa dijadikan konteks
-> terpisah saat ngoding di Claude Code biar fokus.
+| # | Dokumen | Isi | Baca saat |
+|---|---|---|---|
+| 01 | [Arsitektur](01-arsitektur.md) | Stack, struktur folder, pola data, cache | Pertama kali / sebelum ubah kode |
+| 02 | [Fitur toko](02-fitur-toko.md) | Semua halaman publik & perilakunya | Ubah tampilan/alur belanja |
+| 03 | [Panel admin](03-panel-admin.md) | Menu admin & cara pakainya | Kelola produk, pesanan, konten |
+| 04 | [Database](04-database.md) | Model data & aturan (harga dummy, arsip, backup) | Ubah skema / data |
+| 05 | [Pembayaran & pengiriman](05-pembayaran-pengiriman.md) | Transfer manual/Midtrans, ongkir, email pesanan | Checkout, go-live Midtrans/Biteship |
+| 06 | [Integrasi](06-integrasi.md) | Ginee, Merchant Center, Meta, GA4, Customer Reviews | Stok, feed, iklan, tracking |
+| 07 | [Infrastruktur](07-infrastruktur.md) | Vercel, Cloudflare, R2, cron, env vars, deploy | Deploy / ganti kredensial |
+| 08 | [Performa & SEO](08-performa-seo.md) | Aturan agar PageSpeed tetap tinggi, SEO | Tambah fitur/skrip baru |
+| 09 | [Keamanan](09-keamanan.md) | Auth, admin, rate limit, rahasia | Ubah login/admin/API |
+| 10 | [Operasional](10-operasional.md) | Rutinitas, backup/restore, skrip, troubleshooting | Ada masalah / perawatan rutin |
 
-## Daftar Dokumen
+Dokumen perencanaan lama (sebelum launch) disimpan di [`arsip/`](arsip/README.md) —
+**jangan** dijadikan acuan, banyak yang sudah berubah.
 
-| File | Isi | Baca saat |
-|------|-----|-----------|
-| `01-arsitektur.md` | Stack, struktur folder, model fullstack Next.js, deployment | Awal / setup proyek |
-| `02-design-system.md` | Arah UI/UX, token warna/font, halaman kunci, responsive | Sebelum bikin komponen |
-| `03-database.md` | Model data Prisma (produk, varian, order, banner, voucher, diskon) | Sebelum bikin backend |
-| `04-payment-gateway.md` | Integrasi Midtrans Snap, biaya, alur bayar | Fitur checkout |
-| `05-pengiriman.md` | Integrasi Biteship, ongkir | Fitur checkout |
-| `06-auth-security.md` | Supabase Auth, anti-bruteforce, MFA admin, rate limit | Fitur login/admin |
-| `07-deployment-dns.md` | Vercel, setup DNS/NS, hybrid CDN (hosting cPanel), email/MX | Sebelum launch |
-| `08-tracking.md` | GTM, Meta Pixel, GA4 | Setelah storefront jadi |
-| `09-dashboard-admin.md` | Kebutuhan panel admin (banner, CRUD, diskon, voucher, order) | Fitur admin |
-| `10-biaya.md` | Rincian biaya bulanan | Referensi / planning |
-| `11-roadmap.md` | Urutan build nol→launch + perintah siap-tempel per sesi | **Mulai ngoding** |
+## Konvensi
 
-## Prinsip Proyek
-
-- **Tujuan utama: belajar.** Mulai di localhost, bangun bertahap via Claude Code.
-- **Single-brand premium** — referensi rasa: Nomad Goods (bukan gaya marketplace).
-- **Full responsive, MOBILE PRIORITAS UTAMA** — lalu tablet & desktop; tiap ukuran
-  diperlakukan sadar (Snapfit jual case HP + iPad/tablet).
-- **Interaksi dinamis (AJAX) tanpa reload** — filter, keranjang, search, load-more, cek
-  ongkir update sebagian halaman tanpa muat ulang penuh. Detail: `01-arsitektur.md`.
-- **Ringan & cepat (hybrid)** — RSC untuk muat awal (cepat + SEO), AJAX untuk interaksi;
-  `next/image` untuk semua gambar.
-- **Solo, tanpa tim teknis** — pilih yang simpel & murah dirawat sendiri.
-
-## Stack Ringkas
-
-Next.js 15 (App Router) · Tailwind CSS · shadcn/ui · Prisma · Supabase (Postgres)
-· Midtrans Snap · Biteship · deploy di Vercel · hosting cPanel lama sebagai CDN aset.
+- Bahasa Indonesia untuk dokumen & komentar kode.
+- Satu sumber kebenaran per hal: nomor WA di `lib/contact.ts`, aturan harga dummy di
+  `lib/price-guard.ts`, slug di `lib/slug.ts`, format rupiah di `lib/format.ts`.
+- Rahasia (API key/token) **hanya** di `.env` (lokal) dan Vercel env — tidak pernah di
+  kode, commit, chat, atau URL.

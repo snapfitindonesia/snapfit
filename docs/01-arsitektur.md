@@ -1,120 +1,109 @@
 # 01 — Arsitektur
 
-## Model: fullstack dalam satu proyek
+## Gambaran besar
 
-Next.js adalah fullstack framework — **frontend dan backend hidup di satu proyek yang
-sama**, dan itu memang cara yang benar. Jangan pisah jadi server backend terpisah.
+Satu proyek **Next.js 15 (App Router)** berisi semuanya — tidak ada server backend
+terpisah:
 
-- **Frontend** = komponen React (`app/.../page.tsx`)
-- **Backend** = Server Components + Server Actions + Route Handlers (jalan di server)
-- **Database** = Prisma + Supabase Postgres, diakses dari sisi server
+```
+Browser ──► Vercel (Next.js)
+             ├─ Halaman toko (RSC + ISR)          app/(shop)/…
+             ├─ Panel admin (dinamis, login)       app/admin/…
+             ├─ Server Actions (mutasi)            lib/actions/…
+             ├─ Route handler (API/feed/cron)      app/api/…, app/feed/…
+             └─ Cron harian (vercel.json)          app/api/cron/…
+                 │
+                 ├──► Supabase Postgres (Prisma)   data toko
+                 ├──► Supabase Auth                login pelanggan & admin
+                 ├──► Cloudflare R2                foto (cdn.snapfit.id) + backup DB
+                 ├──► Ginee OpenAPI                stok gudang, impor produk, push pesanan
+                 ├──► Resend                       email transaksional
+                 └──► Meta CAPI / GA4 / GCR        tracking & ulasan
+```
 
-Backend "kesembunyi" dari browser karena data ditarik server-side (pola yang sama dipakai
-toko referensi UniTAG) — bukan karena server terpisah. Satu repo, satu deploy, satu tagihan.
+## Stack
 
-## Strategi data & interaksi (hybrid RSC + AJAX)
-
-Target: halaman **muat cepat** TAPI interaksi terasa **dinamis tanpa reload** (AJAX).
-Bukan pilih salah satu — dibagi per kebutuhan:
-
-| Kebutuhan | Teknik | Reload? |
-|-----------|--------|---------|
-| Muat awal halaman (home, listing, PDP) | **RSC** (server render) | — (cepat + SEO) |
-| Filter tipe HP, sort, "load more", search | **AJAX** → `fetch()` ke Route Handler `app/api/*` dari Client Component | Tidak |
-| Tambah/ubah/hapus keranjang | **AJAX** + optimistic UI | Tidak |
-| Cek ongkir di checkout | **AJAX** → Route Handler | Tidak |
-| Submit order, aksi admin (CRUD, diskon, voucher) | **Server Actions** (mutasi async) | Tidak |
-
-> **Istilah:** "AJAX" di sini = update sebagian halaman tanpa muat ulang penuh, lewat
-> `fetch()` ke Route Handler / Server Action — **bukan** XMLHttpRequest/jQuery kuno. Efek
-> UX-nya sama (dinamis), tapi cara modern & aman di Next.js.
-
-**Aturan pembagian:**
-- **RSC** untuk yang perlu cepat tampil & terindeks Google (konten produk, halaman awal).
-- **Client Component + AJAX** untuk yang butuh reaktif tanpa reload (interaksi user).
-- **Server Actions** untuk mutasi data (tulis ke DB) — tervalidasi di server.
-
-Jangan jadikan SEMUA halaman client-side (gaya SPA jQuery lama) — itu bikin muat awal lambat
-& jelek buat SEO. Hybrid ini yang menjaga dua tujuan sekaligus: **cepat DAN dinamis.**
-
-## Responsive: mobile prioritas utama (wajib)
-
-Desain & bangun **mobile dulu**, baru tablet, baru desktop — bukan sebaliknya.
-
-| Ukuran | Lebar | Status |
-|--------|-------|--------|
-| Mobile | 375px | **PRIORITAS UTAMA** — mayoritas traffic |
-| Tablet | 768px | Penting (Snapfit jual case iPad/tablet) |
-| Desktop | 1280px | |
-
-Tiap ukuran diperlakukan sadar (layout, jumlah kolom, target sentuh), bukan sekadar
-"desktop yang diciutkan". Detail pola per halaman: `02-design-system.md`.
-
-## Stack final
-
-| Layer | Pilihan |
-|-------|---------|
-| Framework | Next.js 15 (App Router) |
-| Styling | Tailwind CSS |
-| Komponen UI | shadcn/ui (Radix + Tailwind) |
-| Font | Geist (via `next/font`) |
-| ORM | Prisma |
-| Database | SQLite (dev lokal) → Postgres/Supabase (produksi) |
-| Auth | Supabase Auth (lihat `06-auth-security.md`) |
-| Payment | Midtrans Snap (lihat `04-payment-gateway.md`) |
-| Ongkir | Biteship (lihat `05-pengiriman.md`) |
-| Hosting app | Vercel |
-| CDN aset | Hosting cPanel lama → `cdn.snapfit.id` (lihat `07-deployment-dns.md`) |
-| Tracking | GTM + Meta Pixel + GA4 (lihat `08-tracking.md`) |
+| Lapisan | Pilihan | Catatan |
+|---|---|---|
+| Framework | Next.js 15.5, React 19 | **Jangan** naik ke Next 16 tanpa uji penuh |
+| Styling | Tailwind CSS 4 + `tw-animate-css` | Token di `styles/globals.css`, brand monokrom |
+| Komponen UI | shadcn (hanya `Button`) + komponen sendiri | `radix-ui` di-tree-shake via `optimizePackageImports` |
+| Database | Postgres (Supabase) via **Prisma 6** | Jangan naik ke Prisma 7 tanpa migrasi |
+| Auth | Supabase Auth (`@supabase/ssr`) | Cookie sesi; admin = role di `app_metadata` |
+| Gambar | `next/image` lewat `@/components/ui/image` | Wajib — lihat [08](08-performa-seo.md#gambar) |
+| Rate limit | Upstash Redis | `lib/security/ratelimit.ts` |
 
 ## Struktur folder
 
 ```
-snapfit/
-├── app/
-│   ├── (shop)/              # STOREFRONT: home, produk, keranjang, checkout
-│   │   ├── page.tsx         # homepage
-│   │   ├── produk/[slug]/   # halaman detail produk (PDP)
-│   │   ├── keranjang/
-│   │   └── checkout/
-│   ├── admin/               # DASHBOARD ADMIN (layout & proteksi terpisah)
-│   │   ├── produk/
-│   │   ├── banner/
-│   │   ├── diskon/
-│   │   ├── voucher/
-│   │   └── pesanan/
-│   └── api/                 # Route Handlers (webhook Midtrans, dll)
-├── components/
-│   ├── ui/                  # komponen shadcn (Button, Card, Dialog...)
-│   └── shop/                # komponen domain (ProductCard, VariantPicker...)
-├── lib/
-│   ├── db.ts                # koneksi Prisma
-│   ├── actions/             # SERVER ACTIONS = logika backend (order, produk, diskon)
-│   ├── validations/         # skema Zod
-│   ├── midtrans.ts
-│   └── biteship.ts
-├── prisma/
-│   └── schema.prisma        # model data (lihat 03-database.md)
-├── styles/
-│   └── globals.css          # DESIGN SYSTEM: token warna/font (lihat 02-design-system.md)
-└── public/                  # aset STATIS build-time (logo, ikon) — BUKAN upload admin
+app/
+  (shop)/            halaman toko (layout: header, footer, keranjang, WA melayang)
+    page.tsx           beranda
+    produk/            daftar produk & detail (/produk/[slug])
+    kategori/[slug]    landing SEO per kategori
+    merek/[slug]       landing SEO per merek
+    keranjang/ checkout/ lacak/ akun/ bantuan/ privacy/ terms/
+  admin/             panel admin (dilindungi middleware + MFA)
+  api/               route handler: upload, produk (AJAX), ongkir, webhook, cron, CAPI
+  feed/products.xml  feed produk untuk Google Merchant Center & Meta
+  links/             halaman linktree (/links)
+  grosir/            halaman penawaran grosir
+  masuk/ daftar/ lupa-password/ reset-password/ auth/callback
+  sitemap.ts robots.ts layout.tsx (metadata global, tracking)
+components/
+  shop/              komponen storefront
+  admin/             komponen panel admin
+  auth/              form login/daftar/MFA
+  tracking/          GA4, Meta Pixel, Customer Reviews, pemuat tertunda
+  ui/                Button + Image (wrapper next/image)
+lib/
+  actions/           Server Actions per domain (product, order, admin, ginee, linktree, track, voucher, auth)
+  ginee/             klien OpenAPI Ginee (HMAC), sinkron stok, impor, push pesanan
+  upload/            kompres WebP + upload R2, mirror foto marketplace, pembersihan
+  security/          rate limit, Turnstile
+  supabase/          klien server/browser/admin + middleware sesi
+  validations/       skema zod
+  email.ts           template & pengiriman email (Resend)
+  backup.ts          ekspor DB → R2 (cron)
+  price-guard.ts     aturan harga dummy (99.999 dst.)
+  contact.ts         nomor WhatsApp toko (satu sumber)
+  slug.ts            slugify / productSlug / skuify / link merek
+  image-loader.ts    loader langsung untuk foto marketplace
+prisma/schema.prisma model data
+scripts/             skrip CLI perawatan (lihat 10-operasional)
+middleware.ts        refresh sesi Supabase + gerbang /admin
+vercel.json          jadwal cron
 ```
 
-## Pemisahan yang wajib dijaga
+## Pola data & interaksi
 
-1. **`app/(shop)` vs `app/admin`** — beda layout, beda proteksi. Admin butuh auth + MFA.
-2. **UI vs logika** — komponen tampilan (`components/`) tidak menyentuh DB langsung.
-   Semua logika data di `lib/actions/`.
-3. **Design system terpusat** — token warna/font/spacing HANYA di `globals.css`.
-   Jangan hardcode warna di komponen.
-4. **Upload admin ≠ folder `public/`** — Vercel filesystem ephemeral; gambar yang
-   di-upload admin harus ke storage eksternal (lihat `07-deployment-dns.md`).
+| Kebutuhan | Teknik | Contoh |
+|---|---|---|
+| Muat awal halaman toko | **Server Component + ISR** (`revalidate = 300`) | beranda, PDP, landing kategori/merek |
+| Filter/sort/cari/muat lagi | Client component `fetch()` ke `/api/products` | `components/shop/product-listing.tsx` |
+| Keranjang | Client state + `localStorage` (`CartProvider`) | tanpa login, tanpa reload |
+| Mutasi (checkout, admin CRUD) | **Server Actions** di `lib/actions/*` | `createOrder`, `saveProduct` |
+| Status login di header | Dibaca dari cookie sesi (tanpa supabase-js) | `StoreUIProvider` |
+| Integrasi terjadwal | Cron Vercel harian → route `app/api/cron/*` | stok Ginee, backup, email |
 
-## Urutan build per fitur
+### Cache & kesegaran data
 
-Untuk tiap fitur, kerjakan berurutan (bukan sekaligus):
+- Halaman toko di-cache ISR 5 menit; setelah admin menyimpan produk/banner, action
+  memanggil `revalidatePath` sehingga perubahan tampil segera.
+- PDP & landing memakai `generateStaticParams() { return [] }` + ISR on-demand: tidak
+  dibangun saat build, dibuat saat pertama dibuka lalu di-cache.
+- Feed produk di-cache 1 jam, sitemap 1 jam.
+- Admin selalu dinamis (tanpa cache).
 
-**Design (token/mock) → Frontend (komponen) → Backend (Server Action + Prisma)**
+## Aturan lintas-kode
 
-Contoh fitur "produk": tentukan tampilan PDP → bikin `VariantPicker` & `ProductGallery`
-→ bikin `lib/actions/product.ts` + model Prisma yang menyalakannya.
+1. **Gambar**: selalu `import Image from "@/components/ui/image"`, bukan `next/image`
+   langsung — wrapper ini memilih loader yang hemat kuota Vercel.
+2. **Harga dummy**: selalu lewat `isPlaceholderPrice` / `sellableStock`
+   (`lib/price-guard.ts`); jangan membuat ambang harga sendiri.
+3. **Produk diarsipkan** (`archived: true`) wajib dikecualikan di semua query toko,
+   feed, sitemap, dan landing.
+4. **Nomor WA** hanya dari `lib/contact.ts` (`STORE_WA`, `waChatUrl`).
+5. **Skrip pihak ketiga** baru harus ditunda (lihat [08](08-performa-seo.md)).
+6. Server Action yang mengubah data wajib memanggil `requireAdmin()` (admin) atau
+   memvalidasi input dengan zod (publik).

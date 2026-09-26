@@ -1,36 +1,61 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SNAPFIT Indonesia — www.snapfit.id
 
-## Getting Started
+Toko online resmi SNAPFIT (aksesoris gadget premium: case HP, tablet & AirPods —
+authorized reseller Ringke, VRS Design, Araree, Supcase). Satu proyek Next.js berisi
+storefront, panel admin, API, dan tugas terjadwal.
 
-First, run the development server:
+| | |
+|---|---|
+| **Produksi** | https://www.snapfit.id (Vercel, tim `mandimalems-projects`) |
+| **Repo** | github.com/mandimalem/snapfit (branch `main`) |
+| **Stack** | Next.js 15 (App Router) · React 19 · Tailwind 4 · Prisma 6 · Supabase (Postgres + Auth) |
+| **Aset foto** | Cloudflare R2 → `cdn.snapfit.id` |
+| **Stok** | Sinkron harian dari Ginee (gudang) |
+
+## Mulai cepat (lokal)
+
+Butuh Node 20+ dan file `.env` (minta salinan; **jangan pernah di-commit**).
+
+```bash
+npm install
+```
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Buka http://localhost:3000 — admin di http://localhost:3000/admin.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Perintah | Fungsi |
+|---|---|
+| `npm run dev` | Server pengembangan |
+| `npm run build` | Build produksi (jalankan sebelum deploy untuk cek error) |
+| `npm run typecheck` | Cek tipe TypeScript |
+| `npm run lint` | ESLint |
+| `npx prisma db push` | Terapkan perubahan `prisma/schema.prisma` ke database (hentikan `npm run dev` dulu di Windows) |
+| `npx prisma studio` | Lihat/ubah isi database lewat browser |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Deploy
 
-## Learn More
+Deploy **manual lewat Vercel CLI** (auto-deploy GitHub tidak andal):
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npx vercel deploy --prod --yes
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Butuh env `VERCEL_TOKEN`. Detail & jebakan: [docs/07-infrastruktur.md](docs/07-infrastruktur.md#deploy).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Dokumentasi
 
-## Deploy on Vercel
+Semua ada di [`docs/`](docs/README.md):
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. [Arsitektur & struktur kode](docs/01-arsitektur.md)
+2. [Fitur toko (halaman publik)](docs/02-fitur-toko.md)
+3. [Panel admin](docs/03-panel-admin.md)
+4. [Database & aturan data](docs/04-database.md)
+5. [Pembayaran, ongkir & email pesanan](docs/05-pembayaran-pengiriman.md)
+6. [Integrasi: Ginee, Google, Meta](docs/06-integrasi.md)
+7. [Infrastruktur, env & deploy](docs/07-infrastruktur.md)
+8. [Performa & SEO](docs/08-performa-seo.md)
+9. [Keamanan](docs/09-keamanan.md)
+10. [Operasional & troubleshooting](docs/10-operasional.md)
