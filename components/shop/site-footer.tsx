@@ -19,6 +19,7 @@ const COLUMNS: { title: string; links: FooterLink[] }[] = [
   {
     title: "Bantuan",
     links: [
+      { label: "Lacak Pesanan", href: "/lacak" },
       { label: "Cara Pesan", href: "/bantuan#cara-pesan" },
       { label: "Pengiriman", href: "/bantuan#pengiriman" },
       { label: "Pengembalian", href: "/bantuan#pengembalian" },

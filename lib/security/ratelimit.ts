@@ -17,6 +17,25 @@ function getLimiter(): Ratelimit | null {
   return limiter;
 }
 
+const generic = new Map<string, Ratelimit>();
+
+/** Rate-limit umum (mis. lacak pesanan): `max` percobaan per `window`. Tanpa Upstash → dilewati. */
+export async function limitAction(
+  name: string,
+  key: string,
+  max: number,
+  window: `${number} s` | `${number} m`,
+): Promise<{ success: boolean; skipped: boolean }> {
+  if (!isUpstashConfigured()) return { success: true, skipped: true };
+  let l = generic.get(name);
+  if (!l) {
+    l = new Ratelimit({ redis: Redis.fromEnv(), limiter: Ratelimit.slidingWindow(max, window), prefix: `rl_${name}` });
+    generic.set(name, l);
+  }
+  const { success } = await l.limit(key);
+  return { success, skipped: false };
+}
+
 export async function limitLogin(
   ip: string,
 ): Promise<{ success: boolean; skipped: boolean }> {

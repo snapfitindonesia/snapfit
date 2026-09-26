@@ -97,7 +97,7 @@ export default function BantuanPage() {
             <li>Pesanan dikirim melalui kurir tepercaya (JNE, J&T, SiCepat, dll.) sesuai pilihan saat checkout.</li>
             <li>Ongkos kirim dihitung otomatis berdasarkan alamat & berat paket.</li>
             <li>Pesanan diproses 1×24 jam kerja setelah pembayaran terkonfirmasi.</li>
-            <li>Nomor resi akan muncul di <Link href="/akun/pesanan" className="font-medium text-brand hover:underline">Pesanan Saya</Link> setelah paket dikirim, untuk kamu lacak.</li>
+            <li>Cek status & nomor resi kapan saja di <Link href="/lacak" className="font-medium text-brand hover:underline">Lacak Pesanan</Link> — cukup nomor pesanan + email/nomor HP, tanpa login.</li>
           </ul>
         </section>
 

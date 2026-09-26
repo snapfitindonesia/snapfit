@@ -87,6 +87,10 @@ function fmtDate(d?: Date | string): string {
   return date.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Jakarta" });
 }
 
+function trackUrl(order: OrderLike): string {
+  return `${SITE}/lacak?order=${encodeURIComponent(order.midtransOrderId ?? "")}`;
+}
+
 function orderUrl(order: OrderLike): string {
   return `${SITE}/checkout/sukses?order=${encodeURIComponent(order.midtransOrderId ?? "")}`;
 }
@@ -271,7 +275,7 @@ export function orderProcessingEmail(order: OrderLike, items: ItemLike[]) {
       body:
         highlight("Status pesanan", "Sedang dikemas") +
         details(order, items) +
-        button("Lihat Pesanan", orderUrl(order)),
+        button("Lacak Pesanan", trackUrl(order)),
     }),
   };
 }
@@ -291,7 +295,7 @@ export function orderShippedEmail(order: OrderLike, items: ItemLike[]) {
           "Gunakan nomor ini untuk melacak paket di aplikasi/situs kurir.",
         ) +
         details(order, items) +
-        button("Lihat Pesanan", orderUrl(order)),
+        button("Lacak Paket", trackUrl(order)),
     }),
   };
 }
