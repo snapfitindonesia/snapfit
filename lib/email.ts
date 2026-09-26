@@ -3,6 +3,7 @@ import { formatRupiah } from "@/lib/format";
 const FROM = process.env.EMAIL_FROM || "SNAPFIT <no-reply@snapfit.id>";
 // Balasan pembeli diarahkan ke inbox yang dibaca (bukan no-reply).
 const REPLY_TO = process.env.EMAIL_REPLY_TO || "admin@snapfit.id";
+const SITE = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.snapfit.id").replace(/\/$/, "");
 
 export function isEmailConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY);
@@ -30,7 +31,17 @@ export async function sendEmail(input: {
   return { mock: false };
 }
 
-type Address = { name?: string; address?: string; city?: string; postalCode?: string };
+/* ============================ TEMPLATE ============================ */
+
+type Address = {
+  name?: string;
+  phone?: string;
+  address?: string;
+  district?: string;
+  city?: string;
+  province?: string;
+  postalCode?: string;
+};
 type OrderLike = {
   midtransOrderId: string | null;
   subtotal: number;
@@ -38,67 +49,176 @@ type OrderLike = {
   total: number;
   trackingNo: string | null;
   address: unknown; // Prisma Json — di-cast lokal
+  discount?: number;
+  courier?: string | null;
+  createdAt?: Date | string;
 };
 type ItemLike = { name: string; price: number; qty: number };
+
+// Warna brand (oranye logo SNAPFIT) + netral.
+const C = {
+  brand: "#F05000",
+  brand2: "#FF8A1F",
+  ink: "#18181b",
+  muted: "#71717a",
+  line: "#e4e4e7",
+  soft: "#FFF4EC",
+  bg: "#f4f4f5",
+};
+
+function esc(s: unknown): string {
+  return String(s ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
 
 function addr(order: OrderLike): Address {
   return (order.address as Address | null) ?? {};
 }
 
-function itemsTable(items: ItemLike[]): string {
-  const rows = items
-    .map(
-      (it) =>
-        `<tr><td style="padding:4px 0">${it.name} × ${it.qty}</td><td style="padding:4px 0;text-align:right">${formatRupiah(it.price * it.qty)}</td></tr>`,
-    )
-    .join("");
-  return `<table style="width:100%;border-collapse:collapse;font-size:14px">${rows}</table>`;
+function firstName(order: OrderLike): string {
+  return (addr(order).name ?? "").trim().split(/\s+/)[0] || "Kak";
 }
 
-function shell(title: string, body: string): string {
-  return `<div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#18181b">
-    <h1 style="font-size:20px">snapfit.</h1>
-    <h2 style="font-size:16px">${title}</h2>
-    ${body}
-    <p style="color:#71717a;font-size:12px;margin-top:24px">Email otomatis SNAPFIT.</p>
-  </div>`;
+function fmtDate(d?: Date | string): string {
+  const date = d ? new Date(d) : new Date();
+  return date.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Jakarta" });
+}
+
+function orderUrl(order: OrderLike): string {
+  return `${SITE}/checkout/sukses?order=${encodeURIComponent(order.midtransOrderId ?? "")}`;
+}
+
+/** Kotak sorotan (seperti kotak "Nomor token" di email Shopee). */
+function highlight(label: string, value: string, hint?: string): string {
+  return `
+  <tr><td style="padding:20px 0 6px;font-size:14px;font-weight:700;color:${C.ink}">${esc(label)}</td></tr>
+  ${hint ? `<tr><td style="padding:0 0 10px;font-size:12px;color:${C.muted}">${esc(hint)}</td></tr>` : ""}
+  <tr><td style="background:${C.soft};border-radius:6px;padding:18px;text-align:center;font-size:22px;letter-spacing:1px;color:${C.brand};font-weight:600">${esc(value)}</td></tr>`;
+}
+
+/** Baris label : nilai pada tabel rincian. */
+function row(label: string, value: string, opts: { strong?: boolean; accent?: boolean } = {}): string {
+  const color = opts.accent ? C.brand : C.ink;
+  const weight = opts.strong || opts.accent ? 700 : 600;
+  return `<tr>
+    <td style="padding:7px 0;font-size:14px;color:${C.ink};width:42%;vertical-align:top">${esc(label)}</td>
+    <td style="padding:7px 0;font-size:14px;color:${color};font-weight:${weight};vertical-align:top">${value}</td>
+  </tr>`;
+}
+
+function details(order: OrderLike, items: ItemLike[], opts: { withTotals?: boolean } = {}): string {
+  const products = items
+    .map((it) => `${esc(it.name)} <span style="color:${C.muted};font-weight:400">× ${it.qty}</span>`)
+    .join("<br/>");
+  const a = addr(order);
+  const place = [a.address, a.district, a.city, a.province, a.postalCode].filter(Boolean).map(esc).join(", ");
+  return `
+  <tr><td style="padding:24px 0 8px;font-size:14px;font-weight:700;color:${C.ink}">Rincian Pesanan</td></tr>
+  <tr><td>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse">
+      ${row("Nomor pesanan", esc(order.midtransOrderId ?? "-"))}
+      ${row("Tanggal pesanan", esc(fmtDate(order.createdAt)))}
+      ${row("Produk", products)}
+      ${
+        opts.withTotals
+          ? `${row("Subtotal", formatRupiah(order.subtotal))}
+             ${row("Ongkos kirim", order.shippingCost > 0 ? formatRupiah(order.shippingCost) : "Gratis")}
+             ${order.discount ? row("Diskon voucher", `− ${formatRupiah(order.discount)}`) : ""}
+             ${row("Total pembayaran", formatRupiah(order.total), { accent: true })}`
+          : ""
+      }
+      ${a.name ? row("Penerima", `${esc(a.name)}${a.phone ? `<br/><span style="font-weight:400;color:${C.muted}">${esc(a.phone)}</span>` : ""}`) : ""}
+      ${place ? row("Alamat pengiriman", `<span style="font-weight:400">${place}</span>`) : ""}
+    </table>
+  </td></tr>`;
+}
+
+function button(label: string, href: string): string {
+  return `<tr><td style="padding:24px 0 4px">
+    <a href="${href}" style="display:inline-block;background:${C.brand};color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;padding:12px 22px;border-radius:6px">${esc(label)}</a>
+  </td></tr>`;
+}
+
+/** Kerangka email: header oranye + logo, isi, penutup, footer kecil. */
+function shell(opts: { preheader: string; greeting: string; intro: string; body: string }): string {
+  return `<!doctype html>
+<html lang="id"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>SNAPFIT</title></head>
+<body style="margin:0;padding:0;background:${C.bg};font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0">${esc(opts.preheader)}</div>
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:${C.bg}">
+    <tr><td align="center" style="padding:24px 12px">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;background:#ffffff">
+        <tr><td style="background:${C.brand};background-image:linear-gradient(110deg,${C.brand} 55%,${C.brand2});padding:16px 24px">
+          <a href="${SITE}" style="text-decoration:none"><img src="${SITE}/email/logo-white.png" width="120" height="30" alt="SNAPFIT" style="display:block;border:0"/></a>
+        </td></tr>
+        <tr><td style="padding:28px 24px 8px">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+            <tr><td style="font-size:16px;font-weight:700;color:${C.ink};padding-bottom:14px">${esc(opts.greeting)}</td></tr>
+            <tr><td style="font-size:14px;line-height:1.6;color:${C.ink};padding-bottom:18px;border-bottom:1px solid ${C.line}">${opts.intro}</td></tr>
+            ${opts.body}
+            <tr><td style="padding:28px 0 0;font-size:14px;line-height:1.6;color:${C.ink}">Salam,<br/>Tim SNAPFIT</td></tr>
+            <tr><td style="padding:24px 0 24px;font-size:12px;line-height:1.6;color:${C.muted}">
+              Butuh bantuan? Cukup balas email ini, tim kami akan membantu.<br/>
+              Email ini dikirim otomatis dari <a href="${SITE}" style="color:${C.brand}">snapfit.id</a> karena kamu berbelanja di SNAPFIT.
+            </td></tr>
+          </table>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
 }
 
 export function orderConfirmationEmail(order: OrderLike, items: ItemLike[]) {
   return {
-    subject: `Pesanan ${order.midtransOrderId} sudah dibayar ✓`,
-    html: shell(
-      "Pembayaran diterima",
-      `<p>Terima kasih, pesananmu sedang kami siapkan.</p>
-       ${itemsTable(items)}
-       <p style="font-size:14px">Ongkir: ${formatRupiah(order.shippingCost)}<br/>
-       <strong>Total: ${formatRupiah(order.total)}</strong></p>
-       <p style="font-size:13px;color:#71717a">Alamat: ${addr(order).name ?? ""}, ${addr(order).address ?? ""}, ${addr(order).city ?? ""} ${addr(order).postalCode ?? ""}</p>`,
-    ),
+    subject: `[SNAPFIT] Pembayaran pesanan ${order.midtransOrderId} berhasil ✓`,
+    html: shell({
+      preheader: `Pembayaran ${formatRupiah(order.total)} diterima. Pesananmu segera kami siapkan.`,
+      greeting: `Halo ${firstName(order)}`,
+      intro: `Terima kasih telah berbelanja di SNAPFIT. Kami informasikan bahwa <strong>pembayaranmu telah kami terima</strong> dan pesanan segera kami siapkan.`,
+      body:
+        highlight("Nomor pesanan", order.midtransOrderId ?? "-", "Simpan nomor ini untuk menanyakan status pesanan.") +
+        details(order, items, { withTotals: true }) +
+        button("Lihat Pesanan", orderUrl(order)),
+    }),
   };
 }
 
 export function orderProcessingEmail(order: OrderLike, items: ItemLike[]) {
   return {
-    subject: `Pesanan ${order.midtransOrderId} sedang kami proses 🛠️`,
-    html: shell(
-      "Pesanan sedang diproses",
-      `<p>Hai ${addr(order).name ?? ""}, pesananmu sedang kami siapkan & kemas.</p>
-       <p style="font-size:14px">Kami akan kabari lagi begitu paket dikirim beserta nomor resinya.</p>
-       ${itemsTable(items)}`,
-    ),
+    subject: `[SNAPFIT] Pesanan ${order.midtransOrderId} sedang dikemas 📦`,
+    html: shell({
+      preheader: "Pesananmu sedang kami siapkan & kemas.",
+      greeting: `Halo ${firstName(order)}`,
+      intro: `Pesananmu <strong>sedang kami siapkan &amp; kemas</strong>. Kami akan mengabarimu lagi begitu paket dikirim, lengkap dengan nomor resinya.`,
+      body:
+        highlight("Status pesanan", "Sedang dikemas") +
+        details(order, items) +
+        button("Lihat Pesanan", orderUrl(order)),
+    }),
   };
 }
 
 export function orderShippedEmail(order: OrderLike, items: ItemLike[]) {
+  const courier = order.courier ? order.courier.toUpperCase() : "";
   return {
-    subject: `Pesanan ${order.midtransOrderId} sudah dikirim 📦`,
-    html: shell(
-      "Pesanan dikirim",
-      `<p>Pesananmu sedang dalam perjalanan.</p>
-       <p style="font-size:14px"><strong>No. Resi: ${order.trackingNo ?? "-"}</strong></p>
-       ${itemsTable(items)}`,
-    ),
+    subject: `[SNAPFIT] Pesanan ${order.midtransOrderId} sudah dikirim 🚚`,
+    html: shell({
+      preheader: `Paketmu dalam perjalanan${order.trackingNo ? ` · Resi ${order.trackingNo}` : ""}.`,
+      greeting: `Halo ${firstName(order)}`,
+      intro: `Kabar baik! Pesananmu <strong>sudah kami kirim</strong> dan sedang dalam perjalanan ke alamatmu.`,
+      body:
+        highlight(
+          courier ? `Nomor resi ${courier}` : "Nomor resi",
+          order.trackingNo ?? "-",
+          "Gunakan nomor ini untuk melacak paket di aplikasi/situs kurir.",
+        ) +
+        details(order, items) +
+        button("Lihat Pesanan", orderUrl(order)),
+    }),
   };
 }
 
@@ -111,18 +231,26 @@ export function reviewRequestEmail(
   productLinks: { name: string; url: string }[] = [],
 ) {
   const links = productLinks.length
-    ? `<ul style="font-size:14px;padding-left:18px;margin:12px 0">${productLinks
-        .map((p) => `<li><a href="${p.url}" style="color:#18181b">${p.name}</a></li>`)
-        .join("")}</ul>`
+    ? `<tr><td style="padding:22px 0 8px;font-size:14px;font-weight:700;color:${C.ink}">Produk yang kamu beli</td></tr>
+       ${productLinks
+         .map(
+           (p) => `<tr><td style="padding:10px 14px;border:1px solid ${C.line};border-radius:6px;font-size:14px">
+             <a href="${esc(p.url)}" style="color:${C.ink};text-decoration:none;font-weight:600">${esc(p.name)}</a>
+             <a href="${esc(p.url)}" style="float:right;color:${C.brand};text-decoration:none;font-weight:700">Beri ulasan ›</a>
+           </td></tr><tr><td style="height:8px;line-height:8px">&nbsp;</td></tr>`,
+         )
+         .join("")}`
     : "";
   return {
-    subject: `Bagaimana pengalaman belanjamu di SNAPFIT? ⭐`,
-    html: shell(
-      "Bagikan pengalamanmu",
-      `<p>Hai ${addr(order).name ?? ""}, semoga pesananmu sudah sampai dengan selamat!</p>
-       <p style="font-size:14px">Kami ingin tahu pengalamanmu berbelanja di SNAPFIT. Ulasan jujurmu sangat membantu pembeli lain — dan kami. 🙏</p>
-       ${links}
-       <p style="font-size:14px">Cukup balas email ini untuk memberi masukan, atau tulis ulasan di halaman produk. Terima kasih sudah mempercayai SNAPFIT!</p>`,
-    ),
+    subject: `Bagaimana pesananmu, ${firstName(order)}? ⭐`,
+    html: shell({
+      preheader: "Ceritakan pengalamanmu — ulasanmu sangat membantu pembeli lain.",
+      greeting: `Halo ${firstName(order)}`,
+      intro: `Semoga pesananmu <strong>${esc(order.midtransOrderId ?? "")}</strong> sudah sampai dengan selamat! Kami ingin tahu pengalamanmu. Ulasan jujurmu sangat membantu pembeli lain — dan kami. 🙏`,
+      body:
+        highlight("Beri penilaian", "★ ★ ★ ★ ★") +
+        links +
+        (productLinks[0] ? button("Tulis Ulasan", productLinks[0].url) : ""),
+    }),
   };
 }

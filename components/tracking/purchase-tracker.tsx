@@ -5,8 +5,9 @@ import { trackPurchase } from "@/lib/tracking";
 
 type Item = { item_id: string; item_name: string; price: number; quantity: number };
 
-// Fire `purchase` sekali (setelah PAID). Guard sessionStorage cegah double-count
-// saat halaman sukses di-refresh (docs/08).
+// Fire `purchase` sekali (setelah PAID). Guard localStorage cegah double-count
+// saat halaman sukses di-refresh / dibuka ulang dari email (docs/08). Lintas
+// perangkat: GA4 dedup via transaction_id, Meta via event_id tetap.
 export function PurchaseTracker({
   transactionId,
   value,
@@ -25,8 +26,8 @@ export function PurchaseTracker({
     if (fired.current) return;
     const key = `snapfit.purchase.${transactionId}`;
     try {
-      if (sessionStorage.getItem(key)) return;
-      sessionStorage.setItem(key, "1");
+      if (localStorage.getItem(key) || sessionStorage.getItem(key)) return;
+      localStorage.setItem(key, "1");
     } catch {
       // storage tak tersedia — tetap lanjut fire
     }

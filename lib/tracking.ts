@@ -27,10 +27,12 @@ type Pii = { email?: string; phone?: string };
 
 // Kirim event ke Facebook Pixel (browser) + Conversions API (server) dengan
 // event_id yang SAMA → Meta dedup otomatis. Aman bila Pixel/CAPI tak aktif.
-function fbTrack(event: string, params?: Record<string, unknown>, pii?: Pii) {
+function fbTrack(event: string, params?: Record<string, unknown>, pii?: Pii, fixedEventId?: string) {
   if (typeof window === "undefined") return;
   const eventId =
-    window.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    fixedEventId ??
+    window.crypto?.randomUUID?.() ??
+    `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   window.fbq?.("track", event, params, { eventID: eventId });
   try {
     fetch("/api/fb-capi", {
@@ -114,6 +116,6 @@ export function trackPurchase(transactionId: string, value: number, items: Item[
     num_items: items.reduce((n, i) => n + (i.quantity ?? 1), 0),
     value,
     currency: "IDR",
-  }, pii);
+  }, pii, `purchase_${transactionId}`); // ID tetap per pesanan → Meta buang duplikat (mis. buka ulang dari email/perangkat lain)
   gaTrack("purchase", { transaction_id: transactionId, currency: "IDR", value, items });
 }
