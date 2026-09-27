@@ -43,6 +43,15 @@ const cdnLoader: ImageLoader = ({ src, width }) => {
   return tag(isBase && w ? src.replace(/\.webp$/, `.w${w}.webp`) : src, width);
 };
 
+/** True bila src adalah foto di CDN kita (cdn.snapfit.id). */
+export function isOwnCdn(src: string): boolean {
+  try {
+    return new URL(src).hostname === CDN_HOST;
+  } catch {
+    return false;
+  }
+}
+
 /** Loader langsung-ke-CDN untuk src ini, atau null → pakai optimasi Vercel. */
 export function directLoaderFor(src: string): ImageLoader | null {
   let host: string;
