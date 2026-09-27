@@ -190,14 +190,14 @@ export default async function HomePage() {
 
       {/* 2 banner kotak (PROMO, 1000×1000) */}
       {promo.length > 0 && (
-        <section className="mx-auto max-w-6xl px-4 pb-4 sm:px-6">
+        <section className="cv-auto mx-auto max-w-6xl px-4 pb-4 sm:px-6">
           <PromoBanners banners={promo} />
         </section>
       )}
 
       {/* Produk terbaru (12) + See more */}
       {latest.length > 0 && (
-        <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+        <section className="cv-auto mx-auto max-w-6xl px-4 py-12 [--cv-h:2000px] sm:px-6">
           <div className="flex items-end justify-between">
             <h2 className="text-xl font-semibold tracking-tight">Produk Terbaru</h2>
             <Link href="/produk" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
@@ -222,7 +222,7 @@ export default async function HomePage() {
 
       {/* Banner strip panjang (ETALASE, 2000×100) */}
       {strip[0] && (
-        <section className="mx-auto max-w-6xl px-4 pb-14 sm:px-6">
+        <section className="cv-auto mx-auto max-w-6xl px-4 pb-14 [--cv-h:200px] sm:px-6">
           <StripBanner banner={strip[0]} />
         </section>
       )}

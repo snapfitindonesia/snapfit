@@ -15,6 +15,15 @@ export function BannerCarousel({ banners }: { banners: Banner[] }) {
   // Geser (swipe) untuk mobile — pengganti panah yang disembunyikan.
   const [touchX, setTouchX] = useState<number | null>(null);
   const n = banners.length;
+  // Foto slide selain yang pertama (tersembunyi) baru dimuat setelah halaman selesai
+  // — tak berebut jaringan dengan banner pertama (LCP). Rotasi pertama baru di 5 dtk.
+  const [warm, setWarm] = useState(false);
+  useEffect(() => {
+    const on = () => setWarm(true);
+    if (document.readyState === "complete") on();
+    else window.addEventListener("load", on, { once: true });
+    return () => window.removeEventListener("load", on);
+  }, []);
 
   useEffect(() => {
     if (paused || n < 2) return;
@@ -52,15 +61,17 @@ export function BannerCarousel({ banners }: { banners: Banner[] }) {
             idx === i ? "opacity-100" : "pointer-events-none opacity-0",
           )}
         >
-          <Image
-            src={b.image}
-            alt={`Promo SNAPFIT ${idx + 1}`}
-            fill
-            sizes="(max-width: 1024px) 100vw, 1200px"
-            className="object-cover"
-            priority={idx === 0}
-            {...(idx === 0 ? { fetchPriority: "high" as const } : {})}
-          />
+          {(idx === 0 || idx === i || warm) && (
+            <Image
+              src={b.image}
+              alt={`Promo SNAPFIT ${idx + 1}`}
+              fill
+              sizes="(max-width: 1024px) 100vw, 1200px"
+              className="object-cover"
+              priority={idx === 0}
+              {...(idx === 0 ? { fetchPriority: "high" as const } : {})}
+            />
+          )}
         </Link>
       ))}
 

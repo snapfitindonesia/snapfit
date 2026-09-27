@@ -136,3 +136,13 @@
     @apply font-sans;
   }
 }
+/*
+ * Bagian jauh di bawah layar (beranda): browser tak menata & tak mengunduh fotonya
+ * sampai mendekati layar — foto tak berebut jaringan dengan banner utama (LCP).
+ * Konten tetap di HTML (SEO & pembaca layar aman). --cv-h = perkiraan tinggi
+ * sebelum dirender (browser mengingat tinggi asli setelahnya: kata kunci `auto`).
+ */
+@utility cv-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: auto var(--cv-h, 800px);
+}
