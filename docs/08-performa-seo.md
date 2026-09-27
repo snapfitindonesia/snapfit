@@ -44,7 +44,8 @@ Aturan berikut lahir dari pengukuran nyata:
    `load`, dan bagian jauh di bawah memakai utility `cv-auto` (`content-visibility:auto`,
    tinggi perkiraan via `--cv-h`). Pasang di **grid/konten**, bukan di section yang berisi
    tombol (Lighthouse *target-size* keliru membaca elemen yang belum dirender).
-   Uji: `scratchpad/lazy-test` (puppeteer) — foto sebelum load 8 → 2, CLS 0.
+   Cek: DevTools (mode HP) → tab Network, filter Img, muat ulang → sebelum event *Load*
+   hanya logo + banner pertama; gulir sampai bawah → semua foto tampil, CLS tetap 0.
 5. **Jangan munculkan popup/modal saat load** — elemen besar yang muncul belakangan
    menjadi LCP. Popup promo menunggu scroll/15 detik.
 6. **Tanpa `experimental.inlineCss`**: CSS (±80KB) terkirim dua kali per halaman &
