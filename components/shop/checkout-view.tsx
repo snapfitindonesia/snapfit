@@ -15,6 +15,32 @@ import { applyVoucher } from "@/lib/actions/voucher";
 import { saveCheckoutDraft } from "@/lib/actions/cart-draft";
 import type { ShippingRate } from "@/lib/biteship";
 
+// Kontak & alamat pesanan terakhir, disimpan HANYA di perangkat pembeli
+// (localStorage) setelah pesanan berhasil → checkout berikutnya terisi otomatis.
+const SAVED_KEY = "snapfit.checkout.contact";
+
+function loadSavedContact(): Partial<Fields> | null {
+  try {
+    const s = JSON.parse(localStorage.getItem(SAVED_KEY) ?? "null");
+    if (!s || typeof s !== "object") return null;
+    const out: Partial<Fields> = {};
+    for (const k of Object.keys(EMPTY) as (keyof Fields)[]) {
+      if (typeof s[k] === "string") out[k] = s[k].slice(0, 300);
+    }
+    return out.name || out.phone ? out : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveContact(f: Fields) {
+  try {
+    localStorage.setItem(SAVED_KEY, JSON.stringify(f));
+  } catch {
+    // abaikan storage yang tak tersedia
+  }
+}
+
 /** Id acak per browser untuk draf checkout (satu draf per perangkat). */
 function checkoutClientId(): string {
   const KEY = "snapfit.checkout.id";
@@ -104,6 +130,24 @@ export function CheckoutView({
   const [payError, setPayError] = useState<string | null>(null);
 
   const set = (k: keyof Fields, v: string) => setF((s) => ({ ...s, [k]: v }));
+
+  // Pelanggan lama di perangkat ini: isi otomatis dari pesanan terakhir.
+  const [prefilled, setPrefilled] = useState(false);
+  useEffect(() => {
+    const saved = loadSavedContact();
+    if (!saved) return;
+    setF((cur) => (cur.name || cur.phone ? cur : { ...EMPTY, ...saved }));
+    setPrefilled(true);
+  }, []);
+  function forgetContact() {
+    try {
+      localStorage.removeItem(SAVED_KEY);
+    } catch {
+      // abaikan
+    }
+    setF(EMPTY);
+    setPrefilled(false);
+  }
 
   const cartLines = items.map((i) => ({ variantId: i.variantId, qty: i.qty }));
   const selectedRate = rates?.find((r) => r.id === rateId) ?? null;
@@ -211,6 +255,7 @@ export function CheckoutView({
     setPlacing(true);
     try {
       const result = await createOrder({ address: parsed.data, items: cartLines, rateId, voucherCode: voucher?.code, note });
+      saveContact({ ...EMPTY, ...parsed.data, email: parsed.data.email ?? "" });
       if (result.manual) {
         // Transfer manual: order PENDING → arahkan ke halaman instruksi transfer.
         clear();
@@ -238,6 +283,14 @@ export function CheckoutView({
       <div className="lg:col-span-2 space-y-8">
         <section>
           <h2 className="text-base font-medium">Alamat pengiriman</h2>
+          {prefilled && (
+            <p className="mt-2 flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
+              Diisi dari pesanan terakhirmu di perangkat ini — periksa sebelum memesan.
+              <button type="button" onClick={forgetContact} className="font-medium text-foreground underline underline-offset-2">
+                Bukan kamu? Hapus
+              </button>
+            </p>
+          )}
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <Field label="Nama" value={f.name} onChange={(v) => set("name", v)} error={errors.name} />
             <Field label="No. Telepon" value={f.phone} onChange={(v) => set("phone", v)} error={errors.phone} inputMode="tel" />

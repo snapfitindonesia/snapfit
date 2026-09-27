@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { ProductCard } from "@/components/shop/product-card";
 import { SORT_OPTIONS, type SortOption, NO_BRAND } from "@/lib/validations/product";
 import type { ProductListItem, ProductListResult } from "@/lib/actions/product";
+import { logSearch } from "@/lib/actions/search-log";
 
 const TAKE = 12;
 
@@ -132,6 +133,19 @@ export function ProductListing({
   }
 
   const activeCount = selDevices.size + selBrands.size + (priceMin != null || priceMax != null ? 1 : 0);
+
+  // Catat kata kunci untuk Admin → Pencarian: setelah stabil 2 dtk & hasil termuat,
+  // hanya tanpa filter lain (agar "0 hasil" benar-benar karena kata kuncinya).
+  const lastLogged = useRef("");
+  const term = q.trim();
+  useEffect(() => {
+    if (!term || loading || error || activeCount > 0 || model || term === lastLogged.current) return;
+    const t = setTimeout(() => {
+      lastLogged.current = term;
+      logSearch(term, total).catch(() => {});
+    }, 2000);
+    return () => clearTimeout(t);
+  }, [term, total, loading, error, activeCount, model]);
   const brandOptions = useMemo(
     () => [...brands.map((b) => ({ key: b, label: b })), ...(hasNoBrand ? [{ key: NO_BRAND, label: "Tanpa Brand" }] : [])],
     [brands, hasNoBrand],

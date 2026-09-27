@@ -231,3 +231,15 @@ model EmailOptOut {
   email     String   @id
   createdAt DateTime @default(now())
 }
+
+/// Kata kunci pencarian di /produk (teragregasi per kata kunci) — Admin → Pencarian.
+/// Dicatat dari lib/actions/search-log.ts; hanya pencarian tanpa filter lain.
+model SearchTerm {
+  term        String   @id // huruf kecil, spasi dirapikan, maks 60 karakter
+  count       Int      @default(0) // total dicari
+  zeroCount   Int      @default(0) // berapa kali hasilnya 0
+  lastResults Int      @default(0) // jumlah hasil pada pencarian terakhir
+  lastAt      DateTime @default(now())
+
+  @@index([lastAt])
+}

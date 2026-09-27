@@ -9,6 +9,7 @@ Alamat: **https://www.snapfit.id/admin** — wajib login dengan akun ber-role `a
 |---|---|---|
 | Dashboard | `/admin` | Omzet, pesanan, produk terjual, pelanggan (bandingkan periode sebelumnya) |
 | Keranjang Ditinggal | `/admin/keranjang` | Checkout yang belum jadi pesanan + tombol WA siap kirim; statistik 30 hari |
+| Pencarian | `/admin/pencarian` | Kata kunci terpopuler & pencarian tanpa hasil (90 hari) |
 | Pesanan | `/admin/pesanan` | Konfirmasi transfer, isi resi, ubah status, kirim WA ke pembeli |
 | Produk | `/admin/produk` | Daftar, cari, ubah, hapus (satuan/massal); badge "Diarsipkan" |
 | Produk baru / ubah | `/admin/produk/baru`, `/admin/produk/[id]` | Form lengkap: foto, varian, harga, stok, merek, kategori |
@@ -45,6 +46,13 @@ memesan (14 hari terakhir). Yang punya email sudah dikirimi pengingat otomatis
 pemulihan. Tombol **Chat WhatsApp** membuka pesan siap kirim berisi produk & tautan
 pemulihan keranjang. Statistik "Lewat pengingat" = pesanan dari pembeli yang
 membuka tautan pemulihan.
+
+### Membaca data pencarian
+**Pencarian → Tidak ada hasil** = produk/tipe yang dicari pembeli tapi belum ada atau
+stoknya kosong. Gunakan untuk memutuskan restock di Ginee atau impor produk baru.
+Kolom "sekarang N hasil" menunjukkan hasil pada pencarian terakhir — bila sudah
+ada hasil, berarti produknya sudah tersedia. Klik kata kunci untuk mencoba
+pencarian itu di toko.
 
 ### Menambah foto produk
 - Klik area foto lalu pilih file, **atau tempel (Ctrl+V)** gambar yang disalin dari

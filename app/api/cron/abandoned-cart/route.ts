@@ -27,6 +27,8 @@ export async function GET(req: NextRequest) {
   const now = Date.now();
   // Retensi: draf > 60 hari dihapus (data kontak tak disimpan selamanya).
   const purged = await db.checkoutDraft.deleteMany({ where: { updatedAt: { lt: new Date(now - KEEP_DAYS * 86_400_000) } } });
+  // Kata kunci pencarian yang cuma sekali dicari & sudah > 90 hari → buang (jaga tabel ringkas).
+  await db.searchTerm.deleteMany({ where: { count: { lte: 1 }, lastAt: { lt: new Date(now - 90 * 86_400_000) } } });
   const drafts = await db.checkoutDraft.findMany({
     where: {
       email: { not: null },

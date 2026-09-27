@@ -27,7 +27,7 @@ export default function PrivacyPage() {
             <li><b>Data akun:</b> nama, alamat email, dan foto profil — saat Anda mendaftar dengan email atau login dengan Google.</li>
             <li><b>Data pesanan:</b> nama penerima, nomor telepon, email, dan alamat pengiriman yang Anda masukkan saat checkout (termasuk checkout yang belum diselesaikan).</li>
             <li><b>Data transaksi:</b> rincian pesanan dan status pembayaran (kami tidak menyimpan nomor kartu Anda).</li>
-            <li><b>Data teknis:</b> data dasar peramban/perangkat untuk menjaga sesi login dan keranjang belanja.</li>
+            <li><b>Data teknis:</b> data dasar peramban/perangkat untuk menjaga sesi login dan keranjang belanja. Kontak &amp; alamat pesanan terakhir disimpan <b>hanya di perangkat Anda</b> agar checkout berikutnya terisi otomatis — bisa dihapus lewat tombol &quot;Bukan kamu? Hapus&quot; di halaman checkout.</li>
           </ul>
         </section>
 

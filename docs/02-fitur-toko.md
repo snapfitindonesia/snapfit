@@ -45,6 +45,17 @@ bar bawah (HP), dan tombol WhatsApp melayang.
 - Setelah pesan: email instruksi transfer ke pembeli + email notifikasi ke admin.
   Detail: [05](05-pembayaran-pengiriman.md).
 
+- **Isi otomatis untuk pelanggan lama**: setelah pesanan berhasil, kontak & alamat
+  disimpan di `localStorage` perangkat pembeli (`snapfit.checkout.contact`) — tidak
+  di server. Checkout berikutnya terisi otomatis, dengan tombol "Bukan kamu? Hapus"
+  untuk perangkat bersama.
+
+### Pencarian
+- Kata kunci di `/produk` dicatat (teragregasi, tanpa data pribadi) setelah stabil
+  2 detik dan hasilnya termuat — hanya bila tidak ada filter lain aktif, agar "0 hasil"
+  memang karena kata kuncinya. Ketikan parsial & saran cepat di header tidak dicatat.
+  Lihat di **Admin → Pencarian**.
+
 ### Keranjang ditinggal
 - Saat pembeli mengisi **email atau nomor HP** di checkout, isi keranjang + kontak
   disimpan sebagai draf (`CheckoutDraft`, 1,5 detik setelah berhenti mengetik).

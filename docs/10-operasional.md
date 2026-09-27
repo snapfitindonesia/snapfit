@@ -15,7 +15,8 @@ Log setiap cron: Vercel → Project → **Logs** (filter path `/api/cron/...`).
 ## Rutinitas yang disarankan
 
 - **Harian**: proses pesanan masuk (email "Pesanan baru") — lihat [03](03-panel-admin.md#memproses-pesanan-transfer-manual); follow-up **Keranjang Ditinggal** via WhatsApp.
-- **Mingguan**: cek produk "Diarsipkan"; cek varian berharga dummy yang perlu harga.
+- **Mingguan**: cek produk "Diarsipkan"; cek varian berharga dummy yang perlu harga;
+  cek **Admin → Pencarian → Tidak ada hasil** untuk ide restock/impor.
 - **Bulanan**: cek kuota Vercel (Usage → *Image Optimization*, *Functions Storage*);
   hapus deploy lama bila storage mendekati batas; cek Merchant Center & katalog Meta
   untuk produk ditolak.
