@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { OrderManager, type AdminOrder } from "@/components/admin/order-manager";
+import { ensureReviewToken, reviewUrl, REVIEWABLE_STATUSES } from "@/lib/review-token";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,12 @@ export default async function AdminOrdersPage() {
   });
   const vMap = new Map(variants.map((v) => [v.id, v]));
 
+  // Tautan form ulasan untuk tombol "WA: ajak ulas" (token dibuat sekali per pesanan).
+  const reviewUrls = new Map<string, string>();
+  for (const o of orders.filter((o) => REVIEWABLE_STATUSES.includes(o.status))) {
+    reviewUrls.set(o.id, reviewUrl(await ensureReviewToken(o)));
+  }
+
   const data: AdminOrder[] = orders.map((o) => ({
     id: o.id,
     midtransOrderId: o.midtransOrderId,
@@ -28,6 +35,7 @@ export default async function AdminOrdersPage() {
     courier: o.courier,
     createdAt: o.createdAt.toISOString(),
     address: o.address as AdminOrder["address"],
+    reviewUrl: reviewUrls.get(o.id) ?? null,
     items: o.items.map((it) => ({
       id: it.id,
       name: it.name,

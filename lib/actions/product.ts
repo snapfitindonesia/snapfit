@@ -322,7 +322,7 @@ export async function getProducts(query: ProductQuery): Promise<ProductListResul
     },
     include: {
       category: { select: { name: true, slug: true } },
-      reviews: { select: { rating: true } },
+      reviews: { where: { approved: true }, select: { rating: true } },
       variants: {
         select: {
           id: true,
@@ -443,9 +443,9 @@ export type ProductDetail = NonNullable<Awaited<ReturnType<typeof getProductBySl
 
 export async function getProductReviews(productId: string) {
   const reviews = await db.review.findMany({
-    where: { productId },
+    where: { productId, approved: true }, // ulasan pembeli tampil setelah dimoderasi
     orderBy: { createdAt: "desc" },
-    select: { id: true, author: true, image: true, rating: true, comment: true, createdAt: true },
+    select: { id: true, author: true, image: true, rating: true, comment: true, createdAt: true, verified: true, photo: true },
   });
   return reviews.map((r) => ({
     id: r.id,
@@ -454,6 +454,8 @@ export async function getProductReviews(productId: string) {
     rating: r.rating,
     comment: r.comment,
     createdAt: r.createdAt.toISOString(),
+    verified: r.verified,
+    photo: r.photo,
   }));
 }
 

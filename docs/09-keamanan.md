@@ -41,6 +41,9 @@ authenticator di `/admin/mfa`.
 - Upload admin menerima URL gambar jarak jauh dengan pengaman SSRF (hanya http/https,
   alamat privat/lokal ditolak) dan batas ukuran.
 - Harga, diskon, dan voucher selalu dihitung ulang di server saat checkout.
+- Form ulasan `/api/ulasan`: wajib token pesanan valid (status Dikirim/Selesai), produk harus
+  ada di pesanan, 1 ulasan per produk, rate-limit 10/10 menit per IP, foto ≤ 4 MB & harus
+  gambar; ulasan menunggu moderasi sebelum tampil.
 
 ## Rahasia
 

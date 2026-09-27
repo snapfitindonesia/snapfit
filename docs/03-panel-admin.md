@@ -23,7 +23,7 @@ Alamat: **https://www.snapfit.id/admin** — wajib login dengan akun ber-role `a
 | Unggulan | `/admin/unggulan` | Produk yang ditonjolkan di beranda |
 | Diskon | `/admin/diskon` | Diskon persen untuk varian terpilih, dengan periode mulai–selesai |
 | Voucher | `/admin/voucher` | Kode voucher: potongan harga atau gratis ongkir, minimal belanja, batas manfaat |
-| Ulasan | `/admin/ulasan` | Moderasi ulasan pelanggan |
+| Ulasan | `/admin/ulasan` | Setujui/tolak ulasan pembeli (di atas, kuning) + tambah ulasan manual |
 | Linktree | `/admin/linktree` | Isi halaman `/links`: profil, latar, tombol, pemisah |
 | MFA | `/admin/mfa` | Daftarkan/verifikasi aplikasi authenticator |
 
@@ -46,6 +46,12 @@ memesan (14 hari terakhir). Yang punya email sudah dikirimi pengingat otomatis
 pemulihan. Tombol **Chat WhatsApp** membuka pesan siap kirim berisi produk & tautan
 pemulihan keranjang. Statistik "Lewat pengingat" = pesanan dari pembeli yang
 membuka tautan pemulihan.
+
+### Moderasi ulasan pembeli
+Ulasan dari pembeli muncul paling atas di **Ulasan** dengan label "Menunggu persetujuan".
+**Setujui** → tampil di halaman produk. **Tolak** → dihapus beserta fotonya. Ulasan negatif
+yang jujur sebaiknya tetap disetujui (menambah kepercayaan) — tolak hanya spam/kasar/tak
+relevan. Balas keluhan lewat WhatsApp pembeli dari menu Pesanan.
 
 ### Membaca data pencarian
 **Pencarian → Tidak ada hasil** = produk/tipe yang dicari pembeli tapi belum ada atau

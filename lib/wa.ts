@@ -42,6 +42,8 @@ export function waShippedMessage(o: WaOrder): string {
   return `${hi(o)} pesanan SNAPFIT kamu (${ref(o)}) sudah *dikirim* 📦\nNo. Resi: *${o.trackingNo ?? "-"}*\nTerima kasih sudah belanja di SNAPFIT!`;
 }
 
-export function waReviewMessage(o: WaOrder): string {
-  return `${hi(o)} semoga pesanan SNAPFIT (${ref(o)}) sudah sampai dengan selamat 😊 Boleh minta tolong ceritakan pengalaman belanjamu & beri ulasan produknya? Masukanmu sangat berarti buat kami. Terima kasih! ⭐`;
+export function waReviewMessage(o: WaOrder, reviewUrl?: string | null): string {
+  const link = reviewUrl ? `
+Tulis ulasan di sini (1 menit): ${reviewUrl}` : "";
+  return `${hi(o)} semoga pesanan SNAPFIT (${ref(o)}) sudah sampai dengan selamat 😊 Boleh minta tolong ceritakan pengalaman belanjamu & beri ulasan produknya? Masukanmu sangat berarti buat kami. Terima kasih! ⭐${link}`;
 }

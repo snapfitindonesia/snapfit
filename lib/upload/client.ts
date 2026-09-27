@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Helper upload gambar dari sisi admin (browser):
+ * Helper upload gambar dari browser (admin; shrinkImage juga dipakai form ulasan):
  * - uploadImageFile: file dari pilih-file / tempel (Ctrl+V)
  * - importImageUrl:  alamat gambar (mis. dari Shopee) → diunduh server → CDN
  * - readPastedImages: ambil gambar/alamat gambar dari event paste
@@ -9,8 +9,8 @@
 
 const MAX_SIDE = 1600; // kecilkan dulu di browser: body request Vercel maks ±4,5 MB
 
-/** Perkecil gambar besar (mis. PNG hasil "Salin gambar") sebelum dikirim. */
-async function shrink(file: File): Promise<Blob> {
+/** Perkecil gambar besar (foto HP, PNG hasil "Salin gambar") sebelum dikirim. Dipakai admin & form ulasan. */
+export async function shrinkImage(file: File): Promise<Blob> {
   if (file.size < 1.5 * 1024 * 1024 || typeof createImageBitmap === "undefined") return file;
   try {
     const bmp = await createImageBitmap(file);
@@ -34,7 +34,7 @@ async function parse(res: Response): Promise<string> {
 
 export async function uploadImageFile(file: File): Promise<string> {
   const form = new FormData();
-  const blob = await shrink(file);
+  const blob = await shrinkImage(file);
   form.append("file", blob, file.name || "tempel.webp");
   return parse(await fetch("/api/admin/upload", { method: "POST", body: form }));
 }

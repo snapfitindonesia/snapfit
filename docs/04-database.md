@@ -11,7 +11,7 @@ Skema: `prisma/schema.prisma`. Klien: `lib/db.ts`.
 | `Variant` | Varian per produk | `price` (rupiah, integer), `stock`, `sku`, `color`, `type`, `image` |
 | `Category` | Pohon kategori 3 tingkat: brand → seri → model | `parentId` (null = tingkat brand), `slug` |
 | `Merek` | Daftar merek aksesori | nama → halaman `/merek/[slug]` |
-| `Review` | Ulasan pelanggan | `rating` 1–5, foto opsional, moderasi admin |
+| `Review` | Ulasan (manual admin / dari pembeli) | `rating` 1–5, `approved` (false = menunggu moderasi), `verified` (dari pesanan), `orderId`, `photo` |
 | `Banner` | Banner beranda | gambar, tautan, urutan |
 | `NavLink` | Menu header | |
 | `Discount` | Diskon persen untuk varian tertentu | `percent`, `startAt`/`endAt` |
@@ -38,6 +38,7 @@ PENDING ──(transfer dikonfirmasi / webhook Midtrans)──► PAID ──►
 | `gineePushedAt`, `gineeOrderSn` | pesanan terkirim ke Ginee | anti-kirim ulang |
 | `shippedAt` | status → SHIPPED | ajakan ulasan dikirim 7 hari setelahnya |
 | `reviewRequestedAt` | email ajakan ulasan terkirim | anti-kirim ulang |
+| `reviewToken` | pertama kali tautan ulasan dibuat | token acak `/ulasan/<token>` (index biasa; keunikan dijaga kode) |
 
 ## Aturan data (penting)
 

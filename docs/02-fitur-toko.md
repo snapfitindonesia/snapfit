@@ -15,6 +15,7 @@ bar bawah (HP), dan tombol WhatsApp melayang.
 | `/merek/[slug]` | Landing SEO per merek (Ringke, VRS Design, …) | idem |
 | `/keranjang`, `/checkout` | Keranjang & checkout (tanpa wajib login) | `checkout-view.tsx` |
 | `/keranjang?pulih=…` | Memulihkan keranjang dari tautan email/WA pengingat | `cart-restore.tsx` |
+| `/ulasan/[token]` | Form ulasan pembeli (tautan dari email/WA ajakan ulas) | `review-form.tsx`, `app/api/ulasan` |
 | `/berhenti` | Berhenti menerima email pengingat keranjang | |
 | `/checkout/sukses` | Terima kasih + instruksi transfer + opt-in Google Customer Reviews | |
 | `/lacak` | Lacak pesanan: nomor pesanan + email/HP → status, resi | `track-order.tsx`, `lib/actions/track.ts` |
@@ -57,6 +58,16 @@ bar bawah (HP), dan tombol WhatsApp melayang.
   disimpan di `localStorage` perangkat pembeli (`snapfit.checkout.contact`) — tidak
   di server. Checkout berikutnya terisi otomatis, dengan tombol "Bukan kamu? Hapus"
   untuk perangkat bersama.
+
+### Ulasan pembeli
+- Email ajakan ulas (7 hari setelah dikirim) & tombol **WA: ajak ulas** di admin berisi
+  tautan `/ulasan/<token>` — token acak per pesanan = bukti pembelian, tanpa login.
+- Pembeli memberi bintang, komentar, nama tampil (default nama depan + inisial), foto
+  opsional (diperkecil di browser → WebP di R2). Satu ulasan per produk per pesanan;
+  hanya pesanan berstatus Dikirim/Selesai.
+- Ulasan masuk sebagai **menunggu persetujuan** — tampil di PDP (badge "Pembeli
+  terverifikasi" + foto) setelah disetujui admin. Rata-rata bintang & data Google hanya
+  menghitung ulasan yang disetujui.
 
 ### Pencarian
 - Kata kunci di `/produk` dicatat (teragregasi, tanpa data pribadi) setelah stabil

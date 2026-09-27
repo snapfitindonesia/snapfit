@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { sendEmail, reviewRequestEmail } from "@/lib/email";
+import { ensureReviewToken, reviewUrl } from "@/lib/review-token";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -8,7 +9,6 @@ export const dynamic = "force-dynamic";
 // ~7 hari setelah dikirim, kirim email ajakan ulas (sekali per pesanan).
 // Dipicu Vercel Cron harian (lihat vercel.json). Diamankan CRON_SECRET.
 const DAYS = 7;
-const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://www.snapfit.id";
 
 function authorized(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET;
@@ -38,7 +38,8 @@ export async function GET(req: NextRequest) {
   for (const order of orders) {
     const email = (order.address as { email?: string } | null)?.email;
 
-    // Tautan halaman produk yang dibeli (untuk ajakan ulas)
+    // Tautan form ulasan pesanan ini (/ulasan/<token>#p-<slug> per produk)
+    const url = reviewUrl(await ensureReviewToken(order));
     const variantIds = order.items.map((i) => i.variantId);
     const variants = await db.variant.findMany({
       where: { id: { in: variantIds } },
@@ -48,7 +49,7 @@ export async function GET(req: NextRequest) {
     const productLinks = variants
       .map((v) => v.product)
       .filter((p) => p && !seen.has(p.slug) && seen.add(p.slug))
-      .map((p) => ({ name: p!.name, url: `${SITE}/produk/${p!.slug}` }));
+      .map((p) => ({ name: p!.name, url: `${url}#p-${p!.slug}` }));
 
     if (email) {
       try {

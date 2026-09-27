@@ -22,6 +22,7 @@ export type AdminOrder = {
   createdAt: string;
   address: { name?: string; phone?: string; address?: string; city?: string; postalCode?: string } | null;
   items: { id: string; name: string; price: number; qty: number; sku?: string | null; image?: string | null }[];
+  reviewUrl?: string | null; // form ulasan pembeli (pesanan dikirim/selesai)
 };
 
 const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
@@ -144,7 +145,7 @@ function OrderRow({ order }: { order: AdminOrder }) {
               Resi: <span className="font-medium text-foreground">{order.trackingNo ?? "-"}</span>
             </span>
             <WaButton href={waLink(phone, waShippedMessage(order))} label="WA: dikirim + resi" />
-            <WaButton href={waLink(phone, waReviewMessage(order))} label="WA: ajak ulas" />
+            <WaButton href={waLink(phone, waReviewMessage(order, order.reviewUrl))} label="WA: ajak ulas" />
             <Button size="sm" variant="outline" onClick={() => apply("DONE", "done")} disabled={busy !== null}>
               {busy === "done" ? <Loader2 className="size-3.5 animate-spin" /> : <CheckCircle2 className="size-3.5" />}
               Tandai Selesai
@@ -157,7 +158,7 @@ function OrderRow({ order }: { order: AdminOrder }) {
             <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700">
               <Star className="size-3.5" /> Selesai
             </span>
-            <WaButton href={waLink(phone, waReviewMessage(order))} label="WA: ajak ulas" />
+            <WaButton href={waLink(phone, waReviewMessage(order, order.reviewUrl))} label="WA: ajak ulas" />
           </>
         )}
 

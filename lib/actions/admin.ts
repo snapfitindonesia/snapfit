@@ -771,12 +771,24 @@ export async function saveReview(input: ReviewInput, id?: string): Promise<Resul
   }
 }
 
+/** Setujui ulasan pembeli (dari /ulasan/[token]) → tampil di halaman produk. */
+export async function approveReview(id: string): Promise<Result> {
+  try {
+    await requireAdmin();
+    const review = await db.review.update({ where: { id }, data: { approved: true } });
+    await revalidateReview(review.productId);
+    return { ok: true };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
 export async function deleteReview(id: string): Promise<Result> {
   try {
     await requireAdmin();
     const review = await db.review.delete({ where: { id } });
     await revalidateReview(review.productId);
-    if (review.image) await cleanupOrphanImages([review.image]);
+    await cleanupOrphanImages([review.image, review.photo]);
     return { ok: true };
   } catch (e) {
     return fail(e);

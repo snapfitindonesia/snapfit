@@ -1,4 +1,5 @@
-import { Star, MessageSquare } from "lucide-react";
+import { Star, MessageSquare, BadgeCheck } from "lucide-react";
+import Image from "@/components/ui/image";
 
 export type ReviewItem = {
   id: string;
@@ -7,6 +8,8 @@ export type ReviewItem = {
   rating: number;
   comment: string;
   createdAt: string; // ISO
+  verified?: boolean; // dari pesanan nyata
+  photo?: string | null; // foto produk dari pembeli
 };
 
 function Stars({ value, className = "size-4" }: { value: number; className?: string }) {
@@ -72,8 +75,18 @@ export function ProductReviews({ reviews = [] }: { reviews?: ReviewItem[] }) {
                   <span className="text-sm font-medium">{r.author}</span>
                   <Stars value={r.rating} />
                   <span className="text-xs text-muted-foreground">{fmtDate(r.createdAt)}</span>
+                  {r.verified && (
+                    <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700">
+                      <BadgeCheck className="size-3.5" /> Pembeli terverifikasi
+                    </span>
+                  )}
                 </div>
                 <p className="mt-1.5 whitespace-pre-line text-sm text-foreground/90">{r.comment}</p>
+                {r.photo && (
+                  <a href={r.photo} target="_blank" rel="noopener noreferrer" className="mt-3 inline-block">
+                    <Image src={r.photo} alt={`Foto dari ${r.author}`} width={96} height={96} sizes="96px" className="size-24 rounded-lg border border-border object-cover" />
+                  </a>
+                )}
               </div>
             </div>
           ))}

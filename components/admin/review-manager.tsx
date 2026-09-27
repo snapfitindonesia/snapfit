@@ -2,10 +2,10 @@
 
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Trash2, Pencil, Star, Search, X } from "lucide-react";
+import { Loader2, Trash2, Pencil, Star, Search, X, Check, BadgeCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ImageInput } from "@/components/admin/image-input";
-import { saveReview, deleteReview } from "@/lib/actions/admin";
+import { saveReview, deleteReview, approveReview } from "@/lib/actions/admin";
 
 export type ProductOption = { id: string; name: string };
 export type ReviewRow = {
@@ -17,6 +17,9 @@ export type ReviewRow = {
   rating: number;
   comment: string;
   createdAt: string; // ISO
+  approved: boolean; // false = ulasan pembeli menunggu moderasi
+  verified: boolean; // dari pesanan nyata
+  photo: string | null; // foto produk dari pembeli
 };
 
 const input = "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-foreground";
@@ -146,8 +149,12 @@ export function ReviewManager({ products, rows }: { products: ProductOption[]; r
     if (res.ok) { reset(); router.refresh(); } else setError(res.error ?? "Gagal.");
     setSaving(false);
   }
-  async function del(id: string) {
-    if (!confirm("Hapus ulasan ini?")) return;
+  async function approve(id: string) {
+    const res = await approveReview(id);
+    if (res.ok) router.refresh(); else alert(res.error);
+  }
+  async function del(id: string, pending = false) {
+    if (!confirm(pending ? "Tolak & hapus ulasan ini?" : "Hapus ulasan ini?")) return;
     const res = await deleteReview(id);
     if (res.ok) router.refresh(); else alert(res.error);
   }
@@ -183,7 +190,7 @@ export function ReviewManager({ products, rows }: { products: ProductOption[]; r
 
       <div className="space-y-2">
         {rows.map((r) => (
-          <div key={r.id} className="flex gap-3 rounded-lg border border-border p-3">
+          <div key={r.id} className={`flex gap-3 rounded-lg border p-3 ${r.approved ? "border-border" : "border-amber-300 bg-amber-50/60"}`}>
             <span className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-md border border-border bg-muted">
               {r.image && (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -191,12 +198,26 @@ export function ReviewManager({ products, rows }: { products: ProductOption[]; r
               )}
             </span>
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="text-sm font-medium">{r.author}</span>
                 <Stars value={r.rating} />
+                {!r.approved && <span className="rounded-full bg-amber-200 px-2 py-0.5 text-[11px] font-medium text-amber-900">Menunggu persetujuan</span>}
+                {r.verified && <span className="inline-flex items-center gap-0.5 text-[11px] font-medium text-emerald-700"><BadgeCheck className="size-3.5" /> Pembeli</span>}
               </div>
               <p className="text-xs text-muted-foreground">{r.productName}</p>
               <p className="mt-1 line-clamp-3 text-sm">{r.comment}</p>
+              {r.photo && (
+                <a href={r.photo} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={r.photo} alt="Foto dari pembeli" className="size-16 rounded-md border border-border object-cover" />
+                </a>
+              )}
+              {!r.approved && (
+                <div className="mt-2 flex gap-2">
+                  <Button size="sm" onClick={() => approve(r.id)}><Check className="size-3.5" /> Setujui</Button>
+                  <Button size="sm" variant="outline" onClick={() => del(r.id, true)}>Tolak</Button>
+                </div>
+              )}
             </div>
             <div className="flex shrink-0 flex-col gap-2">
               <button onClick={() => edit(r)} className="text-muted-foreground hover:text-foreground"><Pencil className="size-4" /></button>
