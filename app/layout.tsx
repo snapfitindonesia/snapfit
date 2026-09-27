@@ -47,9 +47,10 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  // Koneksi awal ke skrip pihak ketiga (Pixel & GA4) — hemat ±300 md di HP.
-  preconnect("https://connect.facebook.net");
-  preconnect("https://www.googletagmanager.com");
+  // Koneksi awal ke CDN foto (banner/kartu = elemen LCP, beda domain dari halaman).
+  // Pixel & GA4 SENGAJA tidak di-preconnect — skripnya baru dimuat saat interaksi
+  // (useDeferredLoad), preconnect di awal hanya berebut jaringan dengan LCP.
+  preconnect("https://cdn.snapfit.id");
   return (
     <html
       lang="id"
