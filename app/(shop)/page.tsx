@@ -197,14 +197,15 @@ export default async function HomePage() {
 
       {/* Produk terbaru (12) + See more */}
       {latest.length > 0 && (
-        <section className="cv-auto mx-auto max-w-6xl px-4 py-12 [--cv-h:2000px] sm:px-6">
+        <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
           <div className="flex items-end justify-between">
             <h2 className="text-xl font-semibold tracking-tight">Produk Terbaru</h2>
             <Link href="/produk" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
               Lihat semua
             </Link>
           </div>
-          <div className="mt-6 grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
+          {/* cv-auto di grid saja (bukan section) → judul & tombol tetap dirender normal */}
+          <div className="cv-auto mt-6 grid grid-cols-2 gap-4 [--cv-h:1900px] sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
             {latest.map((p) => (
               <ProductCard key={p.id} product={p} />
             ))}
