@@ -25,6 +25,9 @@ import { trackViewItem, trackAddToCart, trackContact } from "@/lib/tracking";
 import { waChatUrl } from "@/lib/contact";
 import { WhatsAppIcon } from "@/components/shop/whatsapp-float";
 import Link from "next/link";
+import { CompanionRow } from "@/components/shop/companion-row";
+import { typeKey } from "@/lib/product-kind";
+import type { Companion } from "@/lib/cross-sell";
 
 export type PdpVariant = {
   id: string;
@@ -60,7 +63,15 @@ const NO_COLOR = "Lainnya";
 const colorKey = (v: PdpVariant) => v.color.trim() || NO_COLOR;
 const typeLabel = (v: PdpVariant) => v.type.trim() || v.name;
 
-export function PdpView({ product, vouchers = [] }: { product: PdpProduct; vouchers?: VoucherChip[] }) {
+export function PdpView({
+  product,
+  vouchers = [],
+  companions = [],
+}: {
+  product: PdpProduct;
+  vouchers?: VoucherChip[];
+  companions?: Companion[];
+}) {
   const { addItem } = useCart();
   const { openCart } = useStoreUI();
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
@@ -79,6 +90,15 @@ export function PdpView({ product, vouchers = [] }: { product: PdpProduct; vouch
   const firstInStock =
     product.variants.find((v) => v.stock > 0) ?? product.variants[0];
   const [variantId, setVariantId] = useState(firstInStock?.id);
+  // ?varian=<id> (dari "Lengkapi dengan" di produk lain) → pilih varian itu.
+  // Dibaca di client agar PDP tetap statis (ISR).
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("varian");
+    if (id && product.variants.some((v) => v.id === id)) {
+      setVariantId(id);
+      setHeroImage(null); // tampilkan foto varian itu, bukan cover
+    }
+  }, [product.variants]);
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
   // Foto yang sedang dilihat (override galeri). Default = cover produk (tampil
@@ -499,7 +519,7 @@ export function PdpView({ product, vouchers = [] }: { product: PdpProduct; vouch
                       )}
                     >
                       <span className="relative size-6 shrink-0 overflow-hidden rounded bg-muted">
-                        <Image src={c.rep.image} alt={c.name} fill sizes="24px" className="object-cover" />
+                        <Image src={c.rep.image} alt="" fill sizes="24px" className="object-cover" />
                       </span>
                       <span className={cn(!c.inStock && "line-through")}>{c.name}</span>
                     </button>
@@ -616,6 +636,8 @@ export function PdpView({ product, vouchers = [] }: { product: PdpProduct; vouch
           <WhatsAppIcon className={cn("size-4", !outOfStock && "text-[#25D366]")} />
           {outOfStock ? "Stok habis? Tanya ketersediaan via WhatsApp" : "Tanya stok / tipe HP via WhatsApp"}
         </a>
+
+        <CompanionRow companions={companions} typeKey={typeKey(variant.type)} typeName={typeLabel(variant)} />
 
         {/* Deskripsi di BAWAH varian & tombol beli — deskripsi panjang tak lagi
             mendorong pilihan warna/tipe ke bawah layar. */}

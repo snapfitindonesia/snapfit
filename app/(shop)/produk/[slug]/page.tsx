@@ -12,6 +12,7 @@ import { ProductCard } from "@/components/shop/product-card";
 import { ProductReviews } from "@/components/shop/product-reviews";
 import { getActiveVouchers } from "@/lib/actions/voucher";
 import { applyDiscount } from "@/lib/format";
+import { getCompanions } from "@/lib/cross-sell";
 
 // ISR: PDP di-generate on-demand saat request pertama lalu DI-CACHE 5 menit
 // (tak query DB saat build → deploy Vercel aman). Fresh via revalidatePath saat admin edit.
@@ -75,11 +76,15 @@ export default async function ProductDetailPage({
     // URL relatif / tak valid — abaikan
   }
 
-  const [related, reviews, vouchers] = await Promise.all([
-    getRelatedProducts(product.id, product.category?.slug ?? null),
+  const [relatedAll, reviews, vouchers, companions] = await Promise.all([
+    getRelatedProducts(product.id, product.category?.slug ?? null, 8),
     getProductReviews(product.id),
     getActiveVouchers(),
+    getCompanions(product),
   ]);
+  // Produk yang sudah tampil di "Lengkapi dengan" tak diulang di bawah.
+  const companionIds = new Set(companions.map((c) => c.productId));
+  const related = relatedAll.filter((p) => !companionIds.has(p.id)).slice(0, 4);
 
   // Bentuk data serializable untuk Client Component (tanpa Date dsb.)
   const pdpProduct: PdpProduct = {
@@ -142,6 +147,7 @@ export default async function ProductDetailPage({
           <PdpView
             product={pdpProduct}
             vouchers={vouchers.map((v) => ({ code: v.code, label: v.label, minPurchase: v.minPurchase }))}
+            companions={companions}
           />
         </div>
       </section>

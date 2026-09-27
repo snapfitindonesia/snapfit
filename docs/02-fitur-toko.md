@@ -37,6 +37,14 @@ bar bawah (HP), dan tombol WhatsApp melayang.
 - Urutan: galeri → varian & tombol beli → **deskripsi di bawahnya** (agar varian
   terlihat tanpa scroll).
 - Tombol "Tanya stok / tipe HP via WhatsApp" (tercatat sebagai event *Contact*).
+- **"Lengkapi dengan"** di bawah tombol beli: case ↔ pelindung layar / pelindung kamera
+  untuk **tipe HP varian terpilih** (`lib/cross-sell.ts`, `lib/product-kind.ts`).
+  - Jenis produk = kata kunci **paling awal** di nama ("Case … Include Tempered Glass" = case).
+  - Tipe dicocokkan lewat kunci ternormalisasi ("Z Fold 8 (Wide)" = "Fold8 Wide"); opsi tanpa
+    angka (warna) tak dicocokkan. Tak ada yang cocok persis → bagian ini tidak tampil.
+  - 1 varian cocok → tombol **Tambah** (langsung ke keranjang); lebih → **Pilih** membuka
+    produknya dengan varian tipe itu terpilih (`?varian=<id>`, dibaca di client agar PDP tetap ISR).
+  - Dihitung di server saat ISR (cache 5 menit), maks 3 item tampil.
 - Tautan ke halaman merek & kategori; ulasan pelanggan; voucher yang berlaku.
 
 ### Keranjang & checkout

@@ -45,7 +45,9 @@ Aturan berikut lahir dari pengukuran nyata:
    tak ter-cache. File CSS eksternal lebih baik untuk kunjungan berulang.
 6. **Foto selalu lewat `@/components/ui/image`** dengan `sizes` yang benar agar HP
    tidak mengunduh versi desktop.
-7. **Aksesibilitas**: teks oranye kecil pakai `text-brand-ink` (kontras ≥ 4,5:1),
+7. **Rekomendasi/data tambahan di PDP dihitung di server saat ISR**, dikirim ringkas
+   (1 opsi per tipe, bukan semua varian) — "Lengkapi dengan" menambah ±1 kB JS & ±1,4 kB HTML.
+8. **Aksesibilitas**: teks oranye kecil pakai `text-brand-ink` (kontras ≥ 4,5:1),
    bukan `text-brand`; urutan heading runtut (h1 → h2 → h3); tombol ikon wajib
    `aria-label`; drawer/modal tertutup memakai `inert`.
 

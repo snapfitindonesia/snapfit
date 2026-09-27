@@ -54,6 +54,13 @@ Kolom "sekarang N hasil" menunjukkan hasil pada pencarian terakhir — bila suda
 ada hasil, berarti produknya sudah tersedia. Klik kata kunci untuk mencoba
 pencarian itu di toko.
 
+### Agar rekomendasi "Lengkapi dengan" akurat
+- Tulis **tipe HP** di opsi varian secara konsisten antar produk (case & tempered glass),
+  mis. selalu "iPhone 18 Pro Max" / "Z Fold 8 Ultra". Variasi kecil seperti "Fold8 Ultra"
+  atau "(Wide)" sudah disamakan otomatis, tapi salah ketik ("Pivacy") atau tipe yang
+  berbeda nama tidak.
+- Awali nama produk dengan jenisnya ("… Case …", "… Tempered Glass …", "… Lens Protector …").
+
 ### Menambah foto produk
 - Klik area foto lalu pilih file, **atau tempel (Ctrl+V)** gambar yang disalin dari
   Shopee/web lain — langsung diunggah.
