@@ -1,12 +1,12 @@
 # 08 — Performa & SEO
 
-## Skor saat ini (PageSpeed/Lighthouse **mobile**, 27 Sep 2026)
+## Skor saat ini (PageSpeed/Lighthouse **mobile**, 28 Sep 2026)
 
 | Halaman | Performa | Aksesibilitas | Best practices | SEO |
 |---|---|---|---|---|
-| Beranda | 95–96 | 100 | 100 | 100 |
-| Daftar produk `/produk` | 94–96 | 100 | 100 | 100 |
-| Detail produk | 90 | 100 | 100 | 100 |
+| Beranda | 96–98 | 100 | 100 | 100 |
+| Daftar produk `/produk` | 95–97 | 100 | 100 | 100 |
+| Detail produk | 88–95 | 100 | 100 | 100 |
 | Landing kategori/merek | 99 | 100 | 100 | 100* |
 
 \* Landing tanpa produk ber-stok sengaja `noindex` (SEO "diblokir" di Lighthouse itu wajar).
@@ -39,15 +39,21 @@ Aturan berikut lahir dari pengukuran nyata:
    skor ±10 poin dan menambah TBT ±250ms.
 3. **Gambar LCP diberi prioritas**: banner pertama `priority` + `fetchPriority="high"`,
    4 kartu produk teratas `priority`. Yang lain lazy.
-4. **Jangan munculkan popup/modal saat load** — elemen besar yang muncul belakangan
+4. **Foto di bawah layar jangan berebut jaringan dengan LCP**: Chrome memuat foto `lazy`
+   sampai ±3.000px di bawah layar. Di beranda, slide carousel tersembunyi baru dimuat setelah
+   `load`, dan bagian jauh di bawah memakai utility `cv-auto` (`content-visibility:auto`,
+   tinggi perkiraan via `--cv-h`). Pasang di **grid/konten**, bukan di section yang berisi
+   tombol (Lighthouse *target-size* keliru membaca elemen yang belum dirender).
+   Uji: `scratchpad/lazy-test` (puppeteer) — foto sebelum load 8 → 2, CLS 0.
+5. **Jangan munculkan popup/modal saat load** — elemen besar yang muncul belakangan
    menjadi LCP. Popup promo menunggu scroll/15 detik.
-5. **Tanpa `experimental.inlineCss`**: CSS (±80KB) terkirim dua kali per halaman &
+6. **Tanpa `experimental.inlineCss`**: CSS (±80KB) terkirim dua kali per halaman &
    tak ter-cache. File CSS eksternal lebih baik untuk kunjungan berulang.
-6. **Foto selalu lewat `@/components/ui/image`** dengan `sizes` yang benar agar HP
+7. **Foto selalu lewat `@/components/ui/image`** dengan `sizes` yang benar agar HP
    tidak mengunduh versi desktop.
-7. **Rekomendasi/data tambahan di PDP dihitung di server saat ISR**, dikirim ringkas
+8. **Rekomendasi/data tambahan di PDP dihitung di server saat ISR**, dikirim ringkas
    (1 opsi per tipe, bukan semua varian) — "Lengkapi dengan" menambah ±1 kB JS & ±1,4 kB HTML.
-8. **Aksesibilitas**: teks oranye kecil pakai `text-brand-ink` (kontras ≥ 4,5:1),
+9. **Aksesibilitas**: teks oranye kecil pakai `text-brand-ink` (kontras ≥ 4,5:1),
    bukan `text-brand`; urutan heading runtut (h1 → h2 → h3); tombol ikon wajib
    `aria-label`; drawer/modal tertutup memakai `inert`.
 
