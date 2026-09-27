@@ -5,7 +5,9 @@
 //   node --env-file=.env scripts/mirror-marketplace-images.mjs            → dry-run (hitung)
 //   node --env-file=.env scripts/mirror-marketplace-images.mjs --upload   → unduh+kompres+unggah
 //   node --env-file=.env scripts/mirror-marketplace-images.mjs --rewrite  → ganti URL di DB
-//        (hanya URL yang file-nya SUDAH ada di bucket)
+//        (hanya URL yang file-nya + varian w320/w640 SUDAH ada di bucket)
+//
+// Varian ukuran ikut dibuat (sama dengan lib/upload/cdn.ts & scripts/cdn-variants.mjs).
 import { createHash } from "node:crypto";
 import sharp from "sharp";
 import { AwsClient } from "aws4fetch";
@@ -21,6 +23,19 @@ const client = new AwsClient({ accessKeyId: e.R2_ACCESS_KEY_ID, secretAccessKey:
 const OURS = [PUBLIC, "r2.dev", "supabase.co"];
 const isExternal = (u) => /^https?:\/\//.test(u) && !OURS.some((o) => u.includes(o));
 const keyFor = (u) => `m-${createHash("sha1").update(u).digest("hex").slice(0, 24)}.webp`;
+const WIDTHS = [320, 640];
+const variantKey = (key, w) => key.replace(/.webp$/, `.w${w}.webp`);
+const complete = (keys, k) => keys.has(k) && WIDTHS.every((w) => keys.has(variantKey(k, w)));
+
+async function putWebp(key, buf) {
+  const body = new Uint8Array(buf);
+  const put = await client.fetch(`${base}/${key}`, {
+    method: "PUT",
+    body,
+    headers: { "Content-Type": "image/webp", "Content-Length": String(body.byteLength), "Cache-Control": "public, max-age=31536000, immutable" },
+  });
+  if (!put.ok) throw new Error(`PUT ${put.status}`);
+}
 const IMG_IN_HTML = /<img[^>]+src=["']([^"']+)["']/gi;
 
 const db = new PrismaClient();
@@ -48,7 +63,7 @@ async function listKeys() {
 }
 
 const have = await listKeys();
-const todo = [...urls].filter((u) => !have.has(keyFor(u)));
+const todo = [...urls].filter((u) => !complete(have, keyFor(u)));
 console.log(`foto eksternal: ${urls.size} · sudah di CDN: ${urls.size - todo.length} · belum: ${todo.length}`);
 
 if (upload && todo.length) {
@@ -63,13 +78,11 @@ if (upload && todo.length) {
         if (!res.ok) throw new Error(`GET ${res.status}`);
         const src = Buffer.from(await res.arrayBuffer());
         const out = await sharp(src).rotate().resize({ width: 1200, height: 1200, fit: "inside", withoutEnlargement: true }).webp({ quality: 80 }).toBuffer();
-        const body = new Uint8Array(out);
-        const put = await client.fetch(`${base}/${keyFor(u)}`, {
-          method: "PUT",
-          body,
-          headers: { "Content-Type": "image/webp", "Content-Length": String(body.byteLength), "Cache-Control": "public, max-age=31536000, immutable" },
-        });
-        if (!put.ok) throw new Error(`PUT ${put.status}`);
+        // Varian dulu, file asli terakhir → "asli ada" berarti varian juga ada.
+        for (const w of WIDTHS) {
+          await putWebp(variantKey(keyFor(u), w), await sharp(out).resize({ width: w, height: w, fit: "inside", withoutEnlargement: true }).webp({ quality: 78 }).toBuffer());
+        }
+        await putWebp(keyFor(u), out);
         bytesIn += src.length; bytesOut += out.length; done++;
       } catch (err) {
         failed++; failures.push(`${u}  (${err.message})`);
@@ -84,7 +97,7 @@ if (upload && todo.length) {
 
 if (rewrite) {
   const ready = await listKeys();
-  const swap = (u) => (u && isExternal(u) && ready.has(keyFor(u)) ? `${PUBLIC}/${keyFor(u)}` : u);
+  const swap = (u) => (u && isExternal(u) && complete(ready, keyFor(u)) ? `${PUBLIC}/${keyFor(u)}` : u);
   let rows = 0;
   for (const p of products) {
     const images = Array.isArray(p.images) ? p.images.map(swap) : p.images;

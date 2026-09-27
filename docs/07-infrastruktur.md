@@ -56,12 +56,18 @@ Semua route cron mewajibkan header `Authorization: Bearer <CRON_SECRET>`
 
 ## Gambar & kuota Vercel
 
-- Foto disimpan sebagai WebP di R2 → `https://cdn.snapfit.id/<nama>.webp`.
-- Ditampilkan lewat `@/components/ui/image` (wrapper `next/image`):
-  - Foto marketplace (Shopee, Tokopedia, TikTok/ibyteimg, Ginee, Shopify) → dimuat
-    **langsung** dari CDN asalnya dengan ukuran yang pas (`lib/image-loader.ts`),
-    tidak memakan kuota *Image Optimization* Vercel (5.000 transformasi/bulan).
-  - Foto `cdn.snapfit.id` & lainnya → lewat `/_next/image` (WebP, cache 31 hari).
+- Foto disimpan sebagai WebP di R2 dalam **3 ukuran**: `https://cdn.snapfit.id/<nama>.webp`
+  (≤1200px) + `<nama>.w320.webp` + `<nama>.w640.webp`. Varian dibuat otomatis oleh
+  `uploadToR2` (upload admin, impor Ginee, foto ulasan) dan ikut terhapus oleh `deleteFromR2`.
+- Ditampilkan lewat `@/components/ui/image` (wrapper `next/image`) — semua **langsung**
+  dari CDN, tanpa kuota *Image Optimization* Vercel (5.000 transformasi/bulan):
+  - `cdn.snapfit.id` → varian terkecil yang ≥ lebar diminta (≤320 → `.w320`, ≤640 → `.w640`,
+    selebihnya asli). Kartu produk di HP ±20 KB, bukan foto 1200px.
+  - Foto marketplace (Shopee, Tokopedia, TikTok/ibyteimg, Ginee, Shopify) → ukuran bawaan CDN asalnya.
+  - Host lain → lewat `/_next/image` (WebP, cache 31 hari).
+- **Syarat penting:** setiap URL `cdn.snapfit.id` di DB wajib punya varian, kalau tidak
+  thumbnail-nya 404. Cek/buat dengan `scripts/cdn-variants.mjs` (lihat [10](10-operasional.md)).
+  Upload di luar `uploadToR2` (mis. langsung lewat dashboard Cloudflare) → jalankan skrip itu.
 - **Jangan** memasang `images.loader: "custom"` global — `/_next/image` jadi 404 di Vercel.
 - Host gambar baru harus ditambahkan ke `remotePatterns` di `next.config.mjs`
   (atau env `NEXT_PUBLIC_IMAGE_HOSTS`, dipisah koma).

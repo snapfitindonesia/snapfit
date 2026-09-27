@@ -3,7 +3,8 @@
  *
  * Foto marketplace (Shopee/Tokopedia/TikTok) dilayani LANGSUNG dari CDN mereka,
  * pakai varian ukuran bawaan CDN tsb (sudah JPEG terkompres) → 0 transformasi.
- * Foto upload admin ada di cdn.snapfit.id (R2 + Cloudflare) → juga langsung.
+ * Foto kita di cdn.snapfit.id (R2 + Cloudflare) → juga langsung, pakai varian
+ * ukuran .w320/.w640.webp yang dibuat saat upload (lib/upload/cdn.ts).
  * Host lain (mis. r2.dev yang DIBLOKIR sebagian ISP Indonesia) tetap lewat
  * /_next/image Vercel (loader default) supaya tetap tampil.
  *
@@ -13,9 +14,6 @@
  */
 import type { ImageLoader } from "next/image";
 
-// cdn.snapfit.id = bucket R2 kita via Cloudflare (sudah WebP 1200px terkompres saat upload).
-// SEMENTARA lewat Vercel (26 Sep 2026): DNS ISP sebagian pembeli belum kenal cdn.snapfit.id
-// (propagasi nameserver ke Cloudflare). Mulai ±29 Sep tambahkan /^cdn\.snapfit\.id$/ ke DIRECT.
 const DIRECT = [/(^|\.)ibyteimg\.com$/, /(^|\.)tiktokcdn\.com$/, /(^|\.)ginee\.com$/, /^cdn\.shopify\.com$/, /^placehold\.co$/];
 
 // Tanda #w=… beda per lebar agar srcset valid & dev tak memperingatkan
@@ -34,6 +32,16 @@ const tokopediaLoader: ImageLoader = ({ src, width }) => {
 
 const directLoader: ImageLoader = ({ src, width }) => tag(src, width);
 
+// cdn.snapfit.id: varian terkecil yang lebarnya ≥ diminta (tak pernah diperbesar).
+// Hanya file WebP di root bucket — semuanya punya varian (dijamin scripts/cdn-variants.mjs).
+const CDN_HOST = "cdn.snapfit.id";
+const cdnLoader: ImageLoader = ({ src, width }) => {
+  const { pathname } = new URL(src);
+  const isBase = /^\/[^/]+\.webp$/.test(pathname) && !/\.w\d+\.webp$/.test(pathname);
+  const w = width <= 320 ? 320 : width <= 640 ? 640 : 0;
+  return tag(isBase && w ? src.replace(/\.webp$/, `.w${w}.webp`) : src, width);
+};
+
 /** Loader langsung-ke-CDN untuk src ini, atau null → pakai optimasi Vercel. */
 export function directLoaderFor(src: string): ImageLoader | null {
   let host: string;
@@ -42,6 +50,7 @@ export function directLoaderFor(src: string): ImageLoader | null {
   } catch {
     return null;
   }
+  if (host === CDN_HOST) return cdnLoader;
   if (host === "cf.shopee.co.id" || host.endsWith(".susercontent.com")) return shopeeLoader;
   if (host === "images.tokopedia.net" && /\/img\/cache\/[^/]+\//.test(src)) return tokopediaLoader;
   if (DIRECT.some((re) => re.test(host))) return directLoader;

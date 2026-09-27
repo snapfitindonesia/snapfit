@@ -13,6 +13,19 @@ export async function compressToWebp(buffer: Buffer): Promise<Buffer> {
     .toBuffer();
 }
 
+/* ---------- Varian ukuran (dimuat langsung dari cdn.snapfit.id) ---------- */
+
+// Tiap foto .webp disimpan 3 ukuran: asli (≤1200px) + `.w320.webp` + `.w640.webp`.
+// lib/image-loader.ts memilih varian terkecil yang ≥ lebar diminta → kartu produk
+// di HP tak mengunduh foto 1200px, tanpa kuota Image Optimization Vercel.
+// SAMAKAN dengan scripts/cdn-variants.mjs & scripts/mirror-marketplace-images.mjs.
+export const CDN_VARIANT_WIDTHS = [320, 640] as const;
+export const variantKey = (key: string, width: number) => key.replace(/\.webp$/, `.w${width}.webp`);
+
+async function makeVariant(buffer: Buffer, width: number): Promise<Buffer> {
+  return sharp(buffer).resize({ width, height: width, fit: "inside", withoutEnlargement: true }).webp({ quality: 78 }).toBuffer();
+}
+
 /* ---------- Cloudflare R2 (S3-compatible, egress gratis) ---------- */
 
 type R2Config = { accountId: string; accessKeyId: string; secretAccessKey: string; bucket: string; publicUrl: string };
@@ -27,19 +40,16 @@ export function r2Config(): R2Config | null {
   return { accountId, accessKeyId, secretAccessKey, bucket, publicUrl: publicUrl.replace(/\/$/, "") };
 }
 
-/** Upload buffer WebP ke Cloudflare R2. Kembalikan public URL, atau null bila belum dikonfigurasi. */
-export async function uploadToR2(buffer: Buffer, filename: string): Promise<string | null> {
-  const cfg = r2Config();
-  if (!cfg) return null;
-  const client = new AwsClient({
-    accessKeyId: cfg.accessKeyId,
-    secretAccessKey: cfg.secretAccessKey,
-    service: "s3",
-    region: "auto",
-  });
-  const endpoint = `https://${cfg.accountId}.r2.cloudflarestorage.com/${cfg.bucket}/${filename}`;
+function r2(cfg: R2Config) {
+  const client = new AwsClient({ accessKeyId: cfg.accessKeyId, secretAccessKey: cfg.secretAccessKey, service: "s3", region: "auto" });
+  const url = (key: string) => `https://${cfg.accountId}.r2.cloudflarestorage.com/${cfg.bucket}/${key}`;
+  return { client, url };
+}
+
+async function put(cfg: R2Config, key: string, buffer: Buffer): Promise<void> {
+  const { client, url } = r2(cfg);
   const body = new Uint8Array(buffer);
-  const res = await client.fetch(endpoint, {
+  const res = await client.fetch(url(key), {
     method: "PUT",
     body,
     headers: {
@@ -49,20 +59,29 @@ export async function uploadToR2(buffer: Buffer, filename: string): Promise<stri
     },
   });
   if (!res.ok) throw new Error(`R2 ${res.status}: ${await res.text().catch(() => "")}`.slice(0, 200));
+}
+
+/**
+ * Upload buffer WebP ke R2 + varian 320/640 (untuk .webp). Varian diunggah
+ * DULU, file asli terakhir → URL baru dipakai hanya bila semua ukuran sudah ada.
+ * Kembalikan public URL, atau null bila R2 belum dikonfigurasi.
+ */
+export async function uploadToR2(buffer: Buffer, filename: string): Promise<string | null> {
+  const cfg = r2Config();
+  if (!cfg) return null;
+  if (filename.endsWith(".webp")) {
+    await Promise.all(CDN_VARIANT_WIDTHS.map(async (w) => put(cfg, variantKey(filename, w), await makeVariant(buffer, w))));
+  }
+  await put(cfg, filename, buffer);
   return `${cfg.publicUrl}/${filename}`;
 }
 
-/** Hapus objek dari Cloudflare R2. True bila sukses / memang tak ada (404). */
+/** Hapus objek (+ variannya) dari R2. True bila sukses / memang tak ada (404). */
 export async function deleteFromR2(filename: string): Promise<boolean> {
   const cfg = r2Config();
   if (!cfg) return false;
-  const client = new AwsClient({
-    accessKeyId: cfg.accessKeyId,
-    secretAccessKey: cfg.secretAccessKey,
-    service: "s3",
-    region: "auto",
-  });
-  const endpoint = `https://${cfg.accountId}.r2.cloudflarestorage.com/${cfg.bucket}/${filename}`;
-  const res = await client.fetch(endpoint, { method: "DELETE" });
-  return res.ok || res.status === 404;
+  const { client, url } = r2(cfg);
+  const keys = filename.endsWith(".webp") ? [filename, ...CDN_VARIANT_WIDTHS.map((w) => variantKey(filename, w))] : [filename];
+  const results = await Promise.all(keys.map((k) => client.fetch(url(k), { method: "DELETE" })));
+  return results.every((res) => res.ok || res.status === 404);
 }

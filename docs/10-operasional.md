@@ -29,7 +29,8 @@ Jalankan dari folder proyek; `--env-file=.env` memuat kredensial. Semua skrip
 | Skrip | Fungsi |
 |---|---|
 | `restore-backup.mjs` | Pulihkan data dari backup (lihat bawah) |
-| `mirror-marketplace-images.mjs` | Salin foto yang masih menempel ke Shopee/TikTok/… ke `cdn.snapfit.id` (`--upload`), lalu ganti URL-nya di DB (`--rewrite`) |
+| `mirror-marketplace-images.mjs` | Salin foto yang masih menempel ke Shopee/TikTok/… ke `cdn.snapfit.id` + varian (`--upload`), lalu ganti URL-nya di DB (`--rewrite`, hanya yang variannya lengkap) |
+| `cdn-variants.mjs` | Buat varian `.w320/.w640` yang belum ada (`--apply`) & verifikasi semua URL cdn di DB lengkap — exit 1 bila ada yang kurang |
 | `migrate-image-host.mjs` | Ganti awalan URL foto di seluruh DB (mis. pindah domain CDN) |
 
 ```bash
@@ -67,13 +68,11 @@ Backup tidak mencakup akun login (Supabase Auth) dan file foto (R2).
 | Sitemap kosong | query paralel menghabiskan koneksi DB | pertahankan satu query di `listLandingPages` |
 | Skor PageSpeed turun | skrip/library baru di layout | lihat [08](08-performa-seo.md) |
 | `cdn.snapfit.id` tak bisa dibuka dari rumah | DNS ISP / propagasi | cek via DoH ([07](07-infrastruktur.md#dns-di-cloudflare)) |
+| Thumbnail produk rusak, foto besar tampil | varian `.w320/.w640` tak ada | `node --env-file=.env scripts/cdn-variants.mjs --apply` |
+| Foto baru impor masih dari Shopee/TikTok | belum di-mirror | `mirror-marketplace-images.mjs --upload` lalu `--rewrite` (berkala) |
 
 ## Pekerjaan yang masih tertunda
 
-- **±29 Sep 2026 — tahap 2 CDN**: setelah `cdn.snapfit.id` bisa dibuka langsung dari
-  koneksi rumah, tambahkan `/^cdn\.snapfit\.id$/` ke `DIRECT` di `lib/image-loader.ts`,
-  deploy, **baru** jalankan `mirror-marketplace-images.mjs --upload` lalu `--rewrite`.
-  Urutan penting — kalau terbalik, kuota *Image Optimization* Vercel jebol.
 - Go-live Midtrans & Biteship saat akun terverifikasi ([05](05-pembayaran-pengiriman.md)).
 - Aktifkan `ADMIN_REQUIRE_MFA=true` ([09](09-keamanan.md)).
 - Roll kunci yang pernah tertempel di chat (R2, Resend); hapus token R2 lama.
