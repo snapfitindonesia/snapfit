@@ -63,6 +63,9 @@ Semua route cron mewajibkan header `Authorization: Bearer <CRON_SECRET>`
   dari CDN, tanpa kuota *Image Optimization* Vercel (5.000 transformasi/bulan):
   - `cdn.snapfit.id` → varian terkecil yang ≥ lebar diminta (≤128 → `.w128`, ≤384 → `.w384`, ≤750 → `.w750`,
     selebihnya asli). Kartu produk di HP ±15 KB, banner HP ±30 KB — setara hasil Vercel dulu.
+  - **Pengecualian:** foto `priority` dari `cdn.snapfit.id` (banner pertama, 4 kartu teratas,
+    foto utama PDP, popup) lewat `/_next/image` — satu domain dengan halaman, jadi elemen LCP
+    tak menunggu koneksi baru di HP. Jumlahnya kecil (±beberapa ratus transformasi/bulan).
   - Foto marketplace (Shopee, Tokopedia, TikTok/ibyteimg, Ginee, Shopify) → ukuran bawaan CDN asalnya.
   - Host lain → lewat `/_next/image` (WebP, cache 31 hari).
 - **Syarat penting:** setiap URL `cdn.snapfit.id` di DB wajib punya varian, kalau tidak
