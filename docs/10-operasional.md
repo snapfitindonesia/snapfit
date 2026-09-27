@@ -30,7 +30,7 @@ Jalankan dari folder proyek; `--env-file=.env` memuat kredensial. Semua skrip
 |---|---|
 | `restore-backup.mjs` | Pulihkan data dari backup (lihat bawah) |
 | `mirror-marketplace-images.mjs` | Salin foto yang masih menempel ke Shopee/TikTok/… ke `cdn.snapfit.id` + varian (`--upload`), lalu ganti URL-nya di DB (`--rewrite`, hanya yang variannya lengkap) |
-| `cdn-variants.mjs` | Buat varian `.w320/.w640` yang belum ada (`--apply`) & verifikasi semua URL cdn di DB lengkap — exit 1 bila ada yang kurang |
+| `cdn-variants.mjs` | Buat varian `.w128/.w384/.w750` yang belum ada (`--apply`), hapus varian lebar lama (`--prune-old --apply`) | `cdn-variants.mjs` | Buat varian `.w320/.w640` yang belum ada (`--apply`) & verifikasi semua URL cdn di DB lengkap — exit 1 bila ada yang kurang | verifikasi semua URL cdn di DB lengkap — exit 1 bila ada yang kurang |
 | `migrate-image-host.mjs` | Ganti awalan URL foto di seluruh DB (mis. pindah domain CDN) |
 
 ```bash
@@ -68,7 +68,7 @@ Backup tidak mencakup akun login (Supabase Auth) dan file foto (R2).
 | Sitemap kosong | query paralel menghabiskan koneksi DB | pertahankan satu query di `listLandingPages` |
 | Skor PageSpeed turun | skrip/library baru di layout | lihat [08](08-performa-seo.md) |
 | `cdn.snapfit.id` tak bisa dibuka dari rumah | DNS ISP / propagasi | cek via DoH ([07](07-infrastruktur.md#dns-di-cloudflare)) |
-| Thumbnail produk rusak, foto besar tampil | varian `.w320/.w640` tak ada | `node --env-file=.env scripts/cdn-variants.mjs --apply` |
+| Thumbnail produk rusak, foto besar tampil | varian `.w128/.w384/.w750` tak ada | `node --env-file=.env scripts/cdn-variants.mjs --apply` |
 | Foto baru impor masih dari Shopee/TikTok | belum di-mirror | `mirror-marketplace-images.mjs --upload` lalu `--rewrite` (berkala) |
 
 ## Pekerjaan yang masih tertunda

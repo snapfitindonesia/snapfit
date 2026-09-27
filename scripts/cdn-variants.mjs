@@ -1,10 +1,11 @@
 // Varian ukuran foto di bucket R2 (cdn.snapfit.id): tiap `x.webp` punya
-// `x.w320.webp` & `x.w640.webp` — dipakai lib/image-loader.ts (foto dimuat langsung
+// `x.w128.webp`, `x.w384.webp` & `x.w750.webp` — dipakai lib/image-loader.ts (foto dimuat langsung
 // dari CDN tanpa kuota Vercel, tapi tetap kecil di HP). Upload baru otomatis membuat
 // varian (lib/upload/cdn.ts); skrip ini untuk file lama + verifikasi.
 //
 //   node --env-file=.env scripts/cdn-variants.mjs           → hitung & verifikasi (dry-run)
 //   node --env-file=.env scripts/cdn-variants.mjs --apply   → buat varian yang belum ada
+//   … --prune-old --apply                                    → + hapus varian lebar lama
 //
 // Selalu diakhiri pengecekan: setiap URL cdn di DB harus punya file asli + semua varian.
 // SAMAKAN lebar & kualitas dengan lib/upload/cdn.ts.
@@ -12,7 +13,7 @@ import sharp from "sharp";
 import { AwsClient } from "aws4fetch";
 import { PrismaClient } from "@prisma/client";
 
-const WIDTHS = [320, 640];
+const WIDTHS = [128, 384, 750];
 const apply = process.argv.includes("--apply");
 const e = process.env;
 const PUBLIC = (e.R2_PUBLIC_URL || "https://cdn.snapfit.id").replace(/\/$/, "");
@@ -55,7 +56,7 @@ if (apply && todo.length) {
         if (!res.ok) throw new Error(`GET ${res.status}`);
         const src = Buffer.from(await res.arrayBuffer());
         for (const w of widths) {
-          const out = await sharp(src).resize({ width: w, height: w, fit: "inside", withoutEnlargement: true }).webp({ quality: 78 }).toBuffer();
+          const out = await sharp(src).resize({ width: w, height: w, fit: "inside", withoutEnlargement: true }).webp({ quality: 75 }).toBuffer();
           const body = new Uint8Array(out);
           const put = await client.fetch(`${base}/${variantKey(k, w)}`, {
             method: "PUT",
@@ -77,6 +78,29 @@ if (apply && todo.length) {
   console.log(`varian dibuat untuk ${done} foto (${(bytes / 1048576).toFixed(1)} MB) · gagal: ${failed}`);
   if (failures.length) console.log("GAGAL:\n" + failures.slice(0, 20).join("\n"));
   keys = await listKeys();
+}
+
+// ---- --prune-old: hapus varian lebar lama (bukan di WIDTHS). Jalankan HANYA setelah
+// loader yang memakai WIDTHS baru sudah live, agar halaman tak merujuk file terhapus. ----
+if (process.argv.includes("--prune-old")) {
+  const old = [...keys].filter((k) => {
+    const m = k.match(/\.w(\d+)\.webp$/);
+    return m && !WIDTHS.includes(Number(m[1]));
+  });
+  console.log(`varian lama: ${old.length}${apply ? " — menghapus…" : " (tambah --apply untuk menghapus)"}`);
+  if (apply && old.length) {
+    let i = 0, gone = 0;
+    async function del() {
+      while (i < old.length) {
+        const k = old[i++];
+        const res = await client.fetch(`${base}/${k}`, { method: "DELETE" });
+        if (res.ok || res.status === 404) gone++;
+      }
+    }
+    await Promise.all(Array.from({ length: 8 }, del));
+    console.log(`varian lama dihapus: ${gone}/${old.length}`);
+    keys = await listKeys();
+  }
 }
 
 // ---- Verifikasi: semua URL cdn yang dipakai DB lengkap (asli + varian) ----

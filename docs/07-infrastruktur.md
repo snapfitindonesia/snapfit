@@ -56,13 +56,13 @@ Semua route cron mewajibkan header `Authorization: Bearer <CRON_SECRET>`
 
 ## Gambar & kuota Vercel
 
-- Foto disimpan sebagai WebP di R2 dalam **3 ukuran**: `https://cdn.snapfit.id/<nama>.webp`
-  (≤1200px) + `<nama>.w320.webp` + `<nama>.w640.webp`. Varian dibuat otomatis oleh
+- Foto disimpan sebagai WebP di R2 dalam **4 ukuran**: `https://cdn.snapfit.id/<nama>.webp`
+  (≤1200px) + `<nama>.w128/.w384/.w750.webp` (q75, sama dengan titik srcset next/image). Varian dibuat otomatis oleh
   `uploadToR2` (upload admin, impor Ginee, foto ulasan) dan ikut terhapus oleh `deleteFromR2`.
 - Ditampilkan lewat `@/components/ui/image` (wrapper `next/image`) — semua **langsung**
   dari CDN, tanpa kuota *Image Optimization* Vercel (5.000 transformasi/bulan):
-  - `cdn.snapfit.id` → varian terkecil yang ≥ lebar diminta (≤320 → `.w320`, ≤640 → `.w640`,
-    selebihnya asli). Kartu produk di HP ±20 KB, bukan foto 1200px.
+  - `cdn.snapfit.id` → varian terkecil yang ≥ lebar diminta (≤128 → `.w128`, ≤384 → `.w384`, ≤750 → `.w750`,
+    selebihnya asli). Kartu produk di HP ±15 KB, banner HP ±30 KB — setara hasil Vercel dulu.
   - Foto marketplace (Shopee, Tokopedia, TikTok/ibyteimg, Ginee, Shopify) → ukuran bawaan CDN asalnya.
   - Host lain → lewat `/_next/image` (WebP, cache 31 hari).
 - **Syarat penting:** setiap URL `cdn.snapfit.id` di DB wajib punya varian, kalau tidak

@@ -15,15 +15,16 @@ export async function compressToWebp(buffer: Buffer): Promise<Buffer> {
 
 /* ---------- Varian ukuran (dimuat langsung dari cdn.snapfit.id) ---------- */
 
-// Tiap foto .webp disimpan 3 ukuran: asli (≤1200px) + `.w320.webp` + `.w640.webp`.
+// Tiap foto .webp disimpan 4 ukuran: asli (≤1200px) + `.w128/.w384/.w750.webp` — lebar
+// = titik srcset bawaan next/image yang paling sering diminta (thumbnail, kartu, banner HP).
 // lib/image-loader.ts memilih varian terkecil yang ≥ lebar diminta → kartu produk
 // di HP tak mengunduh foto 1200px, tanpa kuota Image Optimization Vercel.
 // SAMAKAN dengan scripts/cdn-variants.mjs & scripts/mirror-marketplace-images.mjs.
-export const CDN_VARIANT_WIDTHS = [320, 640] as const;
+export const CDN_VARIANT_WIDTHS = [128, 384, 750] as const;
 export const variantKey = (key: string, width: number) => key.replace(/\.webp$/, `.w${width}.webp`);
 
 async function makeVariant(buffer: Buffer, width: number): Promise<Buffer> {
-  return sharp(buffer).resize({ width, height: width, fit: "inside", withoutEnlargement: true }).webp({ quality: 78 }).toBuffer();
+  return sharp(buffer).resize({ width, height: width, fit: "inside", withoutEnlargement: true }).webp({ quality: 75 }).toBuffer();
 }
 
 /* ---------- Cloudflare R2 (S3-compatible, egress gratis) ---------- */
@@ -62,7 +63,7 @@ async function put(cfg: R2Config, key: string, buffer: Buffer): Promise<void> {
 }
 
 /**
- * Upload buffer WebP ke R2 + varian 320/640 (untuk .webp). Varian diunggah
+ * Upload buffer WebP ke R2 + varian 128/384/750 (untuk .webp). Varian diunggah
  * DULU, file asli terakhir → URL baru dipakai hanya bila semua ukuran sudah ada.
  * Kembalikan public URL, atau null bila R2 belum dikonfigurasi.
  */

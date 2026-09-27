@@ -5,7 +5,7 @@
 //   node --env-file=.env scripts/mirror-marketplace-images.mjs            → dry-run (hitung)
 //   node --env-file=.env scripts/mirror-marketplace-images.mjs --upload   → unduh+kompres+unggah
 //   node --env-file=.env scripts/mirror-marketplace-images.mjs --rewrite  → ganti URL di DB
-//        (hanya URL yang file-nya + varian w320/w640 SUDAH ada di bucket)
+//        (hanya URL yang file-nya + varian w128/w384/w750 SUDAH ada di bucket)
 //
 // Varian ukuran ikut dibuat (sama dengan lib/upload/cdn.ts & scripts/cdn-variants.mjs).
 import { createHash } from "node:crypto";
@@ -23,7 +23,7 @@ const client = new AwsClient({ accessKeyId: e.R2_ACCESS_KEY_ID, secretAccessKey:
 const OURS = [PUBLIC, "r2.dev", "supabase.co"];
 const isExternal = (u) => /^https?:\/\//.test(u) && !OURS.some((o) => u.includes(o));
 const keyFor = (u) => `m-${createHash("sha1").update(u).digest("hex").slice(0, 24)}.webp`;
-const WIDTHS = [320, 640];
+const WIDTHS = [128, 384, 750];
 const variantKey = (key, w) => key.replace(/.webp$/, `.w${w}.webp`);
 const complete = (keys, k) => keys.has(k) && WIDTHS.every((w) => keys.has(variantKey(k, w)));
 
@@ -80,7 +80,7 @@ if (upload && todo.length) {
         const out = await sharp(src).rotate().resize({ width: 1200, height: 1200, fit: "inside", withoutEnlargement: true }).webp({ quality: 80 }).toBuffer();
         // Varian dulu, file asli terakhir → "asli ada" berarti varian juga ada.
         for (const w of WIDTHS) {
-          await putWebp(variantKey(keyFor(u), w), await sharp(out).resize({ width: w, height: w, fit: "inside", withoutEnlargement: true }).webp({ quality: 78 }).toBuffer());
+          await putWebp(variantKey(keyFor(u), w), await sharp(out).resize({ width: w, height: w, fit: "inside", withoutEnlargement: true }).webp({ quality: 75 }).toBuffer());
         }
         await putWebp(keyFor(u), out);
         bytesIn += src.length; bytesOut += out.length; done++;

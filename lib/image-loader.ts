@@ -4,7 +4,7 @@
  * Foto marketplace (Shopee/Tokopedia/TikTok) dilayani LANGSUNG dari CDN mereka,
  * pakai varian ukuran bawaan CDN tsb (sudah JPEG terkompres) → 0 transformasi.
  * Foto kita di cdn.snapfit.id (R2 + Cloudflare) → juga langsung, pakai varian
- * ukuran .w320/.w640.webp yang dibuat saat upload (lib/upload/cdn.ts).
+ * ukuran .w128/.w384/.w750.webp yang dibuat saat upload (lib/upload/cdn.ts).
  * Host lain (mis. r2.dev yang DIBLOKIR sebagian ISP Indonesia) tetap lewat
  * /_next/image Vercel (loader default) supaya tetap tampil.
  *
@@ -38,7 +38,8 @@ const CDN_HOST = "cdn.snapfit.id";
 const cdnLoader: ImageLoader = ({ src, width }) => {
   const { pathname } = new URL(src);
   const isBase = /^\/[^/]+\.webp$/.test(pathname) && !/\.w\d+\.webp$/.test(pathname);
-  const w = width <= 320 ? 320 : width <= 640 ? 640 : 0;
+  // SAMAKAN dengan CDN_VARIANT_WIDTHS (lib/upload/cdn.ts); 0 = file asli (≤1200px).
+  const w = width <= 128 ? 128 : width <= 384 ? 384 : width <= 750 ? 750 : 0;
   return tag(isBase && w ? src.replace(/\.webp$/, `.w${w}.webp`) : src, width);
 };
 
