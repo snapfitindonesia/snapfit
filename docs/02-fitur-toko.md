@@ -14,6 +14,8 @@ bar bawah (HP), dan tombol WhatsApp melayang.
 | `/kategori/[slug]` | Landing SEO per kategori (mis. iPhone 17 Series) | `lib/seo-pages.ts`, `landing-view.tsx` |
 | `/merek/[slug]` | Landing SEO per merek (Ringke, VRS Design, …) | idem |
 | `/keranjang`, `/checkout` | Keranjang & checkout (tanpa wajib login) | `checkout-view.tsx` |
+| `/keranjang?pulih=…` | Memulihkan keranjang dari tautan email/WA pengingat | `cart-restore.tsx` |
+| `/berhenti` | Berhenti menerima email pengingat keranjang | |
 | `/checkout/sukses` | Terima kasih + instruksi transfer + opt-in Google Customer Reviews | |
 | `/lacak` | Lacak pesanan: nomor pesanan + email/HP → status, resi | `track-order.tsx`, `lib/actions/track.ts` |
 | `/akun`, `/akun/pesanan` | Profil & riwayat pesanan (login) | |
@@ -42,6 +44,18 @@ bar bawah (HP), dan tombol WhatsApp melayang.
 - Voucher & diskon dihitung ulang di server saat checkout (harga dari klien tidak dipercaya).
 - Setelah pesan: email instruksi transfer ke pembeli + email notifikasi ke admin.
   Detail: [05](05-pembayaran-pengiriman.md).
+
+### Keranjang ditinggal
+- Saat pembeli mengisi **email atau nomor HP** di checkout, isi keranjang + kontak
+  disimpan sebagai draf (`CheckoutDraft`, 1,5 detik setelah berhenti mengetik).
+- Belum memesan setelah 1 jam (maks. 3 hari) → **email pengingat sekali** (cron 20:00
+  WIB) berisi produk & tombol "Lanjutkan Belanja" → `/keranjang?pulih=<token>`
+  mengisi ulang keranjang dengan produk yang masih tersedia.
+- Pembeli yang hanya mengisi HP muncul di **Admin → Keranjang Ditinggal** untuk
+  di-follow-up via WhatsApp.
+- Membuat pesanan dengan email/HP yang sama → draf otomatis ditutup.
+- Tautan "Berhenti" di email → `/berhenti` (perlu klik konfirmasi).
+- Draf lebih tua dari 60 hari dihapus otomatis oleh cron (retensi data).
 
 ### WhatsApp
 - Nomor toko: **+62 816-4806-156**, satu sumber di `lib/contact.ts`

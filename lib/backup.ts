@@ -25,7 +25,7 @@ function cfg() {
 
 /** Ekspor semua tabel (+ id relasi m-n) ke satu objek. */
 export async function exportDatabase() {
-  const [products, reviews, variants, categories, mereks, banners, discounts, vouchers, orders, orderItems, bioProfiles, bioLinks, navLinks] =
+  const [products, reviews, variants, categories, mereks, banners, discounts, vouchers, orders, orderItems, bioProfiles, bioLinks, navLinks, emailOptOuts] =
     await Promise.all([
       db.product.findMany({ include: { extraCategories: { select: { id: true } } } }),
       db.review.findMany(),
@@ -40,11 +40,12 @@ export async function exportDatabase() {
       db.bioProfile.findMany(),
       db.bioLink.findMany(),
       db.navLink.findMany(),
+      db.emailOptOut.findMany(), // permintaan berhenti pengingat (CheckoutDraft sengaja tidak — data sementara)
     ]);
   return {
     version: BACKUP_VERSION,
     createdAt: new Date().toISOString(),
-    tables: { products, reviews, variants, categories, mereks, banners, discounts, vouchers, orders, orderItems, bioProfiles, bioLinks, navLinks },
+    tables: { products, reviews, variants, categories, mereks, banners, discounts, vouchers, orders, orderItems, bioProfiles, bioLinks, navLinks, emailOptOuts },
   };
 }
 

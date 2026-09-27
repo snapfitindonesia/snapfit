@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { applyDiscount } from "@/lib/format";
+import { applyDiscount, activeDiscountPercent } from "@/lib/format";
 import { isPlaceholderPrice, sellableStock } from "@/lib/price-guard";
 import type { ProductQuery } from "@/lib/validations/product";
 
@@ -30,21 +30,6 @@ export type ProductListResult = {
   total: number;
   hasMore: boolean;
 };
-
-function activeDiscountPercent(
-  discounts: { percent: number; active: boolean; startAt: Date | null; endAt: Date | null }[],
-): number {
-  const now = Date.now();
-  const percents = discounts
-    .filter(
-      (d) =>
-        d.active &&
-        (!d.startAt || d.startAt.getTime() <= now) &&
-        (!d.endAt || d.endAt.getTime() >= now),
-    )
-    .map((d) => d.percent);
-  return percents.length ? Math.max(...percents) : 0;
-}
 
 /** Kategori "line" (tingkat 2) — dipakai chip filter di halaman /produk. */
 export async function getCategories() {

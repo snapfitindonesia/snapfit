@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/require-admin";
-import { applyDiscount } from "@/lib/format";
+import { applyDiscount, activeDiscountPercent } from "@/lib/format";
 import {
   createOrderSchema,
   type CreateOrderInput,
@@ -19,21 +19,7 @@ import { waLink } from "@/lib/wa";
 import { isPlaceholderPrice } from "@/lib/price-guard";
 import { pushOrderToGinee } from "@/lib/ginee/orders";
 import { isGineeConfigured } from "@/lib/ginee/config";
-
-function activeDiscountPercent(
-  discounts: { percent: number; active: boolean; startAt: Date | null; endAt: Date | null }[],
-): number {
-  const now = Date.now();
-  const p = discounts
-    .filter(
-      (d) =>
-        d.active &&
-        (!d.startAt || d.startAt.getTime() <= now) &&
-        (!d.endAt || d.endAt.getTime() >= now),
-    )
-    .map((d) => d.percent);
-  return p.length ? Math.max(...p) : 0;
-}
+import { markDraftsConverted } from "@/lib/cart-draft";
 
 /**
  * Hitung ULANG order dari DB (harga varian + diskon + ongkir) — JANGAN percaya
@@ -168,6 +154,10 @@ export async function createOrder(input: CreateOrderInput) {
   });
 
   await notifyNewOrder(order, items, isManualPayment());
+  // Keranjang ditinggal: kontak ini sudah memesan → jangan diingatkan.
+  await markDraftsConverted(data.address.email, data.address.phone).catch((e) =>
+    console.error("Tandai draf checkout gagal:", e),
+  );
 
   // Mode TRANSFER MANUAL (Midtrans belum aktif): tak buat Snap token.
   // Order PENDING → pembeli transfer → admin konfirmasi (markOrderPaid).

@@ -25,7 +25,7 @@ export default function PrivacyPage() {
           <h2 className="text-base font-semibold text-foreground">1. Data yang Kami Kumpulkan</h2>
           <ul className="mt-2 list-disc space-y-1 pl-5">
             <li><b>Data akun:</b> nama, alamat email, dan foto profil — saat Anda mendaftar dengan email atau login dengan Google.</li>
-            <li><b>Data pesanan:</b> nama penerima, nomor telepon, dan alamat pengiriman yang Anda masukkan saat checkout.</li>
+            <li><b>Data pesanan:</b> nama penerima, nomor telepon, email, dan alamat pengiriman yang Anda masukkan saat checkout (termasuk checkout yang belum diselesaikan).</li>
             <li><b>Data transaksi:</b> rincian pesanan dan status pembayaran (kami tidak menyimpan nomor kartu Anda).</li>
             <li><b>Data teknis:</b> data dasar peramban/perangkat untuk menjaga sesi login dan keranjang belanja.</li>
           </ul>
@@ -46,6 +46,11 @@ export default function PrivacyPage() {
             <li>Memproses, mengirim, dan melacak pesanan Anda.</li>
             <li>Mengelola akun dan riwayat pesanan Anda.</li>
             <li>Memberikan layanan pelanggan dan mengirim notifikasi terkait pesanan.</li>
+            <li>
+              Mengingatkan Anda (sekali, via email atau WhatsApp) bila checkout belum diselesaikan — kontak
+              & isi keranjang yang diisi di halaman checkout disimpan untuk keperluan ini. Anda bisa berhenti
+              kapan saja lewat tautan &quot;Berhenti&quot; di email.
+            </li>
             <li>Meningkatkan produk dan pengalaman berbelanja.</li>
           </ul>
         </section>

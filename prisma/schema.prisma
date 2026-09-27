@@ -203,3 +203,31 @@ model NavLink {
   newTab   Boolean @default(false)
   active   Boolean @default(true)
 }
+
+/// Checkout yang belum jadi pesanan — untuk pengingat keranjang ditinggal.
+/// Disimpan saat pembeli mengisi kontak di /checkout (lib/actions/cart-draft.ts).
+model CheckoutDraft {
+  id          String    @id @default(cuid())
+  clientId    String    @unique // id acak per browser (localStorage) → satu draf per perangkat
+  token       String    @unique // token acak untuk tautan "pulihkan keranjang" (tanpa data pribadi di URL)
+  name        String?
+  email       String? // huruf kecil
+  phone       String? // format 62…
+  items       Json // [{ variantId, qty }]
+  subtotal    Int       @default(0)
+  remindedAt  DateTime? // email pengingat terkirim (sekali per draf)
+  recoveredAt DateTime? // tautan pemulihan diklik
+  convertedAt DateTime? // jadi pesanan
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([updatedAt])
+  @@index([email])
+  @@index([phone])
+}
+
+/// Email yang meminta berhenti menerima pengingat keranjang.
+model EmailOptOut {
+  email     String   @id
+  createdAt DateTime @default(now())
+}

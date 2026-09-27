@@ -17,6 +17,8 @@ Skema: `prisma/schema.prisma`. Klien: `lib/db.ts`.
 | `Discount` | Diskon persen untuk varian tertentu | `percent`, `startAt`/`endAt` |
 | `Voucher` | Kode voucher | `type` POTONGAN / GRATIS_ONGKIR, `minPurchase`, `maxBenefit` |
 | `Order` / `OrderItem` | Pesanan & isinya | lihat status di bawah |
+| `CheckoutDraft` | Checkout belum jadi pesanan (keranjang ditinggal) | `token` (tautan pulihkan), `remindedAt`, `recoveredAt`, `convertedAt` |
+| `EmailOptOut` | Email yang minta berhenti pengingat keranjang | |
 | `BioProfile` / `BioLink` | Linktree `/links` | `BioLink.kind` LINK / DIVIDER, `newTab`, `clicks` |
 
 Pengguna (login) disimpan di **Supabase Auth**, bukan di Prisma. Admin ditandai

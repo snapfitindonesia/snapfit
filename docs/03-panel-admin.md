@@ -8,8 +8,9 @@ Alamat: **https://www.snapfit.id/admin** — wajib login dengan akun ber-role `a
 | Menu | URL | Untuk apa |
 |---|---|---|
 | Dashboard | `/admin` | Omzet, pesanan, produk terjual, pelanggan (bandingkan periode sebelumnya) |
+| Keranjang Ditinggal | `/admin/keranjang` | Checkout yang belum jadi pesanan + tombol WA siap kirim; statistik 30 hari |
 | Pesanan | `/admin/pesanan` | Konfirmasi transfer, isi resi, ubah status, kirim WA ke pembeli |
-| Produk | `/admin/produk` | Daftar, cari, aktif/nonaktif, hapus; badge "Diarsipkan" |
+| Produk | `/admin/produk` | Daftar, cari, ubah, hapus (satuan/massal); badge "Diarsipkan" |
 | Produk baru / ubah | `/admin/produk/baru`, `/admin/produk/[id]` | Form lengkap: foto, varian, harga, stok, merek, kategori |
 | Edit massal | `/admin/produk/edit-massal` | Ubah harga/stok banyak varian via CSV |
 | Impor CSV | `/admin/produk/impor` | Tambah banyak produk dari CSV |
@@ -36,6 +37,14 @@ Alamat: **https://www.snapfit.id/admin** — wajib login dengan akun ber-role `a
 5. Tombol WhatsApp di tiap pesanan membuka chat ke pembeli dengan pesan siap kirim.
 
 Pembeli yang belum bayar setelah 2 jam otomatis dikirimi pengingat (sekali).
+
+### Follow-up keranjang ditinggal
+**Keranjang Ditinggal** menampilkan pembeli yang mengisi kontak di checkout tapi belum
+memesan (14 hari terakhir). Yang punya email sudah dikirimi pengingat otomatis
+(badge "Email terkirim"); badge "Tautan dibuka" = pembeli sudah mengklik tautan
+pemulihan. Tombol **Chat WhatsApp** membuka pesan siap kirim berisi produk & tautan
+pemulihan keranjang. Statistik "Lewat pengingat" = pesanan dari pembeli yang
+membuka tautan pemulihan.
 
 ### Menambah foto produk
 - Klik area foto lalu pilih file, **atau tempel (Ctrl+V)** gambar yang disalin dari

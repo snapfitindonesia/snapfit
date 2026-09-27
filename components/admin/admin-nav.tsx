@@ -9,6 +9,7 @@ import {
   Percent,
   Ticket,
   ShoppingBag,
+  ShoppingCart,
   DownloadCloud,
   FolderTree,
   Link2,
@@ -32,6 +33,7 @@ const ITEMS = [
   { href: "/admin/voucher", label: "Voucher", icon: Ticket },
   { href: "/admin/ulasan", label: "Ulasan", icon: Star },
   { href: "/admin/pesanan", label: "Pesanan", icon: ShoppingBag },
+  { href: "/admin/keranjang", label: "Keranjang Ditinggal", icon: ShoppingCart },
 ];
 
 export function AdminNav({ orientation = "vertical" }: { orientation?: "vertical" | "horizontal" }) {

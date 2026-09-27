@@ -48,6 +48,7 @@ npx vercel deploy --prod --yes
 | `0 3 * * *` | 10:00 | `/api/cron/review-request` | Email ajakan ulasan (7 hari setelah dikirim) |
 | `0 4 * * *` | 11:00 | `/api/cron/ginee-stock` | Sinkron stok/harga dummy + arsip produk Ginee |
 | `0 12 * * *` | 19:00 | `/api/cron/payment-reminder` | Pengingat bayar pesanan PENDING |
+| `0 13 * * *` | 20:00 | `/api/cron/abandoned-cart` | Email pengingat keranjang ditinggal |
 | `0 20 * * *` | 03:00 | `/api/cron/db-backup` | Backup DB → R2 privat |
 
 Semua route cron mewajibkan header `Authorization: Bearer <CRON_SECRET>`

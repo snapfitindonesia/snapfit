@@ -8,12 +8,13 @@
 | 10:00 | Email ajakan ulasan (7 hari setelah dikirim) | `/admin/ulasan` |
 | 11:00 | Sinkron stok Ginee + arsip produk yang dihapus | badge "Diarsipkan" di `/admin/produk` |
 | 19:00 | Pengingat bayar pesanan PENDING | kolom pesanan |
+| 20:00 | Pengingat keranjang ditinggal | `/admin/keranjang` (badge "Email terkirim") |
 
 Log setiap cron: Vercel → Project → **Logs** (filter path `/api/cron/...`).
 
 ## Rutinitas yang disarankan
 
-- **Harian**: proses pesanan masuk (email "Pesanan baru") — lihat [03](03-panel-admin.md#memproses-pesanan-transfer-manual).
+- **Harian**: proses pesanan masuk (email "Pesanan baru") — lihat [03](03-panel-admin.md#memproses-pesanan-transfer-manual); follow-up **Keranjang Ditinggal** via WhatsApp.
 - **Mingguan**: cek produk "Diarsipkan"; cek varian berharga dummy yang perlu harga.
 - **Bulanan**: cek kuota Vercel (Usage → *Image Optimization*, *Functions Storage*);
   hapus deploy lama bila storage mendekati batas; cek Merchant Center & katalog Meta
@@ -53,7 +54,7 @@ Backup tidak mencakup akun login (Supabase Auth) dan file foto (R2).
 
 | Gejala | Kemungkinan penyebab | Tindakan |
 |---|---|---|
-| Produk tidak tampil di toko | stok 0 di gudang Ginee, harga dummy, `active` mati, atau diarsipkan | cek stok gudang di Ginee; isi harga; cek badge di admin |
+| Produk tidak tampil di toko | stok 0 di gudang Ginee, harga dummy, atau diarsipkan | cek stok gudang di Ginee; isi harga; cek badge di admin |
 | Stok web beda dengan Shopee | data Ginee belum sinkron / produk `syncLocked` | tunggu sinkron 11:00 atau jalankan cron manual; cek kunci sinkron |
 | Harga Rp99.999 dst. | varian dummy dari marketplace | isi harga di form produk (varian dummy otomatis tak bisa dibeli) |
 | Foto tidak muncul (host baru) | host belum ada di `remotePatterns` | tambahkan di `next.config.mjs` atau env `NEXT_PUBLIC_IMAGE_HOSTS` |

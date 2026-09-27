@@ -301,6 +301,51 @@ export function orderShippedEmail(order: OrderLike, items: ItemLike[]) {
 }
 
 /**
+ * Keranjang ditinggal: checkout belum diselesaikan. Tombol memulihkan isi
+ * keranjang lewat token (tanpa data pribadi di URL).
+ */
+export function abandonedCartEmail(opts: {
+  name?: string | null;
+  items: { name: string; price: number; image: string; qty: number }[];
+  restoreUrl: string;
+  optOutUrl: string;
+}) {
+  const first = (opts.name ?? "").trim().split(/\s+/)[0] || "Kak";
+  const total = opts.items.reduce((n, i) => n + i.price * i.qty, 0);
+  const rows = opts.items
+    .slice(0, 5)
+    .map(
+      (i) => `<tr><td style="padding:8px 0;border-bottom:1px solid ${C.line}">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr>
+          <td width="64" style="vertical-align:top"><img src="${esc(i.image)}" width="56" height="56" alt="" style="display:block;border:1px solid ${C.line};border-radius:6px;object-fit:cover"/></td>
+          <td style="vertical-align:top;font-size:14px;color:${C.ink};padding-left:10px">
+            <div style="font-weight:600;line-height:1.4">${esc(i.name)}</div>
+            <div style="color:${C.muted};font-size:13px;padding-top:2px">${i.qty} × ${formatRupiah(i.price)}</div>
+          </td>
+        </tr></table>
+      </td></tr>`,
+    )
+    .join("");
+  const more = opts.items.length > 5 ? `<tr><td style="padding:8px 0;font-size:13px;color:${C.muted}">+${opts.items.length - 5} produk lainnya</td></tr>` : "";
+  return {
+    subject: `${first}, keranjangmu masih menunggu 🛒`,
+    html: shell({
+      preheader: `Produk pilihanmu masih tersedia — lanjutkan checkout sebelum stoknya habis.`,
+      greeting: `Halo ${first}`,
+      intro: `Sepertinya checkout-mu belum selesai. Kabar baik: <strong>produk pilihanmu masih tersedia</strong>. Lanjutkan kapan saja — keranjangmu sudah kami simpan.`,
+      body:
+        `<tr><td style="padding:22px 0 6px;font-size:14px;font-weight:700;color:${C.ink}">Isi keranjangmu</td></tr>` +
+        rows +
+        more +
+        `<tr><td style="padding:12px 0 0;font-size:14px;color:${C.ink}">Subtotal: <strong style="color:${C.brand}">${formatRupiah(total)}</strong></td></tr>` +
+        button("Lanjutkan Belanja", opts.restoreUrl) +
+        `<tr><td style="padding:16px 0 0;font-size:13px;line-height:1.6;color:${C.ink}">Ragu soal tipe HP atau stok? Balas email ini, kami bantu cek. 😊</td></tr>` +
+        `<tr><td style="padding:16px 0 0;font-size:11px;color:${C.muted}">Tidak ingin menerima pengingat seperti ini? <a href="${esc(opts.optOutUrl)}" style="color:${C.muted}">Berhenti</a></td></tr>`,
+    }),
+  };
+}
+
+/**
  * Ajakan ulas ~7 hari setelah dikirim. `productLinks` = daftar {name, url}
  * halaman produk yang dibeli (opsional) agar pembeli mudah memberi ulasan.
  */

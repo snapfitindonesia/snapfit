@@ -12,7 +12,23 @@ import { useCart } from "@/components/shop/cart-provider";
 import { addressSchema } from "@/lib/validations/checkout";
 import { createOrder } from "@/lib/actions/order";
 import { applyVoucher } from "@/lib/actions/voucher";
+import { saveCheckoutDraft } from "@/lib/actions/cart-draft";
 import type { ShippingRate } from "@/lib/biteship";
+
+/** Id acak per browser untuk draf checkout (satu draf per perangkat). */
+function checkoutClientId(): string {
+  const KEY = "snapfit.checkout.id";
+  try {
+    let id = localStorage.getItem(KEY);
+    if (!id) {
+      id = crypto.randomUUID();
+      localStorage.setItem(KEY, id);
+    }
+    return id;
+  } catch {
+    return crypto.randomUUID();
+  }
+}
 
 declare global {
   interface Window {
@@ -105,6 +121,30 @@ export function CheckoutView({
       items.map((i) => ({ item_id: i.variantId, item_name: i.name, price: i.price, quantity: i.qty })),
     );
   }, [hydrated, items, subtotal]);
+
+  // Keranjang ditinggal: simpan draf (kontak + isi keranjang) setelah berhenti
+  // mengetik — dipakai untuk email pengingat & daftar di admin.
+  const lastDraft = useRef("");
+  useEffect(() => {
+    if (!hydrated || items.length === 0) return;
+    const hasEmail = /^\S+@\S+\.\S+$/.test(f.email.trim());
+    const hasPhone = f.phone.replace(/\D/g, "").length >= 10;
+    if (!hasEmail && !hasPhone) return;
+    const payload = {
+      clientId: checkoutClientId(),
+      name: f.name,
+      email: hasEmail ? f.email : "",
+      phone: hasPhone ? f.phone : "",
+      items: items.map((i) => ({ variantId: i.variantId, qty: i.qty })),
+    };
+    const key = JSON.stringify(payload);
+    if (key === lastDraft.current) return;
+    const t = setTimeout(() => {
+      lastDraft.current = key;
+      saveCheckoutDraft(payload).catch(() => {});
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [hydrated, items, f.name, f.email, f.phone]);
 
   if (!hydrated) {
     return <div className="mt-8 h-40 rounded-lg border border-border bg-muted/50" aria-hidden />;
@@ -206,6 +246,9 @@ export function CheckoutView({
             <Field label="Kota" value={f.city} onChange={(v) => set("city", v)} error={errors.city} />
             <Field label="Kode pos" value={f.postalCode} onChange={(v) => set("postalCode", v)} error={errors.postalCode} inputMode="numeric" />
           </div>
+          <p className="mt-3 text-xs text-muted-foreground">
+            Kontakmu dipakai untuk info pesanan &amp; pengingat bila checkout belum selesai.
+          </p>
         </section>
 
         <section>

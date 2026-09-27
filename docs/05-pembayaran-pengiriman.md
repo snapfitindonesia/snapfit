@@ -53,5 +53,6 @@ Template di `lib/email.ts` (header oranye + logo, gaya mirip Shopee).
 | Sedang dikemas | → `PROCESSING` | pembeli (+ tautan lacak) |
 | Sudah dikirim | → `SHIPPED` + resi | pembeli (+ tautan lacak) |
 | Ajakan ulasan | cron 10:00 WIB, 7 hari setelah dikirim | pembeli |
+| Keranjang masih menunggu | cron 20:00 WIB, checkout tak selesai 1 jam–3 hari | calon pembeli (kecuali yang minta berhenti) |
 
 Tanpa `RESEND_API_KEY` email hanya dicatat di log (`[email:mock]`) — aman untuk lokal.

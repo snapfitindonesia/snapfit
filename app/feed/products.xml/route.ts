@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { applyDiscount } from "@/lib/format";
+import { applyDiscount, activeDiscountPercent } from "@/lib/format";
 import { isPlaceholderPrice } from "@/lib/price-guard";
 
 // Feed produk (Google RSS 2.0 + namespace g:) — dipakai Meta Catalog (Data feed)
@@ -16,16 +16,6 @@ function esc(s: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&apos;");
-}
-
-function activePct(
-  discounts: { percent: number; active: boolean; startAt: Date | null; endAt: Date | null }[],
-): number {
-  const now = Date.now();
-  const p = discounts
-    .filter((d) => d.active && (!d.startAt || d.startAt.getTime() <= now) && (!d.endAt || d.endAt.getTime() >= now))
-    .map((d) => d.percent);
-  return p.length ? Math.max(...p) : 0;
 }
 
 export async function GET() {
@@ -45,7 +35,7 @@ export async function GET() {
     for (const v of p.variants) {
       const img = v.image || p.coverImage;
       if (!img || isPlaceholderPrice(v.price)) continue; // harga placeholder → jangan diiklankan
-      const pct = activePct(v.discounts);
+      const pct = activeDiscountPercent(v.discounts);
       const finalP = applyDiscount(v.price, pct);
       const label = [v.color, v.type].filter(Boolean).join(" ").trim();
       const title = (label ? `${p.name} - ${label}` : p.name).slice(0, 150);

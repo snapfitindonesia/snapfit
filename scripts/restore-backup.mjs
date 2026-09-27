@@ -76,12 +76,13 @@ async function restore() {
     ["NavLink", "navLink", T.navLinks],
     ["BioProfile", "bioProfile", T.bioProfiles],
     ["BioLink", "bioLink", T.bioLinks],
+    ["EmailOptOut", "emailOptOut", T.emailOptOuts ?? [], "email"], // kunci = email
   ];
 
   let totalMissing = 0;
-  for (const [model, key, rows] of plan) {
-    const existing = new Set((await db[key].findMany({ select: { id: true } })).map((r) => r.id));
-    const missing = rows.filter((r) => !existing.has(r.id));
+  for (const [model, key, rows, idField = "id"] of plan) {
+    const existing = new Set((await db[key].findMany({ select: { [idField]: true } })).map((r) => r[idField]));
+    const missing = rows.filter((r) => !existing.has(r[idField]));
     totalMissing += missing.length;
     console.log(`${model.padEnd(11)} backup ${String(rows.length).padStart(5)} · DB ${String(existing.size).padStart(5)} · hilang ${missing.length}`);
     if (apply && missing.length) {
