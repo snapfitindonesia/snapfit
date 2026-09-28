@@ -178,8 +178,8 @@ export function ProductListing({
         <Button size="sm" className="mt-2 w-full" onClick={applyPrice}>Terapkan harga</Button>
       </Facet>
 
-      {/* Merek */}
-      {brandOptions.length > 0 && (
+      {/* Merek — hanya bila ada >1 merek (toko kini satu merek: SNAPFIT) */}
+      {brands.length > 1 && (
         <Facet title="Merek">
           <div className="max-h-56 overflow-y-auto pr-1">
             {brandOptions.map((b) => (

@@ -38,6 +38,11 @@ const CDN_HOST = "cdn.snapfit.id";
 const cdnLoader: ImageLoader = ({ src, width }) => {
   const { pathname } = new URL(src);
   const isBase = /^\/[^/]+\.webp$/.test(pathname) && !/\.w\d+\.webp$/.test(pathname);
+  // Foto lebar beranda (-wide.webp, asli ≤2400px): varian 750/1200/1800 (lib/upload/cdn.ts).
+  if (isBase && /-wide\.webp$/.test(pathname)) {
+    const ww = width <= 750 ? 750 : width <= 1200 ? 1200 : width <= 1800 ? 1800 : 0;
+    return tag(ww ? src.replace(/\.webp$/, `.w${ww}.webp`) : src, width);
+  }
   // SAMAKAN dengan CDN_VARIANT_WIDTHS (lib/upload/cdn.ts); 0 = file asli (≤1200px).
   const w = width <= 128 ? 128 : width <= 384 ? 384 : width <= 750 ? 750 : 0;
   return tag(isBase && w ? src.replace(/\.webp$/, `.w${w}.webp`) : src, width);

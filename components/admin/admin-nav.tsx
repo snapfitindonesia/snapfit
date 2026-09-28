@@ -51,6 +51,7 @@ const GROUPS: NavGroup[] = [
     label: "Tampilan Toko",
     icon: Palette,
     items: [
+      { href: "/admin/beranda", label: "Konten Beranda" },
       { href: "/admin/banner", label: "Banner" },
       { href: "/admin/menu", label: "Menu Header" },
       { href: "/admin/overview", label: "Overview Produk" },

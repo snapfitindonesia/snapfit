@@ -2,10 +2,15 @@ import Link from "next/link";
 import { ArrowRight, MessageCircle, PackageSearch, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { waChatUrl } from "@/lib/contact";
-import { slugify } from "@/lib/slug";
 
-// Merek resmi yang kami jual — pintasan belanja di halaman 404.
-const BRANDS = ["SNAPFIT", "Ringke", "VRS Design", "Araree", "Supcase"];
+// Pintasan belanja per perangkat di halaman 404.
+const SHORTCUTS = [
+  { label: "iPhone", href: "/produk?q=iphone" },
+  { label: "Galaxy S", href: "/produk?q=galaxy%20s" },
+  { label: "Galaxy Z Fold", href: "/produk?q=fold" },
+  { label: "Galaxy Z Flip", href: "/produk?q=flip" },
+  { label: "AirPods", href: "/produk?q=airpods" },
+];
 
 /**
  * Isi halaman 404 (dipakai app/(shop)/not-found.tsx — dengan header & footer toko —
@@ -58,15 +63,15 @@ export function NotFoundContent() {
         </div>
 
         <div className="mt-12">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Belanja per merek</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Belanja per perangkat</p>
           <ul className="mt-3 flex flex-wrap justify-center gap-2">
-            {BRANDS.map((b) => (
-              <li key={b}>
+            {SHORTCUTS.map((b) => (
+              <li key={b.label}>
                 <Link
-                  href={`/merek/${slugify(b)}`}
+                  href={b.href}
                   className="inline-flex h-9 items-center rounded-full border border-border px-4 text-sm font-medium transition-colors hover:border-foreground"
                 >
-                  {b}
+                  {b.label}
                 </Link>
               </li>
             ))}

@@ -10,11 +10,11 @@
 const MAX_SIDE = 1600; // kecilkan dulu di browser: body request Vercel maks ±4,5 MB
 
 /** Perkecil gambar besar (foto HP, PNG hasil "Salin gambar") sebelum dikirim. Dipakai admin & form ulasan. */
-export async function shrinkImage(file: File): Promise<Blob> {
+export async function shrinkImage(file: File, maxSide = MAX_SIDE): Promise<Blob> {
   if (file.size < 1.5 * 1024 * 1024 || typeof createImageBitmap === "undefined") return file;
   try {
     const bmp = await createImageBitmap(file);
-    const scale = Math.min(1, MAX_SIDE / Math.max(bmp.width, bmp.height));
+    const scale = Math.min(1, maxSide / Math.max(bmp.width, bmp.height));
     const canvas = document.createElement("canvas");
     canvas.width = Math.round(bmp.width * scale);
     canvas.height = Math.round(bmp.height * scale);
@@ -32,16 +32,17 @@ async function parse(res: Response): Promise<string> {
   return data.url as string;
 }
 
-export async function uploadImageFile(file: File): Promise<string> {
+/** `wide`: foto full-width beranda (maks 2400px, lihat app/api/admin/upload). */
+export async function uploadImageFile(file: File, opts: { wide?: boolean } = {}): Promise<string> {
   const form = new FormData();
-  const blob = await shrinkImage(file);
+  const blob = await shrinkImage(file, opts.wide ? 2400 : MAX_SIDE);
   form.append("file", blob, file.name || "tempel.webp");
-  return parse(await fetch("/api/admin/upload", { method: "POST", body: form }));
+  return parse(await fetch(`/api/admin/upload${opts.wide ? "?wide=1" : ""}`, { method: "POST", body: form }));
 }
 
-export async function importImageUrl(url: string): Promise<string> {
+export async function importImageUrl(url: string, opts: { wide?: boolean } = {}): Promise<string> {
   return parse(
-    await fetch("/api/admin/upload", {
+    await fetch(`/api/admin/upload${opts.wide ? "?wide=1" : ""}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ url }),

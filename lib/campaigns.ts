@@ -22,7 +22,7 @@ export const CAMPAIGNS: Record<CampaignSlug, Campaign> = {
     tagline: "Gajian tiba — saatnya upgrade case & aksesori HP original dengan harga spesial.",
     schedule: "Setiap tanggal 25 sampai 28",
     seoDescription:
-      "Payday Sale SNAPFIT: diskon gajian case HP, tempered glass & aksesori original Ringke, VRS Design, Araree, Supcase. Setiap tanggal 25–28.",
+      "Payday Sale SNAPFIT: diskon gajian case HP, tempered glass & aksesori SNAPFIT. Setiap tanggal 25–28.",
   },
   "tanggal-kembar": {
     slug: "tanggal-kembar",

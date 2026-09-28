@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { compressToWebp, uploadToR2, r2Config } from "@/lib/upload/cdn";
+import { compressToWebp, uploadToR2, r2Config, WIDE_MAX } from "@/lib/upload/cdn";
 
 export const runtime = "nodejs";
 const BUCKET = "product-images";
@@ -18,6 +18,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Tidak diizinkan." }, { status: 403 });
   }
 
+  // ?wide=1 → foto lebar beranda (maks 2400px, nama -wide.webp, varian 750/1200/1800).
+  const wide = new URL(request.url).searchParams.get("wide") === "1";
   let buf: Buffer;
   try {
     buf = (request.headers.get("content-type") ?? "").includes("application/json")
@@ -30,12 +32,12 @@ export async function POST(request: Request) {
   // Kompres → WebP
   let webp: Buffer;
   try {
-    webp = await compressToWebp(buf);
+    webp = await compressToWebp(buf, wide ? WIDE_MAX : 1200);
   } catch (e) {
     return NextResponse.json({ error: `Gagal memproses gambar: ${e instanceof Error ? e.message : "error"}` }, { status: 500 });
   }
 
-  const filename = `${Date.now()}-${crypto.randomUUID()}.webp`;
+  const filename = `${Date.now()}-${crypto.randomUUID()}${wide ? "-wide" : ""}.webp`;
 
   // 1) Cloudflare R2 (bila dikonfigurasi) — egress gratis
   if (r2Config()) {

@@ -26,11 +26,11 @@ export const metadata: Metadata = {
     template: "%s | SNAPFIT Indonesia",
   },
   description:
-    "Toko resmi aksesoris gadget premium: case HP, tablet & AirPods original Ringke, VRS Design, Araree, Supcase & SNAPFIT. Garansi resmi, gratis ongkir s/d Rp20rb min. Rp150rb.",
+    "Toko resmi SNAPFIT: case HP, pelindung layar & aksesori untuk iPhone, Samsung Galaxy, dan AirPods. Bergaransi, gratis ongkir s/d Rp20rb min. Rp150rb.",
   applicationName: "SNAPFIT Indonesia",
   keywords: [
     "case hp", "casing hp premium", "aksesoris gadget", "case iphone", "case samsung",
-    "Ringke Indonesia", "VRS Design", "Araree", "Supcase", "SNAPFIT",
+    "SNAPFIT", "SNAPFIT Indonesia", "tempered glass", "case airpods",
   ],
   openGraph: {
     type: "website",

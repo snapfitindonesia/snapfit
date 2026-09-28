@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { getMerekLanding } from "@/lib/seo-pages";
 import { LandingView } from "@/components/shop/landing-view";
 
@@ -10,23 +10,22 @@ export function generateStaticParams() {
   return [];
 }
 
-const RESELLER = new Set(["ringke", "vrs-design", "araree", "supcase"]);
+// Sejak 28 Sep 2026 toko hanya menjual SNAPFIT: halaman merek lain (masih terindeks Google)
+// dialihkan permanen ke Semua Produk, bukan 404.
+const OWN_BRAND = "snapfit";
 
 function titleOf(name: string): string {
   return `${name} Indonesia - Case Original Bergaransi`;
 }
 
 function intro(name: string, slug: string, total: number): string {
-  const who = slug === "snapfit"
-    ? "SNAPFIT adalah merek aksesori gadget kami sendiri"
-    : RESELLER.has(slug)
-      ? `SNAPFIT adalah authorized reseller ${name} di Indonesia`
-      : `Koleksi ${name} di SNAPFIT dijamin original`;
+  const who = slug === OWN_BRAND ? "SNAPFIT adalah merek aksesori gadget kami sendiri" : `Koleksi ${name} di SNAPFIT dijamin original`;
   return `Belanja case dan aksesoris ${name} original — ${total} produk tersedia. ${who}: bergaransi resmi, 100% original, gratis ongkir s/d Rp20.000 untuk pembelian minimal Rp150.000.`;
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
+  if (slug !== OWN_BRAND) permanentRedirect("/produk");
   const data = await getMerekLanding(slug);
   if (!data) return { title: "Merek tidak ditemukan" };
   const title = titleOf(data.name);
@@ -45,6 +44,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function MerekLandingPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  if (slug !== OWN_BRAND) permanentRedirect("/produk");
   const data = await getMerekLanding(slug);
   if (!data) notFound();
 

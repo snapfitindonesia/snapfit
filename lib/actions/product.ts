@@ -59,88 +59,9 @@ export async function getBrandFacets(): Promise<{ brands: string[]; hasNoBrand: 
   }
 }
 
-export type DeviceModel = { label: string; slug: string; count: number };
-export type DeviceLine = { name: string; slug: string; productCount: number; models: DeviceModel[] };
-export type DeviceBrand = { name: string; slug: string; lines: DeviceLine[] };
-
-/**
- * Pohon pemilih perangkat homepage (drill-down 3 tingkat) — MENGIKUTI pohon
- * kategori yang dikelola di Admin → Kategori (Brand → Seri → Model).
- * Jumlah produk dihitung lintas-subtree (kategori utama + tambahan). Hanya
- * kategori yang punya produk yang ditampilkan.
- */
-export async function getDeviceTree(): Promise<DeviceBrand[]> {
-  try {
-    const brands = await db.category.findMany({
-      where: { parentId: null },
-      orderBy: [{ order: "asc" }, { name: "asc" }],
-      select: {
-        id: true, name: true, slug: true,
-        children: {
-          orderBy: [{ order: "asc" }, { name: "asc" }],
-          select: {
-            id: true, name: true, slug: true,
-            children: {
-              orderBy: [{ order: "asc" }, { name: "asc" }],
-              select: { id: true, name: true, slug: true },
-            },
-          },
-        },
-      },
-    });
-
-    // Peta induk (utk rambat hitung ke leluhur).
-    const parentOf = new Map<string, string | null>();
-    for (const b of brands) {
-      parentOf.set(b.id, null);
-      for (const l of b.children) {
-        parentOf.set(l.id, b.id);
-        for (const m of l.children) parentOf.set(m.id, l.id);
-      }
-    }
-
-    // Hitung produk per kategori: tiap produk menyumbang ke kategori utama +
-    // tambahan DAN semua leluhurnya (dedup per produk).
-    const products = await db.product.findMany({
-      where: { archived: false },
-      select: { categoryId: true, extraCategories: { select: { id: true } } },
-    });
-    const count = new Map<string, number>();
-    for (const p of products) {
-      const ids = new Set<string>();
-      const seeds = [p.categoryId, ...p.extraCategories.map((e) => e.id)].filter(Boolean) as string[];
-      for (const s of seeds) {
-        let cur: string | null | undefined = s;
-        while (cur) {
-          ids.add(cur);
-          cur = parentOf.get(cur);
-        }
-      }
-      for (const id of ids) count.set(id, (count.get(id) ?? 0) + 1);
-    }
-    const cnt = (id: string) => count.get(id) ?? 0;
-
-    // Tampilkan SEMUA kategori (mirror Admin → Kategori), walau belum ada produk.
-    return brands
-      .map((b) => ({
-        name: b.name,
-        slug: b.slug,
-        lines: b.children.map((l) => ({
-          name: l.name,
-          slug: l.slug,
-          productCount: cnt(l.id),
-          models: l.children.map((m) => ({ label: m.name, slug: m.slug, count: cnt(m.id) })),
-        })),
-      }))
-      .filter((b) => b.lines.length > 0);
-  } catch {
-    return [];
-  }
-}
-
 export type MainBanner = { id: string; image: string; href: string };
 
-/** Ambil banner aktif per tipe (MAIN/PROMO/ETALASE), terurut. */
+/** Ambil banner aktif per tipe, terurut. Beranda kini diatur di Konten Beranda — tersisa POPUP. */
 async function getBannersByType(type: string, take?: number): Promise<MainBanner[]> {
   try {
     const banners = await db.banner.findMany({
@@ -155,18 +76,6 @@ async function getBannersByType(type: string, take?: number): Promise<MainBanner
   }
 }
 
-/** Banner hero (MAIN) — ideal 1200×600. */
-export function getMainBanners() {
-  return getBannersByType("MAIN");
-}
-/** 2 banner kotak (PROMO) — ideal 1000×1000. */
-export function getPromoBanners() {
-  return getBannersByType("PROMO", 2);
-}
-/** Banner strip panjang (ETALASE) — ideal 2000×400 landscape. */
-export function getStripBanners() {
-  return getBannersByType("ETALASE", 1);
-}
 /** Banner popup awal masuk (POPUP) — ideal 1000×1000. */
 export async function getPopupBanner(): Promise<MainBanner | null> {
   const banners = await getBannersByType("POPUP", 1);

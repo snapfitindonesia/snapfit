@@ -8,7 +8,7 @@ Alamat: **https://www.snapfit.id/admin** — wajib login dengan akun ber-role `a
 Menu samping dikelompokkan (`components/admin/admin-nav.tsx`): **Dashboard** ·
 **Penjualan** (Pesanan, Keranjang Ditinggal, Voucher, Diskon) · **Katalog** (Semua Produk,
 Tambah Produk, Edit Massal, Impor CSV, Impor Ginee, Unggulan, Kategori, Merek) ·
-**Tampilan Toko** (Banner, Menu Header, Linktree) · **Pelanggan** (Ulasan, Pencarian).
+**Tampilan Toko** (Konten Beranda, Banner, Menu Header, Overview Produk, Linktree) · **Pelanggan** (Ulasan, Pencarian).
 Grup bisa dibuka/tutup; grup halaman aktif selalu terbuka; pilihan diingat di browser.
 
 | Menu | URL | Untuk apa |
@@ -25,7 +25,8 @@ Grup bisa dibuka/tutup; grup halaman aktif selalu terbuka; pilihan diingat di br
 | Kategori | `/admin/kategori` | Pohon kategori (Brand › Seri › Model) + gambar |
 | Merek | `/admin/merek` | Daftar merek (Ringke, VRS Design, …) |
 | Menu | `/admin/menu` | Tautan menu header |
-| Banner | `/admin/banner` | Banner carousel beranda & promo |
+| Konten Beranda | `/admin/beranda` | Susun beranda: tambah/urutkan/sembunyikan bagian, foto, teks, tombol |
+| Banner | `/admin/banner` | Kini hanya **POPUP** (MAIN/PROMO/ETALASE tak tampil lagi — beranda di Konten Beranda) |
 | Unggulan | `/admin/unggulan` | Produk yang ditonjolkan di beranda |
 | Diskon | `/admin/diskon` | Diskon persen untuk varian terpilih, dengan periode mulai–selesai |
 | Ongkir per Provinsi | `/admin/ongkir` | Tarif 1 kg pertama + per kg berikutnya + estimasi untuk 38 provinsi; isi cepat per pulau |

@@ -1,26 +1,11 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  getProducts,
-  getFeaturedProducts,
-  getDeviceTree,
-  getMainBanners,
-  getPromoBanners,
-  getStripBanners,
-  type ProductListItem,
-  type DeviceBrand,
-  type MainBanner,
-} from "@/lib/actions/product";
-import { ProductCard } from "@/components/shop/product-card";
-import { DevicePicker } from "@/components/shop/device-picker";
-import { HeroCarousel, type HeroSlide } from "@/components/shop/hero-carousel";
-import { BannerCarousel } from "@/components/shop/banner-carousel";
 import { STORE_WA_DISPLAY } from "@/lib/contact";
-import { PromoBanners, StripBanner } from "@/components/shop/home-banners";
+import { getHomeSections, loadHomeData, type HomeData } from "@/lib/home/data";
+import { DEFAULT_SECTIONS, type HomeSection } from "@/lib/home/sections";
+import { HomeSections } from "@/components/home/home-sections";
 
-// ISR: homepage di-cache (cepat), regenerasi tiap 5 menit.
+// ISR: beranda di-cache (cepat), regenerasi tiap 5 menit; simpan di Admin → Konten Beranda
+// memperbarui langsung (revalidatePath("/")).
 export const revalidate = 300;
 
 export const metadata: Metadata = {
@@ -42,8 +27,7 @@ const SITE_JSON_LD = [
     name: "SNAPFIT Indonesia",
     url: `${SITE}/`,
     logo: `${SITE}/logo.png`,
-    description:
-      "Toko resmi aksesoris gadget premium: case HP, tablet & AirPods original Ringke, VRS Design, Araree, Supcase & SNAPFIT.",
+    description: "Toko resmi SNAPFIT: case HP, pelindung layar & aksesori untuk iPhone, Samsung Galaxy, dan AirPods.",
     contactPoint: {
       "@type": "ContactPoint",
       telephone: STORE_WA_DISPLAY,
@@ -53,180 +37,30 @@ const SITE_JSON_LD = [
   },
 ];
 
-// Hero banner: produk device terbaru dari brand mitra (authorized reseller).
-const HERO_SLIDES: HeroSlide[] = [
-  {
-    image:
-      "https://cdn.shopify.com/s/files/1/1270/3733/files/1c577dc6092d75c0e453206fe7bae282_1dbf26b5-e4b3-4e32-9298-c1bbc2f38db3.jpg?v=1784240712",
-    brand: "VRS Design",
-    caption: "Galaxy Z Fold 8 · Case Rugged Premium",
-    href: "/produk/vrs-active-z-fold-8-ultra",
-  },
-  {
-    image:
-      "https://cdn.shopify.com/s/files/1/1696/1045/files/SUPCASE_iPhone_16_Pro_Max_Unicorn_Beetle_XT_MagSafe_phone_case_Ruddy_1x1_2c1bd284-d24a-4dff-a6ab-f918e0b46c95.png?v=1724767101",
-    brand: "Supcase",
-    caption: "iPhone 16 Pro Max · Unicorn Beetle MagSafe",
-    href: "/kategori/apple",
-  },
-  {
-    image:
-      "https://cdn.shopify.com/s/files/1/1352/5175/files/XM17U_FUSX_MGNT_Main.jpg?v=1777668398",
-    brand: "Ringke",
-    caption: "Xiaomi 17 Ultra · Fusion-X Magnetic",
-    href: "/produk/ringke-xiaomi-17-ultra-case-fusion-x",
-  },
-];
-
 export default async function HomePage() {
-  // Tahan-banting: kalau DB ngadat saat build, jangan gagalkan deploy —
-  // ISR akan mengisi produk unggulan saat request pertama.
-  let featured: ProductListItem[] = [];
+  // Tahan-banting: DB ngadat saat build/ISR → tetap tampil dengan isi bawaan.
+  let sections: HomeSection[] = DEFAULT_SECTIONS;
   try {
-    featured = await getFeaturedProducts(8);
+    sections = await getHomeSections();
   } catch {
-    featured = [];
+    // pakai bawaan
+  }
+  let data: HomeData = { products: {}, reviews: null, shots: [] };
+  try {
+    data = await loadHomeData(sections);
+  } catch {
+    // bagian dinamis tak tampil
   }
 
-  let deviceTree: DeviceBrand[] = [];
-  try {
-    deviceTree = await getDeviceTree();
-  } catch {
-    deviceTree = [];
-  }
-
-  let banners: MainBanner[] = [];
-  let promo: MainBanner[] = [];
-  let strip: MainBanner[] = [];
-  let latest: ProductListItem[] = [];
-  try {
-    [banners, promo, strip, latest] = await Promise.all([
-      getMainBanners(),
-      getPromoBanners(),
-      getStripBanners(),
-      getProducts({ sort: "terbaru", take: 12, skip: 0 }).then((r) => r.items),
-    ]);
-  } catch {
-    // biarkan default kosong
-  }
+  // H1 = judul hero pertama (bila hero ada di paling atas); selain itu H1 tersembunyi untuk SEO.
+  const first = sections.find((s) => s.active);
+  const heroH1 = first?.type === "hero" && !!first.title;
 
   return (
     <>
-      {/* SEO: nama situs & organisasi untuk Google (nama situs di hasil pencarian) */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(SITE_JSON_LD) }}
-      />
-      {/* H1 utama halaman (visual diwakili banner) */}
-      {banners.length > 0 && <h1 className="sr-only">SNAPFIT Indonesia - Aksesoris Gadget Premium</h1>}
-
-      {/* Hero banner besar (1200×600) — dikelola di Admin → Banner (type MAIN) */}
-      {banners.length > 0 && (
-        <section className="mx-auto max-w-6xl px-4 pb-10 pt-6 sm:px-6 sm:pb-14">
-          <BannerCarousel banners={banners} />
-        </section>
-      )}
-
-      {/* Hero teks — fallback bila belum ada banner */}
-      {banners.length === 0 && (
-      <section className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="grid items-center gap-8 py-12 sm:py-16 md:grid-cols-2 md:gap-12 md:py-24">
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <p className="text-sm font-medium text-muted-foreground">
-              Aksesori HP & tablet
-            </p>
-            <h1 className="mt-3 text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
-              Yang benar-benar pas.
-            </h1>
-            <p className="mt-4 max-w-md text-lg text-muted-foreground text-pretty">
-              Pilih tipe HP-mu, temukan case & pelindung yang cocok — tanpa
-              tebak-tebakan.
-            </p>
-            <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Button size="lg" asChild>
-                <Link href="/produk">
-                  Belanja sekarang
-                  <ArrowRight className="size-4" />
-                </Link>
-              </Button>
-              <Button size="lg" variant="ghost" asChild>
-                <Link href="/produk">Lihat semua produk</Link>
-              </Button>
-            </div>
-          </div>
-
-          {/* Hero banner: carousel produk device terbaru */}
-          <div className="animate-in fade-in zoom-in-95 delay-150 duration-700 fill-mode-both">
-            <HeroCarousel slides={HERO_SLIDES} />
-          </div>
-        </div>
-      </section>
-      )}
-
-      {/* Pilih tipe HP kamu — drill-down brand → line → model (lihat 02-design-system.md) */}
-      <section className="mx-auto max-w-6xl px-4 sm:px-6">
-        <DevicePicker tree={deviceTree} />
-      </section>
-
-      {/* Produk unggulan — grid placeholder (belum ada data) */}
-      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-        <div className="flex items-end justify-between">
-          <h2 className="text-xl font-semibold tracking-tight">
-            Produk unggulan
-          </h2>
-          <Link
-            href="/produk"
-            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Lihat semua
-          </Link>
-        </div>
-        <div className="mt-6 grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
-          {featured.map((p) => (
-            <ProductCard key={p.id} product={p} />
-          ))}
-        </div>
-      </section>
-
-      {/* 2 banner kotak (PROMO, 1000×1000) */}
-      {promo.length > 0 && (
-        <section className="cv-auto mx-auto max-w-6xl px-4 pb-4 sm:px-6">
-          <PromoBanners banners={promo} />
-        </section>
-      )}
-
-      {/* Produk terbaru (12) + See more */}
-      {latest.length > 0 && (
-        <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-          <div className="flex items-end justify-between">
-            <h2 className="text-xl font-semibold tracking-tight">Produk Terbaru</h2>
-            <Link href="/produk" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-              Lihat semua
-            </Link>
-          </div>
-          {/* cv-auto di grid saja (bukan section) → judul & tombol tetap dirender normal */}
-          <div className="cv-auto mt-6 grid grid-cols-2 gap-4 [--cv-h:1900px] sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
-            {latest.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
-          </div>
-          <div className="mt-8 flex justify-center">
-            <Button size="lg" variant="outline" asChild>
-              <Link href="/produk">
-                Lihat semua produk
-                <ArrowRight className="size-4" />
-              </Link>
-            </Button>
-          </div>
-        </section>
-      )}
-
-      {/* Banner strip panjang (ETALASE, 2000×100) */}
-      {strip[0] && (
-        <section className="cv-auto mx-auto max-w-6xl px-4 pb-14 [--cv-h:200px] sm:px-6">
-          <StripBanner banner={strip[0]} />
-        </section>
-      )}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(SITE_JSON_LD) }} />
+      {!heroH1 && <h1 className="sr-only">SNAPFIT Indonesia — Case & Aksesori HP</h1>}
+      <HomeSections sections={sections} data={data} />
     </>
   );
 }

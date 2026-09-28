@@ -19,7 +19,7 @@ type Banner = {
 const input =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-foreground";
 
-const BLANK = { type: "MAIN", image: "", targetUrl: "", order: "0", active: true };
+const BLANK = { type: "POPUP", image: "", targetUrl: "", order: "0", active: true };
 
 // Rasio pratinjau per tipe (samakan dgn tampilan storefront).
 const ASPECT: Record<string, string> = {

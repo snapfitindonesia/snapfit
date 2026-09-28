@@ -5,13 +5,21 @@ import { AwsClient } from "aws4fetch";
  * Kompres + resize gambar apa pun → WebP (maks 1200px, quality 80).
  * Ukuran biasanya turun 70-90%.
  */
-export async function compressToWebp(buffer: Buffer): Promise<Buffer> {
+export async function compressToWebp(buffer: Buffer, maxSide = 1200): Promise<Buffer> {
   return sharp(buffer)
     .rotate() // hormati orientasi EXIF
-    .resize({ width: 1200, height: 1200, fit: "inside", withoutEnlargement: true })
+    .resize({ width: maxSide, height: maxSide, fit: "inside", withoutEnlargement: true })
     .webp({ quality: 80 })
     .toBuffer();
 }
+
+/**
+ * Foto LEBAR (bagian full-width beranda): maks 2400px, nama berakhiran `-wide.webp`,
+ * varian 750/1200/1800 (lib/image-loader.ts memilih sesuai lebar layar).
+ */
+export const WIDE_MAX = 2400;
+export const WIDE_VARIANT_WIDTHS = [750, 1200, 1800] as const;
+export const isWideKey = (key: string) => /-wide\.webp$/.test(key);
 
 /* ---------- Varian ukuran (dimuat langsung dari cdn.snapfit.id) ---------- */
 
@@ -71,7 +79,8 @@ export async function uploadToR2(buffer: Buffer, filename: string): Promise<stri
   const cfg = r2Config();
   if (!cfg) return null;
   if (filename.endsWith(".webp")) {
-    await Promise.all(CDN_VARIANT_WIDTHS.map(async (w) => put(cfg, variantKey(filename, w), await makeVariant(buffer, w))));
+    const widths = isWideKey(filename) ? WIDE_VARIANT_WIDTHS : CDN_VARIANT_WIDTHS;
+    await Promise.all(widths.map(async (w) => put(cfg, variantKey(filename, w), await makeVariant(buffer, w))));
   }
   await put(cfg, filename, buffer);
   return `${cfg.publicUrl}/${filename}`;
@@ -82,7 +91,8 @@ export async function deleteFromR2(filename: string): Promise<boolean> {
   const cfg = r2Config();
   if (!cfg) return false;
   const { client, url } = r2(cfg);
-  const keys = filename.endsWith(".webp") ? [filename, ...CDN_VARIANT_WIDTHS.map((w) => variantKey(filename, w))] : [filename];
+  const widths = isWideKey(filename) ? WIDE_VARIANT_WIDTHS : CDN_VARIANT_WIDTHS;
+  const keys = filename.endsWith(".webp") ? [filename, ...widths.map((w) => variantKey(filename, w))] : [filename];
   const results = await Promise.all(keys.map((k) => client.fetch(url(k), { method: "DELETE" })));
   return results.every((res) => res.ok || res.status === 404);
 }

@@ -32,7 +32,7 @@ const NAV = [
 const FAQ = [
   {
     q: "Produknya original?",
-    a: "100% original. SNAPFIT adalah authorized reseller merek seperti Ringke, VRS, Araree, dan Supcase — bergaransi resmi.",
+    a: "100% original. Semua produk adalah produk resmi SNAPFIT dan bergaransi.",
   },
   {
     q: "Bagaimana kalau tipe HP saya tidak ada?",

@@ -15,10 +15,12 @@ export function ImageInput({
   value,
   onChange,
   placeholder = "Tempel gambar (Ctrl+V) atau upload",
+  wide = false,
 }: {
   value: string;
   onChange: (url: string) => void;
   placeholder?: string;
+  wide?: boolean; // foto full-width beranda: disimpan s/d 2400px (bukan 1200px)
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -39,7 +41,7 @@ export function ImageInput({
 
   function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (file) void run(() => uploadImageFile(file));
+    if (file) void run(() => uploadImageFile(file, { wide }));
   }
 
   // Ctrl+V di kolom: gambar dari clipboard / alamat gambar → unggah ke CDN.
@@ -47,7 +49,7 @@ export function ImageInput({
     const p = readPastedImages(e.clipboardData);
     if (!hasPastedImages(p)) return;
     e.preventDefault();
-    void run(() => (p.files[0] ? uploadImageFile(p.files[0]) : importImageUrl(p.urls[0])));
+    void run(() => (p.files[0] ? uploadImageFile(p.files[0], { wide }) : importImageUrl(p.urls[0], { wide })));
   }
 
   return (

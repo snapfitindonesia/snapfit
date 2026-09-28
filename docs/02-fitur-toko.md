@@ -28,6 +28,18 @@ bar bawah (HP), dan tombol WhatsApp melayang.
 
 ## Perilaku penting
 
+### Beranda (bercerita, gaya Nomad) — sejak 28 Sep 2026
+- Toko **satu merek (SNAPFIT)**. Beranda disusun dari bagian yang diatur di **Admin → Konten Beranda**
+  (JSON di `SiteSetting` `home.sections`; skema & isi bawaan: `lib/home/sections.ts`; data: `lib/home/data.ts`;
+  tampilan: `components/home/`). Jenis: hero, deretan produk, pintasan kategori, gambar+teks bergantian,
+  kutipan, banner cerita, komunitas, banner ulasan, kartu info.
+- **Lebar gabungan**: hero, banner cerita, komunitas & banner ulasan selebar layar; sisanya max-w-6xl.
+- Hero mode **produk** (latar warna + foto produk, putih foto dilebur `mix-blend-multiply`) dipakai sampai ada
+  foto lifestyle; mode **foto** = foto penuh + versi HP (`<picture>`, hanya satu yang diunduh).
+- Komunitas (foto ulasan, min. 3) & banner ulasan (`{jumlah}`/`{rating}` asli) **tersembunyi otomatis** bila belum ada data.
+- Foto lebar diunggah via `ImageInput wide` → maks 2400px, nama `-wide.webp`, varian 750/1200/1800 (`lib/image-loader.ts`).
+- Halaman `/merek/<selain snapfit>` → redirect permanen ke `/produk`; filter Merek disembunyikan bila <2 merek.
+
 ### Stok & harga yang tampil
 - Stok berasal dari **gudang Ginee** (sinkron harian 11:00 WIB) — lihat [06](06-integrasi.md#ginee).
 - Varian berharga dummy (99.999 / 999.999 / 9.999.999) dianggap **stok 0** dan tidak
