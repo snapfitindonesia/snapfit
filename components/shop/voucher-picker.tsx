@@ -58,17 +58,21 @@ export function VoucherPicker({
               <div className="flex items-start gap-2">
                 <Ticket className={cn("mt-0.5 size-4 shrink-0", r.state === "ok" || applied ? "text-brand-ink" : "text-muted-foreground")} />
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium">
-                    {r.label}
-                    {r.code === best && !applied && (
-                      <span className="ml-1.5 rounded bg-brand-ink px-1.5 py-0.5 text-[10px] font-semibold text-brand-foreground">Paling hemat</span>
-                    )}
-                  </p>
+                  <p className="font-medium">{r.label}</p>
                   <p className="text-xs text-foreground/70">
                     <span className="font-mono">{r.code}</span>
                     {r.minPurchase > 0 && ` · min. belanja ${formatRupiah(r.minPurchase)}`}
                   </p>
-                  {r.state === "ok" && <p className="mt-0.5 text-xs font-medium text-emerald-700">Hemat {formatRupiah(r.saving)}</p>}
+                  {r.state === "ok" && (
+                    <p className="mt-1 flex flex-wrap items-center gap-1.5 text-xs font-medium text-emerald-700">
+                      Hemat {formatRupiah(r.saving)}
+                      {r.code === best && !applied && (
+                        <span className="whitespace-nowrap rounded bg-brand-ink px-1.5 py-0.5 text-[10px] font-semibold text-brand-foreground">
+                          Paling hemat
+                        </span>
+                      )}
+                    </p>
+                  )}
                   {r.state === "none" && (
                     <p className="mt-0.5 text-xs text-foreground/70">
                       {r.type === "GRATIS_ONGKIR" ? "Ongkirmu sudah gratis 🎉" : "Belum memberi potongan untuk pesanan ini."}
@@ -98,11 +102,11 @@ export function VoucherPicker({
                     <div className="h-full rounded-full bg-brand" style={{ width: `${Math.min(100, (subtotal / r.minPurchase) * 100)}%` }} />
                   </div>
                   <p className="mt-1.5 text-xs">
-                    Belanja <b>{formatRupiah(r.shortfall)}</b> lagi untuk pakai voucher ini.{" "}
-                    <Link href="/produk" className="font-medium text-brand-ink underline underline-offset-2">
-                      Tambah produk →
-                    </Link>
+                    Belanja <b>{formatRupiah(r.shortfall)}</b> lagi untuk pakai voucher ini.
                   </p>
+                  <Link href="/produk" className="mt-1 inline-block text-xs font-medium text-brand-ink underline underline-offset-2">
+                    Tambah produk →
+                  </Link>
                 </div>
               )}
             </li>

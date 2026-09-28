@@ -336,8 +336,8 @@ export function CheckoutView({
           ) : null}
           {flatShipping && freeShippingMin > 0 && !freeShip && (
             <p className="mt-2 text-xs">
-              Belanja <b>{formatRupiah(freeShippingMin - subtotal)}</b> lagi untuk <b>gratis ongkir</b>.{" "}
-              <Link href="/produk" className="font-medium text-brand-ink underline underline-offset-2">Tambah produk →</Link>
+              Belanja <b>{formatRupiah(freeShippingMin - subtotal)}</b> lagi untuk <b>gratis ongkir</b>.
+              <Link href="/produk" className="mt-1 block w-fit font-medium text-brand-ink underline underline-offset-2">Tambah produk →</Link>
             </p>
           )}
           {!flatShipping && (
