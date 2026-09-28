@@ -18,6 +18,8 @@ import { guessMerek } from "@/lib/brand-guess";
 import { mirrorImages } from "@/lib/upload/mirror";
 
 type SearchItem = ReturnType<typeof summarizeGinee> & {
+  stock: number; // total stok GUDANG semua varian
+  stockKnown: boolean; // false = stok gudang gagal diambil
   imported: boolean;
   variations: GineeVariationBrief[];
 };
@@ -39,17 +41,34 @@ export async function searchGineeForImport(keyword: string, page = 0): Promise<S
       select: { gineeProductId: true },
     });
     const importedSet = new Set(existing.map((e) => e.gineeProductId));
-    const items: SearchItem[] = content.map((c) => ({
-      ...summarizeGinee(c),
-      imported: importedSet.has(c.productId),
+
+    // Stok master Ginee selalu 0 — stok asli ada di INVENTORI GUDANG (sama dengan
+    // impor & sinkron harian). Gagal ambil → stockKnown=false (tampil "stok ?").
+    const skus = [...new Set(content.flatMap((c) => (c.variationBriefs ?? []).map((v) => v.sku)).filter(Boolean))];
+    let warehouse: Map<string, { stock: number }> | null = null;
+    try {
+      const warehouseId = await getDefaultWarehouseId();
+      if (warehouseId && skus.length) warehouse = await getWarehouseStockBySku(skus, warehouseId);
+    } catch (e) {
+      console.error("Stok gudang Ginee (pencarian impor) gagal:", e instanceof Error ? e.message : e);
+    }
+
+    const items: SearchItem[] = content.map((c) => {
       // variationBriefs dari search = sumber varian yang benar (terfilter per produk)
-      variations: (c.variationBriefs ?? []).map((v) => ({
+      const variations = (c.variationBriefs ?? []).map((v) => ({
         id: v.id,
         sku: v.sku,
         optionValues: v.optionValues ?? [],
-        stock: v.stock?.availableStock ?? 0,
-      })),
-    }));
+        stock: warehouse?.get(v.sku)?.stock ?? 0,
+      }));
+      return {
+        ...summarizeGinee(c),
+        stock: variations.reduce((n, v) => n + (v.stock ?? 0), 0),
+        stockKnown: warehouse !== null,
+        imported: importedSet.has(c.productId),
+        variations,
+      };
+    });
     return { ok: true, total, items };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Gagal mengambil data Ginee." };

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { searchGineeForImport, importGineeProducts } from "@/lib/actions/ginee";
 
 type Variation = { id: string; sku: string; optionValues?: string[]; stock?: number };
-type Item = { productId: string; name: string; image: string; variantCount: number; stock: number; imported: boolean; variations: Variation[] };
+type Item = { productId: string; name: string; image: string; variantCount: number; stock: number; stockKnown: boolean; imported: boolean; variations: Variation[] };
 
 const QUICK = ["Fold 8", "iPhone 18 Pro Max", "S26 Ultra"];
 
@@ -172,7 +172,7 @@ export function GineeImport() {
                 <img src={it.image || "https://placehold.co/64"} alt="" className="size-12 shrink-0 rounded-md border border-border object-cover grayscale" />
                 <div className="min-w-[180px] flex-1">
                   <p className="line-clamp-2 text-sm font-medium">{it.name}</p>
-                  <p className="text-xs text-muted-foreground">{it.variantCount} varian · stok {it.stock}</p>
+                  <p className="text-xs text-muted-foreground">{it.variantCount} varian · stok gudang {it.stockKnown ? it.stock : "?"}</p>
                 </div>
                 <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700">✓ Sudah diimpor</span>
               </div>
@@ -197,7 +197,7 @@ export function GineeImport() {
               />
               <div className="min-w-[180px] flex-1">
                 <p className="line-clamp-2 text-sm font-medium">{it.name}</p>
-                <p className="text-xs text-muted-foreground">{it.variantCount} varian · stok {it.stock}</p>
+                <p className="text-xs text-muted-foreground">{it.variantCount} varian · stok gudang {it.stockKnown ? it.stock : "?"}</p>
               </div>
             </label>
           );

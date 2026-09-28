@@ -186,14 +186,13 @@ export type MappedProduct = {
 };
 
 /** Ringkasan untuk preview di UI (tanpa menulis apa pun). */
+// Stok TIDAK diambil dari sini (stok master Ginee selalu 0) — pakai inventori gudang.
 export function summarizeGinee(mp: GineeMasterProduct) {
   const vars = mp.variationBriefs ?? [];
-  const stock = vars.reduce((n, v) => n + (v.stock?.availableStock ?? 0), 0);
   return {
     productId: mp.productId,
     name: mp.name,
     image: mp.images?.[0] ?? "",
     variantCount: vars.length,
-    stock,
   };
 }
