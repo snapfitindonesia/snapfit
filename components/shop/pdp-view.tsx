@@ -45,6 +45,7 @@ export type PdpProduct = {
   slug: string;
   name: string;
   description: string | null;
+  overview: string[]; // poin Overview (isian produk atau default admin)
   coverImage: string;
   categoryName: string | null;
   categorySlug: string | null;
@@ -656,9 +657,9 @@ export function PdpView({
             </summary>
             <div className="pb-3 text-sm text-muted-foreground">
               <ul className="list-inside list-disc space-y-1">
-                <li>Garansi resmi & 100% original</li>
-                <li>Material berkualitas, tahan pakai</li>
-                <li>7 hari pengembalian bila tidak sesuai</li>
+                {product.overview.map((p, i) => (
+                  <li key={i}>{p}</li>
+                ))}
               </ul>
             </div>
           </details>

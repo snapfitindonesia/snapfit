@@ -53,6 +53,7 @@ const GROUPS: NavGroup[] = [
     items: [
       { href: "/admin/banner", label: "Banner" },
       { href: "/admin/menu", label: "Menu Header" },
+      { href: "/admin/overview", label: "Overview Produk" },
       { href: "/admin/linktree", label: "Linktree" },
     ],
   },

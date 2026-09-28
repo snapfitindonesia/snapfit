@@ -9,7 +9,7 @@ import { canCombine, computeVoucherBenefit } from "@/lib/voucher";
 export type PickerVoucher = { code: string; type: string; amount: number; minPurchase: number; maxBenefit: number; stackable: boolean; label: string };
 type AppliedLite = { code: string; type: string; stackable: boolean };
 
-type Row = PickerVoucher & { state: "ok" | "short" | "none"; saving: number; shortfall: number };
+type Row = PickerVoucher & { state: "ok" | "short" | "none"; saving: number; shortfall: number; upTo: boolean };
 
 /**
  * Daftar voucher aktif di ringkasan checkout. Syarat & nilai hemat dihitung dengan
@@ -21,6 +21,7 @@ export function VoucherPicker({
   vouchers,
   subtotal,
   shippingCost,
+  shippingKnown = true,
   applied,
   applyingCode,
   onApply,
@@ -28,6 +29,7 @@ export function VoucherPicker({
   vouchers: PickerVoucher[];
   subtotal: number;
   shippingCost: number; // ongkir SEBELUM voucher
+  shippingKnown?: boolean; // false = provinsi belum dipilih → gratis ongkir ditulis "s/d maks."
   applied: AppliedLite[];
   applyingCode: string | null;
   onApply: (code: string) => void;
@@ -36,8 +38,10 @@ export function VoucherPicker({
 
   const rows: Row[] = vouchers.map((v) => {
     const b = computeVoucherBenefit({ ...v, active: true }, subtotal, shippingCost);
-    if (b.valid) return { ...v, state: b.discount > 0 ? "ok" : "none", saving: b.discount, shortfall: 0 };
-    return { ...v, state: "short", saving: 0, shortfall: Math.max(0, v.minPurchase - subtotal) };
+    if (!b.valid) return { ...v, state: "short", saving: 0, shortfall: Math.max(0, v.minPurchase - subtotal), upTo: false };
+    // Ongkir belum diketahui: nilai gratis ongkir = batas maksimalnya (bila ada).
+    if (v.type === "GRATIS_ONGKIR" && !shippingKnown) return { ...v, state: "ok", saving: v.maxBenefit, shortfall: 0, upTo: true };
+    return { ...v, state: b.discount > 0 ? "ok" : "none", saving: b.discount, shortfall: 0, upTo: false };
   });
   const rank = { ok: 0, short: 1, none: 2 } as const;
   rows.sort((a, b) => rank[a.state] - rank[b.state] || b.saving - a.saving || a.shortfall - b.shortfall);
@@ -74,8 +78,8 @@ export function VoucherPicker({
                   )}
                   {r.state === "ok" && (
                     <p className="mt-1 flex flex-wrap items-center gap-1.5 text-xs font-medium text-emerald-700">
-                      Hemat {formatRupiah(r.saving)}
-                      {best.has(r.code) && !isApplied && (
+                      {r.upTo ? (r.saving > 0 ? `Hemat ongkir s/d ${formatRupiah(r.saving)}` : "Potong ongkir setelah pilih provinsi") : `Hemat ${formatRupiah(r.saving)}`}
+                      {best.has(r.code) && !isApplied && !r.upTo && (
                         <span className="whitespace-nowrap rounded bg-brand-ink px-1.5 py-0.5 text-[10px] font-semibold text-brand-foreground">
                           Paling hemat
                         </span>

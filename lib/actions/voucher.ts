@@ -1,5 +1,6 @@
 "use server";
 
+import { unstable_cache } from "next/cache";
 import { db } from "@/lib/db";
 import { computeVoucherBenefit, voucherLabel, type VoucherLike } from "@/lib/voucher";
 import { FLAT_SHIPPING_COST, freeShippingSubsidy, isFlatShipping } from "@/lib/payment";
@@ -14,9 +15,11 @@ export type VoucherPublic = {
   label: string;
 };
 
-/** Voucher aktif untuk ditampilkan (chip PDP / daftar di drawer). */
-export async function getActiveVouchers(): Promise<VoucherPublic[]> {
-  try {
+// Di-cache bertag: saveVoucher/deleteVoucher memanggil revalidateTag("vouchers") sehingga
+// checkout/PDP/promo (ISR) langsung memakai daftar terbaru (dulu tertahan s/d 5 menit →
+// kode yang sudah diganti di admin masih tampil & gagal dipakai).
+const activeVouchersCached = unstable_cache(
+  async (): Promise<VoucherPublic[]> => {
     const vouchers = await db.voucher.findMany({
       where: { active: true },
       orderBy: [{ type: "asc" }, { amount: "desc" }],
@@ -30,6 +33,15 @@ export async function getActiveVouchers(): Promise<VoucherPublic[]> {
       stackable: v.stackable,
       label: voucherLabel(v as VoucherLike),
     }));
+  },
+  ["active-vouchers"],
+  { revalidate: 300, tags: ["vouchers"] },
+);
+
+/** Voucher aktif untuk ditampilkan (chip PDP / daftar voucher checkout). */
+export async function getActiveVouchers(): Promise<VoucherPublic[]> {
+  try {
+    return await activeVouchersCached();
   } catch {
     return [];
   }

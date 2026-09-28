@@ -138,6 +138,8 @@ export function CheckoutView({
       setVoucherInput("");
     } else {
       setVoucherError(res.error);
+      // Voucher dari daftar ternyata sudah diubah/dihapus di admin → muat ulang daftarnya.
+      if (code) router.refresh();
     }
     setVoucherApplying(false);
     setApplyingCode(null);
@@ -512,6 +514,7 @@ export function CheckoutView({
               subtotal={subtotal}
               shippingCost={voucherShipping}
               applied={applied}
+              shippingKnown={shippingKnown}
               applyingCode={applyingCode}
               onApply={(code) => onApplyVoucher(code)}
             />

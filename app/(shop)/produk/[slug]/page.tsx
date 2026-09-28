@@ -11,6 +11,7 @@ import { PdpView, type PdpProduct } from "@/components/shop/pdp-view";
 import { ProductCard } from "@/components/shop/product-card";
 import { ProductReviews } from "@/components/shop/product-reviews";
 import { getActiveVouchers } from "@/lib/actions/voucher";
+import { overviewFor } from "@/lib/overview";
 import { applyDiscount } from "@/lib/format";
 import { getCompanions } from "@/lib/cross-sell";
 
@@ -76,11 +77,12 @@ export default async function ProductDetailPage({
     // URL relatif / tak valid — abaikan
   }
 
-  const [relatedAll, reviews, vouchers, companions] = await Promise.all([
+  const [relatedAll, reviews, vouchers, companions, overview] = await Promise.all([
     getRelatedProducts(product.id, product.category?.slug ?? null, 8),
     getProductReviews(product.id),
     getActiveVouchers(),
     getCompanions(product),
+    overviewFor(product),
   ]);
   // Produk yang sudah tampil di "Lengkapi dengan" tak diulang di bawah.
   const companionIds = new Set(companions.map((c) => c.productId));
@@ -91,6 +93,7 @@ export default async function ProductDetailPage({
     slug: product.slug,
     name: product.name,
     description: product.description,
+    overview,
     coverImage: product.coverImage,
     categoryName: product.category?.name ?? null,
     categorySlug: product.category?.slug ?? null,

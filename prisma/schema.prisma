@@ -19,6 +19,7 @@ model Product {
   name        String
   brand       String? // merek aksesori (mis. Ringke, Spigen, SNAPFIT) — tampil sbg badge di kartu
   description String?
+  overview    String? // poin "Overview" di PDP, 1 baris = 1 poin; kosong = pakai default (SiteSetting pdp.overview)
   coverImage  String // URL cover (level produk)
   images      Json? // galeri foto fitur produk (array URL) — ditampilkan di PDP
   variantGroups Json? // nama & opsi variasi custom: { groups: [{name, options:[{value,desc}]}] }
@@ -268,4 +269,11 @@ model ShippingZone {
   etd          String   @default("") // estimasi, mis. "2-3 hari"
   available    Boolean  @default(true) // false = belum ada kurir ke provinsi ini → checkout ditolak
   updatedAt    DateTime @updatedAt
+}
+
+// Pengaturan toko sederhana (key → JSON), mis. "pdp.overview" = ["poin 1", ...].
+model SiteSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
 }

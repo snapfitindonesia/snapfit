@@ -1,7 +1,7 @@
 "use server";
 
 import { productSlug, skuify } from "@/lib/slug";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { cleanupOrphanImages } from "@/lib/upload/cleanup";
@@ -561,6 +561,7 @@ export async function saveVoucher(input: VoucherInput, id?: string): Promise<Res
       ? await db.voucher.update({ where: { id }, data: payload })
       : await db.voucher.create({ data: payload });
     revalidatePath("/admin/voucher");
+    revalidateTag("vouchers"); // checkout, PDP & halaman promo
     return { ok: true, id: voucher.id };
   } catch (e) {
     return fail(e);
@@ -572,6 +573,7 @@ export async function deleteVoucher(id: string): Promise<Result> {
     await requireAdmin();
     await db.voucher.delete({ where: { id } });
     revalidatePath("/admin/voucher");
+    revalidateTag("vouchers");
     return { ok: true };
   } catch (e) {
     return fail(e);
