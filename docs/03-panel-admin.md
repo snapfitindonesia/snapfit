@@ -104,7 +104,10 @@ pencarian itu di toko.
    mengubah); "Centang semua" & Impor hanya berlaku untuk produk yang terlihat.
 2. Diproses 3 produk per langkah (ada progress bar); stok diambil dari gudang,
    merek ditebak dari judul (`lib/brand-guess.ts`), foto disalin ke `cdn.snapfit.id`.
-3. Periksa hasilnya: harga dummy (99.999 dst.) harus diganti manual di form produk.
+3. **Nama sama digabung**: Ginee kadang punya banyak master produk bernama persis sama (mis. 23×, masing-
+   masing 1 varian). Halaman impor menyatukannya jadi 1 baris ("gabungan N produk Ginee") → diimpor
+   sebagai 1 produk dengan semua varian. `gineeProductId` = master pertama; stok tetap per SKU.
+4. Periksa hasilnya: harga dummy (99.999 dst.) harus diganti manual di form produk.
 
 ### Mengunci produk dari sinkron Ginee
 Di form produk, aktifkan **"Kunci dari sinkron"** bila stok/harga produk itu ingin

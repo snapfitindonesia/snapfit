@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { searchGineeForImport, importGineeProducts } from "@/lib/actions/ginee";
 
 type Variation = { id: string; sku: string; optionValues?: string[]; stock?: number };
-type Item = { productId: string; name: string; image: string; variantCount: number; stock: number; stockKnown: boolean; imported: boolean; variations: Variation[] };
+type Item = { productId: string; name: string; image: string; variantCount: number; stock: number; stockKnown: boolean; imported: boolean; variations: Variation[]; productIds: string[] };
 
 const QUICK = ["Fold 8", "iPhone 18 Pro Max", "S26 Ultra"];
 
@@ -51,13 +51,13 @@ export function GineeImport() {
     const res = await searchGineeForImport(keyword, next);
     setLoadingMore(false);
     if (!res.ok) { setMsg(res.error); return; }
-    // Gabung, hindari duplikat by productId
-    setItems((prev) => {
-      const seen = new Set(prev.map((p) => p.productId));
-      return [...prev, ...res.items.filter((i) => !seen.has(i.productId))];
-    });
+    // Gabung ke hasil sebelumnya; nama sama (lintas halaman) disatukan seperti di server.
+    setItems((prev) => mergeByName(prev, res.items));
     setPage(next);
   }
+
+  // Jumlah master Ginee yang sudah dimuat (1 baris bisa = beberapa master bernama sama).
+  const loaded = items.reduce((n, it) => n + it.productIds.length, 0);
 
   // Stok tak diketahui (gagal ambil) → tetap tampil, jangan dianggap 0.
   const isEmpty = (i: Item) => i.stockKnown && i.stock <= 0;
@@ -84,7 +84,7 @@ export function GineeImport() {
     const selectedSet = new Set(selectedIds);
     const inputs = visible
       .filter((it) => selectedSet.has(it.productId) && !it.imported)
-      .map((it) => ({ productId: it.productId, name: it.name, variations: it.variations }));
+      .map((it) => ({ productId: it.productId, productIds: it.productIds, name: it.name, variations: it.variations }));
     setImporting(true);
     setMsg(null);
     setErrList([]);
@@ -187,7 +187,7 @@ export function GineeImport() {
                 <img src={it.image || "https://placehold.co/64"} alt="" className="size-12 shrink-0 rounded-md border border-border object-cover grayscale" />
                 <div className="min-w-[180px] flex-1">
                   <p className="line-clamp-2 text-sm font-medium">{it.name}</p>
-                  <p className="text-xs text-muted-foreground">{it.variantCount} varian · stok gudang {it.stockKnown ? it.stock : "?"}
+                  <p className="text-xs text-muted-foreground">{it.variantCount} varian · stok gudang {it.stockKnown ? it.stock : "?"}{it.productIds.length > 1 && ` · gabungan ${it.productIds.length} produk Ginee bernama sama`}
                   {isEmpty(it) && <span className="ml-1.5 rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700">HABIS</span>}</p>
                 </div>
                 <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700">✓ Sudah diimpor</span>
@@ -213,7 +213,7 @@ export function GineeImport() {
               />
               <div className="min-w-[180px] flex-1">
                 <p className="line-clamp-2 text-sm font-medium">{it.name}</p>
-                <p className="text-xs text-muted-foreground">{it.variantCount} varian · stok gudang {it.stockKnown ? it.stock : "?"}
+                <p className="text-xs text-muted-foreground">{it.variantCount} varian · stok gudang {it.stockKnown ? it.stock : "?"}{it.productIds.length > 1 && ` · gabungan ${it.productIds.length} produk Ginee bernama sama`}
                   {isEmpty(it) && <span className="ml-1.5 rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700">HABIS</span>}</p>
               </div>
             </label>
@@ -228,11 +228,11 @@ export function GineeImport() {
       )}
 
       {/* Muat lebih banyak */}
-      {total !== null && items.length < total && (
+      {total !== null && loaded < total && (
         <div className="mt-4 flex justify-center">
           <Button variant="outline" onClick={loadMore} disabled={loadingMore}>
             {loadingMore && <Loader2 className="size-4 animate-spin" />}
-            Muat lebih banyak ({total - items.length} lagi)
+            Muat lebih banyak ({total - loaded} lagi)
           </Button>
         </div>
       )}
@@ -255,4 +255,29 @@ export function GineeImport() {
       )}
     </div>
   );
+}
+
+/** Satukan item bernama sama (spasi & huruf besar/kecil diabaikan) — sama dengan mergeSameName di server. */
+function mergeByName(prev: Item[], incoming: Item[]): Item[] {
+  const key = (n: string) => n.toLowerCase().replace(/\s+/g, " ").trim();
+  const out = prev.map((it) => ({ ...it, variations: [...it.variations], productIds: [...it.productIds] }));
+  const byKey = new Map(out.map((it) => [key(it.name), it]));
+  for (const it of incoming) {
+    const g = byKey.get(key(it.name));
+    if (!g) {
+      const copy = { ...it, variations: [...it.variations], productIds: [...it.productIds] };
+      out.push(copy);
+      byKey.set(key(it.name), copy);
+      continue;
+    }
+    const ids = new Set(g.productIds);
+    if (it.productIds.every((id) => ids.has(id))) continue; // sudah dimuat
+    const seen = new Set(g.variations.map((v) => v.id));
+    g.variations.push(...it.variations.filter((v) => !seen.has(v.id)));
+    g.productIds.push(...it.productIds.filter((id) => !ids.has(id)));
+    g.variantCount = g.variations.length;
+    g.stock += it.stock;
+    g.imported = g.imported || it.imported;
+  }
+  return out;
 }

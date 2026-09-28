@@ -22,6 +22,7 @@ type SearchItem = ReturnType<typeof summarizeGinee> & {
   stockKnown: boolean; // false = stok gudang gagal diambil
   imported: boolean;
   variations: GineeVariationBrief[];
+  productIds: string[]; // semua master Ginee yang digabung (nama sama); productIds[0] = productId
 };
 type SearchResult = { ok: true; total: number; items: SearchItem[] } | { ok: false; error: string };
 
@@ -36,6 +37,9 @@ export async function searchGineeForImport(keyword: string, page = 0): Promise<S
 
   try {
     const { total, content } = await searchGineeMasterProducts(keyword, page, 100);
+    // Ginee kadang punya BANYAK master produk bernama persis sama, masing-masing 1 varian
+    // (mis. 23× "SNAPFIT Case … S26 … Acrylic"). Digabung jadi 1 baris = 1 produk web
+    // dengan semua variannya.
     const existing = await db.product.findMany({
       where: { gineeProductId: { in: content.map((c) => c.productId) } },
       select: { gineeProductId: true },
@@ -67,15 +71,37 @@ export async function searchGineeForImport(keyword: string, page = 0): Promise<S
         stockKnown: warehouse !== null,
         imported: importedSet.has(c.productId),
         variations,
+        productIds: [c.productId],
       };
     });
-    return { ok: true, total, items };
+    return { ok: true, total, items: mergeSameName(items) };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Gagal mengambil data Ginee." };
   }
 }
 
-type ImportInput = { productId: string; name: string; variations: GineeVariationBrief[] };
+/** Gabungkan hasil bernama sama (spasi & huruf besar/kecil diabaikan) jadi satu item. */
+function mergeSameName(items: SearchItem[]): SearchItem[] {
+  const key = (n: string) => n.toLowerCase().replace(/\s+/g, " ").trim();
+  const map = new Map<string, SearchItem>();
+  for (const it of items) {
+    const k = key(it.name);
+    const g = map.get(k);
+    if (!g) {
+      map.set(k, { ...it, variations: [...it.variations], productIds: [...it.productIds] });
+      continue;
+    }
+    const seen = new Set(g.variations.map((v) => v.id));
+    g.variations.push(...it.variations.filter((v) => !seen.has(v.id)));
+    g.productIds.push(...it.productIds);
+    g.variantCount = g.variations.length;
+    g.stock += it.stock;
+    g.imported = g.imported || it.imported;
+  }
+  return [...map.values()];
+}
+
+type ImportInput = { productId: string; productIds?: string[]; name: string; variations: GineeVariationBrief[] };
 type ImportResult = { ok: boolean; created: number; skipped: number; errors: string[] };
 
 /**
@@ -127,8 +153,9 @@ export async function importGineeProducts(inputs: ImportInput[]): Promise<Import
         continue;
       }
 
-      // Sudah pernah diimpor (by gineeProductId)?
-      if (await db.product.findFirst({ where: { gineeProductId: input.productId }, select: { id: true } })) {
+      // Sudah pernah diimpor (by gineeProductId, termasuk master lain dalam gabungan)?
+      const ids = [...new Set([input.productId, ...(input.productIds ?? [])])];
+      if (await db.product.findFirst({ where: { gineeProductId: { in: ids } }, select: { id: true } })) {
         skipped++;
         errors.push(`"${label}": sudah diimpor — dilewati.`);
         continue;

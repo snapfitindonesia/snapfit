@@ -99,6 +99,8 @@ bar bawah (HP), dan tombol WhatsApp melayang.
   menghitung ulasan yang disetujui.
 
 ### Pencarian
+- **Per kata, bukan frasa utuh** (`searchTerms` di `lib/actions/product.ts`): "snapfit s26" = produk yang
+  mengandung "snapfit" DAN "s26" di nama, merek, atau nama/tipe varian (urutan kata bebas, maks. 6 kata).
 - Kata kunci di `/produk` dicatat (teragregasi, tanpa data pribadi) setelah stabil
   2 detik dan hasilnya termuat — hanya bila tidak ada filter lain aktif, agar "0 hasil"
   memang karena kata kuncinya. Ketikan parsial & saran cepat di header tidak dicatat.

@@ -274,6 +274,11 @@ export async function getMerekMenu(perMerek = 8): Promise<MerekMenuItem[]> {
 }
 
 /** `opts.ids` (internal, tak terbuka di /api/products): batasi ke produk tertentu, mis. halaman kampanye. */
+/** Pecah kata kunci jadi kata (maks. 6, tanpa duplikat). */
+function searchTerms(q: string | undefined): string[] {
+  return [...new Set((q ?? "").toLowerCase().split(/\s+/).map((t) => t.trim()).filter(Boolean))].slice(0, 6);
+}
+
 export async function getProducts(query: ProductQuery, opts: { ids?: string[] } = {}): Promise<ProductListResult> {
   const { tipe, model, perangkat, brands, minPrice: priceMin, maxPrice: priceMax, grosir, featured, q, sort, skip, take } = query;
 
@@ -305,14 +310,22 @@ export async function getProducts(query: ProductQuery, opts: { ids?: string[] } 
         }
       : null;
 
+  // Pencarian per kata (bukan frasa utuh): "snapfit s26" cocok dgn "SNAPFIT Case … Galaxy S26".
+  // Tiap kata boleh ada di nama, merek, atau nama/tipe varian (mis. "lilac", "s26 ultra").
+  const searchWhere = searchTerms(q).map((t) => {
+    const has = { contains: t, mode: "insensitive" as const };
+    return { OR: [{ name: has }, { brand: has }, { variants: { some: { OR: [{ name: has }, { type: has }] } } }] };
+  });
+
   const products = await db.product.findMany({
     where: {
       archived: false, // produk diarsipkan (mis. dihapus di Ginee) tak tampil
       ...(opts.ids ? { id: { in: opts.ids } } : {}),
       // Facet perangkat + brand digabung dengan AND (antar-facet = irisan;
       // dalam facet = OR, sudah dibungkus di deviceWhere/brandWhere).
-      ...((deviceWhere || brandWhere)
-        ? { AND: [...(deviceWhere ? [deviceWhere] : []), ...(brandWhere ? [brandWhere] : [])] }
+      // Kata kunci: tiap kata harus cocok (nama/merek/varian) — digabung AND dengan facet.
+      ...((deviceWhere || brandWhere || searchWhere.length)
+        ? { AND: [...(deviceWhere ? [deviceWhere] : []), ...(brandWhere ? [brandWhere] : []), ...searchWhere] }
         : {}),
       // model tingkat 3: produk punya varian dengan type persis
       ...(model ? { variants: { some: { type: model } } } : {}),
@@ -320,7 +333,6 @@ export async function getProducts(query: ProductQuery, opts: { ids?: string[] } 
       ...(grosir ? { isGrosir: true } : {}),
       // hanya produk unggulan (homepage)
       ...(featured ? { featured: true } : {}),
-      ...(q ? { name: { contains: q, mode: "insensitive" as const } } : {}),
     },
     include: {
       category: { select: { name: true, slug: true } },
