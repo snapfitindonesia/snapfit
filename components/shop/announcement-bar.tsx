@@ -5,7 +5,7 @@ export function AnnouncementBar() {
   return (
     <div className="bg-foreground text-background">
       <div className="mx-auto max-w-6xl px-4 py-2 text-center text-xs font-medium sm:text-sm">
-        Gratis ongkir s/d Rp20rb min. belanja Rp150rb ·{" "}
+        Voucher GRATISONGKIR: potongan ongkir s/d Rp20rb, min. belanja Rp150rb ·{" "}
         <Link href="/produk" className="underline underline-offset-2">
           Belanja sekarang
         </Link>

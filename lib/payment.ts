@@ -7,8 +7,8 @@
 /** Ongkir flat saat mode flat (rupiah). Override via env SHIPPING_FLAT_COST. */
 export const FLAT_SHIPPING_COST = Number(process.env.SHIPPING_FLAT_COST ?? 5000);
 
-/** Ambang belanja untuk GRATIS ONGKIR otomatis (rupiah). Override via env FREE_SHIPPING_MIN. 0 = nonaktif. */
-export const FREE_SHIPPING_MIN = Number(process.env.FREE_SHIPPING_MIN ?? 150000);
+/** Ambang GRATIS ONGKIR otomatis (rupiah). Default 0 = nonaktif: gratis ongkir lewat voucher GRATISONGKIR saja (keputusan 28 Sep). */
+export const FREE_SHIPPING_MIN = Number(process.env.FREE_SHIPPING_MIN ?? 0);
 
 /** Potongan gratis ongkir maksimal (rupiah). Override via env FREE_SHIPPING_MAX. 0 = tanpa batas. */
 export const FREE_SHIPPING_MAX = Number(process.env.FREE_SHIPPING_MAX ?? 20000);

@@ -58,7 +58,7 @@ membuka tautan pemulihan.
 **Penjualan → Ongkir per Provinsi**: isi tarif **1 kg pertama** + **per kg berikutnya** (berat
 dibulatkan ke atas per kg, min. 1 kg) + estimasi. Pakai **Isi cepat per pulau** lalu sesuaikan
 provinsi tertentu. Kosongkan = tarif flat. Hapus centang **Dilayani** untuk provinsi tanpa kurir
-(pembeli tak bisa checkout ke sana). Gratis ongkir (≥ ambang, maks. `FREE_SHIPPING_MAX`) tetap berlaku. Keranjang
+(pembeli tak bisa checkout ke sana). Gratis ongkir lewat voucher `GRATISONGKIR` (Admin → Voucher). Keranjang
 menulis "ongkir mulai RpX" (cache 5 menit).
 
 ### Menyiapkan promo Payday / Tanggal Kembar

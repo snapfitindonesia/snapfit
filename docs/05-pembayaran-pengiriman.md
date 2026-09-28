@@ -8,7 +8,7 @@ Mode diatur lewat env — ganti env di Vercel lalu deploy ulang, tanpa ubah kode
 | `PAYMENT_MODE` | `manual` (transfer bank) | `midtrans` |
 | `SHIPPING_MODE` | `flat` | `biteship` |
 | `SHIPPING_FLAT_COST` | `5000` | rupiah |
-| `FREE_SHIPPING_MIN` | `150000` | rupiah; `0` = tanpa gratis ongkir otomatis |
+| `FREE_SHIPPING_MIN` | `0` (nonaktif) | rupiah; ambang gratis ongkir OTOMATIS — dimatikan, pakai voucher |
 | `FREE_SHIPPING_MAX` | `20000` | potongan gratis ongkir maks. (rupiah); `0` = ongkir digratiskan penuh |
 | `MANUAL_BANK_NAME` / `_NUMBER` / `_HOLDER` | rekening BCA toko | |
 
@@ -18,8 +18,10 @@ per kg berikutnya × berat pesanan, dibulatkan per kg). Provinsi yang belum diat
 `SHIPPING_FLAT_COST`. Dihitung di server (`lib/shipping-zone.ts`) baik saat checkout (perkiraan)
 maupun saat pesanan dibuat (otoritatif).
 
-- **Gratis ongkir**: belanja ≥ `FREE_SHIPPING_MIN` → ongkir dipotong s/d `FREE_SHIPPING_MAX`
-  (se-Indonesia); sisanya dibayar pembeli. Order menyimpan ongkir **setelah** potongan.
+- **Gratis ongkir = voucher `GRATISONGKIR`** (Admin → Voucher; min. belanja Rp150.000, maks. Rp20.000).
+  Gratis ongkir otomatis dimatikan (`FREE_SHIPPING_MIN=0`) agar tidak dobel dengan voucher.
+  Bila suatu saat diaktifkan lagi: ongkir dipotong s/d `FREE_SHIPPING_MAX`, dan voucher gratis ongkir
+  akan MENUMPUK — nonaktifkan vouchernya.
 - **Tidak dilayani**: provinsi dengan centang *Dilayani* dimatikan → checkout menampilkan
   "belum ada kurir", tombol pesan nonaktif, `createOrder` menolak.
 - Tarif saat ini dihitung dari Jakarta, **per kg** (1 kg pertama = per kg berikutnya).

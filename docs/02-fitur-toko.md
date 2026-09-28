@@ -63,9 +63,8 @@ bar bawah (HP), dan tombol WhatsApp melayang.
 - **Ongkir per provinsi** (mode flat): `quoteShipping` di server menghitung dari provinsi + berat
   (`lib/shipping-zone.ts`) — fungsi yang sama dipakai `createOrder`. Provinsi tanpa tarif = flat.
   Sebelum provinsi dipilih, ringkasan menulis "Pilih provinsi" & total belum termasuk ongkir.
-- Gratis ongkir = potongan s/d Rp20.000 bila lolos ambang: kartu Pengiriman menampilkan ~~Rp25.000~~
-  Rp5.000 (atau GRATIS bila tertutup penuh), ringkasan punya baris "Gratis ongkir −RpX". Di bawah
-  ambang: ajakan "Belanja RpX lagi untuk gratis ongkir s/d Rp20.000".
+- Gratis ongkir lewat voucher `GRATISONGKIR` (daftar Voucher tersedia di checkout; maks. Rp20.000).
+  Mode gratis ongkir otomatis (`FREE_SHIPPING_MIN` > 0) masih ada di kode tapi dimatikan.
 - Provinsi tidak dilayani → pesan "belum ada kurir" & tombol pesan nonaktif.
 - Setelah pesan: email instruksi transfer ke pembeli + email notifikasi ke admin.
   Detail: [05](05-pembayaran-pengiriman.md).

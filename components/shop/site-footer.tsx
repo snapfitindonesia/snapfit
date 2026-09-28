@@ -37,7 +37,7 @@ const COLUMNS: { title: string; links: FooterLink[] }[] = [
 ];
 
 const TRUST = [
-  { icon: Plane, title: "Gratis Ongkir", desc: "Potongan ongkir s/d Rp20rb, min. belanja Rp150rb" },
+  { icon: Plane, title: "Gratis Ongkir", desc: "Voucher ongkir s/d Rp20rb, min. belanja Rp150rb" },
   { icon: Headset, title: "Dukungan 24/7", desc: "Bantuan via WhatsApp tiap hari" },
   { icon: RotateCcw, title: "7 Hari Pengembalian", desc: "Retur mudah untuk produk cacat" },
   { icon: ShieldCheck, title: "100% Original", desc: "Produk resmi & bergaransi" },
