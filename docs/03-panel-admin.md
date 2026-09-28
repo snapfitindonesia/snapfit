@@ -5,6 +5,12 @@ Alamat: **https://www.snapfit.id/admin** — wajib login dengan akun ber-role `a
 
 ## Menu
 
+Menu samping dikelompokkan (`components/admin/admin-nav.tsx`): **Dashboard** ·
+**Penjualan** (Pesanan, Keranjang Ditinggal, Voucher, Diskon) · **Katalog** (Semua Produk,
+Tambah Produk, Edit Massal, Impor CSV, Impor Ginee, Unggulan, Kategori, Merek) ·
+**Tampilan Toko** (Banner, Menu Header, Linktree) · **Pelanggan** (Ulasan, Pencarian).
+Grup bisa dibuka/tutup; grup halaman aktif selalu terbuka; pilihan diingat di browser.
+
 | Menu | URL | Untuk apa |
 |---|---|---|
 | Dashboard | `/admin` | Omzet, pesanan, produk terjual, pelanggan (bandingkan periode sebelumnya) |
