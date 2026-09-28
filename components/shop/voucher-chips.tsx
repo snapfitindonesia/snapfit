@@ -24,7 +24,7 @@ export function VoucherChips({ vouchers }: { vouchers: VoucherChipData[] }) {
           <Ticket className="size-5 shrink-0 text-brand-ink" />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold">{v.label}</p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-foreground/70">
               Kode <span className="font-mono font-semibold text-foreground">{v.code}</span>
               {v.minPurchase > 0 && ` · min. belanja ${formatRupiah(v.minPurchase)}`}
             </p>

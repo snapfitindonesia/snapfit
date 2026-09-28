@@ -53,7 +53,7 @@ export default async function PromoPage({ params }: { params: Promise<{ slug: st
     <div>
       <section className="bg-foreground text-background">
         <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-brand px-3 py-1 text-xs font-semibold text-brand-foreground">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-ink px-3 py-1 text-xs font-semibold text-brand-foreground">
             {status.badge}
           </span>
           <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-5xl">{c.title}</h1>
