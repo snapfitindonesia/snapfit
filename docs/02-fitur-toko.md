@@ -21,6 +21,7 @@ bar bawah (HP), dan tombol WhatsApp melayang.
 | `/lacak` | Lacak pesanan: nomor pesanan + email/HP → status, resi | `track-order.tsx`, `lib/actions/track.ts` |
 | `/akun`, `/akun/pesanan` | Profil & riwayat pesanan (login) | |
 | `/bantuan` | FAQ, cara pesan, pengiriman, retur, kontak | |
+| `/promo/payday-sale`, `/promo/tanggal-kembar` | Halaman kampanye: produk berdiskon, hitung mundur, voucher | `app/(shop)/promo/[slug]`, `lib/campaigns.ts` |
 | `/grosir` | Penawaran grosir/deadstock via WhatsApp | `app/grosir/page.tsx` |
 | `/links` | Linktree SNAPFIT (diatur dari admin) | `app/links/page.tsx` |
 | `/masuk`, `/daftar` | Login/daftar (email + Google) | `components/auth/*` |
@@ -58,6 +59,15 @@ bar bawah (HP), dan tombol WhatsApp melayang.
   disimpan di `localStorage` perangkat pembeli (`snapfit.checkout.contact`) — tidak
   di server. Checkout berikutnya terisi otomatis, dengan tombol "Bukan kamu? Hapus"
   untuk perangkat bersama.
+
+### Halaman promo (Payday & Tanggal Kembar)
+- Produk = diskon di **Admin → Diskon** yang diberi label kampanye. Tiga keadaan:
+  1. **Berjalan** (diskon aktif) → produk berharga promo + hitung mundur ke berakhirnya.
+  2. **Terjadwal** (diskon mulai nanti) → "bocoran" produk (harga masih normal) + hitung mundur ke mulai.
+  3. **Belum ada diskon** → jadwal kalender berikutnya + produk unggulan (halaman tak pernah kosong).
+- Jadwal kalender (`lib/campaigns.ts`, WIB): Payday tgl 25 – tgl 1 bulan berikutnya;
+  tanggal kembar 1.1 … 12.12 (sehari penuh). Voucher aktif ikut tampil (tombol salin).
+- Link di Menu Header (Payday Sale 🔥, Tanggal Kembar) diatur di **Tampilan Toko → Menu Header**.
 
 ### Ulasan pembeli
 - Email ajakan ulas (7 hari setelah dikirim) & tombol **WA: ajak ulas** di admin berisi

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CAMPAIGN_SLUGS } from "@/lib/campaigns";
 
 const url = z.string().trim().url("URL gambar tidak valid");
 const rupiah = z.coerce.number().int().min(0);
@@ -58,8 +59,9 @@ export const discountSchema = z.object({
   percent: z.coerce.number().int().min(1).max(99),
   variantIds: z.array(z.string()).min(1, "Pilih minimal 1 varian"),
   active: z.coerce.boolean().default(true),
-  startAt: z.string().optional().or(z.literal("")),
+  startAt: z.string().optional().or(z.literal("")), // "YYYY-MM-DDTHH:mm" (WIB) dari form
   endAt: z.string().optional().or(z.literal("")),
+  campaign: z.enum(CAMPAIGN_SLUGS).optional().or(z.literal("")), // halaman /promo/[slug]
 });
 
 export const categorySchema = z.object({

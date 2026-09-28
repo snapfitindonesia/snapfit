@@ -110,6 +110,9 @@ model Discount {
   active   Boolean   @default(true)
   startAt  DateTime?
   endAt    DateTime?
+  campaign String? // payday-sale | tanggal-kembar → tampil di /promo/[slug] (lib/campaigns.ts)
+
+  @@index([campaign])
 }
 
 model Voucher {

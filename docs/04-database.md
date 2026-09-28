@@ -14,7 +14,7 @@ Skema: `prisma/schema.prisma`. Klien: `lib/db.ts`.
 | `Review` | Ulasan (manual admin / dari pembeli) | `rating` 1–5, `approved` (false = menunggu moderasi), `verified` (dari pesanan), `orderId`, `photo` |
 | `Banner` | Banner beranda | gambar, tautan, urutan |
 | `NavLink` | Menu header | |
-| `Discount` | Diskon persen untuk varian tertentu | `percent`, `startAt`/`endAt` |
+| `Discount` | Diskon persen untuk varian tertentu | `percent`, `startAt`/`endAt` (WIB di form, disimpan UTC), `campaign` (payday-sale / tanggal-kembar → halaman promo) |
 | `Voucher` | Kode voucher | `type` POTONGAN / GRATIS_ONGKIR, `minPurchase`, `maxBenefit` |
 | `Order` / `OrderItem` | Pesanan & isinya | lihat status di bawah |
 | `CheckoutDraft` | Checkout belum jadi pesanan (keranjang ditinggal) | `token` (tautan pulihkan), `remindedAt`, `recoveredAt`, `convertedAt` |

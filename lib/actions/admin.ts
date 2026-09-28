@@ -36,6 +36,7 @@ function fail(e: unknown): Result {
 function revalidateStorefront() {
   revalidatePath("/");
   revalidatePath("/produk");
+  revalidatePath("/promo/[slug]", "page"); // halaman kampanye (diskon berlabel)
 }
 
 /* ============================ PRODUK ============================ */
@@ -492,6 +493,13 @@ export async function deleteBanner(id: string): Promise<Result> {
 
 /* ============================ DISKON ============================ */
 
+/** "2026-10-10T00:00" dari input datetime-local = jam WIB (server Vercel berjalan di UTC). */
+function parseWib(s?: string): Date | null {
+  if (!s) return null;
+  const d = new Date(/[zZ]|[+-]dd:dd$/.test(s) ? s : `${s.length === 16 ? `${s}:00` : s}+07:00`);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
 export async function saveDiscount(input: DiscountInput, id?: string): Promise<Result> {
   try {
     await requireAdmin();
@@ -500,9 +508,11 @@ export async function saveDiscount(input: DiscountInput, id?: string): Promise<R
       name: data.name,
       percent: data.percent,
       active: data.active,
-      startAt: data.startAt ? new Date(data.startAt) : null,
-      endAt: data.endAt ? new Date(data.endAt) : null,
+      startAt: parseWib(data.startAt),
+      endAt: parseWib(data.endAt),
+      campaign: data.campaign || null,
     };
+    if (base.startAt && base.endAt && base.endAt <= base.startAt) return { ok: false, error: "Waktu selesai harus setelah waktu mulai." };
     const refs = data.variantIds.map((vid) => ({ id: vid }));
     const discount = id
       ? await db.discount.update({

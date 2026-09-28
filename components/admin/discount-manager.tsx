@@ -6,10 +6,32 @@ import { Loader2, Trash2, Pencil, ChevronRight, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatRupiah } from "@/lib/format";
 import { saveDiscount, deleteDiscount } from "@/lib/actions/admin";
+import { CAMPAIGNS, CAMPAIGN_SLUGS, campaignWindow, type CampaignSlug } from "@/lib/campaigns";
 
 type Variant = { id: string; name: string; price: number };
 type Product = { id: string; name: string; variants: Variant[] };
-type Discount = { id: string; name: string; percent: number; active: boolean; variantIds: string[] };
+type Discount = {
+  id: string;
+  name: string;
+  percent: number;
+  active: boolean;
+  variantIds: string[];
+  campaign: string | null;
+  startAt: string; // "YYYY-MM-DDTHH:mm" WIB, "" = tanpa batas
+  endAt: string;
+};
+
+/** Date → "YYYY-MM-DDTHH:mm" jam WIB (untuk input datetime-local). */
+const toWibInput = (d: Date) => new Date(d.getTime() + 7 * 3_600_000).toISOString().slice(0, 16);
+const wibNow = () => toWibInput(new Date());
+
+function status(d: Discount): { label: string; cls: string } {
+  const now = wibNow();
+  if (!d.active) return { label: "nonaktif", cls: "text-muted-foreground" };
+  if (d.startAt && d.startAt > now) return { label: "terjadwal", cls: "text-blue-700" };
+  if (d.endAt && d.endAt <= now) return { label: "berakhir", cls: "text-muted-foreground" };
+  return { label: "berjalan", cls: "text-emerald-700" };
+}
 
 const input = "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-foreground";
 
@@ -19,6 +41,9 @@ export function DiscountManager({ discounts, products }: { discounts: Discount[]
   const [name, setName] = useState("");
   const [percent, setPercent] = useState("10");
   const [active, setActive] = useState(true);
+  const [campaign, setCampaign] = useState<"" | CampaignSlug>("");
+  const [startAt, setStartAt] = useState("");
+  const [endAt, setEndAt] = useState("");
   const [picked, setPicked] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -27,9 +52,11 @@ export function DiscountManager({ discounts, products }: { discounts: Discount[]
 
   function reset() {
     setEditId(null); setName(""); setPercent("10"); setActive(true); setPicked([]); setError(null);
+    setCampaign(""); setStartAt(""); setEndAt("");
   }
   function edit(d: Discount) {
     setEditId(d.id); setName(d.name); setPercent(String(d.percent)); setActive(d.active); setPicked(d.variantIds); setError(null);
+    setCampaign((d.campaign as CampaignSlug) ?? ""); setStartAt(d.startAt); setEndAt(d.endAt);
   }
 
   const pickedSet = useMemo(() => new Set(picked), [picked]);
@@ -55,10 +82,19 @@ export function DiscountManager({ discounts, products }: { discounts: Discount[]
   async function save(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true); setError(null);
-    const res = await saveDiscount({ name, percent: Number(percent), variantIds: picked, active }, editId ?? undefined);
+    const res = await saveDiscount({ name, percent: Number(percent), variantIds: picked, active, campaign, startAt, endAt }, editId ?? undefined);
     if (res.ok) { reset(); router.refresh(); } else setError(res.error ?? "Gagal.");
     setSaving(false);
   }
+  function pickCampaign(c: "" | CampaignSlug) {
+    setCampaign(c);
+    if (!c) return;
+    const w = campaignWindow(c);
+    setStartAt(toWibInput(w.start));
+    setEndAt(toWibInput(new Date(w.end.getTime() - 60_000))); // s/d 23:59 hari terakhir
+    if (!name.trim()) setName(`${CAMPAIGNS[c].title} ${w.start.toLocaleDateString("id-ID", { day: "numeric", month: "short", timeZone: "Asia/Jakarta" })}`);
+  }
+
   async function del(id: string) {
     if (!confirm("Hapus diskon ini?")) return;
     const res = await deleteDiscount(id);
@@ -75,6 +111,23 @@ export function DiscountManager({ discounts, products }: { discounts: Discount[]
         <label className="block text-sm">Persen diskon
           <input type="number" min={1} max={99} className={`mt-1 ${input}`} value={percent} onChange={(e) => setPercent(e.target.value)} required />
         </label>
+        <label className="block text-sm">Kampanye <span className="text-muted-foreground">(opsional — produk tampil di halaman promo)</span>
+          <select className={`mt-1 ${input}`} value={campaign} onChange={(e) => pickCampaign(e.target.value as "" | CampaignSlug)}>
+            <option value="">— Tanpa kampanye —</option>
+            {CAMPAIGN_SLUGS.map((c) => (
+              <option key={c} value={c}>{CAMPAIGNS[c].title} (/promo/{c})</option>
+            ))}
+          </select>
+        </label>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="block text-sm">Mulai <span className="text-muted-foreground">(WIB)</span>
+            <input type="datetime-local" className={`mt-1 ${input}`} value={startAt} onChange={(e) => setStartAt(e.target.value)} />
+          </label>
+          <label className="block text-sm">Selesai <span className="text-muted-foreground">(WIB)</span>
+            <input type="datetime-local" className={`mt-1 ${input}`} value={endAt} onChange={(e) => setEndAt(e.target.value)} />
+          </label>
+        </div>
+        <p className="-mt-1 text-xs text-muted-foreground">Kosongkan = berlaku langsung / tanpa batas. Harga diskon otomatis aktif & berhenti sesuai jadwal.</p>
 
         <div className="text-sm">
           <div className="mb-1 flex items-center justify-between">
@@ -136,12 +189,22 @@ export function DiscountManager({ discounts, products }: { discounts: Discount[]
             <div className="flex items-center gap-3">
               <span className="text-sm font-medium">{d.name}</span>
               <span className="rounded bg-foreground px-2 py-0.5 text-xs font-semibold text-background">-{d.percent}%</span>
-              {!d.active && <span className="text-xs text-muted-foreground">nonaktif</span>}
+              <span className={`text-xs font-medium ${status(d).cls}`}>{status(d).label}</span>
+              {d.campaign && (
+                <span className="rounded-full bg-brand/10 px-2 py-0.5 text-[11px] font-medium text-brand-ink">
+                  {CAMPAIGNS[d.campaign as CampaignSlug]?.title ?? d.campaign}
+                </span>
+              )}
               <div className="ml-auto flex gap-3">
                 <button onClick={() => edit(d)} className="text-muted-foreground hover:text-foreground"><Pencil className="size-4" /></button>
                 <button onClick={() => del(d.id)} className="text-muted-foreground hover:text-destructive"><Trash2 className="size-4" /></button>
               </div>
             </div>
+            {(d.startAt || d.endAt) && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                {d.startAt ? d.startAt.replace("T", " ") : "sekarang"} → {d.endAt ? d.endAt.replace("T", " ") : "tanpa batas"} WIB
+              </p>
+            )}
             <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
               {d.variantIds.length
                 ? `${d.variantIds.length} varian: ` + d.variantIds.map((id) => variantLabel.get(id) ?? "?").slice(0, 4).join(", ") + (d.variantIds.length > 4 ? ", …" : "")

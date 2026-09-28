@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { CAMPAIGN_SLUGS } from "@/lib/campaigns";
 import { db } from "@/lib/db";
 import { listLandingPages } from "@/lib/seo-pages";
 
@@ -13,6 +14,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE}/`, lastModified: now, changeFrequency: "daily", priority: 1 },
     { url: `${SITE}/produk`, lastModified: now, changeFrequency: "daily", priority: 0.9 },
     { url: `${SITE}/grosir`, lastModified: now, changeFrequency: "weekly", priority: 0.6 },
+    ...CAMPAIGN_SLUGS.map((slug) => ({ url: `${SITE}/promo/${slug}`, lastModified: now, changeFrequency: "daily" as const, priority: 0.7 })),
     { url: `${SITE}/bantuan`, lastModified: now, changeFrequency: "monthly", priority: 0.3 },
     { url: `${SITE}/links`, lastModified: now, changeFrequency: "weekly", priority: 0.4 },
     { url: `${SITE}/lacak`, lastModified: now, changeFrequency: "monthly", priority: 0.3 },

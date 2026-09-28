@@ -53,6 +53,15 @@ pemulihan. Tombol **Chat WhatsApp** membuka pesan siap kirim berisi produk & tau
 pemulihan keranjang. Statistik "Lewat pengingat" = pesanan dari pembeli yang
 membuka tautan pemulihan.
 
+### Menyiapkan promo Payday / Tanggal Kembar
+1. **Penjualan → Diskon** → isi persen, pilih varian.
+2. Pilih **Kampanye** → tanggal Mulai/Selesai **terisi otomatis** dengan jadwal berikutnya
+   (mis. Tanggal Kembar → 10 Okt 00:00–23:59 WIB); bisa diubah.
+3. Simpan. Status di daftar: *terjadwal* → *berjalan* → *berakhir* — harga diskon aktif &
+   berhenti otomatis sesuai jadwal, halaman `/promo/...` ikut berganti tampilan.
+
+Diskon tanpa kampanye tetap berlaku di seluruh toko seperti biasa (kini juga bisa dijadwalkan).
+
 ### Moderasi ulasan pembeli
 Ulasan dari pembeli muncul paling atas di **Ulasan** dengan label "Menunggu persetujuan".
 **Setujui** → tampil di halaman produk. **Tolak** → dihapus beserta fotonya. Ulasan negatif

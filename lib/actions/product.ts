@@ -273,7 +273,8 @@ export async function getMerekMenu(perMerek = 8): Promise<MerekMenuItem[]> {
   }
 }
 
-export async function getProducts(query: ProductQuery): Promise<ProductListResult> {
+/** `opts.ids` (internal, tak terbuka di /api/products): batasi ke produk tertentu, mis. halaman kampanye. */
+export async function getProducts(query: ProductQuery, opts: { ids?: string[] } = {}): Promise<ProductListResult> {
   const { tipe, model, perangkat, brands, minPrice: priceMin, maxPrice: priceMax, grosir, featured, q, sort, skip, take } = query;
 
   // Gabungan slug perangkat: dari facet "perangkat" + tipe (link masuk).
@@ -307,6 +308,7 @@ export async function getProducts(query: ProductQuery): Promise<ProductListResul
   const products = await db.product.findMany({
     where: {
       archived: false, // produk diarsipkan (mis. dihapus di Ginee) tak tampil
+      ...(opts.ids ? { id: { in: opts.ids } } : {}),
       // Facet perangkat + brand digabung dengan AND (antar-facet = irisan;
       // dalam facet = OR, sudah dibungkus di deviceWhere/brandWhere).
       ...((deviceWhere || brandWhere)
@@ -392,6 +394,45 @@ export async function getProducts(query: ProductQuery): Promise<ProductListResul
   const total = priceFiltered.length;
   const items = priceFiltered.slice(skip, skip + take);
   return { items, total, hasMore: skip + take < total };
+}
+
+/**
+ * Produk kampanye (/promo/[slug]) dari diskon berlabel kampanye:
+ * - live: diskon aktif yang sedang berlaku → harga kartu sudah terdiskon
+ * - upcoming: diskon terjadwal berikutnya (bocoran) → harga masih normal
+ */
+export async function getCampaignProducts(campaign: string): Promise<{
+  live: ProductListItem[];
+  livePercent: number;
+  liveEndsAt: Date | null;
+  upcoming: ProductListItem[];
+  upcomingPercent: number;
+  upcomingStartsAt: Date | null;
+}> {
+  const now = new Date();
+  const discounts = await db.discount.findMany({
+    where: { campaign, active: true, OR: [{ endAt: null }, { endAt: { gt: now } }] },
+    select: { percent: true, startAt: true, endAt: true, variants: { select: { productId: true } } },
+    orderBy: { startAt: "asc" },
+  });
+  const isLive = (d: (typeof discounts)[number]) => !d.startAt || d.startAt <= now;
+  const live = discounts.filter(isLive);
+  const next = discounts.filter((d) => !isLive(d));
+  const firstStart = next[0]?.startAt ?? null;
+  const nextBatch = next.filter((d) => d.startAt?.getTime() === firstStart?.getTime());
+  const ids = (ds: typeof discounts) => [...new Set(ds.flatMap((d) => d.variants.map((v) => v.productId)))];
+  const list = async (ds: typeof discounts) =>
+    ds.length ? (await getProducts({ sort: "terbaru", skip: 0, take: 48 }, { ids: ids(ds) })).items : [];
+  const [liveItems, upcomingItems] = await Promise.all([list(live), list(nextBatch)]);
+  const ends = live.map((d) => d.endAt).filter((d): d is Date => !!d);
+  return {
+    live: liveItems.sort((a, b) => b.discountPercent - a.discountPercent),
+    livePercent: Math.max(0, ...live.map((d) => d.percent)),
+    liveEndsAt: ends.length ? new Date(Math.min(...ends.map((d) => d.getTime()))) : null,
+    upcoming: upcomingItems,
+    upcomingPercent: Math.max(0, ...nextBatch.map((d) => d.percent)),
+    upcomingStartsAt: firstStart,
+  };
 }
 
 /** Produk yang ditandai untuk halaman /grosir (isGrosir = true). */

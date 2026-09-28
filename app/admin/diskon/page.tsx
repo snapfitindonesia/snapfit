@@ -3,6 +3,9 @@ import { DiscountManager } from "@/components/admin/discount-manager";
 
 export const dynamic = "force-dynamic";
 
+/** Date → "YYYY-MM-DDTHH:mm" jam WIB (nilai input datetime-local di form). */
+const toWibInput = (d: Date) => new Date(d.getTime() + 7 * 3_600_000).toISOString().slice(0, 16);
+
 export default async function AdminDiscountPage() {
   const [discounts, products] = await Promise.all([
     db.discount.findMany({
@@ -26,7 +29,7 @@ export default async function AdminDiscountPage() {
     <div>
       <h1 className="text-xl font-semibold">Diskon per Varian</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        Pilih varian mana yang kena diskon — beda varian bisa beda diskon (buat beberapa aturan).
+        Pilih varian mana yang kena diskon — beda varian bisa beda diskon (buat beberapa aturan). Beri <b>kampanye</b> (Payday / Tanggal Kembar) + jadwal agar produknya tampil di halaman promo.
       </p>
       <div className="mt-6">
         <DiscountManager
@@ -36,6 +39,9 @@ export default async function AdminDiscountPage() {
             percent: d.percent,
             active: d.active,
             variantIds: d.variants.map((v) => v.id),
+            campaign: d.campaign,
+            startAt: d.startAt ? toWibInput(d.startAt) : "",
+            endAt: d.endAt ? toWibInput(d.endAt) : "",
           }))}
           products={products}
         />
