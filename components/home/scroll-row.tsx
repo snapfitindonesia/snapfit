@@ -27,8 +27,8 @@ export function ScrollRow({ children, className, label }: { children: React.Reac
       </div>
       {(
         [
-          [-1, "left-3 lg:left-6", ChevronLeft, "Geser ke kiri"],
-          [1, "right-3 lg:right-6", ChevronRight, "Geser ke kanan"],
+          [-1, "left-0 -translate-x-1/2", ChevronLeft, "Geser ke kiri"],
+          [1, "right-0 translate-x-1/2", ChevronRight, "Geser ke kanan"],
         ] as const
       ).map(([dir, pos, Icon, aria]) => (
         <button

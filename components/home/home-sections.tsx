@@ -15,8 +15,9 @@ import type { HomeData } from "@/lib/home/data";
  */
 
 const WRAP = "mx-auto max-w-[90rem] px-4 sm:px-6 lg:px-10";
-// Baris geser yang menembus sampai tepi kanan layar (ala Nomad): kartu pertama sejajar kolom isi.
-const BLEED = "px-4 scroll-px-4 sm:px-6 sm:scroll-px-6 lg:px-[max(2.5rem,calc((100vw-90rem)/2+2.5rem))] lg:scroll-px-[max(2.5rem,calc((100vw-90rem)/2+2.5rem))]";
+// Baris geser: di HP/tablet menembus tepi layar (kartu berikut mengintip); di desktop tetap di
+// dalam kolom isi agar halaman simetris (menembus kanan di layar lebar terlihat berat sebelah).
+const BLEED = "-mx-4 px-4 scroll-px-4 sm:-mx-6 sm:px-6 sm:scroll-px-6 lg:mx-0 lg:px-0 lg:scroll-px-0";
 
 /** Tombol pil (gaya Nomad). `dark` = di atas latar gelap/foto. */
 function Cta({ label, href, dark = false, className }: { label: string; href: string; dark?: boolean; className?: string }) {
@@ -115,13 +116,11 @@ function Products({ s, data, eager }: { s: SectionOf<"products">; data: HomeData
   const items = data.products[s.id] ?? [];
   if (!items.length) return null;
   return (
-    <section className={cn("py-12 sm:py-16", !eager && "cv-auto [--cv-h:560px]")}>
-      <div className={WRAP}>
-        <SectionHead title={s.title} subtitle={s.subtitle} ctaLabel={s.ctaLabel} ctaHref={s.ctaHref} />
-      </div>
+    <section className={cn(WRAP, "py-12 sm:py-16", !eager && "cv-auto [--cv-h:560px]")}>
+      <SectionHead title={s.title} subtitle={s.subtitle} ctaLabel={s.ctaLabel} ctaHref={s.ctaHref} />
       <ScrollRow label={s.title || "Produk"} className={BLEED}>
         {items.map((p, i) => (
-          <div key={p.id} className="w-[44vw] shrink-0 snap-start sm:w-[30vw] lg:w-[17rem] xl:w-[19rem]">
+          <div key={p.id} className="w-[44vw] shrink-0 snap-start sm:w-[30vw] lg:w-[calc((100%-3.75rem)/4.4)]">
             <ProductCard product={p} priority={eager && i < 2} />
           </div>
         ))}
@@ -241,10 +240,8 @@ function Community({ s, data }: { s: SectionOf<"community">; data: HomeData }) {
   const shots = (s.source === "ulasan" ? data.shots : s.items).filter((x) => x.image);
   if (shots.length < 3) return null; // terlalu sedikit → tampak kosong; sembunyikan
   return (
-    <section className="cv-auto py-12 [--cv-h:420px] sm:py-16">
-      <div className={WRAP}>
-        <SectionHead title={s.title} subtitle={s.subtitle} />
-      </div>
+    <section className={cn(WRAP, "cv-auto py-12 [--cv-h:420px] sm:py-16")}>
+      <SectionHead title={s.title} subtitle={s.subtitle} />
       <ScrollRow label={s.title || "Komunitas"} className={BLEED}>
         {shots.map((x, i) => {
           const body = (
@@ -256,7 +253,7 @@ function Community({ s, data }: { s: SectionOf<"community">; data: HomeData }) {
             </>
           );
           return (
-            <div key={i} className="group w-[42vw] shrink-0 snap-start sm:w-[28vw] lg:w-[16rem] xl:w-[18rem]">
+            <div key={i} className="group w-[42vw] shrink-0 snap-start sm:w-[28vw] lg:w-[calc((100%-5rem)/5.4)]">
               {x.href ? <Link href={x.href}>{body}</Link> : body}
             </div>
           );
