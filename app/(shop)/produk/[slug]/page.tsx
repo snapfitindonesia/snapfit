@@ -26,7 +26,9 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const product = await getProductBySlug(slug);
-  if (!product) return { title: "Produk tidak ditemukan" };
+  // Di sini (bukan hanya di halaman): metadata diproses sebelum streaming untuk bot → status
+  // HTTP 404 sungguhan (loading.tsx membuat notFound() di halaman terkirim sebagai 200).
+  if (!product) notFound();
   const title = `${product.name} | SNAPFIT Indonesia`;
   // Deskripsi meta: ringkas (±155 karakter), tanpa bullet/baris baru dari teks marketplace.
   const clean = (product.description ?? "")

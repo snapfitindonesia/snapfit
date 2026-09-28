@@ -1,3 +1,5 @@
+// Hanya membungkus halaman daftar /produk (grup "(daftar)"), BUKAN /produk/[slug]:
+// loading.tsx di atas halaman produk membuat notFound() terkirim sebagai HTTP 200 (soft 404).
 export default function LoadingProducts() {
   return (
     <div className="mx-auto max-w-6xl animate-pulse px-4 py-8 sm:px-6 sm:py-12">

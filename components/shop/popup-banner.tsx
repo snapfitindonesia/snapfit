@@ -34,6 +34,8 @@ export function PopupBanner({ banner }: { banner: MainBanner | null }) {
       if (done) return;
       done = true;
       cleanup();
+      // Halaman tertentu (mis. 404) menandai diri agar tak ditimpa popup promo.
+      if (document.querySelector("[data-no-popup]")) return;
       setOpen(true);
       try {
         localStorage.setItem(KEY, String(Date.now()));

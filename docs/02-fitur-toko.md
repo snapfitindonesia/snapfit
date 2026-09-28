@@ -134,3 +134,10 @@ bar bawah (HP), dan tombol WhatsApp melayang.
 - Profil (foto, bio, ikon sosial), tombol link, dan **pemisah bagian**.
 - Latar: default / warna / gradien / gambar; teks terang/gelap.
 - Klik dihitung lewat `/links/go/[id]` lalu diarahkan; opsi "buka di tab baru" per tombol.
+
+## Halaman 404
+- `components/shop/not-found-content.tsx`: pencarian produk, tautan beranda/semua produk, pintasan merek,
+  WhatsApp & lacak pesanan. Tanpa query DB; popup promo tidak tampil (`data-no-popup`).
+- URL tak dikenal → `app/(shop)/[...missing]` → 404 dengan header & footer toko; `app/not-found.tsx` = cadangan.
+- **Jangan taruh `loading.tsx` di atas halaman yang memanggil `notFound()`** (mis. `/produk/[slug]`): streaming
+  membuat status terkirim 200 (soft 404). Skeleton daftar produk ada di grup `produk/(daftar)/` karena alasan ini.
