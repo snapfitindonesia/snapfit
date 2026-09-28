@@ -174,7 +174,13 @@ function Fields({ s, set }: { s: HomeSection; set: (patch: Partial<HomeSection>)
           )}
           <Color label={s.mode === "foto" ? "Warna latar/gradasi (tema terang)" : "Warna latar"} value={s.bg} onChange={(v) => set({ bg: v })} />
           {s.mode === "foto" && <Check label="Efek parallax" hint="Foto bergerak lebih lambat saat di-scroll." checked={s.parallax} onChange={(v) => set({ parallax: v })} />}
-          <Text label="Label kecil (atas judul)" value={s.eyebrow} onChange={(v) => set({ eyebrow: v })} placeholder="Baru untuk iPhone 18" />
+          <Text label={s.mode === "foto" ? "Badge (pil kecil)" : "Label kecil (atas judul)"} value={s.eyebrow} onChange={(v) => set({ eyebrow: v })} placeholder={s.mode === "foto" ? "BARU" : "Baru untuk iPhone 18"} />
+          {s.mode === "foto" && (
+            <>
+              <Color label="Warna badge" value={s.badgeBg} onChange={(v) => set({ badgeBg: v })} />
+              <Text label="Subjudul atas (tebal, di atas judul)" value={s.kicker} onChange={(v) => set({ kicker: v })} placeholder="Siap untuk iPhone 18" />
+            </>
+          )}
           <div className="sm:col-span-2"><Text label="Judul besar" value={s.title} onChange={(v) => set({ title: v })} /></div>
           <div className="sm:col-span-2"><Text label="Teks pendukung" value={s.subtitle} onChange={(v) => set({ subtitle: v })} area /></div>
           {cta}

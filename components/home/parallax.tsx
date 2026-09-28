@@ -14,11 +14,13 @@ export function Parallax({
   children,
   enabled = true,
   speed = 0.25,
+  overscan = 12,
   className,
 }: {
   children: React.ReactNode;
   enabled?: boolean;
   speed?: number;
+  overscan?: number; // % tambahan atas & bawah (ruang geser); kecil = foto kurang diperbesar
   className?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -35,7 +37,8 @@ export function Parallax({
       frame = 0;
       const r = host.getBoundingClientRect();
       // 0 saat bagian tepat di atas layar; bergerak sebanding posisi scroll relatif bagian.
-      const shift = Math.max(-r.height * 0.12, Math.min(r.height * 0.12, -r.top * speed));
+      const max = (r.height * overscan) / 100;
+      const shift = Math.max(-max, Math.min(max, -r.top * speed));
       el.style.transform = `translate3d(0, ${shift.toFixed(1)}px, 0)`;
     };
     const onScroll = () => {
@@ -54,13 +57,14 @@ export function Parallax({
       window.removeEventListener("resize", onScroll);
       if (frame) cancelAnimationFrame(frame);
     };
-  }, [enabled, speed]);
+  }, [enabled, speed, overscan]);
 
   return (
     <div
       ref={ref}
       aria-hidden
-      className={cn("absolute inset-x-0 -z-10 will-change-transform", enabled ? "-top-[12%] -bottom-[12%]" : "inset-y-0", className)}
+      className={cn("absolute inset-x-0 -z-10 will-change-transform", !enabled && "inset-y-0", className)}
+      style={enabled ? { top: `-${overscan}%`, bottom: `-${overscan}%` } : undefined}
     >
       {children}
     </div>

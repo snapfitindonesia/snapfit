@@ -34,6 +34,11 @@ bar bawah (HP), dan tombol WhatsApp melayang.
   tampilan: `components/home/`). Jenis: hero, deretan produk, pintasan kategori, gambar+teks bergantian,
   kutipan, banner cerita, komunitas, banner ulasan, kartu info.
 - **Lebar gabungan**: hero, banner cerita, komunitas & banner ulasan selebar layar; sisanya max-w-6xl.
+- Hero pertama mode foto bertema gelap = **persis Nomad** (diukur dari nomadgoods.com): mulai dari paling atas layar
+  di belakang bilah pengumuman (jadi transparan via `html:has([data-hero-overlay])`) & header kapsul (hampir selebar
+  layar, 70px, radius 25px); tinggi 90vh (95svh HP); teks kolom 1360px tepi ≥70px: badge biru #005bd3 → subjudul atas
+  33px → judul 77px extrabold tracking −4% → tombol pil putih 48px. HP: teks tengah di atas. Tinggi bilah = CSS
+  `--announce-h`/`--nav-h` (styles/globals.css) — SAMAKAN bila header diubah.
 - Hero mode **foto** (bawaan): foto selebar layar + versi HP (`<picture>`, hanya satu yang diunduh), tema
   terang/gelap (teks gelap + gradasi warna latar / teks putih + gradasi hitam), **parallax** (`components/home/parallax.tsx`;
   mati bila "kurangi gerakan"). Foto bawaan = SEMENTARA, disusun dari foto varian produk (latar dibuat transparan,

@@ -52,6 +52,10 @@
 }
 
 :root {
+  /* Tinggi bilah atas (announcement + header mengambang) — dipakai hero full-bleed beranda
+     untuk masuk ke belakangnya (components/home/home-sections.tsx). SAMAKAN dengan komponennya. */
+  --announce-h: 2.5rem;
+  --nav-h: 4.25rem; /* pt 0.625rem + kapsul 3.5rem (+ sedikit) */
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -145,4 +149,15 @@
 @utility cv-auto {
   content-visibility: auto;
   contain-intrinsic-size: auto var(--cv-h, 800px);
+}
+
+/* Hero foto full-bleed (gaya Nomad): bilah pengumuman transparan di atas foto. */
+html:has([data-hero-overlay]) [data-announce] {
+  background: transparent;
+  color: #fff;
+}
+@media (min-width: 1024px) {
+  :root {
+    --nav-h: 5rem; /* pt 0.625rem + kapsul 70px */
+  }
 }

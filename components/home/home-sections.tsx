@@ -68,33 +68,67 @@ function Hero({ s, first }: { s: SectionOf<"hero">; first: boolean }) {
   const dark = s.theme === "gelap";
   const Heading = first ? "h1" : "h2";
   if (s.mode === "foto" && s.image) {
-    // Tema terang = foto berlatar terang → teks gelap + gradasi warna latar; gelap = teks putih + gradasi hitam.
+    // Gaya Nomad (diukur dari nomadgoods.com): foto full-bleed mulai dari paling atas layar, di belakang
+    // bilah pengumuman & header kapsul; tinggi ±90% layar (95% di HP). Teks: desktop kiri-tengah dalam
+    // kolom 1360px (tepi ≥70px), HP rata tengah di atas. Badge → subjudul → judul besar → tombol pil putih.
+    // Tema terang (foto berlatar terang) → teks gelap & bilah pengumuman tetap hitam.
     const light = s.theme === "terang";
-    const bg = s.bg || "#f2f1ee";
+    const overlay = first && !light;
     return (
       <section
-        className={cn("relative isolate flex min-h-[600px] items-end overflow-hidden md:min-h-[max(560px,min(46vw,720px))] md:items-center", !light && "bg-neutral-900")}
-        style={{ "--hero-bg": bg, ...(light ? { backgroundColor: bg } : {}) } as React.CSSProperties}
+        {...(overlay ? { "data-hero-overlay": "" } : {})}
+        className={cn(
+          "relative isolate flex h-[95svh] max-h-[1000px] min-h-[640px] overflow-hidden lg:h-[90vh] lg:min-h-[620px] lg:items-center",
+          first && "-mt-[calc(var(--announce-h)+var(--nav-h))]",
+          !light && "text-white",
+        )}
+        style={{ backgroundColor: s.bg || (light ? "#f2f1ee" : "#1a0d08") }}
       >
-        <Parallax enabled={s.parallax}>
+        <Parallax enabled={s.parallax} speed={0.12} overscan={5}>
           <ArtImage src={s.image} srcMobile={s.imageMobile || undefined} alt={s.title || "SNAPFIT"} priority={first} />
         </Parallax>
-        {/* Gradasi agar teks terbaca di foto apa pun */}
+        {!light && (
+          <>
+            {/* Gelap tipis di atas (bilah pengumuman & header) + di sisi teks agar selalu terbaca */}
+            <div aria-hidden className="absolute inset-x-0 top-0 -z-10 h-48 bg-gradient-to-b from-black/45 to-transparent" />
+            <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-b from-black/35 via-transparent to-transparent lg:bg-gradient-to-r lg:from-black/40 lg:via-black/10 lg:to-transparent" />
+          </>
+        )}
         <div
-          aria-hidden
           className={cn(
-            "absolute inset-0 -z-10",
-            light
-              ? "bg-gradient-to-t from-(--hero-bg) via-(--hero-bg)/80 via-35% to-transparent to-60% md:bg-gradient-to-r md:from-(--hero-bg)/90 md:via-(--hero-bg)/40 md:via-40% md:to-transparent md:to-65%"
-              : "bg-gradient-to-t from-black/70 via-black/25 to-transparent md:bg-gradient-to-r md:from-black/60 md:via-black/20",
+            "mx-auto w-full max-w-[1500px] px-5 text-center sm:px-8 lg:px-[70px] lg:text-left",
+            first ? "pt-[calc(var(--announce-h)+var(--nav-h)+2rem)] lg:pt-[calc(var(--announce-h)+var(--nav-h))]" : "pt-12 lg:pt-0",
           )}
-        />
-        <div className={cn(WRAP, "w-full pb-12 md:pb-0")}>
-          <div className={cn("max-w-xl", !light && "text-white")}>
-            <Eyebrow dark={!light}>{s.eyebrow}</Eyebrow>
-            {s.title && <Heading className="mt-3 text-4xl font-semibold tracking-tight text-balance sm:text-5xl lg:text-6xl">{s.title}</Heading>}
-            {s.subtitle && <p className={cn("mt-4 text-base text-pretty sm:text-lg", light ? "text-foreground/75" : "text-white/85")}>{s.subtitle}</p>}
-            <Cta label={s.ctaLabel} href={s.ctaHref} dark={!light} className="mt-7" />
+        >
+          <div className="mx-auto max-w-[40rem] lg:mx-0 lg:max-w-[48rem]">
+            {s.eyebrow && (
+              <span
+                className="inline-block rounded-full px-2.5 pb-[3px] pt-1 text-[11px] font-bold uppercase leading-none tracking-wide text-white lg:text-xs"
+                style={{ backgroundColor: s.badgeBg || "#005bd3" }}
+              >
+                {s.eyebrow}
+              </span>
+            )}
+            {s.kicker && <p className="mt-2 text-xl font-bold leading-[0.95] tracking-[-0.04em] sm:text-2xl lg:mt-1.5 lg:text-[33px]">{s.kicker}</p>}
+            {s.title && (
+              <Heading className="mt-1 text-[40px] font-extrabold leading-[0.95] tracking-[-0.04em] text-balance sm:text-6xl lg:text-[77px]">
+                {s.title}
+              </Heading>
+            )}
+            {s.subtitle && (
+              <p className={cn("mt-2 text-lg font-bold leading-tight tracking-[-0.02em] sm:text-xl", light ? "text-foreground/80" : "text-white/90")}>{s.subtitle}</p>
+            )}
+            {s.ctaLabel && s.ctaHref && (
+              <Link
+                href={s.ctaHref}
+                className={cn(
+                  "mt-5 inline-flex h-12 items-center rounded-full px-6 text-base font-bold transition-opacity hover:opacity-85",
+                  light ? "bg-foreground text-background" : "bg-white text-neutral-950",
+                )}
+              >
+                {s.ctaLabel}
+              </Link>
+            )}
           </div>
         </div>
       </section>

@@ -112,11 +112,13 @@ export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaM
   }
 
   return (
-    <div className="sticky top-0 z-40 pt-3">
-      <div className="mx-auto max-w-[90rem] px-3 sm:px-4 lg:px-8">
+    // Kapsul mengambang gaya Nomad: hampir selebar layar (jarak 15px), tinggi 70px di desktop.
+    // Tinggi total (pt + kapsul) = --nav-h di styles/globals.css — hero full-bleed memakainya.
+    <div className="sticky top-0 z-40 pt-2.5">
+      <div className="px-2.5 sm:px-[15px]">
         <div className="relative">
           {/* Bar mengambang */}
-          <div className="relative flex h-14 items-center gap-3 rounded-2xl border border-border bg-background/85 px-4 shadow-lg backdrop-blur transition-shadow hover:shadow-xl supports-[backdrop-filter]:bg-background/70 sm:px-5">
+          <div className="relative flex h-14 items-center gap-3 rounded-[20px] bg-background px-4 shadow-[0_0_0_1px_rgba(0,0,0,.06),0_1px_1px_-.5px_rgba(0,0,0,.06),0_3px_3px_-1.5px_rgba(0,0,0,.06),0_6px_6px_-3px_rgba(0,0,0,.06),0_12px_12px_-6px_rgba(0,0,0,.06),0_24px_24px_-12px_rgba(0,0,0,.06)] sm:px-6 lg:h-[70px] lg:rounded-[25px] lg:px-12">
             {/* Hamburger (mobile) */}
             <button
               type="button"
@@ -146,7 +148,7 @@ export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaM
             </Link>
 
             {/* Nav tengah (desktop) — absolut di tengah header agar benar-benar center */}
-            <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-6 md:flex">
+            <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-6 md:flex lg:gap-11">
               {navLinks.map((l) =>
                 l.kind === "MEGA" ? (
                   <button
@@ -162,8 +164,8 @@ export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaM
                     onFocus={() => setOpen(true)}
                     aria-expanded={open}
                     className={cn(
-                      "flex items-center gap-1 text-sm transition-colors",
-                      open ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+                      "flex items-center gap-1 text-sm font-semibold transition-colors lg:text-[15px]",
+                      open ? "text-foreground/70" : "text-foreground hover:text-foreground/70",
                     )}
                   >
                     {l.label}
@@ -183,8 +185,8 @@ export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaM
                     onFocus={() => setMerekOpen(true)}
                     aria-expanded={merekOpen}
                     className={cn(
-                      "flex items-center gap-1 text-sm transition-colors",
-                      merekOpen ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+                      "flex items-center gap-1 text-sm font-semibold transition-colors lg:text-[15px]",
+                      merekOpen ? "text-foreground/70" : "text-foreground hover:text-foreground/70",
                     )}
                   >
                     {l.label}
@@ -196,7 +198,7 @@ export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaM
                     href={l.url}
                     target={l.newTab ? "_blank" : undefined}
                     rel={l.newTab ? "noopener noreferrer" : undefined}
-                    className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                    className="text-sm font-semibold text-foreground transition-colors hover:text-foreground/70 lg:text-[15px]"
                   >
                     {l.label}
                   </Link>

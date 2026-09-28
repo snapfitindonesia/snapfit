@@ -33,7 +33,9 @@ export const heroSchema = z.object({
   parallax: z.boolean().default(true), // mode foto: foto bergerak lebih lambat saat scroll
   bg: color,
   theme,
-  eyebrow: text(60),
+  eyebrow: text(60), // badge kecil (mis. "BARU")
+  badgeBg: color, // warna badge (kosong = biru ala Nomad #005bd3)
+  kicker: text(80), // subjudul tebal DI ATAS judul (mis. "Siap untuk iPhone 18")
   title: text(120),
   subtitle: text(240),
   ...cta,
@@ -161,18 +163,19 @@ export function blankSection(type: SectionType): HomeSection {
 export const DEFAULT_SECTIONS: HomeSection[] = sectionsSchema.parse([
   {
     id: "hero",
+    // Gaya Nomad: foto gelap full-bleed di belakang header. Foto SEMENTARA (disusun dari foto
+    // varian produk di latar cokelat gelap) — ganti dengan foto lifestyle di Admin → Konten Beranda.
     type: "hero",
-    // Foto sementara: disusun dari foto varian produk (latar krem). Ganti dengan foto lifestyle.
     mode: "foto",
-    theme: "terang",
-    bg: "#f2f1ee",
-    image: "https://cdn.snapfit.id/1790609991864-fbfc6774-a3d5-4496-917b-bfbfe48a6ce7-wide.webp",
-    imageMobile: "https://cdn.snapfit.id/1790609993292-ba020729-79ff-4a07-a249-731046e9efe4-wide.webp",
-    eyebrow: "Baru untuk iPhone 18",
-    title: "Pas sejak pertama dipasang.",
-    subtitle: "Case, pelindung layar, dan aksesori SNAPFIT untuk iPhone, Galaxy, dan AirPods — presisi sampai ke lubang kamera.",
-    ctaLabel: "Belanja sekarang",
-    ctaHref: "/produk",
+    theme: "gelap",
+    bg: "#2b150d",
+    image: "https://cdn.snapfit.id/1790611425803-25a347e7-7333-4760-a9b7-729a1f29c6fd-wide.webp",
+    imageMobile: "https://cdn.snapfit.id/1790611171072-ae8284df-bb5b-4493-a0c4-8a8908b0f2b3-wide.webp",
+    eyebrow: "BARU",
+    kicker: "Siap untuk iPhone 18",
+    title: "Pas Sejak Pertama Dipasang",
+    ctaLabel: "Belanja Sekarang",
+    ctaHref: "/produk?q=iphone%2018",
   },
   {
     id: "baru",
