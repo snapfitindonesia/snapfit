@@ -52,7 +52,7 @@ export default async function PromoPage({ params }: { params: Promise<{ slug: st
   return (
     <div>
       <section className="bg-foreground text-background">
-        <div className="mx-auto max-w-[90rem] px-4 py-12 sm:px-6 lg:px-10 sm:py-16">
+        <div className="mx-auto max-w-[100rem] px-4 py-12 sm:px-6 lg:px-10 sm:py-16">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-ink px-3 py-1 text-xs font-semibold text-brand-foreground">
             {status.badge}
           </span>
@@ -72,7 +72,7 @@ export default async function PromoPage({ params }: { params: Promise<{ slug: st
         </div>
       </section>
 
-      <div className="mx-auto max-w-[90rem] px-4 sm:px-6 lg:px-10">
+      <div className="mx-auto max-w-[100rem] px-4 sm:px-6 lg:px-10">
         {vouchers.length > 0 && (
           <section className="mt-10">
             <h2 className="text-lg font-semibold tracking-tight">Voucher yang bisa dipakai</h2>

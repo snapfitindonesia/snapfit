@@ -682,7 +682,7 @@ export function PdpView({
 
       {/* Sticky add-to-cart bar (mobile) — di atas bottom nav */}
       <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-30 border-y border-border bg-background/95 p-3 backdrop-blur md:hidden">
-        <div className="mx-auto flex max-w-[90rem] items-center gap-2">
+        <div className="mx-auto flex max-w-[100rem] items-center gap-2">
           <Button
             variant="outline"
             size="lg"

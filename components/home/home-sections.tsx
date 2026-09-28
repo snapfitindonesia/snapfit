@@ -12,10 +12,10 @@ import type { HomeData } from "@/lib/home/data";
 /*
  * Beranda "bercerita" (referensi: Nomad). Lebar gabungan: hero, banner cerita, komunitas &
  * banner ulasan SELEBAR LAYAR; deretan produk, kategori, blok gambar+teks & kartu dibatasi
- * max-w-[90rem] (1440px). Bagian di bawah layar pertama memakai cv-auto (render ditunda sampai dekat).
+ * max-w-[100rem] (1600px). Bagian di bawah layar pertama memakai cv-auto (render ditunda sampai dekat).
  */
 
-const WRAP = "mx-auto max-w-[90rem] px-4 sm:px-6 lg:px-10";
+const WRAP = "mx-auto max-w-[100rem] px-4 sm:px-6 lg:px-10";
 // Baris geser: di HP/tablet menembus tepi layar (kartu berikut mengintip); di desktop tetap di
 // dalam kolom isi agar halaman simetris (menembus kanan di layar lebar terlihat berat sebelah).
 const BLEED = "-mx-4 px-4 scroll-px-4 sm:-mx-6 sm:px-6 sm:scroll-px-6 lg:mx-0 lg:px-0 lg:scroll-px-0";
@@ -70,7 +70,7 @@ function Hero({ s, first }: { s: SectionOf<"hero">; first: boolean }) {
   if (s.mode === "foto" && s.image) {
     // Gaya Nomad (diukur dari nomadgoods.com): foto full-bleed mulai dari paling atas layar, di belakang
     // bilah pengumuman & header kapsul; tinggi ±90% layar (95% di HP). Teks: desktop kiri-tengah dalam
-    // kolom 1360px (tepi ≥70px), HP rata tengah di atas. Badge → subjudul → judul besar → tombol pil putih.
+    // kolom 1600px sejajar isi (tepi 40px), HP rata tengah di atas. Badge → subjudul → judul besar → tombol pil putih.
     // Tema terang (foto berlatar terang) → teks gelap & bilah pengumuman tetap hitam.
     const light = s.theme === "terang";
     const overlay = first && !light;
@@ -96,7 +96,7 @@ function Hero({ s, first }: { s: SectionOf<"hero">; first: boolean }) {
         )}
         <div
           className={cn(
-            "mx-auto w-full max-w-[1500px] px-5 text-center sm:px-8 lg:px-[70px] lg:text-left",
+            "mx-auto w-full max-w-[100rem] px-5 text-center sm:px-8 lg:px-10 lg:text-left",
             first ? "pt-[calc(var(--announce-h)+var(--nav-h)+2rem)] lg:pt-[calc(var(--announce-h)+var(--nav-h))]" : "pt-12 lg:pt-0",
           )}
         >

@@ -58,7 +58,7 @@ export function LandingView({
   ];
 
   return (
-    <div className="mx-auto max-w-[90rem] px-4 py-8 sm:px-6 lg:px-10 sm:py-12">
+    <div className="mx-auto max-w-[100rem] px-4 py-8 sm:px-6 lg:px-10 sm:py-12">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
       <nav aria-label="Breadcrumb" className="mb-4 flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
