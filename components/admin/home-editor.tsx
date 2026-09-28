@@ -78,6 +78,18 @@ function Img({ label, value, onChange, wide = false, hint }: { label: string; va
   );
 }
 
+function Check({ label, hint, checked, onChange }: { label: string; hint?: string; checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <label className="flex items-start gap-2 self-end text-sm">
+      <input type="checkbox" className="mt-0.5 size-4 accent-foreground" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+      <span>
+        <span className="font-medium">{label}</span>
+        {hint && <span className="block text-xs text-muted-foreground">{hint}</span>}
+      </span>
+    </label>
+  );
+}
+
 const WIDE_HINT = "Foto lebar: min. 2400px, landscape (±16:9). Disimpan s/d 2400px.";
 const MOBILE_HINT = "Opsional. Potrait (±4:5) untuk HP — tanpa ini foto desktop dipotong otomatis.";
 
@@ -160,7 +172,8 @@ function Fields({ s, set }: { s: HomeSection; set: (patch: Partial<HomeSection>)
               <Img label="Foto versi HP" value={s.imageMobile} onChange={(v) => set({ imageMobile: v })} wide hint={MOBILE_HINT} />
             </div>
           )}
-          {s.mode === "produk" && <Color label="Warna latar" value={s.bg} onChange={(v) => set({ bg: v })} />}
+          <Color label={s.mode === "foto" ? "Warna latar/gradasi (tema terang)" : "Warna latar"} value={s.bg} onChange={(v) => set({ bg: v })} />
+          {s.mode === "foto" && <Check label="Efek parallax" hint="Foto bergerak lebih lambat saat di-scroll." checked={s.parallax} onChange={(v) => set({ parallax: v })} />}
           <Text label="Label kecil (atas judul)" value={s.eyebrow} onChange={(v) => set({ eyebrow: v })} placeholder="Baru untuk iPhone 18" />
           <div className="sm:col-span-2"><Text label="Judul besar" value={s.title} onChange={(v) => set({ title: v })} /></div>
           <div className="sm:col-span-2"><Text label="Teks pendukung" value={s.subtitle} onChange={(v) => set({ subtitle: v })} area /></div>
@@ -242,7 +255,10 @@ function Fields({ s, set }: { s: HomeSection; set: (patch: Partial<HomeSection>)
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2"><Img label="Foto (opsional — tanpa foto = warna polos)" value={s.image} onChange={(v) => set({ image: v })} wide hint={WIDE_HINT} /></div>
           {s.image ? (
-            <div className="sm:col-span-2"><Img label="Foto versi HP" value={s.imageMobile} onChange={(v) => set({ imageMobile: v })} wide hint={MOBILE_HINT} /></div>
+            <>
+              <div className="sm:col-span-2"><Img label="Foto versi HP" value={s.imageMobile} onChange={(v) => set({ imageMobile: v })} wide hint={MOBILE_HINT} /></div>
+              <Check label="Efek parallax" hint="Foto bergerak lebih lambat saat di-scroll." checked={s.parallax} onChange={(v) => set({ parallax: v })} />
+            </>
           ) : (
             <>
               <Color label="Warna latar" value={s.bg} onChange={(v) => set({ bg: v })} />

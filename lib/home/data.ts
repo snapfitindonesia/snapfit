@@ -7,17 +7,24 @@ import { DEFAULT_SECTIONS, sectionsSchema, type HomeSection } from "@/lib/home/s
 export const HOME_KEY = "home.sections";
 export const HOME_TAG = "home-sections";
 
-/** Konten beranda tersimpan (cache bertag; saveHomeSections membersihkannya). Rusak/kosong → bawaan. */
-export const getHomeSections = unstable_cache(
-  async (): Promise<HomeSection[]> => {
-    const row = await db.siteSetting.findUnique({ where: { key: HOME_KEY } });
-    if (!row) return DEFAULT_SECTIONS;
-    const parsed = sectionsSchema.safeParse(row.value);
-    return parsed.success ? parsed.data : DEFAULT_SECTIONS;
-  },
-  ["home-sections"],
+/**
+ * Konten tersimpan dari admin (cache bertag; saveHomeSections membersihkannya). null = belum pernah
+ * disimpan. Isi bawaan SENGAJA tak ikut di-cache — agar perubahan DEFAULT_SECTIONS di kode langsung
+ * berlaku setelah deploy (Data Cache Vercel bisa bertahan lintas deploy).
+ */
+const getSavedSections = unstable_cache(
+  async (): Promise<unknown> => (await db.siteSetting.findUnique({ where: { key: HOME_KEY } }))?.value ?? null,
+  ["home-sections-saved"],
   { revalidate: 3600, tags: [HOME_TAG] },
 );
+
+/** Bagian beranda: tersimpan (valid) atau isi bawaan. */
+export async function getHomeSections(): Promise<HomeSection[]> {
+  const saved = await getSavedSections();
+  if (saved == null) return DEFAULT_SECTIONS;
+  const parsed = sectionsSchema.safeParse(saved);
+  return parsed.success ? parsed.data : DEFAULT_SECTIONS;
+}
 
 export type ReviewStats = { total: number; fiveStar: number; avg: number };
 export type ReviewShot = { image: string; caption: string; href: string };

@@ -30,6 +30,7 @@ export const heroSchema = z.object({
   mode: z.enum(["foto", "produk"]).default("produk"),
   image: img,
   imageMobile: img, // opsional: versi potrait untuk HP (mode foto)
+  parallax: z.boolean().default(true), // mode foto: foto bergerak lebih lambat saat scroll
   bg: color,
   theme,
   eyebrow: text(60),
@@ -77,6 +78,7 @@ export const bannerSchema = z.object({
   type: z.literal("banner"),
   image: img,
   imageMobile: img,
+  parallax: z.boolean().default(true),
   bg: color,
   theme,
   eyebrow: text(60),
@@ -160,9 +162,12 @@ export const DEFAULT_SECTIONS: HomeSection[] = sectionsSchema.parse([
   {
     id: "hero",
     type: "hero",
-    mode: "produk",
+    // Foto sementara: disusun dari foto varian produk (latar krem). Ganti dengan foto lifestyle.
+    mode: "foto",
+    theme: "terang",
     bg: "#f2f1ee",
-    image: "https://cdn.snapfit.id/m-92593ca4a282000bca05680e.webp",
+    image: "https://cdn.snapfit.id/1790609991864-fbfc6774-a3d5-4496-917b-bfbfe48a6ce7-wide.webp",
+    imageMobile: "https://cdn.snapfit.id/1790609993292-ba020729-79ff-4a07-a249-731046e9efe4-wide.webp",
     eyebrow: "Baru untuk iPhone 18",
     title: "Pas sejak pertama dipasang.",
     subtitle: "Case, pelindung layar, dan aksesori SNAPFIT untuk iPhone, Galaxy, dan AirPods — presisi sampai ke lubang kamera.",

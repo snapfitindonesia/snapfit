@@ -34,8 +34,11 @@ bar bawah (HP), dan tombol WhatsApp melayang.
   tampilan: `components/home/`). Jenis: hero, deretan produk, pintasan kategori, gambar+teks bergantian,
   kutipan, banner cerita, komunitas, banner ulasan, kartu info.
 - **Lebar gabungan**: hero, banner cerita, komunitas & banner ulasan selebar layar; sisanya max-w-6xl.
-- Hero mode **produk** (latar warna + foto produk, putih foto dilebur `mix-blend-multiply`) dipakai sampai ada
-  foto lifestyle; mode **foto** = foto penuh + versi HP (`<picture>`, hanya satu yang diunduh).
+- Hero mode **foto** (bawaan): foto selebar layar + versi HP (`<picture>`, hanya satu yang diunduh), tema
+  terang/gelap (teks gelap + gradasi warna latar / teks putih + gradasi hitam), **parallax** (`components/home/parallax.tsx`;
+  mati bila "kurangi gerakan"). Foto bawaan = SEMENTARA, disusun dari foto varian produk (latar dibuat transparan,
+  2400×1350 & 1080×1350) sampai client punya foto lifestyle. Mode **produk** = latar warna + foto produk di samping.
+- Isi bawaan (`DEFAULT_SECTIONS`) tidak ikut di-cache — hanya konten tersimpan dari admin yang di-cache (`lib/home/data.ts`).
 - Komunitas (foto ulasan, min. 3) & banner ulasan (`{jumlah}`/`{rating}` asli) **tersembunyi otomatis** bila belum ada data.
 - Foto lebar diunggah via `ImageInput wide` → maks 2400px, nama `-wide.webp`, varian 750/1200/1800 (`lib/image-loader.ts`).
 - Halaman `/merek/<selain snapfit>` → redirect permanen ke `/produk`; filter Merek disembunyikan bila <2 merek.

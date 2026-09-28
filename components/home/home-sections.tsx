@@ -5,6 +5,7 @@ import Image from "@/components/ui/image";
 import { ProductCard } from "@/components/shop/product-card";
 import { ArtImage } from "@/components/home/art-image";
 import { ScrollRow } from "@/components/home/scroll-row";
+import { Parallax } from "@/components/home/parallax";
 import type { HomeSection, SectionOf } from "@/lib/home/sections";
 import type { HomeData } from "@/lib/home/data";
 
@@ -67,17 +68,33 @@ function Hero({ s, first }: { s: SectionOf<"hero">; first: boolean }) {
   const dark = s.theme === "gelap";
   const Heading = first ? "h1" : "h2";
   if (s.mode === "foto" && s.image) {
+    // Tema terang = foto berlatar terang → teks gelap + gradasi warna latar; gelap = teks putih + gradasi hitam.
+    const light = s.theme === "terang";
+    const bg = s.bg || "#f2f1ee";
     return (
-      <section className="relative isolate flex min-h-[560px] items-end overflow-hidden bg-neutral-900 md:min-h-[620px] md:items-center lg:min-h-[680px]">
-        <ArtImage src={s.image} srcMobile={s.imageMobile || undefined} alt={s.title || "SNAPFIT"} priority={first} className="-z-10" />
+      <section
+        className={cn("relative isolate flex min-h-[600px] items-end overflow-hidden md:min-h-[max(560px,min(46vw,720px))] md:items-center", !light && "bg-neutral-900")}
+        style={{ "--hero-bg": bg, ...(light ? { backgroundColor: bg } : {}) } as React.CSSProperties}
+      >
+        <Parallax enabled={s.parallax}>
+          <ArtImage src={s.image} srcMobile={s.imageMobile || undefined} alt={s.title || "SNAPFIT"} priority={first} />
+        </Parallax>
         {/* Gradasi agar teks terbaca di foto apa pun */}
-        <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-t from-black/70 via-black/25 to-transparent md:bg-gradient-to-r md:from-black/60 md:via-black/20" />
+        <div
+          aria-hidden
+          className={cn(
+            "absolute inset-0 -z-10",
+            light
+              ? "bg-gradient-to-t from-(--hero-bg) via-(--hero-bg)/80 via-35% to-transparent to-60% md:bg-gradient-to-r md:from-(--hero-bg)/90 md:via-(--hero-bg)/40 md:via-40% md:to-transparent md:to-65%"
+              : "bg-gradient-to-t from-black/70 via-black/25 to-transparent md:bg-gradient-to-r md:from-black/60 md:via-black/20",
+          )}
+        />
         <div className={cn(WRAP, "w-full pb-12 md:pb-0")}>
-          <div className="max-w-xl text-white">
-            <Eyebrow dark>{s.eyebrow}</Eyebrow>
+          <div className={cn("max-w-xl", !light && "text-white")}>
+            <Eyebrow dark={!light}>{s.eyebrow}</Eyebrow>
             {s.title && <Heading className="mt-3 text-4xl font-semibold tracking-tight text-balance sm:text-5xl lg:text-6xl">{s.title}</Heading>}
-            {s.subtitle && <p className="mt-4 text-base text-white/85 text-pretty sm:text-lg">{s.subtitle}</p>}
-            <Cta label={s.ctaLabel} href={s.ctaHref} dark className="mt-7" />
+            {s.subtitle && <p className={cn("mt-4 text-base text-pretty sm:text-lg", light ? "text-foreground/75" : "text-white/85")}>{s.subtitle}</p>}
+            <Cta label={s.ctaLabel} href={s.ctaHref} dark={!light} className="mt-7" />
           </div>
         </div>
       </section>
@@ -220,7 +237,9 @@ function Banner({ s }: { s: SectionOf<"banner"> }) {
     >
       {photo && (
         <>
-          <ArtImage src={s.image} srcMobile={s.imageMobile || undefined} alt={s.title || "SNAPFIT"} className="-z-10" />
+          <Parallax enabled={s.parallax}>
+            <ArtImage src={s.image} srcMobile={s.imageMobile || undefined} alt={s.title || "SNAPFIT"} />
+          </Parallax>
           <div aria-hidden className="absolute inset-0 -z-10 bg-black/45" />
         </>
       )}
