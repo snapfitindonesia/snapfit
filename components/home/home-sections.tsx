@@ -14,7 +14,9 @@ import type { HomeData } from "@/lib/home/data";
  * max-w-6xl. Bagian di bawah layar pertama memakai cv-auto (render ditunda sampai dekat).
  */
 
-const WRAP = "mx-auto max-w-6xl px-4 sm:px-6";
+const WRAP = "mx-auto max-w-[90rem] px-4 sm:px-6 lg:px-10";
+// Baris geser yang menembus sampai tepi kanan layar (ala Nomad): kartu pertama sejajar kolom isi.
+const BLEED = "px-4 scroll-px-4 sm:px-6 sm:scroll-px-6 lg:px-[max(2.5rem,calc((100vw-90rem)/2+2.5rem))] lg:scroll-px-[max(2.5rem,calc((100vw-90rem)/2+2.5rem))]";
 
 /** Tombol pil (gaya Nomad). `dark` = di atas latar gelap/foto. */
 function Cta({ label, href, dark = false, className }: { label: string; href: string; dark?: boolean; className?: string }) {
@@ -83,7 +85,7 @@ function Hero({ s, first }: { s: SectionOf<"hero">; first: boolean }) {
   // Mode produk: latar warna + foto produk (latar putih foto katalog dilebur ke warna latar).
   return (
     <section className={cn(dark ? "text-white" : "")} style={{ backgroundColor: s.bg || "#f2f1ee" }}>
-      <div className={cn(WRAP, "grid items-center gap-6 py-10 sm:py-14 md:grid-cols-2 md:gap-10 md:py-16 lg:py-20")}>
+      <div className={cn(WRAP, "grid items-center gap-6 py-10 sm:py-14 md:min-h-[560px] md:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] md:gap-10 md:py-12 lg:min-h-[660px]")}>
         <div className="max-w-xl">
           <Eyebrow dark={dark}>{s.eyebrow}</Eyebrow>
           {s.title && <Heading className="mt-3 text-4xl font-semibold tracking-tight text-balance sm:text-5xl lg:text-6xl">{s.title}</Heading>}
@@ -91,13 +93,13 @@ function Hero({ s, first }: { s: SectionOf<"hero">; first: boolean }) {
           <Cta label={s.ctaLabel} href={s.ctaHref} dark={dark} className="mt-7" />
         </div>
         {s.image && (
-          <div className="relative mx-auto aspect-square w-full max-w-[17rem] sm:max-w-sm md:max-w-none">
+          <div className="relative mx-auto aspect-square w-full max-w-[17rem] sm:max-w-sm md:aspect-[5/4] md:max-w-none">
             <Image
               src={s.image}
               alt={s.title || "Produk SNAPFIT"}
               fill
               priority={first}
-              sizes="(min-width: 1152px) 540px, (min-width: 768px) 46vw, 90vw"
+              sizes="(min-width: 1440px) 760px, (min-width: 768px) 54vw, 90vw"
               className={cn("object-contain", !dark && "mix-blend-multiply")}
             />
           </div>
@@ -113,11 +115,13 @@ function Products({ s, data, eager }: { s: SectionOf<"products">; data: HomeData
   const items = data.products[s.id] ?? [];
   if (!items.length) return null;
   return (
-    <section className={cn(WRAP, "py-12 sm:py-16", !eager && "cv-auto [--cv-h:560px]")}>
-      <SectionHead title={s.title} subtitle={s.subtitle} ctaLabel={s.ctaLabel} ctaHref={s.ctaHref} />
-      <ScrollRow label={s.title || "Produk"}>
+    <section className={cn("py-12 sm:py-16", !eager && "cv-auto [--cv-h:560px]")}>
+      <div className={WRAP}>
+        <SectionHead title={s.title} subtitle={s.subtitle} ctaLabel={s.ctaLabel} ctaHref={s.ctaHref} />
+      </div>
+      <ScrollRow label={s.title || "Produk"} className={BLEED}>
         {items.map((p, i) => (
-          <div key={p.id} className="w-[46%] shrink-0 snap-start sm:w-[31%] lg:w-[23%]">
+          <div key={p.id} className="w-[44vw] shrink-0 snap-start sm:w-[30vw] lg:w-[17rem] xl:w-[19rem]">
             <ProductCard product={p} priority={eager && i < 2} />
           </div>
         ))}
@@ -241,7 +245,7 @@ function Community({ s, data }: { s: SectionOf<"community">; data: HomeData }) {
       <div className={WRAP}>
         <SectionHead title={s.title} subtitle={s.subtitle} />
       </div>
-      <ScrollRow label={s.title || "Komunitas"} className="px-4 sm:px-6 lg:px-[max(1.5rem,calc((100vw-72rem)/2+1.5rem))]">
+      <ScrollRow label={s.title || "Komunitas"} className={BLEED}>
         {shots.map((x, i) => {
           const body = (
             <>
@@ -252,7 +256,7 @@ function Community({ s, data }: { s: SectionOf<"community">; data: HomeData }) {
             </>
           );
           return (
-            <div key={i} className="group w-[42%] shrink-0 snap-start sm:w-[28%] lg:w-[18%]">
+            <div key={i} className="group w-[42vw] shrink-0 snap-start sm:w-[28vw] lg:w-[16rem] xl:w-[18rem]">
               {x.href ? <Link href={x.href}>{body}</Link> : body}
             </div>
           );

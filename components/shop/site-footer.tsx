@@ -50,7 +50,7 @@ export async function SiteFooter() {
     : COLUMNS;
   return (
     <footer className="mt-24 border-t border-border">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+      <div className="mx-auto max-w-[90rem] px-4 sm:px-6 lg:px-10">
         {/* Trust strip — kartu (judul + subjudul kiri, ikon kanan) */}
         <div className="grid grid-cols-1 gap-4 border-b border-border py-8 sm:grid-cols-2 lg:grid-cols-4">
           {TRUST.map(({ icon: Icon, title, desc }) => (

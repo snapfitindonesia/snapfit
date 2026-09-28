@@ -113,7 +113,7 @@ export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaM
 
   return (
     <div className="sticky top-0 z-40 pt-3">
-      <div className="mx-auto max-w-6xl px-3 sm:px-4">
+      <div className="mx-auto max-w-[90rem] px-3 sm:px-4 lg:px-8">
         <div className="relative">
           {/* Bar mengambang */}
           <div className="relative flex h-14 items-center gap-3 rounded-2xl border border-border bg-background/85 px-4 shadow-lg backdrop-blur transition-shadow hover:shadow-xl supports-[backdrop-filter]:bg-background/70 sm:px-5">
