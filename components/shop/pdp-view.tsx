@@ -671,7 +671,7 @@ export function PdpView({
               <p className="font-medium text-foreground">Varian tersedia:</p>
               <p className="mt-1">{product.variants.map((v) => v.name).join(" · ")}</p>
               <p className="mt-3">
-                Dikirim via kurir pilihanmu (cek ongkir di checkout). Estimasi 1–3 hari
+                Ongkir dihitung di checkout sesuai provinsi tujuan. Estimasi 1–3 hari
                 untuk area umum.
               </p>
             </div>

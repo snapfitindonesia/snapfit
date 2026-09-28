@@ -72,9 +72,11 @@ async function computeOrder(
   }
 
   // Ongkir per provinsi (mode flat, Biteship belum aktif): tarif Admin → Ongkir, provinsi
-  // yang belum diatur = tarif flat. Gratis ongkir bila lolos ambang. Sama dengan quoteShipping.
+  // yang belum diatur = tarif flat. Gratis ongkir (maks. FREE_SHIPPING_MAX) bila lolos ambang.
+  // Sama dengan quoteShipping.
   if (isFlatShipping()) {
     const q = await zoneQuote(provinceCode, totalWeight, subtotal);
+    if (!q.available) throw new Error("Maaf, belum ada kurir yang melayani pengiriman ke provinsi ini.");
     const shippingCost = q.cost;
     const rate = {
       id: "flat",

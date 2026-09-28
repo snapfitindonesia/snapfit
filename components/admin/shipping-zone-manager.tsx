@@ -8,7 +8,7 @@ import { formatRupiah } from "@/lib/format";
 import { saveShippingZones } from "@/lib/actions/shipping";
 import { ISLAND_GROUPS, PROVINCES } from "@/lib/wilayah";
 
-export type ZoneRow = { provinceCode: string; baseCost: string; perKg: string; etd: string };
+export type ZoneRow = { provinceCode: string; baseCost: string; perKg: string; etd: string; available: boolean };
 
 const input = "w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-sm outline-none focus:border-foreground";
 
@@ -17,7 +17,7 @@ export function ShippingZoneManager({ initial, flatCost }: { initial: ZoneRow[];
   const router = useRouter();
   const [rows, setRows] = useState<Record<string, ZoneRow>>(() => {
     const m: Record<string, ZoneRow> = {};
-    for (const p of PROVINCES) m[p.code] = initial.find((r) => r.provinceCode === p.code) ?? { provinceCode: p.code, baseCost: "", perKg: "", etd: "" };
+    for (const p of PROVINCES) m[p.code] = initial.find((r) => r.provinceCode === p.code) ?? { provinceCode: p.code, baseCost: "", perKg: "", etd: "", available: true };
     return m;
   });
   const [bulk, setBulk] = useState({ group: ISLAND_GROUPS[0].id, baseCost: "", perKg: "", etd: "" });
@@ -28,21 +28,22 @@ export function ShippingZoneManager({ initial, flatCost }: { initial: ZoneRow[];
   const dirty = useMemo(
     () => PROVINCES.some((p) => {
       const a = rows[p.code];
-      const b = initial.find((r) => r.provinceCode === p.code) ?? { baseCost: "", perKg: "", etd: "" };
-      return a.baseCost !== b.baseCost || a.perKg !== b.perKg || a.etd !== b.etd;
+      const b = initial.find((r) => r.provinceCode === p.code) ?? { baseCost: "", perKg: "", etd: "", available: true };
+      return a.baseCost !== b.baseCost || a.perKg !== b.perKg || a.etd !== b.etd || a.available !== b.available;
     }),
     [rows, initial],
   );
-  const filled = PROVINCES.filter((p) => rows[p.code].baseCost.trim() !== "").length;
+  const filled = PROVINCES.filter((p) => rows[p.code].available && rows[p.code].baseCost.trim() !== "").length;
+  const closed = PROVINCES.filter((p) => !rows[p.code].available).length;
 
-  const set = (code: string, k: keyof ZoneRow, v: string) => setRows((r) => ({ ...r, [code]: { ...r[code], [k]: v } }));
+  const set = <K extends keyof ZoneRow>(code: string, k: K, v: ZoneRow[K]) => setRows((r) => ({ ...r, [code]: { ...r[code], [k]: v } }));
   const num = (v: string) => v.replace(/[^\d]/g, "");
 
   function applyBulk() {
     const g = ISLAND_GROUPS.find((x) => x.id === bulk.group)!;
     setRows((r) => {
       const next = { ...r };
-      for (const c of g.codes) next[c] = { provinceCode: c, baseCost: bulk.baseCost, perKg: bulk.perKg, etd: bulk.etd };
+      for (const c of g.codes) next[c] = { provinceCode: c, baseCost: bulk.baseCost, perKg: bulk.perKg, etd: bulk.etd, available: true };
       return next;
     });
     setMsg({ ok: true, text: `Diterapkan ke ${g.codes.length} provinsi ${g.label} — jangan lupa Simpan.` });
@@ -54,7 +55,7 @@ export function ShippingZoneManager({ initial, flatCost }: { initial: ZoneRow[];
     const res = await saveShippingZones(
       PROVINCES.map((p) => {
         const r = rows[p.code];
-        return { provinceCode: p.code, baseCost: r.baseCost.trim() === "" ? null : Number(r.baseCost), perKg: Number(r.perKg || 0), etd: r.etd };
+        return { provinceCode: p.code, baseCost: r.baseCost.trim() === "" ? null : Number(r.baseCost), perKg: Number(r.perKg || 0), etd: r.etd, available: r.available };
       }),
     );
     setSaving(false);
@@ -90,7 +91,7 @@ export function ShippingZoneManager({ initial, flatCost }: { initial: ZoneRow[];
       <div className="flex flex-wrap items-center justify-between gap-3">
         <input className={`${input} max-w-xs`} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari provinsi…" />
         <p className="text-sm text-muted-foreground">
-          {filled}/{PROVINCES.length} provinsi bertarif khusus · sisanya flat {formatRupiah(flatCost)}
+          {filled}/{PROVINCES.length} provinsi bertarif khusus{closed > 0 && ` · ${closed} tidak dilayani`} · sisanya flat {formatRupiah(flatCost)}
         </p>
       </div>
 
@@ -109,26 +110,31 @@ export function ShippingZoneManager({ initial, flatCost }: { initial: ZoneRow[];
                     <th className="px-3 py-2 font-medium">+ per kg (Rp)</th>
                     <th className="px-3 py-2 font-medium">Estimasi</th>
                     <th className="px-3 py-2 font-medium">Contoh 2 kg</th>
+                    <th className="px-3 py-2 font-medium">Dilayani</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {list.map((p) => {
                     const r = rows[p.code];
                     const base = r.baseCost === "" ? null : Number(r.baseCost);
+                    const off = !r.available;
                     return (
-                      <tr key={p.code}>
+                      <tr key={p.code} className={off ? "bg-muted/40 text-muted-foreground" : undefined}>
                         <td className="px-3 py-2 font-medium">{p.name}</td>
                         <td className="px-3 py-2">
-                          <input inputMode="numeric" aria-label={`Tarif 1 kg ${p.name}`} className={input} value={r.baseCost} onChange={(e) => set(p.code, "baseCost", num(e.target.value))} placeholder={`flat ${flatCost}`} />
+                          <input inputMode="numeric" aria-label={`Tarif 1 kg ${p.name}`} className={input} value={r.baseCost} onChange={(e) => set(p.code, "baseCost", num(e.target.value))} placeholder={`flat ${flatCost}`} disabled={off} />
                         </td>
                         <td className="px-3 py-2">
-                          <input inputMode="numeric" aria-label={`Tambahan per kg ${p.name}`} className={input} value={r.perKg} onChange={(e) => set(p.code, "perKg", num(e.target.value))} placeholder="0" disabled={base === null} />
+                          <input inputMode="numeric" aria-label={`Tambahan per kg ${p.name}`} className={input} value={r.perKg} onChange={(e) => set(p.code, "perKg", num(e.target.value))} placeholder="0" disabled={off || base === null} />
                         </td>
                         <td className="px-3 py-2">
-                          <input aria-label={`Estimasi ${p.name}`} className={input} value={r.etd} onChange={(e) => set(p.code, "etd", e.target.value)} placeholder="2-3 hari" disabled={base === null} />
+                          <input aria-label={`Estimasi ${p.name}`} className={input} value={r.etd} onChange={(e) => set(p.code, "etd", e.target.value)} placeholder="2-3 hari" disabled={off || base === null} />
                         </td>
                         <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">
-                          {base === null ? formatRupiah(flatCost) : formatRupiah(base + Number(r.perKg || 0))}
+                          {off ? "Tidak dilayani" : base === null ? formatRupiah(flatCost) : formatRupiah(base + Number(r.perKg || 0))}
+                        </td>
+                        <td className="px-3 py-2">
+                          <input type="checkbox" aria-label={`Dilayani ${p.name}`} className="size-4 accent-foreground" checked={!off} onChange={(e) => set(p.code, "available", e.target.checked)} />
                         </td>
                       </tr>
                     );

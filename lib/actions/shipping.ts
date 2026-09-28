@@ -42,9 +42,10 @@ const rowSchema = z.object({
   baseCost: z.coerce.number().int().min(0).max(5_000_000).nullable(), // null = pakai tarif flat
   perKg: z.coerce.number().int().min(0).max(5_000_000).default(0),
   etd: z.string().trim().max(40).default(""),
+  available: z.boolean().default(true), // false = tidak dilayani (checkout ditolak)
 });
 
-/** Simpan tabel ongkir per provinsi. baseCost kosong → baris dihapus (kembali ke tarif flat). */
+/** Simpan tabel ongkir per provinsi. baseCost kosong (dan dilayani) → baris dihapus (kembali ke tarif flat). */
 export async function saveShippingZones(rows: z.input<typeof rowSchema>[]): Promise<{ ok: boolean; error?: string; saved?: number }> {
   try {
     await requireAdmin();
@@ -54,15 +55,15 @@ export async function saveShippingZones(rows: z.input<typeof rowSchema>[]): Prom
   const parsed = z.array(rowSchema).max(PROVINCES.length).safeParse(rows);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Data tidak valid." };
   const valid = parsed.data.filter((r) => provinceName(r.provinceCode));
-  const set = valid.filter((r) => r.baseCost !== null);
-  const unset = valid.filter((r) => r.baseCost === null).map((r) => r.provinceCode);
+  const set = valid.filter((r) => r.baseCost !== null || !r.available);
+  const unset = valid.filter((r) => r.baseCost === null && r.available).map((r) => r.provinceCode);
   await db.$transaction([
     db.shippingZone.deleteMany({ where: { provinceCode: { in: unset } } }),
     ...set.map((r) =>
       db.shippingZone.upsert({
         where: { provinceCode: r.provinceCode },
-        create: { provinceCode: r.provinceCode, provinceName: provinceName(r.provinceCode)!, baseCost: r.baseCost!, perKg: r.perKg, etd: r.etd },
-        update: { baseCost: r.baseCost!, perKg: r.perKg, etd: r.etd },
+        create: { provinceCode: r.provinceCode, provinceName: provinceName(r.provinceCode)!, baseCost: r.baseCost ?? 0, perKg: r.perKg, etd: r.etd, available: r.available },
+        update: { baseCost: r.baseCost ?? 0, perKg: r.perKg, etd: r.etd, available: r.available },
       }),
     ),
   ]);

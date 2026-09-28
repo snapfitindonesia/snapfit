@@ -38,7 +38,7 @@ export async function generateMetadata({
   const body = clean.length > 158 - suffix.length ? `${clean.slice(0, 155 - suffix.length).replace(/\s+\S*$/, "")}…` : clean;
   const description = body
     ? `${body}${suffix}`
-    : `Beli ${product.name} original di SNAPFIT Indonesia. Garansi resmi, gratis ongkir min. Rp150rb.`;
+    : `Beli ${product.name} original di SNAPFIT Indonesia. Garansi resmi, gratis ongkir s/d Rp20rb min. Rp150rb.`;
   const image = product.coverImage;
   return {
     title: product.name, // + template "| SNAPFIT Indonesia" dari layout

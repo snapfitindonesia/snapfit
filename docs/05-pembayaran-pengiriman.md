@@ -9,13 +9,21 @@ Mode diatur lewat env — ganti env di Vercel lalu deploy ulang, tanpa ubah kode
 | `SHIPPING_MODE` | `flat` | `biteship` |
 | `SHIPPING_FLAT_COST` | `5000` | rupiah |
 | `FREE_SHIPPING_MIN` | `150000` | rupiah; `0` = tanpa gratis ongkir otomatis |
+| `FREE_SHIPPING_MAX` | `20000` | potongan gratis ongkir maks. (rupiah); `0` = ongkir digratiskan penuh |
 | `MANUAL_BANK_NAME` / `_NUMBER` / `_HOLDER` | rekening BCA toko | |
 
 ## Ongkir per provinsi (mode flat)
 Di mode flat, ongkir = tarif provinsi tujuan dari **Admin → Ongkir per Provinsi** (1 kg pertama +
 per kg berikutnya × berat pesanan, dibulatkan per kg). Provinsi yang belum diatur memakai
 `SHIPPING_FLAT_COST`. Dihitung di server (`lib/shipping-zone.ts`) baik saat checkout (perkiraan)
-maupun saat pesanan dibuat (otoritatif). Gratis ongkir ≥ `FREE_SHIPPING_MIN` tetap berlaku.
+maupun saat pesanan dibuat (otoritatif).
+
+- **Gratis ongkir**: belanja ≥ `FREE_SHIPPING_MIN` → ongkir dipotong s/d `FREE_SHIPPING_MAX`
+  (se-Indonesia); sisanya dibayar pembeli. Order menyimpan ongkir **setelah** potongan.
+- **Tidak dilayani**: provinsi dengan centang *Dilayani* dimatikan → checkout menampilkan
+  "belum ada kurir", tombol pesan nonaktif, `createOrder` menolak.
+- Tarif saat ini dihitung dari Jakarta, **per kg** (1 kg pertama = per kg berikutnya).
+  Biteship tidak dipakai (keputusan 28 Sep 2026).
 
 ## Mode aktif sekarang: transfer manual + ongkir flat
 

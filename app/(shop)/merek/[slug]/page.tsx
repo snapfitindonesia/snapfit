@@ -22,7 +22,7 @@ function intro(name: string, slug: string, total: number): string {
     : RESELLER.has(slug)
       ? `SNAPFIT adalah authorized reseller ${name} di Indonesia`
       : `Koleksi ${name} di SNAPFIT dijamin original`;
-  return `Belanja case dan aksesoris ${name} original — ${total} produk tersedia. ${who}: bergaransi resmi, 100% original, gratis ongkir untuk pembelian minimal Rp150.000.`;
+  return `Belanja case dan aksesoris ${name} original — ${total} produk tersedia. ${who}: bergaransi resmi, 100% original, gratis ongkir s/d Rp20.000 untuk pembelian minimal Rp150.000.`;
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {

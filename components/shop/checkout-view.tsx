@@ -104,6 +104,7 @@ export function CheckoutView({
   bank,
   flatCost = 5000,
   freeShippingMin = 0,
+  freeShippingMax = 0,
   vouchers = [],
 }: {
   manualPayment: boolean;
@@ -111,6 +112,7 @@ export function CheckoutView({
   bank: Bank;
   flatCost?: number;
   freeShippingMin?: number;
+  freeShippingMax?: number;
   vouchers?: PickerVoucher[];
 }) {
   const router = useRouter();
@@ -190,12 +192,16 @@ export function CheckoutView({
 
   const cartLines = items.map((i) => ({ variantId: i.variantId, qty: i.qty }));
   const selectedRate = rates?.find((r) => r.id === rateId) ?? null;
-  const freeShip = flatShipping && freeShippingMin > 0 && subtotal >= freeShippingMin;
-  // Mode flat: ongkir provinsi dari quote (belum pilih provinsi → belum diketahui, 0 di total).
-  const shippingKnown = freeShip || (flatShipping ? !!quote : !!selectedRate);
-  const shippingCost = freeShip ? 0 : flatShipping ? (quote?.cost ?? 0) : (selectedRate?.cost ?? 0);
-  // Estimasi utk voucher gratis ongkir sebelum provinsi dipilih.
-  const voucherShipping = freeShip ? 0 : flatShipping ? (quote?.cost ?? flatCost) : (selectedRate?.cost ?? 0);
+  const freeEligible = flatShipping && freeShippingMin > 0 && subtotal >= freeShippingMin;
+  const freeLabel = freeShippingMax > 0 ? `gratis ongkir s/d ${formatRupiah(freeShippingMax)}` : "gratis ongkir";
+  // Mode flat: ongkir provinsi dari quote server (belum pilih provinsi → belum diketahui, 0 di total).
+  const unavailable = flatShipping && !!quote && !quote.available;
+  const shippingKnown = flatShipping ? !!quote && quote.available : !!selectedRate;
+  const fullShipping = flatShipping ? (quote?.fullCost ?? 0) : (selectedRate?.cost ?? 0);
+  const subsidy = flatShipping ? (quote?.subsidy ?? 0) : 0;
+  const shippingCost = fullShipping - subsidy;
+  // Estimasi sisa ongkir utk voucher gratis ongkir (sebelum provinsi dipilih → tarif flat).
+  const voucherShipping = flatShipping ? (quote?.available ? quote.cost : flatCost) : (selectedRate?.cost ?? 0);
   const discount = voucher?.discount ?? 0;
   const total = Math.max(0, subtotal + shippingCost - discount);
 
@@ -360,34 +366,40 @@ export function CheckoutView({
                 <Truck className="size-5 text-muted-foreground" />
                 <span>
                   <span className="text-sm font-medium">{f.province ? `Ongkir ke ${f.province}` : "Ongkos kirim"}</span>
-                  <span className="block text-xs text-muted-foreground">
-                    {freeShip
-                      ? `Gratis ongkir untuk belanja min. ${formatRupiah(freeShippingMin)}`
-                      : !f.provinceCode
-                        ? "Pilih provinsi di atas untuk menghitung ongkir"
-                        : quoting
-                          ? "Menghitung ongkir…"
+                  <span className={`block text-xs ${unavailable ? "text-destructive" : "text-muted-foreground"}`}>
+                    {!f.provinceCode
+                      ? freeEligible
+                        ? `Kamu dapat ${freeLabel} — pilih provinsi di atas`
+                        : "Pilih provinsi di atas untuk menghitung ongkir"
+                      : quoting
+                        ? "Menghitung ongkir…"
+                        : unavailable
+                          ? "Maaf, belum ada kurir yang melayani provinsi ini."
                           : quote
-                            ? `Berat ${quote.kg} kg${quote.etd ? ` · estimasi ${quote.etd}` : ""}`
+                            ? `Berat ${quote.kg} kg${quote.etd ? ` · estimasi ${quote.etd}` : ""}${quote.subsidy > 0 ? ` · ${freeLabel}` : ""}`
                             : "Gagal menghitung ongkir — pilih ulang provinsi"}
                   </span>
                 </span>
               </span>
-              {freeShip ? (
-                <span className="text-right">
-                  {quote && quote.fullCost > 0 && <span className="block text-xs text-muted-foreground line-through">{formatRupiah(quote.fullCost)}</span>}
-                  <span className="text-sm font-semibold text-emerald-700">GRATIS</span>
-                </span>
+              {unavailable ? (
+                <span className="text-sm text-muted-foreground">—</span>
               ) : quote ? (
-                <span className="text-sm font-semibold">{formatRupiah(quote.cost)}</span>
+                <span className="text-right">
+                  {quote.subsidy > 0 && <span className="block text-xs text-muted-foreground line-through">{formatRupiah(quote.fullCost)}</span>}
+                  {quote.cost === 0 ? (
+                    <span className="text-sm font-semibold text-emerald-700">GRATIS</span>
+                  ) : (
+                    <span className="text-sm font-semibold">{formatRupiah(quote.cost)}</span>
+                  )}
+                </span>
               ) : (
                 <span className="text-sm text-muted-foreground">{quoting ? <Loader2 className="size-4 animate-spin" /> : "—"}</span>
               )}
             </div>
           ) : null}
-          {flatShipping && freeShippingMin > 0 && !freeShip && (
+          {flatShipping && freeShippingMin > 0 && !freeEligible && (
             <p className="mt-2 text-xs">
-              Belanja <b>{formatRupiah(freeShippingMin - subtotal)}</b> lagi untuk <b>gratis ongkir</b>.
+              Belanja <b>{formatRupiah(freeShippingMin - subtotal)}</b> lagi untuk <b>{freeLabel}</b>.
               <Link href="/produk" className="mt-1 block w-fit font-medium text-brand-ink underline underline-offset-2">Tambah produk →</Link>
             </p>
           )}
@@ -494,18 +506,22 @@ export function CheckoutView({
             <Row label={`Subtotal (${items.length} produk)`} value={formatRupiah(subtotal)} />
             <Row
               label="Ongkir"
-              value={freeShip ? "GRATIS" : shippingKnown ? formatRupiah(shippingCost) : "Pilih provinsi"}
+              value={shippingKnown ? formatRupiah(fullShipping) : unavailable ? "Tidak tersedia" : "Pilih provinsi"}
               muted={!shippingKnown}
             />
+            {subsidy > 0 && <Row label="Gratis ongkir" value={`−${formatRupiah(subsidy)}`} />}
             {discount > 0 && <Row label={`Voucher ${voucher?.code ?? ""}`} value={`−${formatRupiah(discount)}`} />}
             <div className="my-2 border-t border-border" />
             <Row label="Total" value={formatRupiah(total)} strong />
           </dl>
-          {!shippingKnown && (
+          {!shippingKnown && !unavailable && (
             <p className="mt-1 text-right text-xs text-muted-foreground">Belum termasuk ongkir — pilih provinsi tujuan.</p>
           )}
+          {unavailable && (
+            <p className="mt-1 text-right text-xs text-destructive">Belum ada pengiriman ke {f.province}.</p>
+          )}
 
-          <Button size="lg" className="mt-5 w-full" onClick={pay} disabled={placing}>
+          <Button size="lg" className="mt-5 w-full" onClick={pay} disabled={placing || unavailable}>
             {placing && <Loader2 className="size-4 animate-spin" />}
             {manualPayment ? "Buat pesanan" : "Bayar sekarang"}
           </Button>

@@ -264,5 +264,6 @@ model ShippingZone {
   baseCost     Int // rupiah untuk 1 kg pertama
   perKg        Int      @default(0) // tambahan per kg berikutnya
   etd          String   @default("") // estimasi, mis. "2-3 hari"
+  available    Boolean  @default(true) // false = belum ada kurir ke provinsi ini → checkout ditolak
   updatedAt    DateTime @updatedAt
 }

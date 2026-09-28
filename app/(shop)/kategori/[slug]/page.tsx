@@ -12,7 +12,7 @@ export function generateStaticParams() {
 
 function intro(name: string, level: number, total: number): string {
   const what = level === 1 ? `case dan aksesoris ${name}` : `case ${name}`;
-  return `Belanja ${what} original di SNAPFIT Indonesia — ${total} produk dari Ringke, VRS Design, Araree, Supcase, SNAPFIT dan merek premium lainnya. Semua bergaransi resmi, 100% original, dengan gratis ongkir untuk pembelian minimal Rp150.000.`;
+  return `Belanja ${what} original di SNAPFIT Indonesia — ${total} produk dari Ringke, VRS Design, Araree, Supcase, SNAPFIT dan merek premium lainnya. Semua bergaransi resmi, 100% original, dengan gratis ongkir s/d Rp20.000 untuk pembelian minimal Rp150.000.`;
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {

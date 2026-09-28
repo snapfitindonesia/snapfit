@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/db";
 import { computeVoucherBenefit, voucherLabel, type VoucherLike } from "@/lib/voucher";
-import { FLAT_SHIPPING_COST, isFlatShipping, qualifiesFreeShipping } from "@/lib/payment";
+import { FLAT_SHIPPING_COST, freeShippingSubsidy, isFlatShipping } from "@/lib/payment";
 
 export type VoucherPublic = {
   code: string;
@@ -49,9 +49,12 @@ export async function applyVoucher(code: string, subtotal: number, shippingEstim
   const voucher = await db.voucher.findUnique({ where: { code: trimmed } });
   if (!voucher || !voucher.active) return { ok: false, error: "Voucher tidak ditemukan / tidak aktif." };
 
-  // Estimasi ongkir untuk voucher GRATIS_ONGKIR: dari quote checkout bila ada, else tarif flat.
-  const est = Number.isFinite(shippingEstimate) ? Math.min(Math.max(0, Math.round(shippingEstimate!)), 5_000_000) : FLAT_SHIPPING_COST;
-  const shippingCost = isFlatShipping() && !qualifiesFreeShipping(subtotal) ? est : 0;
+  // Estimasi sisa ongkir (setelah gratis ongkir) untuk voucher GRATIS_ONGKIR: dari quote
+  // checkout bila ada, else tarif flat dikurangi gratis ongkir.
+  const est = Number.isFinite(shippingEstimate)
+    ? Math.min(Math.max(0, Math.round(shippingEstimate!)), 5_000_000)
+    : FLAT_SHIPPING_COST - freeShippingSubsidy(subtotal, FLAT_SHIPPING_COST);
+  const shippingCost = isFlatShipping() ? est : 0;
 
   const benefit = computeVoucherBenefit(voucher as VoucherLike, subtotal, shippingCost);
   if (!benefit.valid) return { ok: false, error: benefit.reason };

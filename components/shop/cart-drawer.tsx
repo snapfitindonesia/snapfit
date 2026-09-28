@@ -18,11 +18,13 @@ export function CartDrawer({
   flatCost = 5000,
   zoneFrom = null,
   freeShippingMin = 0,
+  freeShippingMax = 0,
 }: {
   flatShipping?: boolean;
   flatCost?: number;
   zoneFrom?: number | null; // null = belum ada tarif per provinsi (tetap flat)
   freeShippingMin?: number;
+  freeShippingMax?: number;
 }) {
   const { items, subtotal, count, setQty, removeItem, hydrated, voucher, setVoucher, note, setNote } = useCart();
   const { cartOpen, closeCart } = useStoreUI();
@@ -47,7 +49,9 @@ export function CartDrawer({
 
   const freeShip = freeShippingMin > 0 && subtotal >= freeShippingMin;
   // Tarif per provinsi → ongkir baru diketahui di checkout (tak dimasukkan ke perkiraan).
-  const baseShipping = flatShipping && zoneFrom === null ? (freeShip ? 0 : flatCost) : 0;
+  const cap = freeShippingMax > 0 ? freeShippingMax : Infinity;
+  const baseShipping = flatShipping && zoneFrom === null ? (freeShip ? Math.max(0, flatCost - cap) : flatCost) : 0;
+  const freeLabel = freeShippingMax > 0 ? `GRATIS ONGKIR s/d ${formatRupiah(freeShippingMax)}` : "GRATIS ONGKIR";
   const discount = voucher?.discount ?? 0;
   const total = Math.max(0, subtotal + baseShipping - discount);
   const remaining = Math.max(0, freeShippingMin - subtotal);
@@ -196,10 +200,10 @@ export function CartDrawer({
                 {panel === "shipping" && (
                   <p className="text-xs text-muted-foreground">
                     {flatShipping
-                      ? freeShip
+                      ? freeShip && zoneFrom === null && baseShipping === 0
                         ? "Gratis ongkir untuk pesanan ini 🎉"
                         : zoneFrom !== null
-                          ? `Ongkir dihitung saat checkout sesuai provinsi tujuan (mulai ${formatRupiah(zoneFrom)}).`
+                          ? `Ongkir dihitung saat checkout sesuai provinsi tujuan (mulai ${formatRupiah(zoneFrom)}/kg)${freeShip ? ` — kamu dapat ${freeLabel.toLowerCase()}` : ""}.`
                           : `Ongkir flat ${formatRupiah(flatCost)} ke seluruh Indonesia. Alamat & kurir diisi saat checkout.`
                       : "Ongkir dihitung berdasar alamat saat checkout."}
                   </p>
@@ -247,7 +251,7 @@ export function CartDrawer({
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Ongkir</span>
                   <span className="font-medium">
-                    {freeShip ? "GRATIS" : zoneFrom !== null ? "Dihitung di checkout" : formatRupiah(baseShipping)}
+                    {zoneFrom !== null ? "Dihitung di checkout" : baseShipping === 0 ? "GRATIS" : formatRupiah(baseShipping)}
                   </span>
                 </div>
               )}
@@ -271,9 +275,9 @@ export function CartDrawer({
                 </div>
                 <p className="mt-1.5 text-center text-xs text-muted-foreground">
                   {freeShip ? (
-                    <span className="font-medium text-brand">Selamat! Kamu dapat GRATIS ONGKIR 🎉</span>
+                    <span className="font-medium text-brand">Selamat! Kamu dapat {freeLabel} 🎉</span>
                   ) : (
-                    <>Belanja <span className="font-semibold text-brand">{formatRupiah(remaining)}</span> lagi untuk <span className="font-semibold">GRATIS ONGKIR!</span></>
+                    <>Belanja <span className="font-semibold text-brand">{formatRupiah(remaining)}</span> lagi untuk <span className="font-semibold">{freeLabel}!</span></>
                   )}
                 </p>
               </div>
