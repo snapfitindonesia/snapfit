@@ -8,7 +8,7 @@ bar bawah (HP), dan tombol WhatsApp melayang.
 
 | URL | Isi | File utama |
 |---|---|---|
-| `/` | Banner carousel, kategori, produk unggulan/terbaru, popup promo | `app/(shop)/page.tsx` |
+| `/` | Beranda bercerita (bagian dari Admin → Konten Beranda), popup promo | `app/(shop)/page.tsx`, `components/home/` |
 | `/produk` | Semua produk: filter merek/perangkat/model, urutkan, cari, muat lagi | `components/shop/product-listing.tsx` |
 | `/produk/[slug]` | Detail produk (PDP) | `components/shop/pdp-view.tsx` |
 | `/kategori/[slug]` | Landing SEO per kategori (mis. iPhone 17 Series) | `lib/seo-pages.ts`, `landing-view.tsx` |
