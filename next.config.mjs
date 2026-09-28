@@ -8,6 +8,12 @@ const nextConfig = {
   // `radix-ui` adalah barrel: tanpa ini `import { Slot }` (tombol) ikut menarik
   // Dialog/DropdownMenu/Popover (±70KB gzip) ke setiap halaman toko.
   experimental: { optimizePackageImports: ["radix-ui"] },
+  // Prisma engineType "client" memuat query compiler WASM lewat fs (tak terlacak otomatis) →
+  // tanpa ini semua query di Vercel gagal ENOENT (hanya jalan di lokal karena file ada di disk).
+  outputFileTracingIncludes: {
+    "/": ["./node_modules/.prisma/client/query_compiler_bg.wasm"],
+    "/**/*": ["./node_modules/.prisma/client/query_compiler_bg.wasm"],
+  },
   images: {
     // Foto marketplace dilayani langsung dari CDN-nya via components/ui/image.tsx
     // (JANGAN loader custom global — mematikan /_next/image di Vercel).

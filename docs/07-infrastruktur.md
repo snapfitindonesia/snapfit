@@ -116,5 +116,8 @@ Hapus file itu setelahnya, lalu deploy ulang.
   (±130 fungsi × 9,5 MB) sehingga Functions Storage Hobby (10 GB) penuh.
 - **Skrip Node (`scripts/*.mjs`) wajib memakai adapter**: `new PrismaClient({ adapter: new PrismaPg({ connectionString:
   process.env.DATABASE_URL }) })` — `new PrismaClient()` polos kini error.
+- **`next.config.mjs` → `outputFileTracingIncludes` WAJIB memuat `query_compiler_bg.wasm`** — file itu dibaca lewat
+  fs sehingga tak ikut terkemas otomatis; tanpa ini SEMUA query di Vercel gagal (ENOENT) walau lokal jalan
+  (terjadi 28 Sep, di-rollback). Ukuran nyata di Vercel: 9,53 MB → 2,5 MB per fungsi (±0,3 GB per deploy).
 - `prisma db push` tetap memakai `DIRECT_URL` (tak berubah).
 - Deploy cukup `git push` (auto-deploy GitHub) — jangan ditambah `vercel deploy` (jadi 2 deploy).
