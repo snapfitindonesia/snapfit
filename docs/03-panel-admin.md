@@ -92,6 +92,8 @@ pencarian itu di toko.
 
 ### Impor dari Ginee
 1. **Impor Ginee** → cari nama produk → centang → Impor.
+   Produk dengan **stok gudang 0 disembunyikan** secara default (centang "Sembunyikan stok 0" untuk
+   mengubah); "Centang semua" & Impor hanya berlaku untuk produk yang terlihat.
 2. Diproses 3 produk per langkah (ada progress bar); stok diambil dari gudang,
    merek ditebak dari judul (`lib/brand-guess.ts`), foto disalin ke `cdn.snapfit.id`.
 3. Periksa hasilnya: harga dummy (99.999 dst.) harus diganti manual di form produk.

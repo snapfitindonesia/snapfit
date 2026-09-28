@@ -23,6 +23,8 @@ export function GineeImport() {
   const [importing, setImporting] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [errList, setErrList] = useState<string[]>([]);
+  // Filter tampilan: stok gudang 0 disembunyikan (default) — tak perlu diimpor.
+  const [hideEmpty, setHideEmpty] = useState(true);
 
   async function search(kw: string) {
     setKeyword(kw);
@@ -57,8 +59,14 @@ export function GineeImport() {
     setPage(next);
   }
 
-  const selectedIds = Object.keys(checked).filter((id) => checked[id]);
-  const selectable = items.filter((i) => !i.imported);
+  // Stok tak diketahui (gagal ambil) → tetap tampil, jangan dianggap 0.
+  const isEmpty = (i: Item) => i.stockKnown && i.stock <= 0;
+  const visible = hideEmpty ? items.filter((i) => !isEmpty(i)) : items;
+  const hiddenCount = items.length - visible.length;
+  const visibleIds = new Set(visible.map((i) => i.productId));
+  // Hanya yang TERLIHAT yang bisa dipilih/diimpor (centangan lama yang kini tersembunyi diabaikan).
+  const selectedIds = Object.keys(checked).filter((id) => checked[id] && visibleIds.has(id));
+  const selectable = visible.filter((i) => !i.imported);
   const allChecked = selectable.length > 0 && selectedIds.length === selectable.length;
 
   function toggleAll() {
@@ -74,7 +82,7 @@ export function GineeImport() {
   async function doImport() {
     if (!selectedIds.length) return;
     const selectedSet = new Set(selectedIds);
-    const inputs = items
+    const inputs = visible
       .filter((it) => selectedSet.has(it.productId) && !it.imported)
       .map((it) => ({ productId: it.productId, name: it.name, variations: it.variations }));
     setImporting(true);
@@ -138,14 +146,21 @@ export function GineeImport() {
       {total !== null && (
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
           <p className="text-xs text-muted-foreground">
-            {total} hasil untuk “{keyword}”. Menampilkan {items.length}. Semua detail
+            {total} hasil untuk “{keyword}”. Menampilkan {visible.length}
+            {hiddenCount > 0 && <> · <b>{hiddenCount} stok 0 disembunyikan</b></>}. Semua detail
             (harga per-varian, stok, foto, deskripsi) otomatis dari Ginee.
           </p>
           {items.length > 0 && (
-            <label className="flex cursor-pointer items-center gap-2 text-xs font-medium">
-              <input type="checkbox" checked={allChecked} onChange={toggleAll} className="size-4" />
-              Centang semua
-            </label>
+            <div className="flex items-center gap-4">
+              <label className="flex cursor-pointer items-center gap-2 text-xs font-medium">
+                <input type="checkbox" checked={hideEmpty} onChange={(e) => setHideEmpty(e.target.checked)} className="size-4" />
+                Sembunyikan stok 0
+              </label>
+              <label className="flex cursor-pointer items-center gap-2 text-xs font-medium">
+                <input type="checkbox" checked={allChecked} onChange={toggleAll} className="size-4" />
+                Centang semua
+              </label>
+            </div>
           )}
         </div>
       )}
@@ -159,7 +174,7 @@ export function GineeImport() {
 
       {/* Hasil */}
       <div className="mt-4 space-y-2">
-        {items.map((it) => {
+        {visible.map((it) => {
           const on = !!checked[it.productId];
           if (it.imported) {
             return (
@@ -172,7 +187,8 @@ export function GineeImport() {
                 <img src={it.image || "https://placehold.co/64"} alt="" className="size-12 shrink-0 rounded-md border border-border object-cover grayscale" />
                 <div className="min-w-[180px] flex-1">
                   <p className="line-clamp-2 text-sm font-medium">{it.name}</p>
-                  <p className="text-xs text-muted-foreground">{it.variantCount} varian · stok gudang {it.stockKnown ? it.stock : "?"}</p>
+                  <p className="text-xs text-muted-foreground">{it.variantCount} varian · stok gudang {it.stockKnown ? it.stock : "?"}
+                  {isEmpty(it) && <span className="ml-1.5 rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700">HABIS</span>}</p>
                 </div>
                 <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700">✓ Sudah diimpor</span>
               </div>
@@ -197,12 +213,19 @@ export function GineeImport() {
               />
               <div className="min-w-[180px] flex-1">
                 <p className="line-clamp-2 text-sm font-medium">{it.name}</p>
-                <p className="text-xs text-muted-foreground">{it.variantCount} varian · stok gudang {it.stockKnown ? it.stock : "?"}</p>
+                <p className="text-xs text-muted-foreground">{it.variantCount} varian · stok gudang {it.stockKnown ? it.stock : "?"}
+                  {isEmpty(it) && <span className="ml-1.5 rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700">HABIS</span>}</p>
               </div>
             </label>
           );
         })}
       </div>
+
+      {items.length > 0 && visible.length === 0 && (
+        <p className="mt-4 rounded-md border border-dashed border-border px-3 py-6 text-center text-sm text-muted-foreground">
+          Semua hasil di halaman ini stok gudangnya 0. Matikan “Sembunyikan stok 0” untuk melihatnya.
+        </p>
+      )}
 
       {/* Muat lebih banyak */}
       {total !== null && items.length < total && (
