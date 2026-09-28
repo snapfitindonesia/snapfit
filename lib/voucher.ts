@@ -8,6 +8,7 @@ export type VoucherLike = {
   minPurchase: number;
   maxBenefit: number;
   active: boolean;
+  stackable?: boolean;
 };
 
 export type VoucherBenefit =
@@ -38,6 +39,27 @@ export function computeVoucherBenefit(
   if (v.maxBenefit > 0) d = Math.min(d, v.maxBenefit);
   d = Math.min(d, subtotal);
   return { valid: true, discount: Math.max(0, d), freeShipping: false };
+}
+
+/** Maks. voucher per pesanan: satu per jenis (POTONGAN + GRATIS_ONGKIR). */
+export const MAX_VOUCHERS = 2;
+
+type Combinable = { type: string; stackable?: boolean };
+
+/**
+ * Aturan gabung voucher: dua voucher bisa dipakai bersama hanya bila JENISNYA BEDA
+ * (potongan + gratis ongkir) dan KEDUANYA ditandai "Bisa digabung" di admin.
+ * Dua voucher sejenis tidak pernah bisa digabung.
+ */
+export function canCombine(a: Combinable, b: Combinable): boolean {
+  return a.type !== b.type && !!a.stackable && !!b.stackable;
+}
+
+/** Pasang voucher `next` ke daftar: yang tak bisa digabung dengannya diganti. */
+export function mergeVoucher<T extends Combinable & { code: string }>(current: T[], next: T): { list: T[]; replaced: T[] } {
+  const others = current.filter((v) => v.code !== next.code);
+  const keep = others.filter((v) => canCombine(v, next));
+  return { list: [...keep, next], replaced: others.filter((v) => !keep.includes(v)) };
 }
 
 /** Label chip singkat untuk voucher (PDP & drawer). */

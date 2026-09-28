@@ -14,7 +14,7 @@ import { createShipment } from "@/lib/biteship";
 import { createSnapToken, isMidtransMock } from "@/lib/midtrans";
 import { isManualPayment, isFlatShipping, MANUAL_BANK } from "@/lib/payment";
 import { zoneQuote } from "@/lib/shipping-zone";
-import { computeVoucherBenefit, type VoucherLike } from "@/lib/voucher";
+import { canCombine, computeVoucherBenefit, MAX_VOUCHERS, type VoucherLike } from "@/lib/voucher";
 import { sendEmail, orderConfirmationEmail, orderPlacedEmail, adminNewOrderEmail } from "@/lib/email";
 import { waLink } from "@/lib/wa";
 import { isPlaceholderPrice } from "@/lib/price-guard";
@@ -30,7 +30,7 @@ async function computeOrder(
   lines: CartLine[],
   postalCode: string,
   rateId: string | undefined,
-  voucherCode?: string,
+  voucherCodes: string[] = [],
   provinceCode?: string,
 ) {
   const variants = await db.variant.findMany({
@@ -61,14 +61,26 @@ async function computeOrder(
   const totalWeight = items.reduce((n, i) => n + i.weight * i.qty, 0);
 
   // Voucher (otoritatif): dihitung ulang dari DB terhadap subtotal & ongkir.
+  // Beberapa voucher: maks. satu per jenis, dan hanya bila saling bisa digabung (lib/voucher.ts).
+  // Voucher tak valid / tak memberi potongan diabaikan; kombinasi terlarang → tolak.
   async function resolveVoucher(shippingCost: number) {
-    const code = voucherCode?.trim().toUpperCase();
-    if (!code) return { discount: 0, appliedCode: null as string | null };
-    const voucher = await db.voucher.findUnique({ where: { code } });
-    if (!voucher || !voucher.active) return { discount: 0, appliedCode: null };
-    const benefit = computeVoucherBenefit(voucher as VoucherLike, subtotal, shippingCost);
-    if (!benefit.valid || benefit.discount <= 0) return { discount: 0, appliedCode: null };
-    return { discount: benefit.discount, appliedCode: code };
+    const codes = [...new Set(voucherCodes.map((c) => c.trim().toUpperCase()).filter(Boolean))];
+    if (!codes.length) return { discount: 0, appliedCode: null as string | null };
+    if (codes.length > MAX_VOUCHERS) throw new Error(`Maks. ${MAX_VOUCHERS} voucher per pesanan.`);
+    const found = await db.voucher.findMany({ where: { code: { in: codes }, active: true } });
+    const used: { v: (typeof found)[number]; discount: number }[] = [];
+    for (const v of found) {
+      const b = computeVoucherBenefit(v as VoucherLike, subtotal, shippingCost);
+      if (b.valid && b.discount > 0) used.push({ v, discount: b.discount });
+    }
+    for (let i = 0; i < used.length; i++)
+      for (let j = i + 1; j < used.length; j++)
+        if (!canCombine(used[i].v, used[j].v))
+          throw new Error(`Voucher ${used[i].v.code} tidak bisa digabung dengan ${used[j].v.code}.`);
+    return {
+      discount: used.reduce((n, u) => n + u.discount, 0),
+      appliedCode: used.length ? used.map((u) => u.v.code).join("+") : null,
+    };
   }
 
   // Ongkir per provinsi (mode flat, Biteship belum aktif): tarif Admin → Ongkir, provinsi
@@ -126,11 +138,11 @@ async function notifyNewOrder(
 
 export async function createOrder(input: CreateOrderInput) {
   const data = createOrderSchema.parse(input);
-  const { items, subtotal, shippingCost, discount, total, rate } = await computeOrder(
+  const { items, subtotal, shippingCost, discount, voucherCode, total, rate } = await computeOrder(
     data.items,
     data.address.postalCode,
     data.rateId,
-    data.voucherCode,
+    [...(data.voucherCodes ?? []), ...(data.voucherCode ? [data.voucherCode] : [])],
     data.address.provinceCode,
   );
 
@@ -145,6 +157,7 @@ export async function createOrder(input: CreateOrderInput) {
       subtotal,
       shippingCost,
       discount,
+      voucherCodes: voucherCode,
       total,
       midtransOrderId,
       courier: rate.id, // "courier:service" — dipakai saat buat pengiriman

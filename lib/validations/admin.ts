@@ -107,6 +107,7 @@ export const voucherSchema = z.object({
   minPurchase: rupiah,
   maxBenefit: rupiah,
   active: z.coerce.boolean().default(true),
+  stackable: z.coerce.boolean().default(false),
 });
 
 export const ORDER_STATUSES = ["PENDING", "PAID", "PROCESSING", "SHIPPED", "DONE", "CANCELLED"] as const;

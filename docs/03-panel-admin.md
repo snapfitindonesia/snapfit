@@ -29,7 +29,7 @@ Grup bisa dibuka/tutup; grup halaman aktif selalu terbuka; pilihan diingat di br
 | Unggulan | `/admin/unggulan` | Produk yang ditonjolkan di beranda |
 | Diskon | `/admin/diskon` | Diskon persen untuk varian terpilih, dengan periode mulai–selesai |
 | Ongkir per Provinsi | `/admin/ongkir` | Tarif 1 kg pertama + per kg berikutnya + estimasi untuk 38 provinsi; isi cepat per pulau |
-| Voucher | `/admin/voucher` | Kode voucher: potongan harga atau gratis ongkir, minimal belanja, batas manfaat |
+| Voucher | `/admin/voucher` | Kode voucher: potongan harga atau gratis ongkir, minimal belanja, batas manfaat, **Bisa digabung** (potongan + gratis ongkir) |
 | Ulasan | `/admin/ulasan` | Setujui/tolak ulasan pembeli (di atas, kuning) + tambah ulasan manual |
 | Linktree | `/admin/linktree` | Isi halaman `/links`: profil, latar, tombol, pemisah |
 | MFA | `/admin/mfa` | Daftarkan/verifikasi aplikasi authenticator |

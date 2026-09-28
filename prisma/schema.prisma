@@ -123,6 +123,7 @@ model Voucher {
   minPurchase Int     @default(0)
   maxBenefit  Int     @default(0)
   active      Boolean @default(true)
+  stackable   Boolean @default(false) // bisa digabung dgn voucher JENIS LAIN yang juga stackable
 }
 
 model Order {
@@ -133,7 +134,8 @@ model Order {
 
   subtotal     Int
   shippingCost Int
-  discount     Int @default(0)
+  discount     Int     @default(0)
+  voucherCodes String? // kode voucher terpakai, dipisah "+" (mis. "SNAP20K+GRATISONGKIR")
   total        Int
 
   // pembayaran

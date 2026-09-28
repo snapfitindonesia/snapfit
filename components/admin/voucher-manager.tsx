@@ -15,11 +15,12 @@ type Voucher = {
   minPurchase: number;
   maxBenefit: number;
   active: boolean;
+  stackable: boolean;
 };
 
 const input =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-foreground";
-const BLANK = { code: "", type: "POTONGAN", amount: "0", minPurchase: "0", maxBenefit: "0", active: true };
+const BLANK = { code: "", type: "POTONGAN", amount: "0", minPurchase: "0", maxBenefit: "0", active: true, stackable: false };
 
 export function VoucherManager({ vouchers }: { vouchers: Voucher[] }) {
   const router = useRouter();
@@ -29,13 +30,13 @@ export function VoucherManager({ vouchers }: { vouchers: Voucher[] }) {
   const [saving, setSaving] = useState(false);
 
   const reset = () => { setEditId(null); setF({ ...BLANK }); setError(null); };
-  const edit = (v: Voucher) => { setEditId(v.id); setF({ code: v.code, type: v.type, amount: String(v.amount), minPurchase: String(v.minPurchase), maxBenefit: String(v.maxBenefit), active: v.active }); };
+  const edit = (v: Voucher) => { setEditId(v.id); setF({ code: v.code, type: v.type, amount: String(v.amount), minPurchase: String(v.minPurchase), maxBenefit: String(v.maxBenefit), active: v.active, stackable: v.stackable }); };
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true); setError(null);
     const res = await saveVoucher(
-      { code: f.code.toUpperCase(), type: f.type as "POTONGAN" | "GRATIS_ONGKIR", amount: Number(f.amount), minPurchase: Number(f.minPurchase), maxBenefit: Number(f.maxBenefit), active: f.active },
+      { code: f.code.toUpperCase(), type: f.type as "POTONGAN" | "GRATIS_ONGKIR", amount: Number(f.amount), minPurchase: Number(f.minPurchase), maxBenefit: Number(f.maxBenefit), active: f.active, stackable: f.stackable },
       editId ?? undefined,
     );
     if (res.ok) { reset(); router.refresh(); } else setError(res.error ?? "Gagal.");
@@ -74,6 +75,15 @@ export function VoucherManager({ vouchers }: { vouchers: Voucher[] }) {
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={f.active} onChange={(e) => setF({ ...f, active: e.target.checked })} className="accent-foreground" /> Aktif
         </label>
+        <label className="flex items-start gap-2 text-sm">
+          <input type="checkbox" checked={f.stackable} onChange={(e) => setF({ ...f, stackable: e.target.checked })} className="mt-0.5 accent-foreground" />
+          <span>
+            Bisa digabung
+            <span className="block text-xs text-muted-foreground">
+              Bisa dipakai bersama voucher {f.type === "GRATIS_ONGKIR" ? "potongan" : "gratis ongkir"} yang juga dicentang. Voucher sejenis tidak pernah bisa digabung.
+            </span>
+          </span>
+        </label>
         {error && <p className="text-sm text-destructive">{error}</p>}
         <div className="flex gap-2">
           <Button type="submit" size="sm" disabled={saving}>{saving && <Loader2 className="size-4 animate-spin" />}{editId ? "Simpan" : "Tambah"}</Button>
@@ -88,6 +98,7 @@ export function VoucherManager({ vouchers }: { vouchers: Voucher[] }) {
             <span className="text-xs text-muted-foreground">
               {v.type === "GRATIS_ONGKIR" ? "Gratis ongkir" : formatRupiah(v.amount)} · min {formatRupiah(v.minPurchase)}
             </span>
+            {v.stackable && <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium">Bisa digabung</span>}
             {!v.active && <span className="text-xs text-muted-foreground">nonaktif</span>}
             <div className="ml-auto flex gap-3">
               <button onClick={() => edit(v)} className="text-muted-foreground hover:text-foreground"><Pencil className="size-4" /></button>

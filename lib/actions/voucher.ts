@@ -10,6 +10,7 @@ export type VoucherPublic = {
   amount: number;
   minPurchase: number;
   maxBenefit: number;
+  stackable: boolean;
   label: string;
 };
 
@@ -26,6 +27,7 @@ export async function getActiveVouchers(): Promise<VoucherPublic[]> {
       amount: v.amount,
       minPurchase: v.minPurchase,
       maxBenefit: v.maxBenefit,
+      stackable: v.stackable,
       label: voucherLabel(v as VoucherLike),
     }));
   } catch {
@@ -34,7 +36,7 @@ export async function getActiveVouchers(): Promise<VoucherPublic[]> {
 }
 
 export type ApplyVoucherResult =
-  | { ok: true; code: string; label: string; discount: number; freeShipping: boolean }
+  | { ok: true; code: string; label: string; discount: number; freeShipping: boolean; type: string; stackable: boolean }
   | { ok: false; error: string };
 
 /**
@@ -68,5 +70,7 @@ export async function applyVoucher(code: string, subtotal: number, shippingEstim
     label: voucherLabel(voucher as VoucherLike),
     discount: benefit.discount,
     freeShipping: benefit.freeShipping,
+    type: voucher.type,
+    stackable: voucher.stackable,
   };
 }

@@ -56,6 +56,11 @@ bar bawah (HP), dan tombol WhatsApp melayang.
   tombol Pakai (terbaik diberi label "Paling hemat"); belum memenuhi syarat → "Belanja RpX lagi" +
   progres + tautan tambah produk; tak bermanfaat (mis. gratis ongkir padahal ongkir sudah gratis) → keterangan.
   Syarat dihitung dengan `computeVoucherBenefit` yang sama dengan server.
+- **Gabung voucher** (`lib/voucher.ts` → `canCombine`): maks. 2 voucher per pesanan, satu **potongan** +
+  satu **gratis ongkir**, dan keduanya harus dicentang *Bisa digabung* di admin. Voucher sejenis tak pernah
+  digabung — memilih yang lain menampilkan tombol **Ganti** dan keterangan "X dilepas". Server
+  (`createOrder`) memeriksa ulang dan menolak kombinasi terlarang; kode tersimpan di `Order.voucherCodes`
+  (mis. `SNAP20K+GRATISONGKIR`) dan tampil di email pesanan.
 - **Alamat:** dropdown Provinsi → Kabupaten/Kota → Kecamatan (`region-select.tsx`, data resmi Kepmendagri
   di `public/wilayah/<kode>.json`, 38 prov · 514 kab/kota · 7.285 kec; diunduh per provinsi ±2–5 KB).
   Kode wilayah divalidasi server (hierarki harus konsisten); pesanan menyimpan kode + nama

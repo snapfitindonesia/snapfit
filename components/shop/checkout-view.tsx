@@ -14,6 +14,7 @@ import { createOrder } from "@/lib/actions/order";
 import { applyVoucher } from "@/lib/actions/voucher";
 import { saveCheckoutDraft } from "@/lib/actions/cart-draft";
 import { VoucherPicker, type PickerVoucher } from "@/components/shop/voucher-picker";
+import { computeVoucherBenefit, MAX_VOUCHERS } from "@/lib/voucher";
 import { RegionSelect } from "@/components/shop/region-select";
 import { quoteShipping } from "@/lib/actions/shipping";
 import type { ZoneQuote } from "@/lib/shipping-zone";
@@ -116,20 +117,24 @@ export function CheckoutView({
   vouchers?: PickerVoucher[];
 }) {
   const router = useRouter();
-  const { items, subtotal, hydrated, clear, voucher, setVoucher, note } = useCart();
+  const { items, subtotal, hydrated, clear, vouchers: applied, addVoucher, removeVoucher, note } = useCart();
 
   const [voucherInput, setVoucherInput] = useState("");
   const [voucherApplying, setVoucherApplying] = useState(false);
   const [voucherError, setVoucherError] = useState<string | null>(null);
+  const [voucherNotice, setVoucherNotice] = useState<string | null>(null);
 
   const [applyingCode, setApplyingCode] = useState<string | null>(null);
   async function onApplyVoucher(code?: string) {
     setVoucherApplying(true);
     setApplyingCode(code ?? null);
     setVoucherError(null);
+    setVoucherNotice(null);
     const res = await applyVoucher(code ?? voucherInput, subtotal, voucherShipping);
     if (res.ok) {
-      setVoucher({ code: res.code, label: res.label, discount: res.discount, freeShipping: res.freeShipping });
+      const v = { code: res.code, label: res.label, discount: res.discount, freeShipping: res.freeShipping, type: res.type, stackable: res.stackable };
+      const replaced = addVoucher(v);
+      if (replaced.length) setVoucherNotice(`${replaced.map((r) => r.code).join(", ")} dilepas — tidak bisa digabung dengan ${v.code}.`);
       setVoucherInput("");
     } else {
       setVoucherError(res.error);
@@ -202,7 +207,15 @@ export function CheckoutView({
   const shippingCost = fullShipping - subsidy;
   // Estimasi sisa ongkir utk voucher gratis ongkir (sebelum provinsi dipilih → tarif flat).
   const voucherShipping = flatShipping ? (quote?.available ? quote.cost : flatCost) : (selectedRate?.cost ?? 0);
-  const discount = voucher?.discount ?? 0;
+  // Potongan per voucher dihitung ulang terhadap ongkir terkini (sama dgn server). Voucher gratis
+  // ongkir belum dihitung selama ongkir belum diketahui (provinsi belum dipilih).
+  const voucherLines = applied.map((a) => {
+    const v = vouchers.find((x) => x.code === a.code);
+    if (a.freeShipping && !shippingKnown) return { ...a, discount: 0, pending: true, cap: v?.maxBenefit ?? 0 };
+    const b = v ? computeVoucherBenefit({ ...v, active: true }, subtotal, shippingCost) : null;
+    return { ...a, discount: b ? (b.valid ? b.discount : 0) : a.discount, pending: false, cap: 0 };
+  });
+  const discount = voucherLines.reduce((n, l) => n + l.discount, 0);
   const total = Math.max(0, subtotal + shippingCost - discount);
 
   const bcFired = useRef(false);
@@ -303,7 +316,7 @@ export function CheckoutView({
     setErrors({});
     setPlacing(true);
     try {
-      const result = await createOrder({ address: parsed.data, items: cartLines, rateId, voucherCode: voucher?.code, note });
+      const result = await createOrder({ address: parsed.data, items: cartLines, rateId, voucherCodes: applied.map((v) => v.code), note });
       saveContact({ ...EMPTY, ...parsed.data, email: parsed.data.email ?? "" });
       if (result.manual) {
         // Transfer manual: order PENDING → arahkan ke halaman instruksi transfer.
@@ -466,16 +479,18 @@ export function CheckoutView({
 
           {/* Voucher */}
           <div className="mt-4">
-            {voucher ? (
-              <div className="flex items-center justify-between rounded-md border border-border bg-muted/30 px-3 py-2">
+            {applied.map((v) => (
+              <div key={v.code} className="mb-2 flex items-center justify-between rounded-md border border-border bg-muted/30 px-3 py-2">
                 <span className="flex items-center gap-2 text-sm">
                   <Check className="size-4 text-emerald-600" />
-                  <span className="font-medium">{voucher.code}</span>
-                  <span className="text-xs text-muted-foreground">{voucher.label}</span>
+                  <span className="font-medium">{v.code}</span>
+                  <span className="text-xs text-muted-foreground">{v.label}</span>
                 </span>
-                <button type="button" onClick={() => setVoucher(null)} className="text-xs text-muted-foreground hover:text-destructive">Hapus</button>
+                <button type="button" onClick={() => { removeVoucher(v.code); setVoucherNotice(null); }} className="text-xs text-muted-foreground hover:text-destructive">Hapus</button>
               </div>
-            ) : (
+            ))}
+            {voucherNotice && <p className="mb-2 text-xs text-foreground/70">{voucherNotice}</p>}
+            {applied.length < MAX_VOUCHERS && (
               <>
                 <div className="flex gap-2">
                   <input
@@ -496,7 +511,7 @@ export function CheckoutView({
               vouchers={vouchers}
               subtotal={subtotal}
               shippingCost={voucherShipping}
-              appliedCode={voucher?.code ?? null}
+              applied={applied}
               applyingCode={applyingCode}
               onApply={(code) => onApplyVoucher(code)}
             />
@@ -510,7 +525,13 @@ export function CheckoutView({
               muted={!shippingKnown}
             />
             {subsidy > 0 && <Row label="Gratis ongkir" value={`−${formatRupiah(subsidy)}`} />}
-            {discount > 0 && <Row label={`Voucher ${voucher?.code ?? ""}`} value={`−${formatRupiah(discount)}`} />}
+            {voucherLines.map((l) =>
+              l.pending ? (
+                <Row key={l.code} label={`Voucher ${l.code}`} value={l.cap > 0 ? `s/d −${formatRupiah(l.cap)}` : "Dihitung setelah pilih provinsi"} muted />
+              ) : l.discount > 0 ? (
+                <Row key={l.code} label={`Voucher ${l.code}`} value={`−${formatRupiah(l.discount)}`} />
+              ) : null,
+            )}
             <div className="my-2 border-t border-border" />
             <Row label="Total" value={formatRupiah(total)} strong />
           </dl>
@@ -559,7 +580,7 @@ function Row({ label, value, strong, muted }: { label: string; value: string; st
   return (
     <div className="flex items-center justify-between">
       <dt className="text-muted-foreground">{label}</dt>
-      <dd className={cn(strong ? "text-base font-semibold" : "font-medium")}>{value}</dd>
+      <dd className={cn(strong ? "text-base font-semibold" : "font-medium", muted && "font-normal text-muted-foreground")}>{value}</dd>
     </div>
   );
 }

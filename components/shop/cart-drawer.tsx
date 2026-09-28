@@ -10,6 +10,7 @@ import { formatRupiah } from "@/lib/format";
 import { useCart } from "@/components/shop/cart-provider";
 import { useStoreUI } from "@/components/shop/store-ui-provider";
 import { applyVoucher } from "@/lib/actions/voucher";
+import { MAX_VOUCHERS } from "@/lib/voucher";
 
 type Panel = "note" | "shipping" | "coupon" | null;
 
@@ -26,13 +27,14 @@ export function CartDrawer({
   freeShippingMin?: number;
   freeShippingMax?: number;
 }) {
-  const { items, subtotal, count, setQty, removeItem, hydrated, voucher, setVoucher, note, setNote } = useCart();
+  const { items, subtotal, count, setQty, removeItem, hydrated, vouchers, addVoucher, removeVoucher, note, setNote } = useCart();
   const { cartOpen, closeCart } = useStoreUI();
 
   const [panel, setPanel] = useState<Panel>(null);
   const [code, setCode] = useState("");
   const [applying, setApplying] = useState(false);
   const [voucherError, setVoucherError] = useState<string | null>(null);
+  const [voucherNotice, setVoucherNotice] = useState<string | null>(null);
 
   // Tutup dengan Esc + kunci scroll body saat terbuka.
   useEffect(() => {
@@ -52,7 +54,10 @@ export function CartDrawer({
   const cap = freeShippingMax > 0 ? freeShippingMax : Infinity;
   const baseShipping = flatShipping && zoneFrom === null ? (freeShip ? Math.max(0, flatCost - cap) : flatCost) : 0;
   const freeLabel = freeShippingMax > 0 ? `GRATIS ONGKIR s/d ${formatRupiah(freeShippingMax)}` : "GRATIS ONGKIR";
-  const discount = voucher?.discount ?? 0;
+  // Voucher gratis ongkir baru dihitung di checkout bila ongkir per provinsi (belum diketahui).
+  const shipKnown = !flatShipping || zoneFrom === null;
+  const voucherRows = vouchers.map((v) => ({ ...v, pending: v.freeShipping && zoneFrom !== null }));
+  const discount = voucherRows.reduce((n, v) => n + (v.pending || (!shipKnown && v.freeShipping) ? 0 : v.discount), 0);
   const total = Math.max(0, subtotal + baseShipping - discount);
   const remaining = Math.max(0, freeShippingMin - subtotal);
   const progress = freeShippingMin > 0 ? Math.min(100, Math.round((subtotal / freeShippingMin) * 100)) : 0;
@@ -60,11 +65,14 @@ export function CartDrawer({
   async function onApply() {
     setApplying(true);
     setVoucherError(null);
+    setVoucherNotice(null);
     const res = await applyVoucher(code, subtotal);
     if (res.ok) {
-      setVoucher({ code: res.code, label: res.label, discount: res.discount, freeShipping: res.freeShipping });
+      const v = { code: res.code, label: res.label, discount: res.discount, freeShipping: res.freeShipping, type: res.type, stackable: res.stackable };
+      const replaced = addVoucher(v);
       setCode("");
-      setPanel(null);
+      if (replaced.length) setVoucherNotice(`${replaced.map((r) => r.code).join(", ")} dilepas — tidak bisa digabung dengan ${v.code}.`);
+      else setPanel(null);
     } else {
       setVoucherError(res.error);
     }
@@ -183,7 +191,7 @@ export function CartDrawer({
             <div className="grid grid-cols-3 divide-x divide-border border-b border-border">
               <PanelButton icon={StickyNote} label="Catatan" active={panel === "note"} onClick={() => togglePanel("note")} dot={!!note} />
               <PanelButton icon={Truck} label="Ongkir" active={panel === "shipping"} onClick={() => togglePanel("shipping")} />
-              <PanelButton icon={Ticket} label="Voucher" active={panel === "coupon"} onClick={() => togglePanel("coupon")} dot={!!voucher} />
+              <PanelButton icon={Ticket} label="Voucher" active={panel === "coupon"} onClick={() => togglePanel("coupon")} dot={vouchers.length > 0} />
             </div>
 
             {panel && (
@@ -210,16 +218,18 @@ export function CartDrawer({
                 )}
                 {panel === "coupon" && (
                   <div>
-                    {voucher ? (
-                      <div className="flex items-center justify-between rounded-md border border-border bg-background px-3 py-2">
+                    {vouchers.map((v) => (
+                      <div key={v.code} className="mb-2 flex items-center justify-between rounded-md border border-border bg-background px-3 py-2">
                         <span className="flex items-center gap-2 text-sm">
                           <Check className="size-4 text-emerald-600" />
-                          <span className="font-medium">{voucher.code}</span>
-                          <span className="text-xs text-muted-foreground">{voucher.label}</span>
+                          <span className="font-medium">{v.code}</span>
+                          <span className="text-xs text-muted-foreground">{v.label}</span>
                         </span>
-                        <button type="button" onClick={() => setVoucher(null)} className="text-xs text-muted-foreground hover:text-destructive">Hapus</button>
+                        <button type="button" onClick={() => { removeVoucher(v.code); setVoucherNotice(null); }} className="text-xs text-muted-foreground hover:text-destructive">Hapus</button>
                       </div>
-                    ) : (
+                    ))}
+                    {voucherNotice && <p className="mb-2 text-xs text-foreground/70">{voucherNotice}</p>}
+                    {vouchers.length < MAX_VOUCHERS && (
                       <>
                         <div className="flex gap-2">
                           <input
@@ -255,12 +265,12 @@ export function CartDrawer({
                   </span>
                 </div>
               )}
-              {discount > 0 && (
-                <div className="flex items-center justify-between text-emerald-600">
-                  <span>Voucher {voucher?.code}</span>
-                  <span className="font-medium">−{formatRupiah(discount)}</span>
+              {voucherRows.map((v) => (
+                <div key={v.code} className="flex items-center justify-between text-emerald-700">
+                  <span>Voucher {v.code}</span>
+                  <span className="font-medium">{v.pending ? "dipotong di checkout" : `−${formatRupiah(v.discount)}`}</span>
                 </div>
-              )}
+              ))}
               <div className="flex items-center justify-between border-t border-border pt-2 text-base">
                 <span className="font-semibold">Total</span>
                 <span className="font-bold">{formatRupiah(total)}</span>

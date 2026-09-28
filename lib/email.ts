@@ -50,6 +50,7 @@ type OrderLike = {
   trackingNo: string | null;
   address: unknown; // Prisma Json — di-cast lokal
   discount?: number;
+  voucherCodes?: string | null;
   courier?: string | null;
   createdAt?: Date | string;
 };
@@ -130,7 +131,7 @@ function details(order: OrderLike, items: ItemLike[], opts: { withTotals?: boole
         opts.withTotals
           ? `${row("Subtotal", formatRupiah(order.subtotal))}
              ${row("Ongkos kirim", order.shippingCost > 0 ? formatRupiah(order.shippingCost) : "Gratis")}
-             ${order.discount ? row("Diskon voucher", `− ${formatRupiah(order.discount)}`) : ""}
+             ${order.discount ? row(order.voucherCodes ? `Voucher ${esc(order.voucherCodes.split("+").join(" + "))}` : "Diskon voucher", `− ${formatRupiah(order.discount)}`) : ""}
              ${row("Total pembayaran", formatRupiah(order.total), { accent: true })}`
           : ""
       }

@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 import { applyVoucher } from "@/lib/actions/voucher";
+import { mergeVoucher } from "@/lib/voucher";
 
 export type CartItem = {
   variantId: string;
@@ -24,6 +25,8 @@ export type AppliedVoucher = {
   label: string;
   discount: number; // estimasi (server hitung ulang saat order)
   freeShipping: boolean;
+  type: string; // POTONGAN | GRATIS_ONGKIR
+  stackable: boolean;
 };
 
 type CartContextValue = {
@@ -36,8 +39,10 @@ type CartContextValue = {
   removeItem: (variantId: string) => void;
   clear: () => void;
   // Voucher & catatan (dibawa ke checkout)
-  voucher: AppliedVoucher | null;
-  setVoucher: (v: AppliedVoucher | null) => void;
+  vouchers: AppliedVoucher[]; // maks. 1 per jenis, hanya yang bisa digabung (lib/voucher.ts)
+  /** Pasang voucher; yang tak bisa digabung dengannya dilepas (dikembalikan). */
+  addVoucher: (v: AppliedVoucher) => AppliedVoucher[];
+  removeVoucher: (code: string) => void;
   note: string;
   setNote: (s: string) => void;
 };
@@ -48,7 +53,7 @@ const CartContext = createContext<CartContextValue | null>(null);
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [hydrated, setHydrated] = useState(false);
-  const [voucher, setVoucher] = useState<AppliedVoucher | null>(null);
+  const [vouchers, setVouchers] = useState<AppliedVoucher[]>([]);
   const [note, setNote] = useState("");
 
   // Muat dari localStorage sekali (client-only, aman untuk SSR)
@@ -115,20 +120,29 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const clear = useCallback(() => {
     commit(() => []);
-    setVoucher(null);
+    setVouchers([]);
     setNote("");
   }, [commit]);
 
   const subtotal = useMemo(() => items.reduce((n, i) => n + i.price * i.qty, 0), [items]);
 
+  const addVoucher = useCallback(
+    (v: AppliedVoucher) => {
+      const r = mergeVoucher(vouchers, v);
+      setVouchers(r.list);
+      return r.replaced;
+    },
+    [vouchers],
+  );
+  const removeVoucher = useCallback((code: string) => setVouchers((cur) => cur.filter((v) => v.code !== code)), []);
+
   // Re-validasi voucher saat subtotal berubah (mis. min belanja tak lagi terpenuhi).
   useEffect(() => {
-    if (!voucher) return;
+    if (!vouchers.length) return;
     let cancelled = false;
-    applyVoucher(voucher.code, subtotal).then((r) => {
+    Promise.all(vouchers.map((v) => applyVoucher(v.code, subtotal))).then((rs) => {
       if (cancelled) return;
-      if (r.ok) setVoucher({ code: r.code, label: r.label, discount: r.discount, freeShipping: r.freeShipping });
-      else setVoucher(null);
+      setVouchers(rs.flatMap((r) => (r.ok ? [{ code: r.code, label: r.label, discount: r.discount, freeShipping: r.freeShipping, type: r.type, stackable: r.stackable }] : [])));
     });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -136,8 +150,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo<CartContextValue>(() => {
     const count = items.reduce((n, i) => n + i.qty, 0);
-    return { items, count, subtotal, hydrated, addItem, setQty, removeItem, clear, voucher, setVoucher, note, setNote };
-  }, [items, subtotal, hydrated, addItem, setQty, removeItem, clear, voucher, note]);
+    return { items, count, subtotal, hydrated, addItem, setQty, removeItem, clear, vouchers, addVoucher, removeVoucher, note, setNote };
+  }, [items, subtotal, hydrated, addItem, setQty, removeItem, clear, vouchers, addVoucher, removeVoucher, note]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }
