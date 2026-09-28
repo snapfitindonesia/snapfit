@@ -10,6 +10,7 @@ import {
   getGineeProductDetail,
   getGineeVariationPrices,
   mapGineeFromBriefs,
+  type GineeMasterProduct,
   type GineeVariationBrief,
 } from "@/lib/ginee/products";
 import { runGineeStockSync, getWarehouseStockBySku, type StockSyncResult } from "@/lib/ginee/sync";
@@ -26,6 +27,68 @@ type SearchItem = ReturnType<typeof summarizeGinee> & {
 };
 type SearchResult = { ok: true; total: number; items: SearchItem[] } | { ok: false; error: string };
 
+/**
+ * Pencarian Ginee cocok FRASA utuh ("snapfit fold 7" = 0 hasil walau ada "SNAPFIT … Fold 7").
+ * ≥2 kata: cari potongan paling spesifik (total Ginee terkecil, mis. "fold 7"+"fold7"),
+ * ambil maks. SCAN_PAGES×100 hasilnya, lalu saring agar SEMUA kata ada di nama. Hasil kata-per-kata
+ * dikembalikan sekaligus di halaman 0 (total = jumlah cocok).
+ */
+const SCAN_PAGES = 5;
+async function searchGineeByWords(keyword: string, page: number): Promise<{ total: number; content: GineeMasterProduct[] }> {
+  const phrase = keyword.trim().replace(/\s+/g, " ");
+  const words = phrase.toLowerCase().split(" ").filter(Boolean).slice(0, 6);
+  // 1 kata: pencarian Ginee biasa (berhalaman). ≥2 kata: selalu per kata — frasa utuh Ginee bisa
+  // memberi 1–2 hasil kebetulan ("fold 7 snapfit") dan menyembunyikan puluhan lainnya.
+  if (words.length < 2) return searchGineeMasterProducts(phrase, page, 100);
+  if (page > 0) return { total: 0, content: [] }; // semua hasil sudah dikirim di halaman 0
+  const direct = await searchGineeMasterProducts(phrase, 0, 100).catch(() => ({ total: 0, content: [] as GineeMasterProduct[] }));
+
+  // Kandidat pencarian ke Ginee (dipilih yang total hasilnya terkecil, >0):
+  //  - kata tunggal ≥3 huruf ("snapfit", "fold")
+  //  - kata pendek (≤2, mis. "7") TIDAK dicari sendiri — dipasangkan dgn kata sebelumnya, dalam dua
+  //    ejaan yang dipakai di Ginee: "fold 7" & "fold7" (hasil keduanya digabung).
+  // Pasangan dua kata panjang ("snapfit fold") tak dipakai: jarang berdampingan di nama → hasil terlalu sempit.
+  const groups: string[][] = words.filter((w) => w.length >= 3).map((w) => [w]);
+  words.forEach((w, i) => {
+    if (w.length > 2) return;
+    const other = i > 0 ? words[i - 1] : words[i + 1];
+    if (!other) return;
+    groups.push(i > 0 ? [`${other} ${w}`, `${other}${w}`] : [`${w} ${other}`, `${w}${other}`]);
+  });
+  if (!groups.length) return direct;
+  const totals = await Promise.all(
+    groups.map((g) =>
+      Promise.all(g.map((c) => searchGineeMasterProducts(c, 0, 1).then((r) => r.total).catch(() => 0))),
+    ),
+  );
+  const sum = totals.map((t) => t.reduce((a, b) => a + b, 0));
+  // Ada kata/pasangan yang 0 hasil → mustahil semua kata cocok.
+  if (sum.some((t) => t === 0)) return { total: 0, content: [] };
+  const best = sum.indexOf(Math.min(...sum));
+
+  const pool = new Map<string, GineeMasterProduct>(direct.content.map((p) => [p.productId, p]));
+  for (const [j, cand] of groups[best].entries()) {
+    const pages = Math.min(SCAN_PAGES, Math.ceil(totals[best][j] / 100));
+    for (let pg = 0; pg < pages; pg++) {
+      const r = await searchGineeMasterProducts(cand, pg, 100);
+      for (const p of r.content) pool.set(p.productId, p);
+      if (r.content.length < 100) break;
+    }
+  }
+  // Kata pendek (mis. "7") dicocokkan per kata utuh ("Fold 7", bukan "17"), atau menempel pada
+  // kata sebelumnya ("Fold7"). Kata lain cukup terkandung di nama.
+  const escape = (w: string) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const hits = [...pool.values()].filter((p) => {
+    const n = p.name.toLowerCase();
+    return words.every((w, i) => {
+      if (w.length > 2) return n.includes(w);
+      if (new RegExp(`(^|[^a-z0-9])${escape(w)}([^a-z0-9]|$)`).test(n)) return true;
+      return i > 0 && n.includes(words[i - 1] + w);
+    });
+  });
+  return { total: hits.length, content: hits };
+}
+
 export async function searchGineeForImport(keyword: string, page = 0): Promise<SearchResult> {
   try {
     await requireAdmin();
@@ -36,7 +99,7 @@ export async function searchGineeForImport(keyword: string, page = 0): Promise<S
   if (!keyword.trim()) return { ok: false, error: "Masukkan kata kunci pencarian." };
 
   try {
-    const { total, content } = await searchGineeMasterProducts(keyword, page, 100);
+    const { total, content } = await searchGineeByWords(keyword, page);
     // Ginee kadang punya BANYAK master produk bernama persis sama, masing-masing 1 varian
     // (mis. 23× "SNAPFIT Case … S26 … Acrylic"). Digabung jadi 1 baris = 1 produk web
     // dengan semua variannya.

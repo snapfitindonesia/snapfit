@@ -99,7 +99,9 @@ pencarian itu di toko.
   (`cleanupOrphanImages` di `lib/upload/cleanup.ts`).
 
 ### Impor dari Ginee
-1. **Impor Ginee** → cari nama produk → centang → Impor.
+1. **Impor Ginee** → cari nama produk → centang → Impor. Pencarian ≥2 kata dicocokkan **per kata**
+   (urutan bebas; "fold 7" juga cocok dgn "Fold7") — maks. 500 master Ginee dipindai per kata kunci,
+   jadi pakai kata yang spesifik (mis. "snapfit fold 7", bukan "case").
    Produk dengan **stok gudang 0 disembunyikan** secara default (centang "Sembunyikan stok 0" untuk
    mengubah); "Centang semua" & Impor hanya berlaku untuk produk yang terlihat.
 2. Diproses 3 produk per langkah (ada progress bar); stok diambil dari gudang,
