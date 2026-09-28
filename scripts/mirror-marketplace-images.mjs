@@ -12,6 +12,7 @@ import { createHash } from "node:crypto";
 import sharp from "sharp";
 import { AwsClient } from "aws4fetch";
 import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 
 const upload = process.argv.includes("--upload");
 const rewrite = process.argv.includes("--rewrite");
@@ -38,7 +39,7 @@ async function putWebp(key, buf) {
 }
 const IMG_IN_HTML = /<img[^>]+src=["']([^"']+)["']/gi;
 
-const db = new PrismaClient();
+const db = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) });
 const products = await db.product.findMany({ select: { id: true, coverImage: true, images: true, description: true } });
 const variants = await db.variant.findMany({ select: { id: true, image: true } });
 

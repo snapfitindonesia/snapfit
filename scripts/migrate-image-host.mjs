@@ -4,6 +4,7 @@
 //   node scripts/migrate-image-host.mjs <dari> <ke>            → dry-run (hitung saja)
 //   node scripts/migrate-image-host.mjs <dari> <ke> --apply    → tulis ke DB
 import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 
 const [from, to] = process.argv.slice(2).filter((a) => !a.startsWith("--"));
 const apply = process.argv.includes("--apply");
@@ -12,7 +13,7 @@ if (!from || !to) {
   process.exit(1);
 }
 
-const db = new PrismaClient();
+const db = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) });
 const swap = (v) => (typeof v === "string" && v.includes(from) ? v.split(from).join(to) : v);
 let changed = 0;
 

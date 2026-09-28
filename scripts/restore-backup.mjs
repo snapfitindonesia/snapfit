@@ -12,6 +12,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { gunzipSync } from "node:zlib";
 import { AwsClient } from "aws4fetch";
 import { PrismaClient, Prisma } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 
 const args = process.argv.slice(2);
 const apply = args.includes("--apply");
@@ -45,7 +46,7 @@ async function restore() {
   const T = backup.tables;
   console.log(`Backup dibuat ${backup.createdAt} (v${backup.version})`);
 
-  const db = new PrismaClient();
+  const db = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) });
 
   // Kolom Json nullable: null harus dikirim sebagai Prisma.DbNull.
   const jsonFields = Object.fromEntries(

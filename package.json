@@ -14,6 +14,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@prisma/adapter-pg": "^6.19.3",
     "@prisma/client": "^6.19.3",
     "@supabase/ssr": "^0.12.5",
     "@supabase/supabase-js": "^2.115.0",
@@ -25,6 +26,7 @@
     "lucide-react": "^1.40.0",
     "next": "^15.5.25",
     "nextjs-toploader": "^3.9.17",
+    "pg": "^8.23.0",
     "radix-ui": "^1.6.7",
     "react": "19.2.8",
     "react-dom": "19.2.8",
@@ -37,6 +39,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",

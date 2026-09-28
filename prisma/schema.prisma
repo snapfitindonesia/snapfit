@@ -4,7 +4,10 @@
 // enum & array Postgres TIDAK dipakai (biar portabel ke SQLite) — pakai String + relasi.
 
 generator client {
-  provider = "prisma-client-js"
+  provider   = "prisma-client-js"
+  // Tanpa mesin query Rust (±17 MB/fungsi) → pakai driver pg (lib/db.ts). Fungsi Vercel jauh lebih
+  // kecil: Functions Storage per deploy ±1,2 GB → jauh lebih kecil (batas Hobby 10 GB).
+  engineType = "client"
 }
 
 datasource db {

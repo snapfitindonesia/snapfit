@@ -12,6 +12,7 @@
 import sharp from "sharp";
 import { AwsClient } from "aws4fetch";
 import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 
 const WIDTHS = [128, 384, 750];
 const apply = process.argv.includes("--apply");
@@ -104,7 +105,7 @@ if (process.argv.includes("--prune-old")) {
 }
 
 // ---- Verifikasi: semua URL cdn yang dipakai DB lengkap (asli + varian) ----
-const db = new PrismaClient();
+const db = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) });
 const IMG_IN_HTML = /<img[^>]+src=["']([^"']+)["']/gi;
 const refs = new Set();
 const add = (u) => { if (typeof u === "string" && u.startsWith(`${PUBLIC}/`)) refs.add(u); };

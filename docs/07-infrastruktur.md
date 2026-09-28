@@ -109,3 +109,12 @@ npx vercel env add NAMA_VARIABEL production --force < file-berisi-nilai.txt
 ```
 
 Hapus file itu setelahnya, lalu deploy ulang.
+
+## Prisma tanpa mesin Rust (Functions Storage)
+- `engineType = "client"` + `@prisma/adapter-pg` (`lib/db.ts`): query lewat driver `pg` ke pooler Supabase
+  (`DATABASE_URL`, :6543). Fungsi Vercel ±23,7 MB → ±2,7 MB (sebelum kompres); dulu ±1,2 GB per deploy
+  (±130 fungsi × 9,5 MB) sehingga Functions Storage Hobby (10 GB) penuh.
+- **Skrip Node (`scripts/*.mjs`) wajib memakai adapter**: `new PrismaClient({ adapter: new PrismaPg({ connectionString:
+  process.env.DATABASE_URL }) })` — `new PrismaClient()` polos kini error.
+- `prisma db push` tetap memakai `DIRECT_URL` (tak berubah).
+- Deploy cukup `git push` (auto-deploy GitHub) — jangan ditambah `vercel deploy` (jadi 2 deploy).
