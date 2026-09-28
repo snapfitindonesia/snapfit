@@ -20,9 +20,9 @@ export const CAMPAIGNS: Record<CampaignSlug, Campaign> = {
     title: "Payday Sale",
     menuLabel: "Payday Sale 🔥",
     tagline: "Gajian tiba — saatnya upgrade case & aksesori HP original dengan harga spesial.",
-    schedule: "Setiap tanggal 25 sampai tanggal 1 bulan berikutnya",
+    schedule: "Setiap tanggal 25 sampai 28",
     seoDescription:
-      "Payday Sale SNAPFIT: diskon gajian case HP, tempered glass & aksesori original Ringke, VRS Design, Araree, Supcase. Setiap tanggal 25–1.",
+      "Payday Sale SNAPFIT: diskon gajian case HP, tempered glass & aksesori original Ringke, VRS Design, Araree, Supcase. Setiap tanggal 25–28.",
   },
   "tanggal-kembar": {
     slug: "tanggal-kembar",
@@ -50,14 +50,14 @@ export type CampaignWindow = { start: Date; end: Date; live: boolean };
 
 /**
  * Jadwal kampanye yang sedang berjalan, atau berikutnya bila belum mulai.
- * - Payday: tgl 25 00:00 WIB s/d tgl 1 bulan berikutnya 23:59 WIB.
+ * - Payday: tgl 25 00:00 WIB s/d tgl 28 23:59 WIB.
  * - Tanggal kembar: tgl = bulan (1.1 … 12.12), 00:00–23:59 WIB.
  */
 export function campaignWindow(slug: CampaignSlug, now = new Date()): CampaignWindow {
   const { y, m } = wibParts(now);
   const candidates: { start: Date; end: Date }[] = [];
   if (slug === "payday-sale") {
-    for (const mm of [m - 1, m, m + 1]) candidates.push({ start: wib(y, mm, 25), end: wib(y, mm + 1, 2) });
+    for (const mm of [m - 1, m, m + 1]) candidates.push({ start: wib(y, mm, 25), end: wib(y, mm, 29) });
   } else {
     for (const yy of [y, y + 1]) for (let mm = 1; mm <= 12; mm++) candidates.push({ start: wib(yy, mm, mm), end: wib(yy, mm, mm + 1) });
   }

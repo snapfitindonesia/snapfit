@@ -65,7 +65,7 @@ bar bawah (HP), dan tombol WhatsApp melayang.
   1. **Berjalan** (diskon aktif) → produk berharga promo + hitung mundur ke berakhirnya.
   2. **Terjadwal** (diskon mulai nanti) → "bocoran" produk (harga masih normal) + hitung mundur ke mulai.
   3. **Belum ada diskon** → jadwal kalender berikutnya + produk unggulan (halaman tak pernah kosong).
-- Jadwal kalender (`lib/campaigns.ts`, WIB): Payday tgl 25 – tgl 1 bulan berikutnya;
+- Jadwal kalender (`lib/campaigns.ts`, WIB): Payday tgl 25–28;
   tanggal kembar 1.1 … 12.12 (sehari penuh). Voucher aktif ikut tampil (tombol salin).
 - Link di Menu Header (Payday Sale 🔥, Tanggal Kembar) diatur di **Tampilan Toko → Menu Header**.
 
