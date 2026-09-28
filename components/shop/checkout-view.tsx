@@ -13,6 +13,7 @@ import { addressSchema } from "@/lib/validations/checkout";
 import { createOrder } from "@/lib/actions/order";
 import { applyVoucher } from "@/lib/actions/voucher";
 import { saveCheckoutDraft } from "@/lib/actions/cart-draft";
+import { VoucherPicker, type PickerVoucher } from "@/components/shop/voucher-picker";
 import type { ShippingRate } from "@/lib/biteship";
 
 // Kontak & alamat pesanan terakhir, disimpan HANYA di perangkat pembeli
@@ -91,12 +92,14 @@ export function CheckoutView({
   bank,
   flatCost = 5000,
   freeShippingMin = 0,
+  vouchers = [],
 }: {
   manualPayment: boolean;
   flatShipping: boolean;
   bank: Bank;
   flatCost?: number;
   freeShippingMin?: number;
+  vouchers?: PickerVoucher[];
 }) {
   const router = useRouter();
   const { items, subtotal, hydrated, clear, voucher, setVoucher, note } = useCart();
@@ -105,10 +108,12 @@ export function CheckoutView({
   const [voucherApplying, setVoucherApplying] = useState(false);
   const [voucherError, setVoucherError] = useState<string | null>(null);
 
-  async function onApplyVoucher() {
+  const [applyingCode, setApplyingCode] = useState<string | null>(null);
+  async function onApplyVoucher(code?: string) {
     setVoucherApplying(true);
+    setApplyingCode(code ?? null);
     setVoucherError(null);
-    const res = await applyVoucher(voucherInput, subtotal);
+    const res = await applyVoucher(code ?? voucherInput, subtotal);
     if (res.ok) {
       setVoucher({ code: res.code, label: res.label, discount: res.discount, freeShipping: res.freeShipping });
       setVoucherInput("");
@@ -116,6 +121,7 @@ export function CheckoutView({
       setVoucherError(res.error);
     }
     setVoucherApplying(false);
+    setApplyingCode(null);
   }
 
   const [f, setF] = useState<Fields>(EMPTY);
@@ -313,12 +319,28 @@ export function CheckoutView({
                 <Truck className="size-5 text-muted-foreground" />
                 <span>
                   <span className="text-sm font-medium">Ongkir Flat</span>
-                  <span className="block text-xs text-muted-foreground">Tarif tetap ke seluruh Indonesia</span>
+                  <span className="block text-xs text-muted-foreground">
+                    {freeShip ? `Gratis ongkir untuk belanja min. ${formatRupiah(freeShippingMin)}` : "Tarif tetap ke seluruh Indonesia"}
+                  </span>
                 </span>
               </span>
-              <span className="text-sm font-semibold">{formatRupiah(flatCost)}</span>
+              {freeShip ? (
+                <span className="text-right">
+                  <span className="block text-xs text-muted-foreground line-through">{formatRupiah(flatCost)}</span>
+                  <span className="text-sm font-semibold text-emerald-700">GRATIS</span>
+                </span>
+              ) : (
+                <span className="text-sm font-semibold">{formatRupiah(flatCost)}</span>
+              )}
             </div>
-          ) : (
+          ) : null}
+          {flatShipping && freeShippingMin > 0 && !freeShip && (
+            <p className="mt-2 text-xs">
+              Belanja <b>{formatRupiah(freeShippingMin - subtotal)}</b> lagi untuk <b>gratis ongkir</b>.{" "}
+              <Link href="/produk" className="font-medium text-brand-ink underline underline-offset-2">Tambah produk →</Link>
+            </p>
+          )}
+          {!flatShipping && (
             <>
               <div className="mt-1 flex justify-end">
                 <Button variant="outline" size="sm" onClick={checkRates} disabled={ratesLoading}>
@@ -400,13 +422,21 @@ export function CheckoutView({
                     placeholder="Kode voucher"
                     className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm uppercase outline-none focus:border-foreground"
                   />
-                  <Button size="sm" variant="outline" onClick={onApplyVoucher} disabled={voucherApplying || !voucherInput.trim()}>
+                  <Button size="sm" variant="outline" onClick={() => onApplyVoucher()} disabled={voucherApplying || !voucherInput.trim()}>
                     {voucherApplying && <Loader2 className="size-4 animate-spin" />}Pakai
                   </Button>
                 </div>
                 {voucherError && <p className="mt-1.5 text-xs text-destructive">{voucherError}</p>}
               </>
             )}
+            <VoucherPicker
+              vouchers={vouchers}
+              subtotal={subtotal}
+              shippingCost={shippingCost}
+              appliedCode={voucher?.code ?? null}
+              applyingCode={applyingCode}
+              onApply={(code) => onApplyVoucher(code)}
+            />
           </div>
 
           <dl className="mt-4 space-y-2 text-sm">

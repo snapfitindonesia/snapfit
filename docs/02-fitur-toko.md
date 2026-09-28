@@ -52,6 +52,12 @@ bar bawah (HP), dan tombol WhatsApp melayang.
 ### Keranjang & checkout
 - Keranjang disimpan di `localStorage` — bertahan walau browser ditutup.
 - Voucher & diskon dihitung ulang di server saat checkout (harga dari klien tidak dipercaya).
+- **Voucher tersedia** tampil di ringkasan checkout (`voucher-picker.tsx`): bisa dipakai → "Hemat RpX" +
+  tombol Pakai (terbaik diberi label "Paling hemat"); belum memenuhi syarat → "Belanja RpX lagi" +
+  progres + tautan tambah produk; tak bermanfaat (mis. gratis ongkir padahal ongkir sudah gratis) → keterangan.
+  Syarat dihitung dengan `computeVoucherBenefit` yang sama dengan server.
+- Kartu Pengiriman menampilkan ~~Rp5.000~~ GRATIS bila lolos ambang gratis ongkir, atau ajakan
+  "Belanja RpX lagi untuk gratis ongkir".
 - Setelah pesan: email instruksi transfer ke pembeli + email notifikasi ke admin.
   Detail: [05](05-pembayaran-pengiriman.md).
 
