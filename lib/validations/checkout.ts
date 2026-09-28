@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { provinceName } from "@/lib/wilayah";
 
 export const cartLineSchema = z.object({
   variantId: z.string().min(1),
@@ -13,8 +14,20 @@ export const addressSchema = z.object({
     .regex(/^[0-9+\-\s]{8,20}$/, "Nomor telepon tidak valid"),
   email: z.string().trim().email("Email tidak valid").optional().or(z.literal("")),
   address: z.string().trim().min(5, "Alamat terlalu pendek"),
-  city: z.string().trim().min(2, "Kota wajib diisi"),
+  // Wilayah dari dropdown (kode Kepmendagri, lib/wilayah). Nama ikut disimpan untuk
+  // label/email/Ginee; "city" = nama kabupaten/kota (kompatibel dengan data lama).
+  provinceCode: z.string().regex(/^\d{2}$/, "Pilih provinsi"),
+  province: z.string().trim().min(2, "Pilih provinsi"),
+  regencyCode: z.string().regex(/^\d{2}\.\d{2}$/, "Pilih kabupaten/kota"),
+  city: z.string().trim().min(2, "Pilih kabupaten/kota"),
+  districtCode: z.string().regex(/^\d{2}\.\d{2}\.\d{2}$/, "Pilih kecamatan"),
+  district: z.string().trim().min(2, "Pilih kecamatan"),
   postalCode: z.string().trim().regex(/^[0-9]{5}$/, "Kode pos harus 5 digit"),
+}).superRefine((a, ctx) => {
+  // Konsistensi hierarki kode (mis. kecamatan harus di dalam kabupaten terpilih).
+  if (provinceName(a.provinceCode) !== a.province) ctx.addIssue({ code: "custom", path: ["provinceCode"], message: "Pilih provinsi" });
+  if (!a.regencyCode.startsWith(`${a.provinceCode}.`)) ctx.addIssue({ code: "custom", path: ["regencyCode"], message: "Pilih kabupaten/kota" });
+  if (!a.districtCode.startsWith(`${a.regencyCode}.`)) ctx.addIssue({ code: "custom", path: ["districtCode"], message: "Pilih kecamatan" });
 });
 
 export const ratesRequestSchema = z.object({

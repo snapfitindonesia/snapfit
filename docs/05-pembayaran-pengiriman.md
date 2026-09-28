@@ -11,6 +11,12 @@ Mode diatur lewat env — ganti env di Vercel lalu deploy ulang, tanpa ubah kode
 | `FREE_SHIPPING_MIN` | `150000` | rupiah; `0` = tanpa gratis ongkir otomatis |
 | `MANUAL_BANK_NAME` / `_NUMBER` / `_HOLDER` | rekening BCA toko | |
 
+## Ongkir per provinsi (mode flat)
+Di mode flat, ongkir = tarif provinsi tujuan dari **Admin → Ongkir per Provinsi** (1 kg pertama +
+per kg berikutnya × berat pesanan, dibulatkan per kg). Provinsi yang belum diatur memakai
+`SHIPPING_FLAT_COST`. Dihitung di server (`lib/shipping-zone.ts`) baik saat checkout (perkiraan)
+maupun saat pesanan dibuat (otoritatif). Gratis ongkir ≥ `FREE_SHIPPING_MIN` tetap berlaku.
+
 ## Mode aktif sekarang: transfer manual + ongkir flat
 
 1. Pembeli checkout → pesanan `PENDING`.

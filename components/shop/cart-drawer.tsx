@@ -16,10 +16,12 @@ type Panel = "note" | "shipping" | "coupon" | null;
 export function CartDrawer({
   flatShipping = true,
   flatCost = 5000,
+  zoneFrom = null,
   freeShippingMin = 0,
 }: {
   flatShipping?: boolean;
   flatCost?: number;
+  zoneFrom?: number | null; // null = belum ada tarif per provinsi (tetap flat)
   freeShippingMin?: number;
 }) {
   const { items, subtotal, count, setQty, removeItem, hydrated, voucher, setVoucher, note, setNote } = useCart();
@@ -44,7 +46,8 @@ export function CartDrawer({
   }, [cartOpen, closeCart]);
 
   const freeShip = freeShippingMin > 0 && subtotal >= freeShippingMin;
-  const baseShipping = flatShipping ? (freeShip ? 0 : flatCost) : 0;
+  // Tarif per provinsi → ongkir baru diketahui di checkout (tak dimasukkan ke perkiraan).
+  const baseShipping = flatShipping && zoneFrom === null ? (freeShip ? 0 : flatCost) : 0;
   const discount = voucher?.discount ?? 0;
   const total = Math.max(0, subtotal + baseShipping - discount);
   const remaining = Math.max(0, freeShippingMin - subtotal);
@@ -195,7 +198,9 @@ export function CartDrawer({
                     {flatShipping
                       ? freeShip
                         ? "Gratis ongkir untuk pesanan ini 🎉"
-                        : `Ongkir flat ${formatRupiah(flatCost)} ke seluruh Indonesia. Alamat & kurir diisi saat checkout.`
+                        : zoneFrom !== null
+                          ? `Ongkir dihitung saat checkout sesuai provinsi tujuan (mulai ${formatRupiah(zoneFrom)}).`
+                          : `Ongkir flat ${formatRupiah(flatCost)} ke seluruh Indonesia. Alamat & kurir diisi saat checkout.`
                       : "Ongkir dihitung berdasar alamat saat checkout."}
                   </p>
                 )}
@@ -241,7 +246,9 @@ export function CartDrawer({
               {flatShipping && (
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Ongkir</span>
-                  <span className="font-medium">{baseShipping === 0 ? "GRATIS" : formatRupiah(baseShipping)}</span>
+                  <span className="font-medium">
+                    {freeShip ? "GRATIS" : zoneFrom !== null ? "Dihitung di checkout" : formatRupiah(baseShipping)}
+                  </span>
                 </div>
               )}
               {discount > 0 && (

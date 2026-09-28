@@ -26,6 +26,7 @@ const GROUPS: NavGroup[] = [
     items: [
       { href: "/admin/pesanan", label: "Pesanan" },
       { href: "/admin/keranjang", label: "Keranjang Ditinggal" },
+      { href: "/admin/ongkir", label: "Ongkir per Provinsi" },
       { href: "/admin/voucher", label: "Voucher" },
       { href: "/admin/diskon", label: "Diskon" },
     ],

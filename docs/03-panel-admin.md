@@ -28,6 +28,7 @@ Grup bisa dibuka/tutup; grup halaman aktif selalu terbuka; pilihan diingat di br
 | Banner | `/admin/banner` | Banner carousel beranda & promo |
 | Unggulan | `/admin/unggulan` | Produk yang ditonjolkan di beranda |
 | Diskon | `/admin/diskon` | Diskon persen untuk varian terpilih, dengan periode mulai–selesai |
+| Ongkir per Provinsi | `/admin/ongkir` | Tarif 1 kg pertama + per kg berikutnya + estimasi untuk 38 provinsi; isi cepat per pulau |
 | Voucher | `/admin/voucher` | Kode voucher: potongan harga atau gratis ongkir, minimal belanja, batas manfaat |
 | Ulasan | `/admin/ulasan` | Setujui/tolak ulasan pembeli (di atas, kuning) + tambah ulasan manual |
 | Linktree | `/admin/linktree` | Isi halaman `/links`: profil, latar, tombol, pemisah |
@@ -52,6 +53,12 @@ memesan (14 hari terakhir). Yang punya email sudah dikirimi pengingat otomatis
 pemulihan. Tombol **Chat WhatsApp** membuka pesan siap kirim berisi produk & tautan
 pemulihan keranjang. Statistik "Lewat pengingat" = pesanan dari pembeli yang
 membuka tautan pemulihan.
+
+### Mengatur ongkir per provinsi
+**Penjualan → Ongkir per Provinsi**: isi tarif **1 kg pertama** + **per kg berikutnya** (berat
+dibulatkan ke atas per kg, min. 1 kg) + estimasi. Pakai **Isi cepat per pulau** lalu sesuaikan
+provinsi tertentu. Kosongkan = tarif flat. Gratis ongkir (≥ ambang) tetap berlaku. Keranjang
+menulis "ongkir mulai RpX" (cache 5 menit).
 
 ### Menyiapkan promo Payday / Tanggal Kembar
 1. **Penjualan → Diskon** → isi persen, pilih varian.

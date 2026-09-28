@@ -56,6 +56,13 @@ bar bawah (HP), dan tombol WhatsApp melayang.
   tombol Pakai (terbaik diberi label "Paling hemat"); belum memenuhi syarat → "Belanja RpX lagi" +
   progres + tautan tambah produk; tak bermanfaat (mis. gratis ongkir padahal ongkir sudah gratis) → keterangan.
   Syarat dihitung dengan `computeVoucherBenefit` yang sama dengan server.
+- **Alamat:** dropdown Provinsi → Kabupaten/Kota → Kecamatan (`region-select.tsx`, data resmi Kepmendagri
+  di `public/wilayah/<kode>.json`, 38 prov · 514 kab/kota · 7.285 kec; diunduh per provinsi ±2–5 KB).
+  Kode wilayah divalidasi server (hierarki harus konsisten); pesanan menyimpan kode + nama
+  (ikut ke email & Ginee). Kode pos tetap diketik.
+- **Ongkir per provinsi** (mode flat): `quoteShipping` di server menghitung dari provinsi + berat
+  (`lib/shipping-zone.ts`) — fungsi yang sama dipakai `createOrder`. Provinsi tanpa tarif = flat.
+  Sebelum provinsi dipilih, ringkasan menulis "Pilih provinsi" & total belum termasuk ongkir.
 - Kartu Pengiriman menampilkan ~~Rp5.000~~ GRATIS bila lolos ambang gratis ongkir, atau ajakan
   "Belanja RpX lagi untuk gratis ongkir".
 - Setelah pesan: email instruksi transfer ke pembeli + email notifikasi ke admin.

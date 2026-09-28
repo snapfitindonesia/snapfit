@@ -19,11 +19,15 @@ Skema: `prisma/schema.prisma`. Klien: `lib/db.ts`.
 | `Order` / `OrderItem` | Pesanan & isinya | lihat status di bawah |
 | `CheckoutDraft` | Checkout belum jadi pesanan (keranjang ditinggal) | `token` (tautan pulihkan), `remindedAt`, `recoveredAt`, `convertedAt` |
 | `EmailOptOut` | Email yang minta berhenti pengingat keranjang | |
+| `ShippingZone` | Ongkir per provinsi (kunci = kode provinsi) | `baseCost` (1 kg), `perKg`, `etd` |
 | `SearchTerm` | Kata kunci pencarian teragregasi | `count`, `zeroCount` (berapa kali 0 hasil), `lastResults` |
 | `BioProfile` / `BioLink` | Linktree `/links` | `BioLink.kind` LINK / DIVIDER, `newTab`, `clicks` |
 
 Pengguna (login) disimpan di **Supabase Auth**, bukan di Prisma. Admin ditandai
 `app_metadata.role = "admin"`.
+
+Alamat pesanan (`Order.address`, JSON) kini berisi `provinceCode/province`, `regencyCode/city`,
+`districtCode/district` selain nama, HP, email, alamat, kode pos.
 
 ## Status pesanan
 

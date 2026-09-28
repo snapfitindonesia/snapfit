@@ -10,6 +10,7 @@ import { PopupBanner } from "@/components/shop/popup-banner";
 import { WhatsAppFloat } from "@/components/shop/whatsapp-float";
 import { getPopupBanner } from "@/lib/actions/product";
 import { isFlatShipping, FLAT_SHIPPING_COST, FREE_SHIPPING_MIN } from "@/lib/payment";
+import { zoneStartingCost } from "@/lib/shipping-zone";
 import { Suspense } from "react";
 
 // Tetap statis/cepat: status login dideteksi di client (StoreUIProvider),
@@ -31,7 +32,7 @@ export default async function ShopLayout({
           <SiteFooter />
           <MobileBottomBar />
         </div>
-        <CartDrawer flatShipping={isFlatShipping()} flatCost={FLAT_SHIPPING_COST} freeShippingMin={FREE_SHIPPING_MIN} />
+        <CartDrawer flatShipping={isFlatShipping()} flatCost={FLAT_SHIPPING_COST} freeShippingMin={FREE_SHIPPING_MIN} zoneFrom={await zoneStartingCost().catch(() => null)} />
         <PopupBanner banner={popupBanner} />
         <WhatsAppFloat />
         <LoginModal />

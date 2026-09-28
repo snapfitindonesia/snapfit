@@ -41,15 +41,17 @@ export type ApplyVoucherResult =
  * Validasi & estimasi benefit voucher untuk UI (checkout/drawer).
  * Otoritatif tetap dihitung ulang di createOrder.
  */
-export async function applyVoucher(code: string, subtotal: number): Promise<ApplyVoucherResult> {
+/** `shippingEstimate`: ongkir dari quote checkout (hanya estimasi — createOrder menghitung ulang). */
+export async function applyVoucher(code: string, subtotal: number, shippingEstimate?: number): Promise<ApplyVoucherResult> {
   const trimmed = code.trim().toUpperCase();
   if (!trimmed) return { ok: false, error: "Masukkan kode voucher." };
 
   const voucher = await db.voucher.findUnique({ where: { code: trimmed } });
   if (!voucher || !voucher.active) return { ok: false, error: "Voucher tidak ditemukan / tidak aktif." };
 
-  // Estimasi ongkir untuk voucher GRATIS_ONGKIR (mode flat, sebelum ambang gratis ongkir).
-  const shippingCost = isFlatShipping() && !qualifiesFreeShipping(subtotal) ? FLAT_SHIPPING_COST : 0;
+  // Estimasi ongkir untuk voucher GRATIS_ONGKIR: dari quote checkout bila ada, else tarif flat.
+  const est = Number.isFinite(shippingEstimate) ? Math.min(Math.max(0, Math.round(shippingEstimate!)), 5_000_000) : FLAT_SHIPPING_COST;
+  const shippingCost = isFlatShipping() && !qualifiesFreeShipping(subtotal) ? est : 0;
 
   const benefit = computeVoucherBenefit(voucher as VoucherLike, subtotal, shippingCost);
   if (!benefit.valid) return { ok: false, error: benefit.reason };

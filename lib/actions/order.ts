@@ -12,7 +12,8 @@ import {
 import { getShippingRates } from "@/lib/biteship";
 import { createShipment } from "@/lib/biteship";
 import { createSnapToken, isMidtransMock } from "@/lib/midtrans";
-import { isManualPayment, isFlatShipping, FLAT_SHIPPING_COST, MANUAL_BANK, qualifiesFreeShipping } from "@/lib/payment";
+import { isManualPayment, isFlatShipping, MANUAL_BANK } from "@/lib/payment";
+import { zoneQuote } from "@/lib/shipping-zone";
 import { computeVoucherBenefit, type VoucherLike } from "@/lib/voucher";
 import { sendEmail, orderConfirmationEmail, orderPlacedEmail, adminNewOrderEmail } from "@/lib/email";
 import { waLink } from "@/lib/wa";
@@ -30,6 +31,7 @@ async function computeOrder(
   postalCode: string,
   rateId: string | undefined,
   voucherCode?: string,
+  provinceCode?: string,
 ) {
   const variants = await db.variant.findMany({
     where: { id: { in: lines.map((l) => l.variantId) } },
@@ -69,17 +71,19 @@ async function computeOrder(
     return { discount: benefit.discount, appliedCode: code };
   }
 
-  // Ongkir FLAT (Biteship belum aktif) — tak butuh pilih kurir. Gratis ongkir bila lolos ambang.
+  // Ongkir per provinsi (mode flat, Biteship belum aktif): tarif Admin → Ongkir, provinsi
+  // yang belum diatur = tarif flat. Gratis ongkir bila lolos ambang. Sama dengan quoteShipping.
   if (isFlatShipping()) {
-    const shippingCost = qualifiesFreeShipping(subtotal) ? 0 : FLAT_SHIPPING_COST;
+    const q = await zoneQuote(provinceCode, totalWeight, subtotal);
+    const shippingCost = q.cost;
     const rate = {
       id: "flat",
       courier: "flat",
-      courierName: "Ongkir Flat",
+      courierName: q.zone ? "Ongkir per provinsi" : "Ongkir Flat",
       service: "flat",
-      serviceName: "Flat",
+      serviceName: q.zone ? `${q.kg} kg` : "Flat",
       cost: shippingCost,
-      etd: "-",
+      etd: q.etd || "-",
     };
     const { discount, appliedCode } = await resolveVoucher(shippingCost);
     const total = Math.max(0, subtotal + shippingCost - discount);
@@ -125,6 +129,7 @@ export async function createOrder(input: CreateOrderInput) {
     data.address.postalCode,
     data.rateId,
     data.voucherCode,
+    data.address.provinceCode,
   );
 
   const midtransOrderId = `SNAP-${Date.now()}-${Math.random()

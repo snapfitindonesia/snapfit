@@ -31,6 +31,7 @@ Jalankan dari folder proyek; `--env-file=.env` memuat kredensial. Semua skrip
 | `restore-backup.mjs` | Pulihkan data dari backup (lihat bawah) |
 | `mirror-marketplace-images.mjs` | Salin foto yang masih menempel ke Shopee/TikTok/… ke `cdn.snapfit.id` + varian (`--upload`), lalu ganti URL-nya di DB (`--rewrite`, hanya yang variannya lengkap) |
 | `cdn-variants.mjs` | Buat varian `.w128/.w384/.w750` yang belum ada (`--apply`), hapus varian lebar lama (`--prune-old --apply`) | `cdn-variants.mjs` | Buat varian `.w320/.w640` yang belum ada (`--apply`) & verifikasi semua URL cdn di DB lengkap — exit 1 bila ada yang kurang | verifikasi semua URL cdn di DB lengkap — exit 1 bila ada yang kurang |
+| `build-wilayah.mjs` | Unduh ulang data wilayah (provinsi/kab/kec, Kepmendagri via wilayah.id) — jalankan bila ada pemekaran |
 | `migrate-image-host.mjs` | Ganti awalan URL foto di seluruh DB (mis. pindah domain CDN) |
 
 ```bash

@@ -14,6 +14,9 @@ import { createOrder } from "@/lib/actions/order";
 import { applyVoucher } from "@/lib/actions/voucher";
 import { saveCheckoutDraft } from "@/lib/actions/cart-draft";
 import { VoucherPicker, type PickerVoucher } from "@/components/shop/voucher-picker";
+import { RegionSelect } from "@/components/shop/region-select";
+import { quoteShipping } from "@/lib/actions/shipping";
+import type { ZoneQuote } from "@/lib/shipping-zone";
 import type { ShippingRate } from "@/lib/biteship";
 
 // Kontak & alamat pesanan terakhir, disimpan HANYA di perangkat pembeli
@@ -78,11 +81,20 @@ type Fields = {
   phone: string;
   email: string;
   address: string;
-  city: string;
+  provinceCode: string;
+  province: string;
+  regencyCode: string;
+  city: string; // nama kabupaten/kota
+  districtCode: string;
+  district: string;
   postalCode: string;
 };
 
-const EMPTY: Fields = { name: "", phone: "", email: "", address: "", city: "", postalCode: "" };
+const EMPTY: Fields = {
+  name: "", phone: "", email: "", address: "",
+  provinceCode: "", province: "", regencyCode: "", city: "", districtCode: "", district: "",
+  postalCode: "",
+};
 
 type Bank = { bank: string; accountNumber: string; accountName: string };
 
@@ -113,7 +125,7 @@ export function CheckoutView({
     setVoucherApplying(true);
     setApplyingCode(code ?? null);
     setVoucherError(null);
-    const res = await applyVoucher(code ?? voucherInput, subtotal);
+    const res = await applyVoucher(code ?? voucherInput, subtotal, voucherShipping);
     if (res.ok) {
       setVoucher({ code: res.code, label: res.label, discount: res.discount, freeShipping: res.freeShipping });
       setVoucherInput("");
@@ -137,6 +149,27 @@ export function CheckoutView({
 
   const set = (k: keyof Fields, v: string) => setF((s) => ({ ...s, [k]: v }));
 
+  // Ongkir per provinsi dihitung server (berat & harga dari DB) — sama dengan createOrder.
+  const [quote, setQuote] = useState<ZoneQuote | null>(null);
+  const [quoting, setQuoting] = useState(false);
+  const lineKey = items.map((i) => `${i.variantId}:${i.qty}`).join(",");
+  useEffect(() => {
+    if (!flatShipping || !f.provinceCode || !lineKey) {
+      setQuote(null);
+      return;
+    }
+    let alive = true;
+    setQuoting(true);
+    quoteShipping({ provinceCode: f.provinceCode, items: items.map((i) => ({ variantId: i.variantId, qty: i.qty })) })
+      .then((q) => alive && setQuote(q))
+      .catch(() => alive && setQuote(null))
+      .finally(() => alive && setQuoting(false));
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [flatShipping, f.provinceCode, lineKey]);
+
   // Pelanggan lama di perangkat ini: isi otomatis dari pesanan terakhir.
   const [prefilled, setPrefilled] = useState(false);
   useEffect(() => {
@@ -158,7 +191,11 @@ export function CheckoutView({
   const cartLines = items.map((i) => ({ variantId: i.variantId, qty: i.qty }));
   const selectedRate = rates?.find((r) => r.id === rateId) ?? null;
   const freeShip = flatShipping && freeShippingMin > 0 && subtotal >= freeShippingMin;
-  const shippingCost = freeShip ? 0 : flatShipping ? flatCost : (selectedRate?.cost ?? 0);
+  // Mode flat: ongkir provinsi dari quote (belum pilih provinsi → belum diketahui, 0 di total).
+  const shippingKnown = freeShip || (flatShipping ? !!quote : !!selectedRate);
+  const shippingCost = freeShip ? 0 : flatShipping ? (quote?.cost ?? 0) : (selectedRate?.cost ?? 0);
+  // Estimasi utk voucher gratis ongkir sebelum provinsi dipilih.
+  const voucherShipping = freeShip ? 0 : flatShipping ? (quote?.cost ?? flatCost) : (selectedRate?.cost ?? 0);
   const discount = voucher?.discount ?? 0;
   const total = Math.max(0, subtotal + shippingCost - discount);
 
@@ -302,7 +339,11 @@ export function CheckoutView({
             <Field label="No. Telepon" value={f.phone} onChange={(v) => set("phone", v)} error={errors.phone} inputMode="tel" />
             <Field label="Email (opsional)" value={f.email} onChange={(v) => set("email", v)} error={errors.email} className="sm:col-span-2" />
             <Field label="Alamat lengkap" value={f.address} onChange={(v) => set("address", v)} error={errors.address} className="sm:col-span-2" textarea />
-            <Field label="Kota" value={f.city} onChange={(v) => set("city", v)} error={errors.city} />
+            <RegionSelect
+              value={f}
+              onChange={(v) => setF((s) => ({ ...s, ...v }))}
+              errors={errors}
+            />
             <Field label="Kode pos" value={f.postalCode} onChange={(v) => set("postalCode", v)} error={errors.postalCode} inputMode="numeric" />
           </div>
           <p className="mt-3 text-xs text-muted-foreground">
@@ -318,19 +359,29 @@ export function CheckoutView({
               <span className="flex items-center gap-3">
                 <Truck className="size-5 text-muted-foreground" />
                 <span>
-                  <span className="text-sm font-medium">Ongkir Flat</span>
+                  <span className="text-sm font-medium">{f.province ? `Ongkir ke ${f.province}` : "Ongkos kirim"}</span>
                   <span className="block text-xs text-muted-foreground">
-                    {freeShip ? `Gratis ongkir untuk belanja min. ${formatRupiah(freeShippingMin)}` : "Tarif tetap ke seluruh Indonesia"}
+                    {freeShip
+                      ? `Gratis ongkir untuk belanja min. ${formatRupiah(freeShippingMin)}`
+                      : !f.provinceCode
+                        ? "Pilih provinsi di atas untuk menghitung ongkir"
+                        : quoting
+                          ? "Menghitung ongkir…"
+                          : quote
+                            ? `Berat ${quote.kg} kg${quote.etd ? ` · estimasi ${quote.etd}` : ""}`
+                            : "Gagal menghitung ongkir — pilih ulang provinsi"}
                   </span>
                 </span>
               </span>
               {freeShip ? (
                 <span className="text-right">
-                  <span className="block text-xs text-muted-foreground line-through">{formatRupiah(flatCost)}</span>
+                  {quote && quote.fullCost > 0 && <span className="block text-xs text-muted-foreground line-through">{formatRupiah(quote.fullCost)}</span>}
                   <span className="text-sm font-semibold text-emerald-700">GRATIS</span>
                 </span>
+              ) : quote ? (
+                <span className="text-sm font-semibold">{formatRupiah(quote.cost)}</span>
               ) : (
-                <span className="text-sm font-semibold">{formatRupiah(flatCost)}</span>
+                <span className="text-sm text-muted-foreground">{quoting ? <Loader2 className="size-4 animate-spin" /> : "—"}</span>
               )}
             </div>
           ) : null}
@@ -432,7 +483,7 @@ export function CheckoutView({
             <VoucherPicker
               vouchers={vouchers}
               subtotal={subtotal}
-              shippingCost={shippingCost}
+              shippingCost={voucherShipping}
               appliedCode={voucher?.code ?? null}
               applyingCode={applyingCode}
               onApply={(code) => onApplyVoucher(code)}
@@ -443,13 +494,16 @@ export function CheckoutView({
             <Row label={`Subtotal (${items.length} produk)`} value={formatRupiah(subtotal)} />
             <Row
               label="Ongkir"
-              value={freeShip ? "GRATIS" : flatShipping || selectedRate ? formatRupiah(shippingCost) : "—"}
-              muted={!freeShip && !flatShipping && !selectedRate}
+              value={freeShip ? "GRATIS" : shippingKnown ? formatRupiah(shippingCost) : "Pilih provinsi"}
+              muted={!shippingKnown}
             />
             {discount > 0 && <Row label={`Voucher ${voucher?.code ?? ""}`} value={`−${formatRupiah(discount)}`} />}
             <div className="my-2 border-t border-border" />
             <Row label="Total" value={formatRupiah(total)} strong />
           </dl>
+          {!shippingKnown && (
+            <p className="mt-1 text-right text-xs text-muted-foreground">Belum termasuk ongkir — pilih provinsi tujuan.</p>
+          )}
 
           <Button size="lg" className="mt-5 w-full" onClick={pay} disabled={placing}>
             {placing && <Loader2 className="size-4 animate-spin" />}
