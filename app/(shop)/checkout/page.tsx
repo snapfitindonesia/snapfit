@@ -16,7 +16,7 @@ export default async function CheckoutPage() {
   const flatShipping = isFlatShipping();
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 pb-32 sm:px-6 sm:py-12 md:pb-12">
+    <div className="mx-auto max-w-[90rem] px-4 py-8 pb-32 sm:px-6 lg:px-10 sm:py-12 md:pb-12">
       {/* Snap.js hanya dimuat saat Midtrans aktif */}
       {!manualPayment && <SnapScript />}
       <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Checkout</h1>

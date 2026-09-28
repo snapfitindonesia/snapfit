@@ -52,7 +52,7 @@ export default async function PromoPage({ params }: { params: Promise<{ slug: st
   return (
     <div>
       <section className="bg-foreground text-background">
-        <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+        <div className="mx-auto max-w-[90rem] px-4 py-12 sm:px-6 lg:px-10 sm:py-16">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-ink px-3 py-1 text-xs font-semibold text-brand-foreground">
             {status.badge}
           </span>
@@ -72,7 +72,7 @@ export default async function PromoPage({ params }: { params: Promise<{ slug: st
         </div>
       </section>
 
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+      <div className="mx-auto max-w-[90rem] px-4 sm:px-6 lg:px-10">
         {vouchers.length > 0 && (
           <section className="mt-10">
             <h2 className="text-lg font-semibold tracking-tight">Voucher yang bisa dipakai</h2>
@@ -94,7 +94,7 @@ export default async function PromoPage({ params }: { params: Promise<{ slug: st
                 ? `Diskon hingga ${data.upcomingPercent}% berlaku mulai ${fmtWibDate(data.upcomingStartsAt!)} — harga di bawah masih harga normal.`
                 : `Daftar produk promo diumumkan menjelang ${c.title.toLowerCase()} (${fmtWibDate(win.live ? win.end : win.start)}). Sementara itu, cek produk unggulan kami.`}
           </p>
-          <div className="mt-6 grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
+          <div className="mt-6 grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {(hasLive ? data.live : hasUpcoming ? data.upcoming : fallback).map((p, i) => (
               <ProductCard key={p.id} product={p} priority={i < 4} />
             ))}

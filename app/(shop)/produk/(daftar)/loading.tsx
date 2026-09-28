@@ -2,7 +2,7 @@
 // loading.tsx di atas halaman produk membuat notFound() terkirim sebagai HTTP 200 (soft 404).
 export default function LoadingProducts() {
   return (
-    <div className="mx-auto max-w-6xl animate-pulse px-4 py-8 sm:px-6 sm:py-12">
+    <div className="mx-auto max-w-[90rem] animate-pulse px-4 py-8 sm:px-6 lg:px-10 sm:py-12">
       <div className="mb-8 space-y-2">
         <div className="h-8 w-48 rounded bg-muted" />
         <div className="h-4 w-64 rounded bg-muted" />
@@ -12,7 +12,7 @@ export default function LoadingProducts() {
           <div key={i} className="h-8 w-24 rounded-full bg-muted" />
         ))}
       </div>
-      <div className="mt-6 grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
+      <div className="mt-6 grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 xl:grid-cols-4">
         {Array.from({ length: 8 }).map((_, i) => (
           <div key={i} className="space-y-3">
             <div className="aspect-square w-full rounded-lg bg-muted" />

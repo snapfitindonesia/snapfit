@@ -4,7 +4,7 @@ import Link from "next/link";
 export function AnnouncementBar() {
   return (
     <div className="bg-foreground text-background">
-      <div className="mx-auto max-w-6xl px-4 py-2 text-center text-xs font-medium sm:text-sm">
+      <div className="mx-auto max-w-[90rem] px-4 lg:px-10 py-2 text-center text-xs font-medium sm:text-sm">
         Voucher GRATISONGKIR: potongan ongkir s/d Rp20rb, min. belanja Rp150rb ·{" "}
         <Link href="/produk" className="underline underline-offset-2">
           Belanja sekarang

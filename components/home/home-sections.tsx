@@ -11,7 +11,7 @@ import type { HomeData } from "@/lib/home/data";
 /*
  * Beranda "bercerita" (referensi: Nomad). Lebar gabungan: hero, banner cerita, komunitas &
  * banner ulasan SELEBAR LAYAR; deretan produk, kategori, blok gambar+teks & kartu dibatasi
- * max-w-6xl. Bagian di bawah layar pertama memakai cv-auto (render ditunda sampai dekat).
+ * max-w-[90rem] (1440px). Bagian di bawah layar pertama memakai cv-auto (render ditunda sampai dekat).
  */
 
 const WRAP = "mx-auto max-w-[90rem] px-4 sm:px-6 lg:px-10";
