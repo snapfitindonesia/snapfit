@@ -10,7 +10,9 @@ export function ProductCard({ product, priority = false }: { product: ProductLis
   const hasDiscount = product.discountPercent > 0;
 
   return (
-    <div className={`group flex flex-col ${priority ? "" : "animate-in fade-in slide-in-from-bottom-3 duration-500"}`}>
+    // h-full + tombol mt-auto: tombol "Pilih Opsi/Keranjang" sejajar di dasar kartu walau isi
+    // kartu beda tinggi (ada/tidaknya kategori, rating, harga coret, judul 1–2 baris).
+    <div className={`group flex h-full flex-col ${priority ? "" : "animate-in fade-in slide-in-from-bottom-3 duration-500"}`}>
       <Link href={`/produk/${product.slug}`} className="block">
       <div className="relative aspect-square w-full overflow-hidden rounded-lg border border-border bg-muted">
         <Image
@@ -70,7 +72,9 @@ export function ProductCard({ product, priority = false }: { product: ProductLis
         </div>
       </div>
       </Link>
-      <AddToCartButton product={product} />
+      <div className="mt-auto">
+        <AddToCartButton product={product} />
+      </div>
     </div>
   );
 }
