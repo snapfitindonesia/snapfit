@@ -1,0 +1,47 @@
+<!doctype html>
+<!--
+  Template Supabase → Authentication → Email Templates → "Confirm signup".
+  Subject: Kode verifikasi SNAPFIT: {{ .Token }}
+  {{ .Token }} = kode OTP (dimasukkan di halaman /daftar), {{ .ConfirmationURL }} = tautan alternatif.
+  Gaya sama dengan email toko (lib/email.ts).
+-->
+<html lang="id"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="color-scheme" content="light"/><title>SNAPFIT</title></head>
+<body style="margin:0;padding:0;background:#efede9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0">Kode verifikasi akun SNAPFIT-mu: {{ .Token }}</div>
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#efede9">
+    <tr><td align="center" style="padding:28px 12px 8px">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px">
+        <tr><td style="padding:0 8px 18px">
+          <a href="https://www.snapfit.id" style="text-decoration:none"><img src="https://www.snapfit.id/email/logo.png" width="116" height="28" alt="SNAPFIT" style="display:block;border:0"/></a>
+        </td></tr>
+        <tr><td style="background:#ffffff;border-radius:20px;padding:32px 28px">
+          <div style="font-size:26px;line-height:1.2;font-weight:800;letter-spacing:-0.6px;color:#0a0a0a">Verifikasi emailmu</div>
+          <div style="font-size:15px;line-height:1.65;color:#3f3f46;padding-top:12px">
+            Masukkan kode di bawah ini pada halaman pendaftaran SNAPFIT untuk mengaktifkan akunmu.
+          </div>
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-top:24px;background:#f5f5f4;border-radius:14px">
+            <tr><td align="center" style="padding:22px 20px">
+              <div style="font-size:12px;color:#71717a">Kode verifikasi</div>
+              <div style="font-size:36px;font-weight:800;letter-spacing:10px;color:#0a0a0a;padding-top:6px;font-family:'SFMono-Regular',Menlo,Consolas,monospace">{{ .Token }}</div>
+              <div style="font-size:12px;color:#71717a;padding-top:8px">Berlaku 1 jam. Jangan berikan kode ini kepada siapa pun.</div>
+            </td></tr>
+          </table>
+          <div style="font-size:14px;line-height:1.6;color:#3f3f46;padding-top:24px">
+            Atau klik tombol ini dari perangkat yang sama:
+          </div>
+          <div style="padding-top:14px">
+            <a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#0a0a0a;color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;padding:14px 28px;border-radius:999px">Aktifkan Akun</a>
+          </div>
+          <div style="font-size:13px;line-height:1.6;color:#71717a;padding-top:24px">
+            Tidak merasa mendaftar di SNAPFIT? Abaikan email ini — akun tidak akan dibuat tanpa kode di atas.
+          </div>
+          <div style="padding-top:28px;font-size:14px;line-height:1.6;color:#3f3f46">Salam hangat,<br/><strong style="color:#0a0a0a">Tim SNAPFIT</strong></div>
+        </td></tr>
+        <tr><td align="center" style="padding:24px 24px 28px;font-size:12px;line-height:1.6;color:#71717a">
+          Butuh bantuan? Balas email ini atau chat WhatsApp +62-816-4806-156.<br/>© SNAPFIT Indonesia · <a href="https://www.snapfit.id" style="color:#71717a">snapfit.id</a>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>

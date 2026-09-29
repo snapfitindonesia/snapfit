@@ -74,6 +74,7 @@ render fungsi template dengan data contoh (tsx) lalu buka HTML-nya di browser.
 | Ajakan ulasan | cron 10:00 WIB, 7 hari setelah dikirim | pembeli (tautan ke form `/ulasan/<token>`) |
 | Keranjang ditinggal | cron 20:00 WIB | pembeli (tautan pulihkan + berhenti) |
 | Koin segera hangus | cron koin 09:00 WIB, H-x (Admin → Koin Member) | member |
+| Kode verifikasi daftar (OTP) | daftar manual (dikirim **Supabase Auth**, bukan Resend) — template `docs/templates/supabase-confirm-signup.html` ditempel di Supabase → Email Templates → Confirm signup; pembeli memasukkan kode di /daftar (`verifySignupOtp`), tautan di email tetap berfungsi | pembeli |
 | Selamat datang | akun baru aktif: login Google pertama / email dikonfirmasi (daftar manual) / cadangan saat saldo koin pertama dibaca; sekali per akun (`app_metadata.welcome_sent_at`, `lib/welcome.ts`), hanya akun < 3 hari | member (+ bonus koin daftar) |
 | Keranjang masih menunggu | cron 20:00 WIB, checkout tak selesai 1 jam–3 hari | calon pembeli (kecuali yang minta berhenti) |
 
