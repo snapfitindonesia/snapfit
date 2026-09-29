@@ -292,22 +292,41 @@ function Banner({ s }: { s: SectionOf<"banner"> }) {
 function Community({ s, data }: { s: SectionOf<"community">; data: HomeData }) {
   const shots = (s.source === "ulasan" ? data.shots : s.items).filter((x) => x.image);
   if (shots.length < 3) return null; // terlalu sedikit → tampak kosong; sembunyikan
+  // Gaya "From the Nomad Community": judul besar di tengah, baris foto SELEBAR LAYAR (terpotong di
+  // tepi), kartu 4:5 bersudut, keterangan di bawah, panah bulat putih di tepi. Foto → halaman produk.
   return (
-    <section className={cn(WRAP, "cv-auto py-12 [--cv-h:420px] sm:py-16")}>
-      <SectionHead title={s.title} subtitle={s.subtitle} />
-      <ScrollRow label={s.title || "Komunitas"} className={BLEED}>
+    <section className="cv-auto py-14 [--cv-h:560px] sm:py-20">
+      {s.title && (
+        <h2 className="mb-7 px-4 text-center text-3xl font-extrabold tracking-[-0.03em] text-balance sm:mb-9 sm:text-4xl lg:text-[46px]">
+          {s.title}
+        </h2>
+      )}
+      {s.subtitle && <p className="-mt-4 mb-8 px-4 text-center text-sm text-muted-foreground sm:-mt-5">{s.subtitle}</p>}
+      <ScrollRow label={s.title || "Galeri SNAPFIT"} edge className="px-4 scroll-px-4">
         {shots.map((x, i) => {
+          // Ada keterangan → itulah teks tautannya; alt dikosongkan agar tak dibaca dua kali.
+          const alt = x.caption ? "" : "Foto SNAPFIT";
           const body = (
             <>
-              <span className="relative block aspect-[4/5] overflow-hidden rounded-xl bg-muted">
-                <Image src={x.image} alt={x.caption ? `Foto dari ${x.caption}` : "Foto pelanggan SNAPFIT"} fill sizes="(min-width: 1024px) 18vw, 42vw" className="object-cover transition-transform duration-500 group-hover:scale-105" />
+              <span className="relative block aspect-[4/5] overflow-hidden rounded-2xl bg-muted">
+                <Image
+                  src={x.image}
+                  alt={alt}
+                  fill
+                  sizes="(min-width: 1024px) 300px, (min-width: 640px) 30vw, 44vw"
+                  className="object-cover transition-transform duration-500 group-hover:scale-105"
+                />
               </span>
-              {x.caption && <span className="mt-2 block truncate text-xs text-muted-foreground">{x.caption}</span>}
+              {x.caption && <span className="mt-3 block truncate text-sm text-foreground/80">{x.caption}</span>}
             </>
           );
           return (
-            <div key={i} className="group w-[42vw] shrink-0 snap-start sm:w-[28vw] lg:w-[calc((100%-5rem)/5.4)]">
-              {x.href ? <Link href={x.href}>{body}</Link> : body}
+            <div key={i} className="group w-[44vw] shrink-0 snap-start sm:w-[30vw] lg:w-[clamp(220px,14.2vw,300px)]">
+              {x.href ? (
+                <Link href={x.href}>{body}</Link>
+              ) : (
+                body
+              )}
             </div>
           );
         })}

@@ -236,6 +236,26 @@ export const DEFAULT_SECTIONS: HomeSection[] = sectionsSchema.parse([
     author: "Tim SNAPFIT",
   },
   {
+    // Gaya "From the Nomad Community": foto bisa diklik → halaman produk. Isi awal = foto produk
+    // yang tampak seperti foto asli; ganti dengan foto pelanggan/tim di Admin → Konten Beranda.
+    id: "komunitas",
+    type: "community",
+    title: "SNAPFIT di Keseharian",
+    source: "manual",
+    items: [
+      { image: "https://cdn.snapfit.id/m-8c596d6f7591923b5b4b1ead.webp", caption: "Case AirPods Pro 3 Carbon", href: "/produk/snapfit-case-compatible-for-airpods-pro-3-2025-airpods-4-2024-snapfit-real-arami" },
+      { image: "https://cdn.snapfit.id/m-c2ad0a382604831c4b0d108b.webp", caption: "Case Vivo X300 Pro Matte", href: "/produk/snapfit-case-compatible-for-vivo-x300-pro-x300-snapfit-ultra-thin-matte-magsafe" },
+      { image: "https://cdn.snapfit.id/m-6706eff7f93943e1f1868ef5.webp", caption: "Case AirPods 4 Aramid", href: "/produk/snapfit-case-compatible-for-airpods-pro-3-2025-airpods-4-2024-snapfit-real-arami" },
+      { image: "https://cdn.snapfit.id/m-cd38360f4156f809c45f718c.webp", caption: "Case Pixel 10 MagSafe", href: "/produk/case-google-pixel-10-10-pro-pixel-10-pro-xl-snapfit-magnetic-magsafe-skin-feel-p" },
+      { image: "https://cdn.snapfit.id/m-2e6d0dccdc7115a4b099da10.webp", caption: "Case Vivo X300 Ultra Thin", href: "/produk/snapfit-case-compatible-for-vivo-x300-pro-x300-snapfit-ultra-thin-matte-magsafe" },
+      { image: "https://cdn.snapfit.id/m-ade9e92a2811c9a450b85ead.webp", caption: "Case AirPods 4 Security Lock", href: "/produk/snapfit-case-compatible-for-airpods-4-2024-snapfit-security-lock-military-shockp" },
+      { image: "https://cdn.snapfit.id/m-775f8401eed54cdc412ebfb4.webp", caption: "Case Pixel 10 Leather Folio", href: "/produk/case-google-pixel-10-10-pro-google-pixel-10-pro-xl-snapfit-leather-folio-wallet" },
+      { image: "https://cdn.snapfit.id/m-288f39e60738b55d8b1230dc.webp", caption: "Case AirPods Carbon Fiber", href: "/produk/snapfit-case-compatible-for-airpods-pro-3-2025-airpods-4-2024-snapfit-real-arami" },
+      { image: "https://cdn.snapfit.id/m-7446f6fa6c861b861d17e547.webp", caption: "Case Pixel 10 Pro Frosted", href: "/produk/case-google-pixel-10-10-pro-pixel-10-pro-xl-snapfit-magnetic-magsafe-skin-feel-p" },
+      { image: "https://cdn.snapfit.id/m-3c4ef31aee4f7b9d4efe526d.webp", caption: "Case Vivo X300 Slim", href: "/produk/snapfit-case-compatible-for-vivo-x300-pro-x300-snapfit-ultra-thin-matte-magsafe" },
+    ],
+  },
+  {
     id: "cerita",
     type: "banner",
     bg: "#151515",
@@ -254,13 +274,6 @@ export const DEFAULT_SECTIONS: HomeSection[] = sectionsSchema.parse([
     limit: 12,
     ctaLabel: "Lihat semua",
     ctaHref: "/produk",
-  },
-  {
-    id: "komunitas",
-    type: "community",
-    title: "Dari pelanggan SNAPFIT",
-    subtitle: "Foto asli dari ulasan pembeli.",
-    source: "ulasan",
   },
   {
     id: "ulasan",
