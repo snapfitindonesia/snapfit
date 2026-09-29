@@ -15,6 +15,10 @@ import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 const WIDTHS = [128, 384, 750];
+// Foto lebar ("-wide.webp", hero/banner) punya varian sendiri — sama dgn WIDE_VARIANT_WIDTHS di lib/upload/cdn.ts.
+const WIDE_WIDTHS = [750, 1200, 1800];
+const isWide = (key) => /-wide(\.w\d+)?\.webp$/.test(key);
+const widthsFor = (key) => (isWide(key) ? WIDE_WIDTHS : WIDTHS);
 const apply = process.argv.includes("--apply");
 const e = process.env;
 const PUBLIC = (e.R2_PUBLIC_URL || "https://cdn.snapfit.id").replace(/\/$/, "");
@@ -39,7 +43,7 @@ async function listKeys() {
 
 let keys = await listKeys();
 const bases = [...keys].filter(isBase);
-const todo = bases.flatMap((k) => WIDTHS.filter((w) => !keys.has(variantKey(k, w))).map((w) => [k, w]));
+const todo = bases.flatMap((k) => widthsFor(k).filter((w) => !keys.has(variantKey(k, w))).map((w) => [k, w]));
 console.log(`objek: ${keys.size} · foto WebP asli: ${bases.length} · varian belum ada: ${todo.length}`);
 
 if (apply && todo.length) {
@@ -86,8 +90,10 @@ if (apply && todo.length) {
 if (process.argv.includes("--prune-old")) {
   const old = [...keys].filter((k) => {
     const m = k.match(/\.w(\d+)\.webp$/);
-    return m && !WIDTHS.includes(Number(m[1]));
+    return m && !widthsFor(k).includes(Number(m[1]));
   });
+  const byW = {}; for (const k of old) { const w = k.match(/\.w(\d+)\.webp$/)[1] + (isWide(k) ? "-wide" : ""); byW[w] = (byW[w] || 0) + 1; }
+  console.log("per lebar:", JSON.stringify(byW));
   console.log(`varian lama: ${old.length}${apply ? " — menghapus…" : " (tambah --apply untuk menghapus)"}`);
   if (apply && old.length) {
     let i = 0, gone = 0;
@@ -126,7 +132,7 @@ const problems = [];
 for (const u of refs) {
   const k = decodeURIComponent(new URL(u).pathname.slice(1));
   if (!keys.has(k)) problems.push(`HILANG asli: ${k}`);
-  else if (isBase(k)) for (const w of WIDTHS) if (!keys.has(variantKey(k, w))) problems.push(`HILANG w${w}: ${k}`);
+  else if (isBase(k)) for (const w of widthsFor(k)) if (!keys.has(variantKey(k, w))) problems.push(`HILANG w${w}: ${k}`);
 }
 console.log(`URL cdn dipakai DB: ${refs.size} · bermasalah: ${problems.length}`);
 if (problems.length) console.log(problems.slice(0, 30).join("\n"));
