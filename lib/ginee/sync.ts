@@ -152,7 +152,7 @@ export async function runGineeStockSync(limit = 5000): Promise<StockSyncResult> 
 async function syncArchivedFromGinee(): Promise<{ archived: number; restored: number; checked: number; note?: string }> {
   const products = await db.product.findMany({
     where: { gineeProductId: { not: null }, syncLocked: false },
-    select: { id: true, gineeProductId: true, archived: true },
+    select: { id: true, gineeProductId: true, archived: true, archivedBy: true },
   });
   const missing: string[] = [];
   const present: string[] = [];
@@ -178,9 +178,10 @@ async function syncArchivedFromGinee(): Promise<{ archived: number; restored: nu
     return { archived: 0, restored: 0, checked, note: `${missing.length}/${checked} produk tak ditemukan di Ginee — terlalu banyak (anomali?), pengarsipan dibatalkan.` };
   }
   const toArchive = products.filter((p) => missing.includes(p.id) && !p.archived).map((p) => p.id);
-  const toRestore = products.filter((p) => present.includes(p.id) && p.archived).map((p) => p.id);
-  if (toArchive.length) await db.product.updateMany({ where: { id: { in: toArchive } }, data: { archived: true } });
-  if (toRestore.length) await db.product.updateMany({ where: { id: { in: toRestore } }, data: { archived: false } });
+  // Hanya pulihkan yang dulu diarsipkan sinkron ini — arsip manual (mis. produk merek lain) tetap tersembunyi.
+  const toRestore = products.filter((p) => present.includes(p.id) && p.archived && p.archivedBy === "ginee").map((p) => p.id);
+  if (toArchive.length) await db.product.updateMany({ where: { id: { in: toArchive } }, data: { archived: true, archivedBy: "ginee" } });
+  if (toRestore.length) await db.product.updateMany({ where: { id: { in: toRestore } }, data: { archived: false, archivedBy: null } });
   return {
     archived: toArchive.length,
     restored: toRestore.length,

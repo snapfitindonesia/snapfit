@@ -31,6 +31,7 @@ model Product {
   featured    Boolean    @default(false) // true = tampil di "Produk Unggulan" homepage
   syncLocked  Boolean    @default(false) // true = stok/harga TIDAK ditimpa sinkron Ginee (kelola manual)
   archived    Boolean    @default(false) // true = disembunyikan dari toko/feed/sitemap (mis. produk sudah dihapus di Ginee)
+  archivedBy  String? // "ginee" = diarsip otomatis sinkron (dipulihkan bila muncul lagi di Ginee); lainnya/null = manual (TIDAK dipulihkan sinkron)
   categoryId  String?
   category    Category?  @relation(fields: [categoryId], references: [id])
   // Kategori tambahan (many-to-many) — 1 produk bisa masuk beberapa kategori,
