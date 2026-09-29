@@ -15,6 +15,7 @@ import { overviewFor } from "@/lib/overview";
 import { applyDiscount } from "@/lib/format";
 import { getCompanions } from "@/lib/cross-sell";
 import { getCoinRules } from "@/lib/coins-settings";
+import { activeCashback } from "@/lib/coins-rules";
 
 // ISR: PDP di-generate on-demand saat request pertama lalu DI-CACHE 5 menit
 // (tak query DB saat build → deploy Vercel aman). Fresh via revalidatePath saat admin edit.
@@ -160,7 +161,8 @@ export default async function ProductDetailPage({
             product={pdpProduct}
             vouchers={vouchers.map((v) => ({ code: v.code, label: v.label, minPurchase: v.minPurchase }))}
             companions={companions}
-            coinCashbackPercent={coinRules.enabled ? coinRules.cashbackPercent : 0}
+            coinCashbackPercent={activeCashback(coinRules).percent}
+            coinPromo={activeCashback(coinRules).promo}
           />
         </div>
       </section>

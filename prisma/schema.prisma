@@ -142,6 +142,7 @@ model Order {
   discount     Int     @default(0)
   voucherCodes String? // kode voucher terpakai, dipisah "+" (mis. "SNAP20K+GRATISONGKIR")
   coinsUsed    Int     @default(0) // koin member terpakai (1 koin = Rp1), sudah dikurangkan dari total
+  cashbackPercent Float? // % cashback koin yang berlaku SAAT pesanan dibuat (termasuk promo berjadwal); null = tamu
   total        Int
 
   // pembayaran

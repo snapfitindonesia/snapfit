@@ -61,6 +61,8 @@ Dipakai di daftar produk, PDP, checkout (ditolak), dan feed (dilewati).
 **Jangan** memakai ambang nominal (mis. ≥ 900rb) — case premium asli berharga Rp945rb–1,9jt.
 
 ### Produk diarsipkan
+- Admin → Produk: tombol **Arsipkan/Tampilkan** (per produk & massal) + tab **Diarsipkan**. Arsip admin
+  = `archivedBy: "admin"`; arsip otomatis sinkron = `"ginee"`. Sinkron Ginee hanya memulihkan yang `"ginee"`.
 `archived = true` → tidak tampil di toko, feed, sitemap, landing; PDP 404. Diset
 otomatis oleh sinkron Ginee bila produk dihapus di Ginee, dan dipulihkan bila muncul
 lagi. Semua query publik **wajib** menyaring `archived: false`.

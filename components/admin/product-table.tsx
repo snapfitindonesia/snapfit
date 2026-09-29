@@ -3,9 +3,9 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronDown, ChevronUp, Search, Trash2, Loader2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Search, Trash2, Loader2, Archive, Eye } from "lucide-react";
 import { formatRupiah } from "@/lib/format";
-import { deleteProduct, deleteProducts } from "@/lib/actions/admin";
+import { deleteProduct, deleteProducts, setProductsArchived } from "@/lib/actions/admin";
 
 export type AdminVariant = {
   id: string;
@@ -24,7 +24,8 @@ export type AdminProduct = {
   coverImage: string | null;
   category: string | null;
   isGrosir: boolean;
-  archived?: boolean; // disembunyikan dari toko (dihapus di Ginee)
+  archived?: boolean; // disembunyikan dari toko/feed/sitemap
+  archivedBy?: string | null; // "ginee" = otomatis (dihapus di Ginee); lainnya = diarsip admin
   sold: number;
   variants: AdminVariant[];
 };
@@ -48,7 +49,7 @@ function priceRange(p: AdminProduct) {
   return min === max ? formatRupiah(min) : `${formatRupiah(min)} - ${formatRupiah(max)}`;
 }
 
-type Tab = "semua" | "aktif" | "habis" | "grosir";
+type Tab = "semua" | "aktif" | "habis" | "grosir" | "arsip";
 type SortKey = "terbaru" | "nama" | "harga-asc" | "harga-desc" | "stok-desc" | "terjual";
 const SORT_LABEL: Record<SortKey, string> = {
   terbaru: "Terbaru",
@@ -77,15 +78,19 @@ export function ProductTable({ products }: { products: AdminProduct[] }) {
     [products],
   );
 
+  const live = useMemo(() => products.filter((p) => !p.archived), [products]);
   const counts = useMemo(() => ({
-    semua: products.length,
-    aktif: products.filter((p) => totalStock(p) > 0).length,
-    habis: products.filter((p) => totalStock(p) === 0).length,
-    grosir: products.filter((p) => p.isGrosir).length,
+    semua: live.length,
+    aktif: live.filter((p) => totalStock(p) > 0).length,
+    habis: live.filter((p) => totalStock(p) === 0).length,
+    grosir: live.filter((p) => p.isGrosir).length,
+    arsip: products.length - live.length,
   }), [products]);
 
   const filtered = useMemo(() => {
     let list = products;
+    // Produk diarsipkan hanya tampil di tab "Diarsipkan".
+    list = tab === "arsip" ? list.filter((p) => p.archived) : list.filter((p) => !p.archived);
     if (tab === "aktif") list = list.filter((p) => totalStock(p) > 0);
     else if (tab === "habis") list = list.filter((p) => totalStock(p) === 0);
     else if (tab === "grosir") list = list.filter((p) => p.isGrosir);
@@ -159,7 +164,18 @@ export function ProductTable({ products }: { products: AdminProduct[] }) {
     { key: "aktif", label: "Aktif" },
     { key: "habis", label: "Stok Habis" },
     { key: "grosir", label: "Grosir" },
+    { key: "arsip", label: "Diarsipkan" },
   ];
+
+  async function onArchive(ids: string[], archived: boolean) {
+    if (!ids.length) return;
+    if (archived && !confirm(`Arsipkan ${ids.length} produk? Produk disembunyikan dari toko, pencarian, feed & sitemap (data tetap tersimpan, bisa ditampilkan lagi).`)) return;
+    setBulkBusy(true);
+    const res = await setProductsArchived(ids, archived);
+    if (res.ok) { setSelected(new Set()); router.refresh(); }
+    else alert(res.error ?? "Gagal menyimpan.");
+    setBulkBusy(false);
+  }
 
   return (
     <div className="rounded-xl border border-border bg-card shadow-sm">
@@ -218,6 +234,13 @@ export function ProductTable({ products }: { products: AdminProduct[] }) {
         <div className="flex flex-wrap items-center gap-3 border-y border-border bg-brand/5 px-3 py-2 text-sm">
           <span className="font-medium">{selected.size} produk dipilih</span>
           <button
+            onClick={() => onArchive([...selected], tab !== "arsip")}
+            disabled={bulkBusy}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted disabled:opacity-50"
+          >
+            {tab === "arsip" ? <Eye className="size-4" /> : <Archive className="size-4" />} {tab === "arsip" ? "Tampilkan terpilih" : "Arsipkan terpilih"}
+          </button>
+          <button
             onClick={onBulkDelete}
             disabled={bulkBusy}
             className="inline-flex items-center gap-1.5 rounded-lg bg-destructive px-3 py-1.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
@@ -269,7 +292,11 @@ export function ProductTable({ products }: { products: AdminProduct[] }) {
                           <p className="text-xs text-muted-foreground">Kode: {p.slug}</p>
                           <div className="mt-1 flex flex-wrap gap-1">
                             {p.archived && (
-                              <span title="Produk ini sudah dihapus di Ginee — disembunyikan dari toko, feed & sitemap. Otomatis tampil lagi bila produknya ada lagi di Ginee." className="rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] font-medium text-destructive">Diarsipkan · dihapus di Ginee</span>
+                              p.archivedBy === "ginee" ? (
+                                <span title="Produk ini sudah dihapus di Ginee — disembunyikan dari toko, feed & sitemap. Otomatis tampil lagi bila produknya ada lagi di Ginee." className="rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] font-medium text-destructive">Diarsipkan · dihapus di Ginee</span>
+                              ) : (
+                                <span title="Diarsipkan dari admin — tersembunyi dari toko sampai ditampilkan lagi." className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">Diarsipkan</span>
+                              )
                             )}
                             {p.category && (
                               <span className="rounded border border-border px-1.5 py-0.5 text-[10px] text-muted-foreground">{p.category}</span>
@@ -287,6 +314,13 @@ export function ProductTable({ products }: { products: AdminProduct[] }) {
                     <td className="px-4 py-3 align-top">
                       <div className="flex flex-col items-end gap-1">
                         <Link href={`/admin/produk/${p.id}`} className="text-brand hover:underline">Ubah</Link>
+                        <button
+                          onClick={() => onArchive([p.id], !p.archived)}
+                          disabled={bulkBusy}
+                          className="text-muted-foreground hover:text-foreground disabled:opacity-50"
+                        >
+                          {p.archived ? "Tampilkan" : "Arsipkan"}
+                        </button>
                         <button
                           onClick={() => onDelete(p)}
                           disabled={busyId === p.id}

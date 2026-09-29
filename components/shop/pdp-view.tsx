@@ -70,12 +70,15 @@ export function PdpView({
   vouchers = [],
   companions = [],
   coinCashbackPercent = 0,
+  coinPromo = null,
 }: {
   product: PdpProduct;
   vouchers?: VoucherChip[];
   companions?: Companion[];
   /** % cashback koin member (Admin → Koin Member); 0 = program mati → info disembunyikan. */
   coinCashbackPercent?: number;
+  /** Nama promo cashback berjadwal yang sedang berjalan (mis. "Payday Sale"). */
+  coinPromo?: string | null;
 }) {
   const coinCashback = (price: number) => Math.floor((price * coinCashbackPercent) / 100);
   const { addItem } = useCart();
@@ -481,6 +484,11 @@ export function PdpView({
           <p className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
             <Coins className="size-3.5 text-amber-600" />
             Member dapat <b className="font-semibold text-foreground">{coinCashback(finalPrice).toLocaleString("id-ID")} koin</b> cashback
+            {coinPromo && (
+              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+                {coinCashbackPercent.toLocaleString("id-ID")}% · {coinPromo}
+              </span>
+            )}
           </p>
         )}
 

@@ -135,6 +135,9 @@ bar bawah (HP), dan tombol WhatsApp melayang.
 - Hanya member (login). Tamu tetap bisa checkout; ringkasan checkout menampilkan ajakan masuk.
   Member: centang "Pakai koin" + info "Dapat X koin setelah pesanan selesai". Jumlah koin selalu
   dihitung ulang di server; pesanan & pemakaian koin dalam satu transaksi (tak bisa dobel).
+- **Promo cashback berjadwal** (Admin → Koin Member): ikut jadwal Payday (25–28) / tanggal kembar,
+  atau rentang tanggal sendiri (WIB); persen tertinggi yang berjalan dipakai. Persen dikunci di
+  `Order.cashbackPercent` saat pesanan dibuat. PDP, checkout & Akun → Koin menampilkan label promo.
 - Batal (admin atau Midtrans) → koin terpakai dikembalikan, cashback ditarik (sebatas saldo).
 - PDP menampilkan "Member dapat X koin cashback" (dihitung dari harga, PDP tetap ISR).
 - Pembeli: **Akun → Koin SNAPFIT** (`/akun/koin`, saldo, yang segera hangus, riwayat, aturan).

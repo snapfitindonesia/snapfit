@@ -232,7 +232,7 @@ export function CheckoutView({
   const coinsUsable = maxCoinsUsable(coinBalance, subtotal, totalBeforeCoins, shippingCost, coinRules);
   const coinsUsed = useCoins ? coinsUsable : 0;
   const total = totalBeforeCoins - coinsUsed;
-  const cashback = cashbackFor(total - shippingCost, coinRules);
+  const cashback = coins?.loggedIn ? cashbackFor(total - shippingCost, coins.cashback.percent) : 0;
 
   const bcFired = useRef(false);
   useEffect(() => {
@@ -620,17 +620,18 @@ function CoinBox({
 }) {
   if (!coins) return null;
   const r = coins.rules;
+  const cb = coins.cashback; // persen berlaku sekarang (dasar / promo berjadwal)
   if (!coins.loggedIn) {
-    if (!r.enabled || (!r.signupBonus && !r.cashbackPercent)) return null;
+    if (!r.enabled || (!r.signupBonus && !cb.percent)) return null;
     return (
       <Link
         href="/masuk?next=/checkout"
         className="mt-4 block rounded-md border border-amber-300 bg-amber-50 px-3 py-2.5 text-xs text-amber-950 transition-colors hover:bg-amber-100"
       >
         {r.signupBonus > 0 ? (
-          <><b>Masuk / daftar, dapat {r.signupBonus.toLocaleString("id-ID")} koin</b>{r.cashbackPercent > 0 && <> + cashback {pct(r.cashbackPercent)} tiap belanja</>}.</>
+          <><b>Masuk / daftar, dapat {r.signupBonus.toLocaleString("id-ID")} koin</b>{cb.percent > 0 && <> + cashback {pct(cb.percent)}{cb.promo ? ` (${cb.promo})` : " tiap belanja"}</>}.</>
         ) : (
-          <><b>Masuk / daftar</b> untuk cashback {pct(r.cashbackPercent)} koin tiap belanja.</>
+          <><b>Masuk / daftar</b> untuk cashback {pct(cb.percent)} koin{cb.promo ? ` (${cb.promo})` : " tiap belanja"}.</>
         )}
         <span className="mt-0.5 block font-medium underline underline-offset-2">Masuk sekarang →</span>
       </Link>
@@ -655,7 +656,8 @@ function CoinBox({
       )}
       {cashback > 0 && (
         <p className="mt-1.5 border-t border-border pt-1.5 text-muted-foreground">
-          Dapat <b className="text-foreground">{cashback.toLocaleString("id-ID")} koin</b> setelah pesanan selesai.
+          Dapat <b className="text-foreground">{cashback.toLocaleString("id-ID")} koin</b> ({pct(cb.percent)}
+          {cb.promo ? <> · <span className="font-semibold text-amber-700">{cb.promo}</span></> : null}) setelah pesanan selesai.
         </p>
       )}
     </div>

@@ -64,6 +64,7 @@ const GROUPS: NavGroup[] = [
     icon: MessagesSquare,
     items: [
       { href: "/admin/koin", label: "Koin Member" },
+      { href: "/admin/email", label: "Email Otomatis" },
       { href: "/admin/ulasan", label: "Ulasan" },
       { href: "/admin/pencarian", label: "Pencarian" },
     ],

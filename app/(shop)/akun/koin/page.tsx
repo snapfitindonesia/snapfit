@@ -89,6 +89,12 @@ export default async function MyCoinsPage() {
         <ul className="mt-2 list-disc space-y-1 pl-5 text-muted-foreground">
           {!r.enabled && <li>Program koin sedang dihentikan: tidak ada koin baru, tapi saldomu tetap bisa dipakai.</li>}
           {r.enabled && r.cashbackPercent > 0 && <li>Cashback {pct(r.cashbackPercent)} dari nilai belanja (tanpa ongkir), masuk setelah pesanan selesai.</li>}
+          {coins.cashback.promo && (
+            <li className="font-medium text-amber-800">
+              Sedang berlangsung: {coins.cashback.promo} — cashback {pct(coins.cashback.percent)}
+              {coins.cashback.until ? ` s/d ${fmt(new Date(new Date(coins.cashback.until).getTime() - 1))}` : ""}.
+            </li>
+          )}
           {r.enabled && (r.signupBonus > 0 || r.reviewBonus > 0) && (
             <li>
               {r.signupBonus > 0 && <>Bonus {n(r.signupBonus)} koin untuk member baru{r.reviewBonus > 0 ? ", " : "."}</>}

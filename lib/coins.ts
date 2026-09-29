@@ -1,6 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
-import { cashbackFor } from "@/lib/coins-rules";
+import { activeCashback, cashbackFor } from "@/lib/coins-rules";
 import { getCoinRules } from "@/lib/coins-settings";
 
 /**
@@ -93,12 +93,24 @@ export async function ensureSignupBonus(userId: string) {
   return grantCoins(userId, rules.signupBonus, "SIGNUP", `signup:${userId}`, { note: "Bonus member baru" });
 }
 
-type OrderForCoins = { id: string; userId: string | null; total: number; shippingCost: number; coinsUsed: number; midtransOrderId?: string | null };
+type OrderForCoins = {
+  id: string;
+  userId: string | null;
+  total: number;
+  shippingCost: number;
+  coinsUsed: number;
+  cashbackPercent?: number | null;
+  midtransOrderId?: string | null;
+};
 
 /** Cashback 2% saat pesanan Selesai (atau otomatis setelah masa tunggu, lihat cron koin). */
 export async function grantOrderCashback(order: OrderForCoins): Promise<number> {
   if (!order.userId) return 0;
-  const amount = cashbackFor(order.total - order.shippingCost, await getCoinRules());
+  const rules = await getCoinRules();
+  if (!rules.enabled) return 0;
+  // Persen yang dikunci saat pesan; pesanan lama (sebelum kolom ada) → persen yang berlaku sekarang.
+  const percent = order.cashbackPercent ?? activeCashback(rules).percent;
+  const amount = cashbackFor(order.total - order.shippingCost, percent);
   const ok = await grantCoins(order.userId, amount, "CASHBACK", `cashback:${order.id}`, {
     orderId: order.id,
     note: `Cashback pesanan ${order.midtransOrderId ?? ""}`.trim(),

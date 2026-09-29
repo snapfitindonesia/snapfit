@@ -39,6 +39,7 @@ export default async function AdminProductsPage() {
     category: p.category?.name ?? null,
     isGrosir: p.isGrosir,
     archived: p.archived,
+    archivedBy: p.archivedBy,
     sold: soldByName.get(p.name) ?? 0,
     variants: p.variants,
   }));

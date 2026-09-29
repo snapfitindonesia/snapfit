@@ -228,6 +228,29 @@ export async function setProductFeatured(id: string, featured: boolean): Promise
   }
 }
 
+/**
+ * Arsipkan / tampilkan lagi produk (tanpa menghapus data, ulasan & riwayat pesanan tetap).
+ * Arsip dari admin ditandai archivedBy "admin" → sinkron Ginee TIDAK memunculkannya lagi.
+ */
+export async function setProductsArchived(ids: string[], archived: boolean): Promise<Result> {
+  try {
+    await requireAdmin();
+    if (!ids.length) return { ok: true };
+    const products = await db.product.findMany({ where: { id: { in: ids } }, select: { slug: true } });
+    await db.product.updateMany({
+      where: { id: { in: ids } },
+      data: { archived, archivedBy: archived ? "admin" : null },
+    });
+    revalidatePath("/admin/produk");
+    revalidateStorefront();
+    revalidatePath("/sitemap.xml");
+    for (const pr of products) revalidatePath(`/produk/${pr.slug}`); // PDP → 404 / tampil lagi
+    return { ok: true };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
 export async function deleteProducts(ids: string[]): Promise<Result> {
   try {
     await requireAdmin();

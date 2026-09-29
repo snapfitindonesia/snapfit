@@ -6,7 +6,7 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { adjustCoins, ensureSignupBonus, getCoinBalance } from "@/lib/coins";
-import { coinRulesSchema, type CoinRules } from "@/lib/coins-rules";
+import { activeCashback, coinRulesSchema, type ActiveCashback, type CoinRules } from "@/lib/coins-rules";
 import { COIN_RULES_KEY, COIN_RULES_TAG, getCoinRules } from "@/lib/coins-settings";
 
 /** ADMIN: koreksi manual koin member berdasarkan email akun (+ tambah, − kurangi). */
@@ -42,13 +42,14 @@ async function findUserIdByEmail(email: string): Promise<string | null> {
 }
 
 export type MyCoins =
-  | { loggedIn: false; rules: CoinRules }
-  | { loggedIn: true; rules: CoinRules; balance: number; expiringSoon: number; expiringAt: string | null };
+  | { loggedIn: false; rules: CoinRules; cashback: ActiveCashback }
+  | { loggedIn: true; rules: CoinRules; cashback: ActiveCashback; balance: number; expiringSoon: number; expiringAt: string | null };
 
 /** Saldo koin user yang login (checkout & halaman akun). Bonus member baru diberikan di sini (sekali). */
 export async function getMyCoins(): Promise<MyCoins> {
   const [user, rules] = await Promise.all([getCurrentUser().catch(() => null), getCoinRules()]);
-  if (!user) return { loggedIn: false, rules };
+  const cashback = activeCashback(rules);
+  if (!user) return { loggedIn: false, rules, cashback };
   await ensureSignupBonus(user.id);
   const [balance, soon] = await Promise.all([
     getCoinBalance(user.id),
@@ -65,6 +66,7 @@ export async function getMyCoins(): Promise<MyCoins> {
   return {
     loggedIn: true,
     rules,
+    cashback,
     balance,
     expiringSoon: soon.reduce((n, l) => n + l.remaining, 0),
     expiringAt: soon[0]?.expiresAt?.toISOString() ?? null,

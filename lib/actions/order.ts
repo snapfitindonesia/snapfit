@@ -24,7 +24,7 @@ import { markDraftsConverted } from "@/lib/cart-draft";
 import { withItemImages } from "@/lib/email-items";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { getCoinBalance, spendCoins } from "@/lib/coins";
-import { maxCoinsUsable } from "@/lib/coins-rules";
+import { activeCashback, maxCoinsUsable } from "@/lib/coins-rules";
 import { getCoinRules } from "@/lib/coins-settings";
 
 /**
@@ -160,8 +160,9 @@ export async function createOrder(input: CreateOrderInput) {
   // Member: pesanan ditautkan ke akun (Pesanan Saya, koin). Koin dihitung ulang di server.
   const user = await getCurrentUser().catch(() => null);
   let coinsUsed = 0;
-  if (user && data.useCoins) {
-    coinsUsed = maxCoinsUsable(await getCoinBalance(user.id), subtotal, total, shippingCost, await getCoinRules());
+  const coinRules = user ? await getCoinRules() : null;
+  if (user && coinRules && data.useCoins) {
+    coinsUsed = maxCoinsUsable(await getCoinBalance(user.id), subtotal, total, shippingCost, coinRules);
   }
   const grandTotal = total - coinsUsed;
 
@@ -176,6 +177,8 @@ export async function createOrder(input: CreateOrderInput) {
       discount,
       voucherCodes: voucherCode,
       coinsUsed,
+      // Persen cashback dikunci saat pesan (promo berjadwal tetap berlaku walau pesanan selesai belakangan).
+      cashbackPercent: coinRules ? activeCashback(coinRules).percent : null,
       total: grandTotal,
       midtransOrderId,
       courier: rate.id, // "courier:service" — dipakai saat buat pengiriman

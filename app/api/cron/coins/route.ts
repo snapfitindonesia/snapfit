@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
   // 1) Cashback otomatis (idempoten: ref "cashback:<orderId>")
   const shipped = await db.order.findMany({
     where: { userId: { not: null }, status: { in: ["SHIPPED", "DONE"] }, shippedAt: { lte: new Date(now - rules.autoDoneDays * DAY) } },
-    select: { id: true, userId: true, total: true, shippingCost: true, coinsUsed: true, midtransOrderId: true },
+    select: { id: true, userId: true, total: true, shippingCost: true, coinsUsed: true, cashbackPercent: true, midtransOrderId: true },
     take: 200,
   });
   const done = await db.coinEntry.findMany({
