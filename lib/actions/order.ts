@@ -21,6 +21,7 @@ import { isPlaceholderPrice } from "@/lib/price-guard";
 import { pushOrderToGinee } from "@/lib/ginee/orders";
 import { isGineeConfigured } from "@/lib/ginee/config";
 import { markDraftsConverted } from "@/lib/cart-draft";
+import { withItemImages } from "@/lib/email-items";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { getCoinBalance, spendCoins } from "@/lib/coins";
 import { maxCoinsUsable } from "@/lib/coins-rules";
@@ -127,9 +128,10 @@ async function computeOrder(
 // pembeli. Paralel & best-effort — gagal email tak menggagalkan checkout.
 async function notifyNewOrder(
   order: Parameters<typeof adminNewOrderEmail>[0],
-  items: { name: string; price: number; qty: number }[],
+  rawItems: { variantId: string; name: string; price: number; qty: number }[],
   manual: boolean,
 ) {
+  const items = await withItemImages(rawItems); // foto produk di email
   const a = (order.address ?? {}) as { name?: string; phone?: string; email?: string };
   const admins = (process.env.ADMIN_NOTIFY_EMAIL || "admin@snapfit.id").split(",").map((s) => s.trim()).filter(Boolean);
   const waUrl = waLink(a.phone, `Halo ${a.name ?? ""}, terima kasih sudah berbelanja di SNAPFIT 🙏 Pesanan ${order.midtransOrderId} sudah kami terima.`);
@@ -300,7 +302,7 @@ export async function handlePaidOrder(
   const email = addressData?.email;
   if (email) {
     try {
-      const tpl = orderConfirmationEmail(updated, items);
+      const tpl = orderConfirmationEmail(updated, await withItemImages(items));
       await sendEmail({ to: email, ...tpl });
     } catch (e) {
       console.error("Email konfirmasi gagal:", e);

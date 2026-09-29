@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { sendEmail, reviewRequestEmail } from "@/lib/email";
+import { sendEmail, reviewRequestEmail, emailImage } from "@/lib/email";
 import { ensureReviewToken, reviewUrl } from "@/lib/review-token";
 
 export const runtime = "nodejs";
@@ -43,13 +43,12 @@ export async function GET(req: NextRequest) {
     const variantIds = order.items.map((i) => i.variantId);
     const variants = await db.variant.findMany({
       where: { id: { in: variantIds } },
-      select: { product: { select: { name: true, slug: true } } },
+      select: { image: true, product: { select: { name: true, slug: true, coverImage: true } } },
     });
     const seen = new Set<string>();
     const productLinks = variants
-      .map((v) => v.product)
-      .filter((p) => p && !seen.has(p.slug) && seen.add(p.slug))
-      .map((p) => ({ name: p!.name, url: `${url}#p-${p!.slug}` }));
+      .filter((v) => v.product && !seen.has(v.product.slug) && seen.add(v.product.slug))
+      .map((v) => ({ name: v.product.name, url: `${url}#p-${v.product.slug}`, image: emailImage(v.image || v.product.coverImage) }));
 
     if (email) {
       try {

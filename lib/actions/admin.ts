@@ -2,6 +2,7 @@
 
 import { productSlug, skuify } from "@/lib/slug";
 import { revalidatePath, revalidateTag } from "next/cache";
+import { withItemImages } from "@/lib/email-items";
 import { grantOrderCashback, grantReviewBonus, reverseOrderCoins } from "@/lib/coins";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/require-admin";
@@ -619,7 +620,7 @@ export async function updateOrder(input: OrderUpdateInput): Promise<Result> {
     // Email "sedang diproses" saat baru berubah ke PROCESSING
     if (data.status === "PROCESSING" && existing && existing.status !== "PROCESSING" && email) {
       try {
-        await sendEmail({ to: email, ...orderProcessingEmail(updated, existing.items) });
+        await sendEmail({ to: email, ...orderProcessingEmail(updated, await withItemImages(existing.items)) });
       } catch (e) {
         console.error("Email diproses gagal:", e);
       }
@@ -628,7 +629,7 @@ export async function updateOrder(input: OrderUpdateInput): Promise<Result> {
     // Email resi saat baru berubah ke SHIPPED (docs/08)
     if (toShipped && existing && email) {
       try {
-        await sendEmail({ to: email, ...orderShippedEmail(updated, existing.items) });
+        await sendEmail({ to: email, ...orderShippedEmail(updated, await withItemImages(existing.items)) });
       } catch (e) {
         console.error("Email resi gagal:", e);
       }

@@ -58,7 +58,10 @@ maupun saat pesanan dibuat (otoritatif).
 
 Dikirim lewat **Resend** (domain `snapfit.id` terverifikasi, region Tokyo).
 Pengirim `SNAPFIT Indonesia <no-reply@snapfit.id>`, balasan ke `admin@snapfit.id`.
-Template di `lib/email.ts` (header oranye + logo, gaya mirip Shopee).
+Template di `lib/email.ts` (redesign 29 Sep 2026, selaras situs): kanvas hangat, kartu putih membulat,
+logo berwarna (`public/email/logo.png`), penanda tahap Dipesan → Dibayar → Dikemas → Dikirim, foto produk
+(`lib/email-items.ts`, varian CDN 128px), tombol pil hitam, footer Belanja · Lacak · WhatsApp. Pratinjau:
+render fungsi template dengan data contoh (tsx) lalu buka HTML-nya di browser.
 
 | Email | Pemicu | Penerima |
 |---|---|---|
@@ -69,6 +72,8 @@ Template di `lib/email.ts` (header oranye + logo, gaya mirip Shopee).
 | Sedang dikemas | → `PROCESSING` | pembeli (+ tautan lacak) |
 | Sudah dikirim | → `SHIPPED` + resi | pembeli (+ tautan lacak) |
 | Ajakan ulasan | cron 10:00 WIB, 7 hari setelah dikirim | pembeli (tautan ke form `/ulasan/<token>`) |
+| Keranjang ditinggal | cron 20:00 WIB | pembeli (tautan pulihkan + berhenti) |
+| Koin segera hangus | cron koin 09:00 WIB, H-x (Admin → Koin Member) | member |
 | Keranjang masih menunggu | cron 20:00 WIB, checkout tak selesai 1 jam–3 hari | calon pembeli (kecuali yang minta berhenti) |
 
 Tanpa `RESEND_API_KEY` email hanya dicatat di log (`[email:mock]`) — aman untuk lokal.
