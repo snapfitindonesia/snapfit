@@ -78,15 +78,19 @@ function Hero({ s, first }: { s: SectionOf<"hero">; first: boolean }) {
       <section
         {...(overlay ? { "data-hero-overlay": "" } : {})}
         className={cn(
-          "relative isolate flex h-[95svh] max-h-[1000px] min-h-[640px] overflow-hidden lg:h-[90vh] lg:min-h-[620px] lg:items-center",
+          // Tinggi = rasio foto (desktop 2400×1350 = 16:9, HP 1080×1920 = 9:16) → foto tampil UTUH,
+          // tak terpotong. Tanpa foto HP: HP pakai tinggi 95% layar (foto desktop dipotong otomatis).
+          "relative isolate flex overflow-hidden md:aspect-video lg:items-center",
+          s.imageMobile ? "aspect-[9/16]" : "h-[95svh] max-h-[1000px] min-h-[640px] md:h-auto md:max-h-none md:min-h-0",
           first && "-mt-[calc(var(--announce-h)+var(--nav-h))]",
           !light && "text-white",
         )}
         style={{ backgroundColor: s.bg || (light ? "#f2f1ee" : "#1a0d08") }}
       >
-        <Parallax enabled={s.parallax} speed={0.12} overscan={5}>
+        {/* Tanpa parallax: parallax butuh foto diperbesar (tepinya terpotong) — hero wajib tampil utuh. */}
+        <div aria-hidden className="absolute inset-0 -z-10">
           <ArtImage src={s.image} srcMobile={s.imageMobile || undefined} alt={s.title || "SNAPFIT"} priority={first} />
-        </Parallax>
+        </div>
         {!light && (
           <>
             {/* Gelap tipis di atas (bilah pengumuman & header) + di sisi teks agar selalu terbaca */}

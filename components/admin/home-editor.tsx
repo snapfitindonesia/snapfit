@@ -91,6 +91,8 @@ function Check({ label, hint, checked, onChange }: { label: string; hint?: strin
 }
 
 const WIDE_HINT = "Foto lebar: min. 2400px, landscape (±16:9). Disimpan s/d 2400px.";
+const HERO_HINT = "2400 × 1350 px (16:9). Tampil utuh tanpa terpotong — tinggi hero mengikuti foto. Teks di kiri: sisakan ruang kosong di sisi kiri.";
+const HERO_MOBILE_HINT = "1080 × 1920 px (9:16). Tampil utuh di HP. Teks di bagian atas: taruh produk di setengah bawah. Tanpa foto ini, foto desktop dipotong otomatis.";
 const MOBILE_HINT = "Opsional. Potrait (±4:5) untuk HP — tanpa ini foto desktop dipotong otomatis.";
 
 /* ------------------------- Daftar item (list) ------------------------- */
@@ -165,15 +167,14 @@ function Fields({ s, set }: { s: HomeSection; set: (patch: Partial<HomeSection>)
           <Select label="Mode" value={s.mode} onChange={(v) => set({ mode: v })} options={[["produk", "Produk — latar warna + foto produk"], ["foto", "Foto penuh selebar layar + teks"]]} />
           <Select label="Warna teks" value={s.theme} onChange={(v) => set({ theme: v })} options={[["terang", "Gelap (untuk latar terang)"], ["gelap", "Putih (untuk latar gelap)"]]} />
           <div className="sm:col-span-2">
-            <Img label={s.mode === "foto" ? "Foto (desktop)" : "Foto produk"} value={s.image} onChange={(v) => set({ image: v })} wide={s.mode === "foto"} hint={s.mode === "foto" ? WIDE_HINT : "Foto produk berlatar putih — putihnya melebur ke warna latar."} />
+            <Img label={s.mode === "foto" ? "Foto (desktop)" : "Foto produk"} value={s.image} onChange={(v) => set({ image: v })} wide={s.mode === "foto"} hint={s.mode === "foto" ? HERO_HINT : "Foto produk berlatar putih — putihnya melebur ke warna latar."} />
           </div>
           {s.mode === "foto" && (
             <div className="sm:col-span-2">
-              <Img label="Foto versi HP" value={s.imageMobile} onChange={(v) => set({ imageMobile: v })} wide hint={MOBILE_HINT} />
+              <Img label="Foto versi HP" value={s.imageMobile} onChange={(v) => set({ imageMobile: v })} wide hint={HERO_MOBILE_HINT} />
             </div>
           )}
           <Color label={s.mode === "foto" ? "Warna latar/gradasi (tema terang)" : "Warna latar"} value={s.bg} onChange={(v) => set({ bg: v })} />
-          {s.mode === "foto" && <Check label="Efek parallax" hint="Foto bergerak lebih lambat saat di-scroll." checked={s.parallax} onChange={(v) => set({ parallax: v })} />}
           <Text label={s.mode === "foto" ? "Badge (pil kecil)" : "Label kecil (atas judul)"} value={s.eyebrow} onChange={(v) => set({ eyebrow: v })} placeholder={s.mode === "foto" ? "BARU" : "Baru untuk iPhone 18"} />
           {s.mode === "foto" && (
             <>
