@@ -1,6 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { STOREFRONT_TAG } from "@/lib/storefront-cache";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { isGineeConfigured } from "@/lib/ginee/config";
@@ -281,6 +282,7 @@ export async function importGineeProducts(inputs: ImportInput[]): Promise<Import
 
   revalidatePath("/admin/produk");
   revalidatePath("/produk");
+  revalidateTag(STOREFRONT_TAG);
   return { ok: created > 0, created, skipped, errors };
 }
 
@@ -294,5 +296,6 @@ export async function syncGineeStock(): Promise<StockSyncResult> {
   const res = await runGineeStockSync();
   revalidatePath("/admin/produk");
   revalidatePath("/produk");
+  revalidateTag(STOREFRONT_TAG);
   return res;
 }

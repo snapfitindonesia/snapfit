@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { applyDiscount, activeDiscountPercent } from "@/lib/format";
 import { isPlaceholderPrice, sellableStock } from "@/lib/price-guard";
 import type { ProductQuery } from "@/lib/validations/product";
+import { storefrontCached } from "@/lib/storefront-cache";
 
 // Catatan: harga produk = harga varian termurah. Dataset dev kecil, jadi sort by harga
 // & paginasi dilakukan in-memory (konsisten lintas mode). Saat skala besar, denormalisasi
@@ -32,7 +33,7 @@ export type ProductListResult = {
 };
 
 /** Kategori "line" (tingkat 2) — dipakai chip filter di halaman /produk. */
-export async function getCategories() {
+export const getCategories = storefrontCached("categories", [] as { id: string; name: string; slug: string }[], async () => {
   // Hanya kategori PALING SPESIFIK (leaf / tanpa anak) untuk filter — buang
   // kategori broad seperti "iPhone"/"Galaxy S" yang masih punya sub-kategori.
   const cats = await db.category.findMany({
@@ -41,11 +42,11 @@ export async function getCategories() {
     select: { id: true, name: true, slug: true, _count: { select: { children: true } } },
   });
   return cats.filter((c) => c._count.children === 0).map(({ id, name, slug }) => ({ id, name, slug }));
-}
+});
 
 /** Daftar brand (untuk facet filter) + apakah ada produk tanpa brand. */
-export async function getBrandFacets(): Promise<{ brands: string[]; hasNoBrand: boolean }> {
-  try {
+export const getBrandFacets = storefrontCached("brand-facets", { brands: [] as string[], hasNoBrand: false }, async () => {
+  {
     const rows = await db.product.findMany({ where: { archived: false }, select: { brand: true } });
     const set = new Set<string>();
     let hasNoBrand = false;
@@ -54,16 +55,14 @@ export async function getBrandFacets(): Promise<{ brands: string[]; hasNoBrand: 
       else hasNoBrand = true;
     }
     return { brands: [...set].sort((a, b) => a.localeCompare(b)), hasNoBrand };
-  } catch {
-    return { brands: [], hasNoBrand: false };
   }
-}
+});
 
 export type MainBanner = { id: string; image: string; href: string };
 
 /** Ambil banner aktif per tipe, terurut. Beranda kini diatur di Konten Beranda — tersisa POPUP. */
 async function getBannersByType(type: string, take?: number): Promise<MainBanner[]> {
-  try {
+  {
     const banners = await db.banner.findMany({
       where: { type, active: true },
       orderBy: [{ order: "asc" }],
@@ -71,31 +70,27 @@ async function getBannersByType(type: string, take?: number): Promise<MainBanner
       select: { id: true, image: true, targetUrl: true },
     });
     return banners.map((b) => ({ id: b.id, image: b.image, href: b.targetUrl || "/produk" }));
-  } catch {
-    return [];
   }
 }
 
 /** Banner popup awal masuk (POPUP) — ideal 1000×1000. */
-export async function getPopupBanner(): Promise<MainBanner | null> {
+export const getPopupBanner = storefrontCached("popup-banner", null as MainBanner | null, async () => {
   const banners = await getBannersByType("POPUP", 1);
   return banners[0] ?? null;
-}
+});
 
 export type NavLinkItem = { id: string; label: string; url: string; newTab: boolean; kind: string };
 
 /** Link menu custom aktif per lokasi (HEADER/FOOTER), terurut. */
+const navLinksCached = storefrontCached("nav-links", [] as NavLinkItem[], async (location: "HEADER" | "FOOTER") =>
+  db.navLink.findMany({
+    where: { location, active: true },
+    orderBy: [{ order: "asc" }],
+    select: { id: true, label: true, url: true, newTab: true, kind: true },
+  }),
+);
 export async function getNavLinks(location: "HEADER" | "FOOTER"): Promise<NavLinkItem[]> {
-  try {
-    const links = await db.navLink.findMany({
-      where: { location, active: true },
-      orderBy: [{ order: "asc" }],
-      select: { id: true, label: true, url: true, newTab: true, kind: true },
-    });
-    return links;
-  } catch {
-    return [];
-  }
+  return navLinksCached(location);
 }
 
 // Model (tingkat 3): slug != null = kategori manual → link ?tipe=slug;
@@ -105,8 +100,8 @@ export type MegaMenuLine = { name: string; slug: string; cover: string | null; m
 export type MegaMenuBrand = { name: string; slug: string; lines: MegaMenuLine[] };
 
 /** Data mega-menu: BRAND (1) → seri (2) → model (3: kategori manual / variant.type). */
-export async function getMegaMenu(): Promise<MegaMenuBrand[]> {
-  try {
+export const getMegaMenu = storefrontCached("mega-menu", [] as MegaMenuBrand[], async (): Promise<MegaMenuBrand[]> => {
+  {
     const brands = await db.category.findMany({
       where: { parentId: null },
       orderBy: [{ order: "asc" }, { name: "asc" }],
@@ -124,7 +119,8 @@ export async function getMegaMenu(): Promise<MegaMenuBrand[]> {
               orderBy: [{ order: "asc" }, { name: "asc" }],
               select: { name: true, slug: true },
             },
-            products: { select: { coverImage: true, variants: { select: { type: true } } } },
+            // Cukup 1 foto sampul (fallback gambar seri) — dulu menarik SEMUA produk + varian tiap render.
+            products: { where: { archived: false, coverImage: { not: "" } }, select: { coverImage: true }, take: 1 },
           },
         },
       },
@@ -146,18 +142,15 @@ export async function getMegaMenu(): Promise<MegaMenuBrand[]> {
         }),
       }))
       .filter((b) => b.lines.length > 0);
-  } catch {
-    // DB tak terjangkau saat build → header tetap render tanpa mega-menu
-    return [];
   }
-}
+});
 
 // Mega menu Merek/Brands: daftar merek + beberapa produk per merek (utk panel kanan).
 export type MerekMenuProduct = { id: string; slug: string; name: string; coverImage: string };
 export type MerekMenuItem = { name: string; products: MerekMenuProduct[] };
 
-export async function getMerekMenu(perMerek = 8): Promise<MerekMenuItem[]> {
-  try {
+export const getMerekMenu = storefrontCached("merek-menu", [] as MerekMenuItem[], async (perMerek: number = 8): Promise<MerekMenuItem[]> => {
+  {
     const merek = await db.merek.findMany({ orderBy: [{ order: "asc" }, { name: "asc" }], select: { name: true } });
     if (!merek.length) return [];
     const names = merek.map((m) => m.name);
@@ -177,10 +170,8 @@ export async function getMerekMenu(perMerek = 8): Promise<MerekMenuItem[]> {
     return merek
       .map((m) => ({ name: m.name, products: byBrand.get(m.name) ?? [] }))
       .filter((m) => m.products.length > 0);
-  } catch {
-    return [];
   }
-}
+});
 
 /** `opts.ids` (internal, tak terbuka di /api/products): batasi ke produk tertentu, mis. halaman kampanye. */
 /** Pecah kata kunci jadi kata (maks. 6, tanpa duplikat). */

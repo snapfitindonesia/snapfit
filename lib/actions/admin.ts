@@ -3,6 +3,7 @@
 import { productSlug, skuify } from "@/lib/slug";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { withItemImages } from "@/lib/email-items";
+import { STOREFRONT_TAG } from "@/lib/storefront-cache";
 import { grantOrderCashback, grantReviewBonus, reverseOrderCoins } from "@/lib/coins";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/require-admin";
@@ -36,6 +37,7 @@ function fail(e: unknown): Result {
 }
 
 function revalidateStorefront() {
+  revalidateTag(STOREFRONT_TAG); // menu, kategori, facet, popup (lib/storefront-cache.ts)
   revalidatePath("/");
   revalidatePath("/produk");
   revalidatePath("/promo/[slug]", "page"); // halaman kampanye (diskon berlabel)
@@ -189,10 +191,12 @@ export async function saveMerek(input: MerekInput, id?: string): Promise<Result>
         revalidateStorefront();
       }
       revalidatePath("/admin/merek");
+      revalidateTag(STOREFRONT_TAG);
       return { ok: true, id: merek.id };
     }
     const merek = await db.merek.create({ data: { name, order: data.order } });
     revalidatePath("/admin/merek");
+    revalidateTag(STOREFRONT_TAG);
     return { ok: true, id: merek.id };
   } catch (e) {
     return fail(e);
@@ -210,6 +214,7 @@ export async function deleteMerek(id: string): Promise<Result> {
       revalidateStorefront();
     }
     revalidatePath("/admin/merek");
+    revalidateTag(STOREFRONT_TAG);
     return { ok: true };
   } catch (e) {
     return fail(e);
@@ -494,6 +499,7 @@ export async function saveBanner(input: BannerInput, id?: string): Promise<Resul
       ? await db.banner.update({ where: { id }, data: payload })
       : await db.banner.create({ data: payload });
     revalidatePath("/admin/banner");
+    revalidateTag(STOREFRONT_TAG);
     revalidatePath("/");
     if (oldImage && oldImage !== data.image) await cleanupOrphanImages([oldImage]);
     return { ok: true, id: banner.id };
@@ -508,6 +514,7 @@ export async function deleteBanner(id: string): Promise<Result> {
     const before = await db.banner.findUnique({ where: { id }, select: { image: true } });
     await db.banner.delete({ where: { id } });
     revalidatePath("/admin/banner");
+    revalidateTag(STOREFRONT_TAG);
     revalidatePath("/");
     if (before?.image) await cleanupOrphanImages([before.image]);
     return { ok: true };
@@ -697,6 +704,7 @@ export async function saveCategory(input: CategoryInput, id?: string): Promise<R
       ? await db.category.update({ where: { id }, data: payload })
       : await db.category.create({ data: payload });
     revalidatePath("/admin/kategori");
+    revalidateTag(STOREFRONT_TAG);
     revalidateStorefront();
     if (oldImage && oldImage !== (data.image || null)) await cleanupOrphanImages([oldImage]);
     return { ok: true, id: cat.id };
@@ -717,6 +725,7 @@ export async function deleteCategory(id: string): Promise<Result> {
     if (cat._count.products > 0) return { ok: false, error: "Masih ada produk di kategori ini. Pindahkan dulu." };
     await db.category.delete({ where: { id } });
     revalidatePath("/admin/kategori");
+    revalidateTag(STOREFRONT_TAG);
     revalidateStorefront();
     if (cat.image) await cleanupOrphanImages([cat.image]);
     return { ok: true };
@@ -743,6 +752,7 @@ export async function saveNavLink(input: NavLinkInput, id?: string): Promise<Res
       ? await db.navLink.update({ where: { id }, data: payload })
       : await db.navLink.create({ data: payload });
     revalidatePath("/admin/menu");
+    revalidateTag(STOREFRONT_TAG);
     revalidateStorefront();
     return { ok: true, id: link.id };
   } catch (e) {
@@ -755,6 +765,7 @@ export async function deleteNavLink(id: string): Promise<Result> {
     await requireAdmin();
     await db.navLink.delete({ where: { id } });
     revalidatePath("/admin/menu");
+    revalidateTag(STOREFRONT_TAG);
     revalidateStorefront();
     return { ok: true };
   } catch (e) {
@@ -768,6 +779,7 @@ export async function reorderCategories(ids: string[]): Promise<Result> {
     await requireAdmin();
     await db.$transaction(ids.map((id, i) => db.category.update({ where: { id }, data: { order: i } })));
     revalidatePath("/admin/kategori");
+    revalidateTag(STOREFRONT_TAG);
     revalidateStorefront();
     return { ok: true };
   } catch (e) {
@@ -780,6 +792,7 @@ export async function reorderNavLinks(ids: string[]): Promise<Result> {
     await requireAdmin();
     await db.$transaction(ids.map((id, i) => db.navLink.update({ where: { id }, data: { order: i } })));
     revalidatePath("/admin/menu");
+    revalidateTag(STOREFRONT_TAG);
     revalidateStorefront();
     return { ok: true };
   } catch (e) {
