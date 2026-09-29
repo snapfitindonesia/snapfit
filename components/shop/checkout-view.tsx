@@ -20,7 +20,7 @@ import { quoteShipping } from "@/lib/actions/shipping";
 import type { ZoneQuote } from "@/lib/shipping-zone";
 import type { ShippingRate } from "@/lib/biteship";
 import { getMyCoins, type MyCoins } from "@/lib/actions/coins";
-import { cashbackFor, maxCoinsUsable, COIN_MIN_USE, COIN_SIGNUP_BONUS, COIN_CASHBACK_RATE } from "@/lib/coins-rules";
+import { cashbackFor, maxCoinsUsable, pct, DEFAULT_COIN_RULES } from "@/lib/coins-rules";
 
 // Kontak & alamat pesanan terakhir, disimpan HANYA di perangkat pembeli
 // (localStorage) setelah pesanan berhasil → checkout berikutnya terisi otomatis.
@@ -225,13 +225,14 @@ export function CheckoutView({
   const [coins, setCoins] = useState<MyCoins | null>(null);
   const [useCoins, setUseCoins] = useState(false);
   useEffect(() => {
-    getMyCoins().then(setCoins).catch(() => setCoins({ loggedIn: false }));
+    getMyCoins().then(setCoins).catch(() => setCoins(null));
   }, []);
   const coinBalance = coins?.loggedIn ? coins.balance : 0;
-  const coinsUsable = maxCoinsUsable(coinBalance, subtotal, totalBeforeCoins, shippingCost);
+  const coinRules = coins?.rules ?? DEFAULT_COIN_RULES;
+  const coinsUsable = maxCoinsUsable(coinBalance, subtotal, totalBeforeCoins, shippingCost, coinRules);
   const coinsUsed = useCoins ? coinsUsable : 0;
   const total = totalBeforeCoins - coinsUsed;
-  const cashback = cashbackFor(total - shippingCost);
+  const cashback = cashbackFor(total - shippingCost, coinRules);
 
   const bcFired = useRef(false);
   useEffect(() => {
@@ -618,18 +619,24 @@ function CoinBox({
   cashback: number;
 }) {
   if (!coins) return null;
-  const pct = `${Math.round(COIN_CASHBACK_RATE * 100)}%`;
+  const r = coins.rules;
   if (!coins.loggedIn) {
+    if (!r.enabled || (!r.signupBonus && !r.cashbackPercent)) return null;
     return (
       <Link
         href="/masuk?next=/checkout"
         className="mt-4 block rounded-md border border-amber-300 bg-amber-50 px-3 py-2.5 text-xs text-amber-950 transition-colors hover:bg-amber-100"
       >
-        <b>Masuk / daftar, dapat {COIN_SIGNUP_BONUS.toLocaleString("id-ID")} koin</b> + cashback {pct} tiap belanja.
+        {r.signupBonus > 0 ? (
+          <><b>Masuk / daftar, dapat {r.signupBonus.toLocaleString("id-ID")} koin</b>{r.cashbackPercent > 0 && <> + cashback {pct(r.cashbackPercent)} tiap belanja</>}.</>
+        ) : (
+          <><b>Masuk / daftar</b> untuk cashback {pct(r.cashbackPercent)} koin tiap belanja.</>
+        )}
         <span className="mt-0.5 block font-medium underline underline-offset-2">Masuk sekarang →</span>
       </Link>
     );
   }
+  if (coins.balance <= 0 && cashback <= 0) return null;
   return (
     <div className="mt-4 rounded-md border border-border bg-muted/30 px-3 py-2.5 text-xs">
       {usable > 0 ? (
@@ -643,7 +650,7 @@ function CoinBox({
       ) : (
         <p className="text-muted-foreground">
           Saldo koin {coins.balance.toLocaleString("id-ID")}
-          {coins.balance < COIN_MIN_USE ? ` · bisa dipakai mulai ${COIN_MIN_USE.toLocaleString("id-ID")} koin` : ""}
+          {coins.balance < r.minUse ? ` · bisa dipakai mulai ${r.minUse.toLocaleString("id-ID")} koin` : ""}
         </p>
       )}
       {cashback > 0 && (

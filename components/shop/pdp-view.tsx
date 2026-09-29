@@ -20,7 +20,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatRupiah, applyDiscount } from "@/lib/format";
-import { cashbackFor } from "@/lib/coins-rules";
 import { useCart } from "@/components/shop/cart-provider";
 import { useStoreUI } from "@/components/shop/store-ui-provider";
 import { trackViewItem, trackAddToCart, trackContact } from "@/lib/tracking";
@@ -70,11 +69,15 @@ export function PdpView({
   product,
   vouchers = [],
   companions = [],
+  coinCashbackPercent = 0,
 }: {
   product: PdpProduct;
   vouchers?: VoucherChip[];
   companions?: Companion[];
+  /** % cashback koin member (Admin → Koin Member); 0 = program mati → info disembunyikan. */
+  coinCashbackPercent?: number;
 }) {
+  const coinCashback = (price: number) => Math.floor((price * coinCashbackPercent) / 100);
   const { addItem } = useCart();
   const { openCart } = useStoreUI();
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
@@ -474,10 +477,10 @@ export function PdpView({
           )}
         </div>
         {/* Koin member (statis — PDP tetap ISR): perkiraan cashback 2% harga ini */}
-        {cashbackFor(finalPrice) > 0 && (
+        {coinCashback(finalPrice) > 0 && (
           <p className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
             <Coins className="size-3.5 text-amber-600" />
-            Member dapat <b className="font-semibold text-foreground">{cashbackFor(finalPrice).toLocaleString("id-ID")} koin</b> cashback
+            Member dapat <b className="font-semibold text-foreground">{coinCashback(finalPrice).toLocaleString("id-ID")} koin</b> cashback
           </p>
         )}
 

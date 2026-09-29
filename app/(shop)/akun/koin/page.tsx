@@ -4,14 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { getMyCoins } from "@/lib/actions/coins";
-import {
-  COIN_CASHBACK_RATE,
-  COIN_EXPIRE_DAYS,
-  COIN_MAX_USE_RATE,
-  COIN_MIN_USE,
-  COIN_REVIEW_BONUS,
-  COIN_SIGNUP_BONUS,
-} from "@/lib/coins-rules";
+import { pct } from "@/lib/coins-rules";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Koin SNAPFIT", robots: { index: false } };
@@ -40,6 +33,7 @@ export default async function MyCoinsPage() {
     take: 100,
   });
   const balance = coins.loggedIn ? coins.balance : 0;
+  const r = coins.rules;
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6">
@@ -93,13 +87,26 @@ export default async function MyCoinsPage() {
       <section className="mt-8 rounded-lg border border-border p-5 text-sm">
         <h2 className="font-semibold">Cara kerja koin</h2>
         <ul className="mt-2 list-disc space-y-1 pl-5 text-muted-foreground">
-          <li>Cashback {Math.round(COIN_CASHBACK_RATE * 100)}% dari nilai belanja (tanpa ongkir), masuk setelah pesanan selesai.</li>
-          <li>Bonus {n(COIN_SIGNUP_BONUS)} koin untuk member baru, {n(COIN_REVIEW_BONUS)} koin untuk tiap ulasan yang disetujui.</li>
-          <li>Pakai di checkout: mulai {n(COIN_MIN_USE)} koin, maks. {Math.round(COIN_MAX_USE_RATE * 100)}% subtotal, tidak untuk ongkir. Bisa bersama voucher.</li>
-          <li>Koin berlaku {Math.round(COIN_EXPIRE_DAYS / 30)} bulan sejak diterima; kami ingatkan lewat email 7 hari sebelum hangus.</li>
+          {!r.enabled && <li>Program koin sedang dihentikan: tidak ada koin baru, tapi saldomu tetap bisa dipakai.</li>}
+          {r.enabled && r.cashbackPercent > 0 && <li>Cashback {pct(r.cashbackPercent)} dari nilai belanja (tanpa ongkir), masuk setelah pesanan selesai.</li>}
+          {r.enabled && (r.signupBonus > 0 || r.reviewBonus > 0) && (
+            <li>
+              {r.signupBonus > 0 && <>Bonus {n(r.signupBonus)} koin untuk member baru{r.reviewBonus > 0 ? ", " : "."}</>}
+              {r.reviewBonus > 0 && <>{n(r.reviewBonus)} koin untuk tiap ulasan yang disetujui.</>}
+            </li>
+          )}
+          <li>Pakai di checkout{r.minUse > 0 ? `: mulai ${n(r.minUse)} koin` : ""}, maks. {pct(r.maxUsePercent)} subtotal, tidak untuk ongkir. Bisa bersama voucher.</li>
+          <li>
+            Koin berlaku {expiryLabel(r.expireDays)} sejak diterima
+            {r.expireNoticeDays > 0 ? `; kami ingatkan lewat email ${r.expireNoticeDays} hari sebelum hangus.` : "."}
+          </li>
           <li>Pesanan dibatalkan: koin yang dipakai dikembalikan, cashback-nya ditarik.</li>
         </ul>
       </section>
     </div>
   );
+}
+
+function expiryLabel(days: number) {
+  return days % 30 === 0 ? `${days / 30} bulan` : `${days} hari`;
 }

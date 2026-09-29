@@ -24,6 +24,7 @@ import { markDraftsConverted } from "@/lib/cart-draft";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { getCoinBalance, spendCoins } from "@/lib/coins";
 import { maxCoinsUsable } from "@/lib/coins-rules";
+import { getCoinRules } from "@/lib/coins-settings";
 
 /**
  * Hitung ULANG order dari DB (harga varian + diskon + ongkir) — JANGAN percaya
@@ -158,7 +159,7 @@ export async function createOrder(input: CreateOrderInput) {
   const user = await getCurrentUser().catch(() => null);
   let coinsUsed = 0;
   if (user && data.useCoins) {
-    coinsUsed = maxCoinsUsable(await getCoinBalance(user.id), subtotal, total, shippingCost);
+    coinsUsed = maxCoinsUsable(await getCoinBalance(user.id), subtotal, total, shippingCost, await getCoinRules());
   }
   const grandTotal = total - coinsUsed;
 

@@ -382,7 +382,7 @@ export function reviewRequestEmail(
 }
 
 /** Pengingat koin member segera hangus (H-7, cron koin). */
-export function coinExpiryEmail(opts: { amount: number; expiresAt: Date; balance: number }) {
+export function coinExpiryEmail(opts: { amount: number; expiresAt: Date; balance: number; rules: { maxUsePercent: number; minUse: number } }) {
   const n = (x: number) => x.toLocaleString("id-ID");
   const date = fmtDate(opts.expiresAt);
   return {
@@ -392,7 +392,7 @@ export function coinExpiryEmail(opts: { amount: number; expiresAt: Date; balance
       greeting: "Halo Kak",
       intro: `<strong>${n(opts.amount)} koin</strong> di akun SNAPFIT-mu akan hangus pada <strong>${esc(date)}</strong>. Pakai di checkout untuk potongan belanja (1 koin = Rp1).`,
       body:
-        highlight("Saldo koin sekarang", n(opts.balance), "Bisa dipakai hingga 30% subtotal, mulai 1.000 koin.") +
+        highlight("Saldo koin sekarang", n(opts.balance), `Bisa dipakai hingga ${opts.rules.maxUsePercent}% subtotal${opts.rules.minUse ? `, mulai ${n(opts.rules.minUse)} koin` : ""}.`) +
         button("Belanja Pakai Koin", `${SITE}/produk`) +
         `<tr><td style="padding:16px 0 0;font-size:13px;line-height:1.6;color:${C.ink}">Riwayat koin ada di <a href="${SITE}/akun/koin" style="color:${C.brand}">Akun → Koin SNAPFIT</a>.</td></tr>`,
     }),

@@ -1,15 +1,8 @@
 import { db } from "@/lib/db";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { CoinAdjustForm } from "@/components/admin/coin-adjust-form";
-import {
-  COIN_AUTO_DONE_DAYS,
-  COIN_CASHBACK_RATE,
-  COIN_EXPIRE_DAYS,
-  COIN_MAX_USE_RATE,
-  COIN_MIN_USE,
-  COIN_REVIEW_BONUS,
-  COIN_SIGNUP_BONUS,
-} from "@/lib/coins-rules";
+import { CoinRulesForm } from "@/components/admin/coin-rules-form";
+import { getCoinRules } from "@/lib/coins-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +23,8 @@ const fmt = (d: Date) =>
 export default async function AdminCoinsPage() {
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const [outstanding, issued, spent, balances, recent] = await Promise.all([
+  const [rules, outstanding, issued, spent, balances, recent] = await Promise.all([
+    getCoinRules(),
     db.coinEntry.aggregate({ where: { remaining: { gt: 0 }, expiresAt: { gt: now } }, _sum: { remaining: true } }),
     db.coinEntry.aggregate({ where: { amount: { gt: 0 }, createdAt: { gte: monthStart } }, _sum: { amount: true } }),
     db.coinEntry.aggregate({ where: { kind: "SPEND", createdAt: { gte: monthStart } }, _sum: { amount: true } }),
@@ -66,11 +60,12 @@ export default async function AdminCoinsPage() {
     <div>
       <h1 className="text-xl font-semibold">Koin Member</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        1 koin = Rp1. Cashback {Math.round(COIN_CASHBACK_RATE * 100)}% (tanpa ongkir) saat pesanan <b>Selesai</b>, atau otomatis{" "}
-        {COIN_AUTO_DONE_DAYS} hari setelah <b>Dikirim</b>. Bonus daftar {n(COIN_SIGNUP_BONUS)}, ulasan disetujui {n(COIN_REVIEW_BONUS)}.
-        Pakai mulai {n(COIN_MIN_USE)} koin, maks. {Math.round(COIN_MAX_USE_RATE * 100)}% subtotal. Hangus {Math.round(COIN_EXPIRE_DAYS / 30)}{" "}
-        bulan (email H-7). Pesanan dibatalkan → koin dikembalikan & cashback ditarik otomatis.
+        1 koin = Rp1 potongan belanja. Pesanan dibatalkan → koin yang dipakai dikembalikan & cashback ditarik otomatis.
+        Ubah aturan di bawah — berlaku untuk transaksi berikutnya (koin yang sudah dimiliki member tidak berubah).
       </p>
+
+      <h2 className="mt-6 text-sm font-semibold">Aturan koin</h2>
+      <CoinRulesForm rules={rules} />
 
       <div className="mt-6 grid gap-3 sm:grid-cols-3">
         <Stat label="Saldo beredar (kewajiban toko)" value={`Rp${n(outstanding._sum.remaining ?? 0)}`} />

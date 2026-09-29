@@ -1,26 +1,61 @@
-// Aturan koin member — murni (tanpa DB), dipakai server (lib/coins.ts) & client (checkout, PDP).
-// Disetujui client 29 Sep 2026. 1 koin = Rp1.
+import { z } from "zod";
 
-export const COIN_CASHBACK_RATE = 0.02; // 2% nilai belanja dibayar (tanpa ongkir)
-export const COIN_SIGNUP_BONUS = 2000; // akun baru
-export const COIN_REVIEW_BONUS = 500; // ulasan disetujui admin
-export const COIN_MAX_USE_RATE = 0.3; // pakai maks. 30% subtotal
-export const COIN_MIN_USE = 1000; // saldo minimal agar bisa dipakai
-export const COIN_EXPIRE_DAYS = 180; // hangus 6 bulan per perolehan
-export const COIN_EXPIRE_NOTICE_DAYS = 7; // email pengingat H-7
-export const COIN_AUTO_DONE_DAYS = 7; // cashback otomatis 7 hari setelah Dikirim (bila admin tak menandai Selesai)
+// Aturan koin member — murni (tanpa DB), dipakai server (lib/coins.ts) & client (checkout, PDP).
+// Nilai diatur di Admin → Pelanggan → Koin Member (SiteSetting "coins.rules", lib/coins-settings.ts);
+// DEFAULT = aturan yang disetujui client 29 Sep 2026. 1 koin = Rp1.
+
+export const coinRulesSchema = z.object({
+  enabled: z.boolean(), // false = tak ada koin baru (cashback/bonus); saldo lama tetap bisa dipakai
+  cashbackPercent: z.number().min(0).max(50), // % nilai belanja dibayar (tanpa ongkir)
+  signupBonus: z.number().int().min(0).max(1_000_000),
+  reviewBonus: z.number().int().min(0).max(1_000_000),
+  maxUsePercent: z.number().min(0).max(100), // pakai maks. % subtotal
+  minUse: z.number().int().min(0).max(1_000_000), // saldo minimal agar bisa dipakai
+  expireDays: z.number().int().min(7).max(1095), // masa berlaku tiap perolehan
+  expireNoticeDays: z.number().int().min(0).max(60), // email pengingat H-x (0 = tanpa email)
+  autoDoneDays: z.number().int().min(1).max(60), // cashback otomatis x hari setelah Dikirim
+});
+export type CoinRules = z.infer<typeof coinRulesSchema>;
+
+export const DEFAULT_COIN_RULES: CoinRules = {
+  enabled: true,
+  cashbackPercent: 2,
+  signupBonus: 2000,
+  reviewBonus: 500,
+  maxUsePercent: 30,
+  minUse: 1000,
+  expireDays: 180,
+  expireNoticeDays: 7,
+  autoDoneDays: 7,
+};
+
+/** Gabung nilai tersimpan dengan default (kolom baru/rusak → default). */
+export function normalizeCoinRules(raw: unknown): CoinRules {
+  const r = coinRulesSchema.partial().safeParse(raw);
+  return { ...DEFAULT_COIN_RULES, ...(r.success ? r.data : {}) };
+}
 
 /** Cashback untuk nilai belanja yang dibayar (total − ongkir). */
-export function cashbackFor(paidGoods: number): number {
-  return Math.max(0, Math.floor(paidGoods * COIN_CASHBACK_RATE));
+export function cashbackFor(paidGoods: number, rules: CoinRules): number {
+  if (!rules.enabled) return 0;
+  return Math.max(0, Math.floor((paidGoods * rules.cashbackPercent) / 100));
 }
 
 /**
- * Koin yang bisa dipakai: maks. 30% subtotal, tak boleh memotong ongkir (≤ total sebelum koin −
+ * Koin yang bisa dipakai: maks. x% subtotal, tak boleh memotong ongkir (≤ total sebelum koin −
  * ongkir), dan hanya bila saldo ≥ minimum. 0 = tak bisa dipakai.
  */
-export function maxCoinsUsable(balance: number, subtotal: number, totalBeforeCoins: number, shippingCost: number): number {
-  if (balance < COIN_MIN_USE) return 0;
-  const cap = Math.min(Math.floor(subtotal * COIN_MAX_USE_RATE), Math.max(0, totalBeforeCoins - shippingCost));
+export function maxCoinsUsable(
+  balance: number,
+  subtotal: number,
+  totalBeforeCoins: number,
+  shippingCost: number,
+  rules: CoinRules,
+): number {
+  if (balance <= 0 || balance < rules.minUse) return 0;
+  const cap = Math.min(Math.floor((subtotal * rules.maxUsePercent) / 100), Math.max(0, totalBeforeCoins - shippingCost));
   return Math.max(0, Math.min(balance, cap));
 }
+
+/** "2%" / "2,5%" */
+export const pct = (n: number) => `${n.toLocaleString("id-ID", { maximumFractionDigits: 2 })}%`;

@@ -2,11 +2,12 @@
 
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/supabase/server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { adjustCoins, ensureSignupBonus, getCoinBalance } from "@/lib/coins";
-import { COIN_EXPIRE_NOTICE_DAYS } from "@/lib/coins-rules";
+import { coinRulesSchema, type CoinRules } from "@/lib/coins-rules";
+import { COIN_RULES_KEY, COIN_RULES_TAG, getCoinRules } from "@/lib/coins-settings";
 
 /** ADMIN: koreksi manual koin member berdasarkan email akun (+ tambah, − kurangi). */
 export async function adminAdjustCoins(input: { email: string; amount: number; note: string }): Promise<{ ok: boolean; error?: string }> {
@@ -41,13 +42,13 @@ async function findUserIdByEmail(email: string): Promise<string | null> {
 }
 
 export type MyCoins =
-  | { loggedIn: false }
-  | { loggedIn: true; balance: number; expiringSoon: number; expiringAt: string | null };
+  | { loggedIn: false; rules: CoinRules }
+  | { loggedIn: true; rules: CoinRules; balance: number; expiringSoon: number; expiringAt: string | null };
 
 /** Saldo koin user yang login (checkout & halaman akun). Bonus member baru diberikan di sini (sekali). */
 export async function getMyCoins(): Promise<MyCoins> {
-  const user = await getCurrentUser().catch(() => null);
-  if (!user) return { loggedIn: false };
+  const [user, rules] = await Promise.all([getCurrentUser().catch(() => null), getCoinRules()]);
+  if (!user) return { loggedIn: false, rules };
   await ensureSignupBonus(user.id);
   const [balance, soon] = await Promise.all([
     getCoinBalance(user.id),
@@ -55,7 +56,7 @@ export async function getMyCoins(): Promise<MyCoins> {
       where: {
         userId: user.id,
         remaining: { gt: 0 },
-        expiresAt: { gt: new Date(), lte: new Date(Date.now() + COIN_EXPIRE_NOTICE_DAYS * 86_400_000) },
+        expiresAt: { gt: new Date(), lte: new Date(Date.now() + Math.max(7, rules.expireNoticeDays) * 86_400_000) },
       },
       select: { remaining: true, expiresAt: true },
       orderBy: { expiresAt: "asc" },
@@ -63,8 +64,29 @@ export async function getMyCoins(): Promise<MyCoins> {
   ]);
   return {
     loggedIn: true,
+    rules,
     balance,
     expiringSoon: soon.reduce((n, l) => n + l.remaining, 0),
     expiringAt: soon[0]?.expiresAt?.toISOString() ?? null,
   };
+}
+
+/** ADMIN: simpan aturan koin (Admin → Koin Member). Berlaku untuk transaksi berikutnya. */
+export async function saveCoinRules(input: CoinRules): Promise<{ ok: boolean; error?: string }> {
+  try {
+    await requireAdmin();
+  } catch {
+    return { ok: false, error: "Tidak diizinkan." };
+  }
+  const parsed = coinRulesSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Data tidak valid." };
+  await db.siteSetting.upsert({
+    where: { key: COIN_RULES_KEY },
+    create: { key: COIN_RULES_KEY, value: parsed.data },
+    update: { value: parsed.data },
+  });
+  revalidateTag(COIN_RULES_TAG);
+  revalidatePath("/produk/[slug]", "page"); // info cashback di PDP
+  revalidatePath("/admin/koin");
+  return { ok: true };
 }

@@ -14,6 +14,7 @@ import { getActiveVouchers } from "@/lib/actions/voucher";
 import { overviewFor } from "@/lib/overview";
 import { applyDiscount } from "@/lib/format";
 import { getCompanions } from "@/lib/cross-sell";
+import { getCoinRules } from "@/lib/coins-settings";
 
 // ISR: PDP di-generate on-demand saat request pertama lalu DI-CACHE 5 menit
 // (tak query DB saat build → deploy Vercel aman). Fresh via revalidatePath saat admin edit.
@@ -84,12 +85,13 @@ export default async function ProductDetailPage({
     // URL relatif / tak valid — abaikan
   }
 
-  const [relatedAll, reviews, vouchers, companions, overview] = await Promise.all([
+  const [relatedAll, reviews, vouchers, companions, overview, coinRules] = await Promise.all([
     getRelatedProducts(product.id, product.category?.slug ?? null, 8),
     getProductReviews(product.id),
     getActiveVouchers(),
     getCompanions(product),
     overviewFor(product),
+    getCoinRules(),
   ]);
   // Produk yang sudah tampil di "Lengkapi dengan" tak diulang di bawah.
   const companionIds = new Set(companions.map((c) => c.productId));
@@ -158,6 +160,7 @@ export default async function ProductDetailPage({
             product={pdpProduct}
             vouchers={vouchers.map((v) => ({ code: v.code, label: v.label, minPurchase: v.minPurchase }))}
             companions={companions}
+            coinCashbackPercent={coinRules.enabled ? coinRules.cashbackPercent : 0}
           />
         </div>
       </section>

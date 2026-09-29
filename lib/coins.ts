@@ -1,11 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
-import {
-  cashbackFor,
-  COIN_EXPIRE_DAYS,
-  COIN_REVIEW_BONUS,
-  COIN_SIGNUP_BONUS,
-} from "@/lib/coins-rules";
+import { cashbackFor } from "@/lib/coins-rules";
+import { getCoinRules } from "@/lib/coins-settings";
 
 /**
  * Koin member (aturan: lib/coins-rules.ts). Buku besar CoinEntry:
@@ -37,6 +33,7 @@ export async function grantCoins(
   opts: { note?: string; orderId?: string; client?: Tx | typeof db } = {},
 ): Promise<boolean> {
   if (amount <= 0) return false;
+  const { expireDays } = await getCoinRules();
   try {
     await (opts.client ?? db).coinEntry.create({
       data: {
@@ -47,7 +44,7 @@ export async function grantCoins(
         note: opts.note,
         orderId: opts.orderId,
         remaining: amount,
-        expiresAt: new Date(Date.now() + COIN_EXPIRE_DAYS * DAY),
+        expiresAt: new Date(Date.now() + expireDays * DAY),
       },
     });
     return true;
@@ -90,8 +87,10 @@ export async function spendCoins(tx: Tx, userId: string, amount: number, orderId
 }
 
 /** Bonus akun baru — sekali per akun (dipanggil saat saldo pertama kali dibaca). */
-export function ensureSignupBonus(userId: string) {
-  return grantCoins(userId, COIN_SIGNUP_BONUS, "SIGNUP", `signup:${userId}`, { note: "Bonus member baru" });
+export async function ensureSignupBonus(userId: string) {
+  const rules = await getCoinRules();
+  if (!rules.enabled) return false;
+  return grantCoins(userId, rules.signupBonus, "SIGNUP", `signup:${userId}`, { note: "Bonus member baru" });
 }
 
 type OrderForCoins = { id: string; userId: string | null; total: number; shippingCost: number; coinsUsed: number; midtransOrderId?: string | null };
@@ -99,7 +98,7 @@ type OrderForCoins = { id: string; userId: string | null; total: number; shippin
 /** Cashback 2% saat pesanan Selesai (atau otomatis setelah masa tunggu, lihat cron koin). */
 export async function grantOrderCashback(order: OrderForCoins): Promise<number> {
   if (!order.userId) return 0;
-  const amount = cashbackFor(order.total - order.shippingCost);
+  const amount = cashbackFor(order.total - order.shippingCost, await getCoinRules());
   const ok = await grantCoins(order.userId, amount, "CASHBACK", `cashback:${order.id}`, {
     orderId: order.id,
     note: `Cashback pesanan ${order.midtransOrderId ?? ""}`.trim(),
@@ -142,7 +141,9 @@ export async function grantReviewBonus(reviewId: string) {
   if (!review?.orderId) return false;
   const order = await db.order.findUnique({ where: { id: review.orderId }, select: { userId: true } });
   if (!order?.userId) return false;
-  return grantCoins(order.userId, COIN_REVIEW_BONUS, "REVIEW", `review:${reviewId}`, { orderId: review.orderId, note: "Bonus ulasan" });
+  const rules = await getCoinRules();
+  if (!rules.enabled) return false;
+  return grantCoins(order.userId, rules.reviewBonus, "REVIEW", `review:${reviewId}`, { orderId: review.orderId, note: "Bonus ulasan" });
 }
 
 /** Koreksi manual admin (+/−). Minus memotong saldo yang ada (tak bisa di bawah 0). */
