@@ -49,7 +49,7 @@ export function AuthShell({
         {/* Form kanan */}
         <div className="p-7 sm:p-10">
           <Link href="/" className="flex items-center gap-2">
-            <Image src={logo} alt="SNAPFIT" className="h-7 w-auto" priority />
+            <Image src={logo} alt="SNAPFIT" unoptimized className="h-7 w-auto" priority />
           </Link>
           <h1 className="mt-7 text-2xl font-bold tracking-tight">{title}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>

@@ -13,7 +13,7 @@ export default function RootNotFound() {
       <header className="border-b border-border">
         <div className="mx-auto flex h-14 max-w-[100rem] items-center px-4 lg:px-10">
           <Link href="/" aria-label="SNAPFIT — beranda">
-            <Image src={logo} alt="SNAPFIT" className="h-6 w-auto sm:h-7" />
+            <Image src={logo} alt="SNAPFIT" unoptimized className="h-6 w-auto sm:h-7" />
           </Link>
         </div>
       </header>

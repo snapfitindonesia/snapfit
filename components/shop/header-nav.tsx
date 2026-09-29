@@ -143,6 +143,7 @@ export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaM
                 src={logo}
                 alt="SNAPFIT"
                 priority
+                unoptimized // PNG 200×50 kecil — tak perlu kuota Image Optimization Vercel
                 className="h-6 w-auto sm:h-7"
               />
             </Link>

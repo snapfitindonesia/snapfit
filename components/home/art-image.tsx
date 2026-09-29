@@ -1,11 +1,11 @@
 import { getImageProps } from "next/image";
-import { directLoaderFor, isOwnCdn } from "@/lib/image-loader";
+import { directLoaderFor } from "@/lib/image-loader";
 import { cn } from "@/lib/utils";
 
 /**
  * Foto `fill` dengan versi HP opsional (<picture>: ≥768px pakai `src`, di bawahnya `srcMobile`)
  * — hanya SATU yang diunduh browser. Loader sama dengan components/ui/image.tsx: foto CDN
- * langsung (varian ukuran), kecuali `priority` dari cdn.snapfit.id → /_next/image (LCP).
+ * langsung (varian ukuran), termasuk `priority` (hemat kuota Image Optimization Vercel).
  * Server component (tanpa JS di browser).
  */
 export function ArtImage({
@@ -24,7 +24,7 @@ export function ArtImage({
   className?: string;
 }) {
   const propsFor = (s: string) => {
-    const loader = !(priority && isOwnCdn(s)) ? directLoaderFor(s) : null;
+    const loader = directLoaderFor(s); // termasuk priority (hemat kuota Vercel, lihat components/ui/image.tsx)
     return getImageProps({ src: s, alt, fill: true, sizes, priority, ...(loader ? { loader } : {}) }).props;
   };
   const desk = propsFor(src);

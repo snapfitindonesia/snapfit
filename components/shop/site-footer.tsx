@@ -70,7 +70,7 @@ export async function SiteFooter() {
         {/* Link columns */}
         <div className="grid grid-cols-2 gap-8 py-12 sm:grid-cols-4">
           <div className="col-span-2 sm:col-span-1">
-            <Image src={logo} alt="SNAPFIT" className="h-7 w-auto" />
+            <Image src={logo} alt="SNAPFIT" unoptimized className="h-7 w-auto" />
             <p className="mt-3 max-w-xs text-sm text-muted-foreground">
               Aksesori HP & tablet yang benar-benar pas. Pilih tipe, pesan,
               beres.
