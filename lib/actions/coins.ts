@@ -6,6 +6,7 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { adjustCoins, ensureSignupBonus, getCoinBalance } from "@/lib/coins";
+import { sendWelcomeIfNew } from "@/lib/welcome";
 import { activeCashback, coinRulesSchema, type ActiveCashback, type CoinRules } from "@/lib/coins-rules";
 import { COIN_RULES_KEY, COIN_RULES_TAG, getCoinRules } from "@/lib/coins-settings";
 
@@ -51,6 +52,7 @@ export async function getMyCoins(): Promise<MyCoins> {
   const cashback = activeCashback(rules);
   if (!user) return { loggedIn: false, rules, cashback };
   await ensureSignupBonus(user.id);
+  await sendWelcomeIfNew(user); // cadangan (mis. tautan konfirmasi dibuka di perangkat lain) — sekali per akun
   const [balance, soon] = await Promise.all([
     getCoinBalance(user.id),
     db.coinEntry.findMany({

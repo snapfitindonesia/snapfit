@@ -483,3 +483,36 @@ export function coinExpiryEmail(opts: { amount: number; expiresAt: Date; balance
     }),
   };
 }
+
+/** Selamat datang member baru (Google atau daftar manual) — sekali per akun (lib/welcome.ts). */
+export function welcomeEmail(opts: { name?: string | null; bonus: number; cashbackPercent: number }) {
+  const first = (opts.name ?? "").trim().split(/\s+/)[0] || "Kak";
+  const n = (x: number) => x.toLocaleString("id-ID");
+  const perk = (title: string, text: string) => `<tr>
+      <td width="28" style="padding:10px 0 0;vertical-align:top;font-size:16px;color:${C.brand}">✓</td>
+      <td style="padding:10px 0 0;vertical-align:top">
+        <div style="font-size:14px;font-weight:700;color:${C.ink}">${title}</div>
+        <div style="font-size:13px;line-height:1.5;color:${C.muted};padding-top:2px">${text}</div>
+      </td>
+    </tr>`;
+  return {
+    subject: opts.bonus > 0 ? `Selamat datang di SNAPFIT, ${first}! ${n(opts.bonus)} koin menantimu 🎉` : `Selamat datang di SNAPFIT, ${first}! 🎉`,
+    html: shell({
+      preheader: opts.bonus > 0 ? `${n(opts.bonus)} koin sudah masuk ke akunmu — pakai di belanja pertamamu.` : "Akunmu sudah aktif. Selamat berbelanja!",
+      greeting: `Selamat datang, ${first}!`,
+      intro: `Akun SNAPFIT-mu sudah aktif. Terima kasih sudah bergabung — kami siap membantumu menemukan case & aksesori yang benar-benar pas untuk HP-mu.`,
+      body:
+        (opts.bonus > 0
+          ? highlight("Bonus member baru", `${n(opts.bonus)} koin`, "Sudah masuk ke akunmu. 1 koin = Rp1 potongan belanja di checkout.")
+          : "") +
+        block(`${sectionTitle("Keuntungan member")}
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+            ${opts.cashbackPercent > 0 ? perk(`Cashback ${opts.cashbackPercent.toLocaleString("id-ID")}% koin`, "Setiap belanja, koin masuk setelah pesanan selesai.") : ""}
+            ${perk("Lacak semua pesanan", "Riwayat & status pesanan tersimpan di akunmu.")}
+            ${perk("Checkout lebih cepat", "Alamat & kontakmu tersimpan untuk belanja berikutnya.")}
+          </table>`, 28) +
+        button("Mulai Belanja", `${SITE}/produk`) +
+        note(`Bingung pilih case untuk tipe HP-mu? Balas email ini atau chat WhatsApp kami — kami bantu pilihkan. 😊`),
+    }),
+  };
+}

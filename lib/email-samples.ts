@@ -17,6 +17,7 @@ export const EMAIL_SAMPLES = [
   { key: "ulasan", label: "Ajakan ulasan", when: "7 hari setelah dikirim (cron 10:00)", to: "Pembeli" },
   { key: "keranjang", label: "Keranjang ditinggal", when: "Checkout tak selesai (cron 20:00)", to: "Pembeli" },
   { key: "koin-hangus", label: "Koin segera hangus", when: "H-x sebelum hangus (cron 09:00)", to: "Member" },
+  { key: "selamat-datang", label: "Selamat datang", when: "Akun baru (Google / daftar manual)", to: "Member" },
   { key: "admin-pesanan-baru", label: "Pesanan baru", when: "Pesanan dibuat", to: "Admin" },
 ] as const;
 export type EmailSampleKey = (typeof EMAIL_SAMPLES)[number]["key"];
@@ -82,6 +83,10 @@ export async function buildEmailSample(key: EmailSampleKey): Promise<{ subject: 
     case "koin-hangus": {
       const rules = await getCoinRules();
       return E.coinExpiryEmail({ amount: 2500, expiresAt: new Date(Date.now() + 6 * 86_400_000), balance: 4200, rules });
+    }
+    case "selamat-datang": {
+      const rules = await getCoinRules();
+      return E.welcomeEmail({ name: "Contoh Pembeli", bonus: rules.enabled ? rules.signupBonus : 0, cashbackPercent: rules.enabled ? rules.cashbackPercent : 0 });
     }
     case "admin-pesanan-baru":
       return E.adminNewOrderEmail(order, items, { manual: true, waUrl: `${site}/admin/pesanan` });

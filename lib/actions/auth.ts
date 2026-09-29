@@ -5,6 +5,7 @@ import { createSupabaseServerClient, getCurrentUser } from "@/lib/supabase/serve
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { verifyTurnstile } from "@/lib/security/turnstile";
 import { credentialsSchema, type Credentials } from "@/lib/validations/auth";
+import { sendWelcomeIfNew } from "@/lib/welcome";
 
 type AuthResult = { ok: boolean; error?: string; message?: string };
 
@@ -52,12 +53,17 @@ export async function signUp(input: Credentials): Promise<AuthResult> {
   const supabase = await createSupabaseServerClient();
   if (!supabase) return { ok: false, error: "Auth belum dikonfigurasi." };
 
-  const { error } = await supabase.auth.signUp({
+  const site = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.snapfit.id").replace(/\/$/, "");
+  const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
+    // Tautan konfirmasi → /auth/callback (sesi + email selamat datang), lalu ke Akun.
+    options: { emailRedirectTo: `${site}/auth/callback?next=/akun` },
   });
   // Pesan netral (jangan konfirmasi email terdaftar/tidak)
   if (error) return { ok: false, error: "Tidak bisa mendaftar. Coba lagi." };
+  // Konfirmasi email dimatikan di Supabase → langsung aktif → kirim sekarang.
+  if (data.session) await sendWelcomeIfNew(data.user);
   return {
     ok: true,
     message: "Cek email kamu untuk konfirmasi (bila diaktifkan).",
