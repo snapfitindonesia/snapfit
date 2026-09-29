@@ -92,6 +92,9 @@ vercel.json          jadwal cron
   memanggil `revalidatePath` sehingga perubahan tampil segera.
 - PDP & landing memakai `generateStaticParams() { return [] }` + ISR on-demand: tidak
   dibangun saat build, dibuat saat pertama dibuka lalu di-cache.
+- `/produk` polos statis (ISR). URL berparameter `?tipe|model|sort|q=` di-rewrite
+  (`next.config.mjs`, beforeFiles) ke `/produk/filter` yang dinamis (noindex, kanonik
+  `/produk`); URL di browser tetap `/produk?...`. Isi bersama: `components/shop/product-list-page.tsx`.
 - Feed produk di-cache 1 jam, sitemap 1 jam.
 - Admin selalu dinamis (tanpa cache).
 

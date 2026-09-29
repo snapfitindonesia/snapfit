@@ -1,48 +1,12 @@
-import { getCategories, getProducts, getBrandFacets } from "@/lib/actions/product";
-import { productQuerySchema } from "@/lib/validations/product";
-import { ProductListing } from "@/components/shop/product-listing";
+import { ProductListPage, LIST_METADATA } from "@/components/shop/product-list-page";
 
-export const metadata = {
-  title: "Semua Produk - Case HP, Tablet & AirPods Original",
-  description: "Belanja case HP, pelindung layar & aksesori AirPods SNAPFIT. Filter sesuai tipe HP-mu, garansi resmi, gratis ongkir s/d Rp20rb min. Rp150rb.",
-};
+// Statis/ISR: tanpa searchParams → disajikan dari cache CDN (tak query DB tiap kunjungan).
+// URL berparameter (?q=, ?tipe=, ...) di-rewrite ke /produk/filter (lihat next.config.mjs).
+// Fresh via revalidatePath("/produk") saat admin edit / sinkron stok.
+export const revalidate = 300;
 
-export default async function ProductListPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ tipe?: string; model?: string; sort?: string; q?: string }>;
-}) {
-  const sp = await searchParams;
-  // Muat awal via RSC (cepat + SEO); interaksi berikutnya via AJAX di client.
-  const query = productQuerySchema.parse({ tipe: sp.tipe, model: sp.model, sort: sp.sort, q: sp.q });
+export const metadata = LIST_METADATA;
 
-  const [categories, brandFacets, initial] = await Promise.all([
-    getCategories(),
-    getBrandFacets(),
-    getProducts(query),
-  ]);
-
-  return (
-    <div className="mx-auto max-w-[100rem] px-4 py-8 sm:px-6 lg:px-10 sm:py-12">
-      <header className="mb-8">
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-          Semua Produk
-        </h1>
-        <p className="mt-2 text-muted-foreground">
-          Pilih tipe HP-mu, temukan yang pas.
-        </p>
-      </header>
-
-      <ProductListing
-        devices={categories.map((c) => ({ name: c.name, slug: c.slug }))}
-        brands={brandFacets.brands}
-        hasNoBrand={brandFacets.hasNoBrand}
-        initial={initial}
-        initialTipe={query.tipe ?? ""}
-        initialModel={query.model ?? ""}
-        initialSort={query.sort}
-        initialQ={query.q ?? ""}
-      />
-    </div>
-  );
+export default function Page() {
+  return <ProductListPage />;
 }

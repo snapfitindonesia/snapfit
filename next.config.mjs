@@ -14,6 +14,17 @@ const nextConfig = {
     "/": ["./node_modules/.prisma/client/query_compiler_bg.wasm"],
     "/**/*": ["./node_modules/.prisma/client/query_compiler_bg.wasm"],
   },
+  // /produk polos = halaman statis (cache CDN); versi berparameter dirender dinamis di
+  // /produk/filter tanpa mengubah URL di browser. beforeFiles: dicek sebelum rute halaman.
+  async rewrites() {
+    return {
+      beforeFiles: ["tipe", "model", "sort", "q"].map((key) => ({
+        source: "/produk",
+        has: [{ type: "query", key }],
+        destination: "/produk/filter",
+      })),
+    };
+  },
   images: {
     // Foto marketplace dilayani langsung dari CDN-nya via components/ui/image.tsx
     // (JANGAN loader custom global — mematikan /_next/image di Vercel).

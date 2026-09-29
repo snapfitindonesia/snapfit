@@ -18,6 +18,11 @@ import { getCompanions } from "@/lib/cross-sell";
 // ISR: PDP di-generate on-demand saat request pertama lalu DI-CACHE 5 menit
 // (tak query DB saat build → deploy Vercel aman). Fresh via revalidatePath saat admin edit.
 export const revalidate = 300;
+// Wajib agar ISR aktif untuk slug dinamis: [] = tak ada yang dibuat saat build, tiap slug dirender
+// sekali saat dikunjungi lalu disajikan dari cache (tanpa ini halaman dirender ulang tiap kunjungan).
+export async function generateStaticParams() {
+  return [];
+}
 
 export async function generateMetadata({
   params,
