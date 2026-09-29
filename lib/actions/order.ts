@@ -21,6 +21,9 @@ import { isPlaceholderPrice } from "@/lib/price-guard";
 import { pushOrderToGinee } from "@/lib/ginee/orders";
 import { isGineeConfigured } from "@/lib/ginee/config";
 import { markDraftsConverted } from "@/lib/cart-draft";
+import { getCurrentUser } from "@/lib/supabase/server";
+import { getCoinBalance, spendCoins } from "@/lib/coins";
+import { maxCoinsUsable } from "@/lib/coins-rules";
 
 /**
  * Hitung ULANG order dari DB (harga varian + diskon + ongkir) — JANGAN percaya
@@ -151,14 +154,26 @@ export async function createOrder(input: CreateOrderInput) {
     .slice(2, 8)
     .toUpperCase()}`;
 
-  const order = await db.order.create({
+  // Member: pesanan ditautkan ke akun (Pesanan Saya, koin). Koin dihitung ulang di server.
+  const user = await getCurrentUser().catch(() => null);
+  let coinsUsed = 0;
+  if (user && data.useCoins) {
+    coinsUsed = maxCoinsUsable(await getCoinBalance(user.id), subtotal, total, shippingCost);
+  }
+  const grandTotal = total - coinsUsed;
+
+  // Pesanan + pemakaian koin dalam SATU transaksi: saldo tak bisa terpakai dobel.
+  const order = await db.$transaction(async (tx) => {
+    const created = await tx.order.create({
     data: {
       status: "PENDING",
+      userId: user?.id ?? null,
       subtotal,
       shippingCost,
       discount,
       voucherCodes: voucherCode,
-      total,
+      coinsUsed,
+      total: grandTotal,
       midtransOrderId,
       courier: rate.id, // "courier:service" — dipakai saat buat pengiriman
       address: { ...data.address, ...(data.note ? { note: data.note } : {}) },
@@ -171,6 +186,9 @@ export async function createOrder(input: CreateOrderInput) {
         })),
       },
     },
+    });
+    if (user && coinsUsed > 0) await spendCoins(tx, user.id, coinsUsed, created.id);
+    return created;
   });
 
   await notifyNewOrder(order, items, isManualPayment());
@@ -188,14 +206,14 @@ export async function createOrder(input: CreateOrderInput) {
       snapToken: null,
       mock: false,
       manual: true,
-      total,
+      total: grandTotal,
       bank: MANUAL_BANK,
     };
   }
 
   const snap = await createSnapToken({
     orderId: midtransOrderId,
-    grossAmount: total,
+    grossAmount: grandTotal,
     customer: {
       name: data.address.name,
       phone: data.address.phone,
@@ -210,6 +228,7 @@ export async function createOrder(input: CreateOrderInput) {
       })),
       { id: "shipping", name: `Ongkir ${rate.courierName}`, price: shippingCost, quantity: 1 },
       ...(discount > 0 ? [{ id: "voucher", name: "Voucher", price: -discount, quantity: 1 }] : []),
+      ...(coinsUsed > 0 ? [{ id: "coins", name: "Koin SNAPFIT", price: -coinsUsed, quantity: 1 }] : []),
     ],
   });
 
@@ -219,7 +238,7 @@ export async function createOrder(input: CreateOrderInput) {
     snapToken: snap.token,
     mock: snap.mock,
     manual: false,
-    total,
+    total: grandTotal,
     bank: MANUAL_BANK,
   };
 }

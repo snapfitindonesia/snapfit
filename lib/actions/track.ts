@@ -19,6 +19,7 @@ export type TrackedOrder = {
   subtotal: number;
   shippingCost: number;
   discount: number;
+  coinsUsed: number;
   total: number;
   bank: { bank: string; accountNumber: string; accountName: string } | null; // hanya bila menunggu transfer
 };
@@ -71,6 +72,7 @@ export async function trackOrder(input: { orderNo: string; contact: string }): P
       subtotal: order.subtotal,
       shippingCost: order.shippingCost,
       discount: order.discount,
+      coinsUsed: order.coinsUsed,
       total: order.total,
       bank: pendingTransfer ? MANUAL_BANK : null,
     },

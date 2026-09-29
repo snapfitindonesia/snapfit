@@ -8,7 +8,7 @@ Alamat: **https://www.snapfit.id/admin** — wajib login dengan akun ber-role `a
 Menu samping dikelompokkan (`components/admin/admin-nav.tsx`): **Dashboard** ·
 **Penjualan** (Pesanan, Keranjang Ditinggal, Voucher, Diskon) · **Katalog** (Semua Produk,
 Tambah Produk, Edit Massal, Impor CSV, Impor Ginee, Unggulan, Kategori, Merek) ·
-**Tampilan Toko** (Konten Beranda, Banner, Menu Header, Overview Produk, Linktree) · **Pelanggan** (Ulasan, Pencarian).
+**Tampilan Toko** (Konten Beranda, Banner, Menu Header, Overview Produk, Linktree) · **Pelanggan** (Koin Member, Ulasan, Pencarian).
 Grup bisa dibuka/tutup; grup halaman aktif selalu terbuka; pilihan diingat di browser.
 
 | Menu | URL | Untuk apa |
@@ -31,6 +31,7 @@ Grup bisa dibuka/tutup; grup halaman aktif selalu terbuka; pilihan diingat di br
 | Diskon | `/admin/diskon` | Diskon persen untuk varian terpilih, dengan periode mulai–selesai |
 | Ongkir per Provinsi | `/admin/ongkir` | Tarif 1 kg pertama + per kg berikutnya + estimasi untuk 38 provinsi; isi cepat per pulau |
 | Voucher | `/admin/voucher` | Kode voucher: potongan harga atau gratis ongkir, minimal belanja, batas manfaat, **Bisa digabung** (potongan + gratis ongkir) |
+| Koin Member | `/admin/koin` | Saldo beredar (kewajiban toko), koin diberikan/dipakai bulan ini, saldo terbesar, transaksi terbaru, koreksi manual per email |
 | Ulasan | `/admin/ulasan` | Setujui/tolak ulasan pembeli (di atas, kuning) + tambah ulasan manual |
 | Linktree | `/admin/linktree` | Isi halaman `/links`: profil, latar, tombol, pemisah |
 | MFA | `/admin/mfa` | Daftarkan/verifikasi aplikasi authenticator |

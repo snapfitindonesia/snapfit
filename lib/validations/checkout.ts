@@ -43,6 +43,8 @@ export const createOrderSchema = z.object({
   // Opsional: kode voucher yang diterapkan pembeli (divalidasi ulang di server).
   voucherCode: z.string().trim().optional().or(z.literal("")), // lama (1 voucher) — tetap diterima
   voucherCodes: z.array(z.string().trim().min(1).max(40)).max(5).optional(),
+  // Opsional: pakai koin member (jumlahnya dihitung server; hanya bila login).
+  useCoins: z.boolean().optional(),
   // Opsional: catatan pembeli untuk penjual.
   note: z.string().trim().max(500).optional().or(z.literal("")),
 });

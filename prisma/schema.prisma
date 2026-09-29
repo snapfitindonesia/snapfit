@@ -140,6 +140,7 @@ model Order {
   shippingCost Int
   discount     Int     @default(0)
   voucherCodes String? // kode voucher terpakai, dipisah "+" (mis. "SNAP20K+GRATISONGKIR")
+  coinsUsed    Int     @default(0) // koin member terpakai (1 koin = Rp1), sudah dikurangkan dari total
   total        Int
 
   // pembayaran
@@ -279,4 +280,25 @@ model SiteSetting {
   key       String   @id
   value     Json
   updatedAt DateTime @updatedAt
+}
+
+// Buku besar koin member (lib/coins.ts). Tiap perolehan = satu "lot" (amount > 0) dengan sisa
+// `remaining` & kedaluwarsa sendiri; pemakaian mengurangi `remaining` lot paling cepat hangus
+// (FIFO) + dicatat sebagai baris negatif. Saldo = jumlah `remaining` lot yang belum hangus.
+// `ref` unik = idempoten (mis. "cashback:<orderId>") → koin tak pernah tercatat dobel.
+model CoinEntry {
+  id         String    @id @default(cuid())
+  userId     String // id user Supabase Auth
+  amount     Int // + perolehan, − pemakaian/hangus/koreksi
+  kind       String // SIGNUP|CASHBACK|REVIEW|REFUND|ADJUST (+) · SPEND|EXPIRE|REVOKE|ADJUST (−)
+  ref        String?   @unique
+  note       String?
+  remaining  Int       @default(0) // sisa lot yang belum terpakai (hanya baris +)
+  expiresAt  DateTime? // kedaluwarsa lot (hanya baris +)
+  notifiedAt DateTime? // email "koin segera hangus" sudah terkirim untuk lot ini
+  orderId    String?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId, createdAt])
+  @@index([expiresAt])
 }

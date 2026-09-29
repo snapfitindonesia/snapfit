@@ -45,6 +45,7 @@ npx vercel deploy --prod --yes
 
 | Jadwal | WIB | Route | Tugas |
 |---|---|---|---|
+| `0 2 * * *` | 09:00 | `/api/cron/coins` | Koin member: cashback otomatis 7 hari setelah dikirim, hanguskan lot kedaluwarsa, email H-7 |
 | `0 3 * * *` | 10:00 | `/api/cron/review-request` | Email ajakan ulasan (7 hari setelah dikirim) |
 | `0 4 * * *` | 11:00 | `/api/cron/ginee-stock` | Sinkron stok/harga dummy + arsip produk Ginee |
 | `0 12 * * *` | 19:00 | `/api/cron/payment-reminder` | Pengingat bayar pesanan PENDING |

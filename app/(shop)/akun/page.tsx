@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { getCurrentUser } from "@/lib/supabase/server";
-import { ShoppingBag, ChevronRight } from "lucide-react";
+import { ShoppingBag, ChevronRight, Coins } from "lucide-react";
+import { getMyCoins } from "@/lib/actions/coins";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { ChangePasswordForm } from "@/components/auth/change-password-form";
 import { DeleteAccountButton } from "@/components/auth/delete-account-button";
@@ -10,6 +11,7 @@ export const metadata = { title: "Akun" };
 
 export default async function AccountPage() {
   const user = await getCurrentUser();
+  const coins = user ? await getMyCoins() : null;
 
   return (
     <div className="mx-auto max-w-md px-4 py-12 sm:px-6">
@@ -27,6 +29,24 @@ export default async function AccountPage() {
 
       {user && (
         <>
+          {coins?.loggedIn && (
+            <Link
+              href="/akun/koin"
+              className="mt-4 flex items-center gap-3 rounded-lg border border-amber-300 bg-amber-50 p-5 transition-colors hover:bg-amber-100"
+            >
+              <Coins className="size-5 text-amber-700" />
+              <span className="flex-1">
+                <span className="block text-xs text-amber-900/80">Koin SNAPFIT</span>
+                <span className="block text-xl font-semibold text-amber-950">{coins.balance.toLocaleString("id-ID")}</span>
+                {coins.expiringSoon > 0 && (
+                  <span className="block text-xs text-amber-900">
+                    {coins.expiringSoon.toLocaleString("id-ID")} koin hangus minggu ini — pakai sebelum hilang
+                  </span>
+                )}
+              </span>
+              <ChevronRight className="size-5 text-amber-700" />
+            </Link>
+          )}
           <Link
             href="/akun/pesanan"
             className="mt-4 flex items-center gap-3 rounded-lg border border-border p-5 transition-colors hover:bg-muted/50"
@@ -58,7 +78,7 @@ export default async function AccountPage() {
       {!user && (
         <div className="mt-6 space-y-3">
           <p className="text-sm text-muted-foreground">
-            Masuk untuk melihat pesanan & checkout lebih cepat.
+            Masuk untuk melihat pesanan, dapat 2.000 koin member & cashback 2% tiap belanja.
           </p>
           <div className="flex gap-3">
             <Button asChild>

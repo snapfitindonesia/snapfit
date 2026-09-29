@@ -126,6 +126,19 @@ bar bawah (HP), dan tombol WhatsApp melayang.
   memang karena kata kuncinya. Ketikan parsial & saran cepat di header tidak dicatat.
   Lihat di **Admin → Pencarian**.
 
+### Koin member
+- Aturan (konstanta di `lib/coins-rules.ts`): 1 koin = Rp1; cashback **2%** dari nilai belanja
+  dibayar (total − ongkir) saat pesanan **Selesai**, atau otomatis 7 hari setelah **Dikirim** (cron
+  koin); bonus **2.000** member baru (diberikan saat saldo pertama kali dibaca) & **500** per ulasan
+  disetujui; pakai mulai **1.000** koin, maks. **30%** subtotal, tak memotong ongkir, bisa bersama
+  voucher; hangus **6 bulan** per perolehan (FIFO) + email H-7. Tanpa tier (ditunda).
+- Hanya member (login). Tamu tetap bisa checkout; ringkasan checkout menampilkan ajakan masuk.
+  Member: centang "Pakai koin" + info "Dapat X koin setelah pesanan selesai". Jumlah koin selalu
+  dihitung ulang di server; pesanan & pemakaian koin dalam satu transaksi (tak bisa dobel).
+- Batal (admin atau Midtrans) → koin terpakai dikembalikan, cashback ditarik (sebatas saldo).
+- PDP menampilkan "Member dapat X koin cashback" (dihitung dari harga, PDP tetap ISR).
+- Pembeli: **Akun → Koin SNAPFIT** (`/akun/koin`, saldo, yang segera hangus, riwayat, aturan).
+
 ### Keranjang ditinggal
 - Saat pembeli mengisi **email atau nomor HP** di checkout, isi keranjang + kontak
   disimpan sebagai draf (`CheckoutDraft`, 1,5 detik setelah berhenti mengetik).

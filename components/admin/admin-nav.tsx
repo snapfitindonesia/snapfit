@@ -63,6 +63,7 @@ const GROUPS: NavGroup[] = [
     label: "Pelanggan",
     icon: MessagesSquare,
     items: [
+      { href: "/admin/koin", label: "Koin Member" },
       { href: "/admin/ulasan", label: "Ulasan" },
       { href: "/admin/pencarian", label: "Pencarian" },
     ],

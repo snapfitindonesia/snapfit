@@ -16,6 +16,10 @@ export type AdminOrder = {
   status: string;
   subtotal: number;
   shippingCost: number;
+  discount: number;
+  voucherCodes: string | null;
+  coinsUsed: number;
+  member: boolean;
   total: number;
   trackingNo: string | null;
   courier: string | null;
@@ -97,6 +101,7 @@ function OrderRow({ order }: { order: AdminOrder }) {
           <span className="font-mono text-xs">{order.midtransOrderId ?? order.id.slice(0, 8)}</span>
         </button>
         <span className="text-sm text-muted-foreground">{order.address?.name ?? "—"}</span>
+        {order.member && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800">Member</span>}
         <span className="text-sm font-semibold">{formatRupiah(order.total)}</span>
         <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${badge.cls}`}>{badge.label}</span>
       </div>
@@ -211,6 +216,16 @@ function OrderRow({ order }: { order: AdminOrder }) {
               <div className="mt-2 flex justify-between border-t border-border pt-1 text-xs">
                 <span>Ongkir</span><span>{formatRupiah(order.shippingCost)}</span>
               </div>
+              {order.discount > 0 && (
+                <div className="flex justify-between text-xs">
+                  <span>Voucher{order.voucherCodes ? ` ${order.voucherCodes.split("+").join(" + ")}` : ""}</span><span>− {formatRupiah(order.discount)}</span>
+                </div>
+              )}
+              {order.coinsUsed > 0 && (
+                <div className="flex justify-between text-xs">
+                  <span>Koin member</span><span>− {formatRupiah(order.coinsUsed)}</span>
+                </div>
+              )}
               <div className="flex justify-between text-sm font-semibold">
                 <span>Total</span><span>{formatRupiah(order.total)}</span>
               </div>

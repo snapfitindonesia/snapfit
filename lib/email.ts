@@ -51,6 +51,7 @@ type OrderLike = {
   address: unknown; // Prisma Json — di-cast lokal
   discount?: number;
   voucherCodes?: string | null;
+  coinsUsed?: number;
   courier?: string | null;
   createdAt?: Date | string;
 };
@@ -132,6 +133,7 @@ function details(order: OrderLike, items: ItemLike[], opts: { withTotals?: boole
           ? `${row("Subtotal", formatRupiah(order.subtotal))}
              ${row("Ongkos kirim", order.shippingCost > 0 ? formatRupiah(order.shippingCost) : "Gratis")}
              ${order.discount ? row(order.voucherCodes ? `Voucher ${esc(order.voucherCodes.split("+").join(" + "))}` : "Diskon voucher", `− ${formatRupiah(order.discount)}`) : ""}
+             ${order.coinsUsed ? row("Koin SNAPFIT", `− ${formatRupiah(order.coinsUsed)}`) : ""}
              ${row("Total pembayaran", formatRupiah(order.total), { accent: true })}`
           : ""
       }
@@ -375,6 +377,24 @@ export function reviewRequestEmail(
         highlight("Beri penilaian", "★ ★ ★ ★ ★") +
         links +
         (productLinks[0] ? button("Tulis Ulasan", productLinks[0].url) : ""),
+    }),
+  };
+}
+
+/** Pengingat koin member segera hangus (H-7, cron koin). */
+export function coinExpiryEmail(opts: { amount: number; expiresAt: Date; balance: number }) {
+  const n = (x: number) => x.toLocaleString("id-ID");
+  const date = fmtDate(opts.expiresAt);
+  return {
+    subject: `${n(opts.amount)} koin SNAPFIT-mu hangus ${date} ⏳`,
+    html: shell({
+      preheader: `Pakai koinmu sebelum ${date} — 1 koin = Rp1 potongan belanja.`,
+      greeting: "Halo Kak",
+      intro: `<strong>${n(opts.amount)} koin</strong> di akun SNAPFIT-mu akan hangus pada <strong>${esc(date)}</strong>. Pakai di checkout untuk potongan belanja (1 koin = Rp1).`,
+      body:
+        highlight("Saldo koin sekarang", n(opts.balance), "Bisa dipakai hingga 30% subtotal, mulai 1.000 koin.") +
+        button("Belanja Pakai Koin", `${SITE}/produk`) +
+        `<tr><td style="padding:16px 0 0;font-size:13px;line-height:1.6;color:${C.ink}">Riwayat koin ada di <a href="${SITE}/akun/koin" style="color:${C.brand}">Akun → Koin SNAPFIT</a>.</td></tr>`,
     }),
   };
 }

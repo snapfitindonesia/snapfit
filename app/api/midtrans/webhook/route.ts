@@ -6,6 +6,7 @@ import {
 } from "@/lib/midtrans";
 import { handlePaidOrder } from "@/lib/actions/order";
 import { db } from "@/lib/db";
+import { reverseOrderCoins } from "@/lib/coins";
 
 // Webhook Midtrans — SUMBER KEBENARAN status bayar (bukan callback browser).
 // Verifikasi signature dulu, baru update order (lihat docs/04).
@@ -31,10 +32,15 @@ export async function POST(request: Request) {
     if (status === "PAID") {
       await handlePaidOrder(payload.order_id, payload.transaction_status);
     } else if (status === "CANCELLED") {
-      await db.order.updateMany({
+      const r = await db.order.updateMany({
         where: { midtransOrderId: payload.order_id, status: "PENDING" },
         data: { status: "CANCELLED", paymentStatus: payload.transaction_status },
       });
+      // Koin member yang terpakai dikembalikan.
+      if (r.count) {
+        const o = await db.order.findUnique({ where: { midtransOrderId: payload.order_id }, select: { id: true } });
+        if (o) await reverseOrderCoins(o.id);
+      }
     }
     // PENDING → biarkan, tunggu notifikasi berikutnya
   } catch {

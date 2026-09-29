@@ -15,10 +15,12 @@ import {
   ZoomIn,
   X,
   Ticket,
+  Coins,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatRupiah, applyDiscount } from "@/lib/format";
+import { cashbackFor } from "@/lib/coins-rules";
 import { useCart } from "@/components/shop/cart-provider";
 import { useStoreUI } from "@/components/shop/store-ui-provider";
 import { trackViewItem, trackAddToCart, trackContact } from "@/lib/tracking";
@@ -471,6 +473,13 @@ export function PdpView({
             </span>
           )}
         </div>
+        {/* Koin member (statis — PDP tetap ISR): perkiraan cashback 2% harga ini */}
+        {cashbackFor(finalPrice) > 0 && (
+          <p className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Coins className="size-3.5 text-amber-600" />
+            Member dapat <b className="font-semibold text-foreground">{cashbackFor(finalPrice).toLocaleString("id-ID")} koin</b> cashback
+          </p>
+        )}
 
         {/* Voucher tersedia */}
         {vouchers.length > 0 && (

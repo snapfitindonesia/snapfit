@@ -19,6 +19,8 @@ import { RegionSelect } from "@/components/shop/region-select";
 import { quoteShipping } from "@/lib/actions/shipping";
 import type { ZoneQuote } from "@/lib/shipping-zone";
 import type { ShippingRate } from "@/lib/biteship";
+import { getMyCoins, type MyCoins } from "@/lib/actions/coins";
+import { cashbackFor, maxCoinsUsable, COIN_MIN_USE, COIN_SIGNUP_BONUS, COIN_CASHBACK_RATE } from "@/lib/coins-rules";
 
 // Kontak & alamat pesanan terakhir, disimpan HANYA di perangkat pembeli
 // (localStorage) setelah pesanan berhasil → checkout berikutnya terisi otomatis.
@@ -218,7 +220,18 @@ export function CheckoutView({
     return { ...a, discount: b ? (b.valid ? b.discount : 0) : a.discount, pending: false, cap: 0 };
   });
   const discount = voucherLines.reduce((n, l) => n + l.discount, 0);
-  const total = Math.max(0, subtotal + shippingCost - discount);
+  const totalBeforeCoins = Math.max(0, subtotal + shippingCost - discount);
+  // Koin member: jumlah dihitung ulang server (createOrder) dengan aturan yang sama.
+  const [coins, setCoins] = useState<MyCoins | null>(null);
+  const [useCoins, setUseCoins] = useState(false);
+  useEffect(() => {
+    getMyCoins().then(setCoins).catch(() => setCoins({ loggedIn: false }));
+  }, []);
+  const coinBalance = coins?.loggedIn ? coins.balance : 0;
+  const coinsUsable = maxCoinsUsable(coinBalance, subtotal, totalBeforeCoins, shippingCost);
+  const coinsUsed = useCoins ? coinsUsable : 0;
+  const total = totalBeforeCoins - coinsUsed;
+  const cashback = cashbackFor(total - shippingCost);
 
   const bcFired = useRef(false);
   useEffect(() => {
@@ -318,7 +331,7 @@ export function CheckoutView({
     setErrors({});
     setPlacing(true);
     try {
-      const result = await createOrder({ address: parsed.data, items: cartLines, rateId, voucherCodes: applied.map((v) => v.code), note });
+      const result = await createOrder({ address: parsed.data, items: cartLines, rateId, voucherCodes: applied.map((v) => v.code), note, useCoins: coinsUsed > 0 });
       saveContact({ ...EMPTY, ...parsed.data, email: parsed.data.email ?? "" });
       if (result.manual) {
         // Transfer manual: order PENDING → arahkan ke halaman instruksi transfer.
@@ -535,9 +548,11 @@ export function CheckoutView({
                 <Row key={l.code} label={`Voucher ${l.code}`} value={`−${formatRupiah(l.discount)}`} />
               ) : null,
             )}
+            {coinsUsed > 0 && <Row label="Koin SNAPFIT" value={`−${formatRupiah(coinsUsed)}`} />}
             <div className="my-2 border-t border-border" />
             <Row label="Total" value={formatRupiah(total)} strong />
           </dl>
+          <CoinBox coins={coins} usable={coinsUsable} use={useCoins} onUse={setUseCoins} cashback={cashback} />
           {!shippingKnown && !unavailable && (
             <p className="mt-1 text-right text-xs text-muted-foreground">Belum termasuk ongkir — pilih provinsi tujuan.</p>
           )}
@@ -584,6 +599,58 @@ function Row({ label, value, strong, muted }: { label: string; value: string; st
     <div className="flex items-center justify-between">
       <dt className="text-muted-foreground">{label}</dt>
       <dd className={cn(strong ? "text-base font-semibold" : "font-medium", muted && "font-normal text-muted-foreground")}>{value}</dd>
+    </div>
+  );
+}
+
+/** Koin member di ringkasan checkout: pakai saldo (member) atau ajakan masuk (tamu). */
+function CoinBox({
+  coins,
+  usable,
+  use,
+  onUse,
+  cashback,
+}: {
+  coins: MyCoins | null;
+  usable: number;
+  use: boolean;
+  onUse: (v: boolean) => void;
+  cashback: number;
+}) {
+  if (!coins) return null;
+  const pct = `${Math.round(COIN_CASHBACK_RATE * 100)}%`;
+  if (!coins.loggedIn) {
+    return (
+      <Link
+        href="/masuk?next=/checkout"
+        className="mt-4 block rounded-md border border-amber-300 bg-amber-50 px-3 py-2.5 text-xs text-amber-950 transition-colors hover:bg-amber-100"
+      >
+        <b>Masuk / daftar, dapat {COIN_SIGNUP_BONUS.toLocaleString("id-ID")} koin</b> + cashback {pct} tiap belanja.
+        <span className="mt-0.5 block font-medium underline underline-offset-2">Masuk sekarang →</span>
+      </Link>
+    );
+  }
+  return (
+    <div className="mt-4 rounded-md border border-border bg-muted/30 px-3 py-2.5 text-xs">
+      {usable > 0 ? (
+        <label className="flex cursor-pointer items-center justify-between gap-3">
+          <span>
+            <span className="block text-sm font-medium">Pakai koin</span>
+            <span className="text-muted-foreground">Saldo {coins.balance.toLocaleString("id-ID")} · hemat {formatRupiah(usable)}</span>
+          </span>
+          <input type="checkbox" checked={use} onChange={(e) => onUse(e.target.checked)} className="size-4 accent-foreground" />
+        </label>
+      ) : (
+        <p className="text-muted-foreground">
+          Saldo koin {coins.balance.toLocaleString("id-ID")}
+          {coins.balance < COIN_MIN_USE ? ` · bisa dipakai mulai ${COIN_MIN_USE.toLocaleString("id-ID")} koin` : ""}
+        </p>
+      )}
+      {cashback > 0 && (
+        <p className="mt-1.5 border-t border-border pt-1.5 text-muted-foreground">
+          Dapat <b className="text-foreground">{cashback.toLocaleString("id-ID")} koin</b> setelah pesanan selesai.
+        </p>
+      )}
     </div>
   );
 }

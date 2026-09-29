@@ -23,6 +23,8 @@ Skema: `prisma/schema.prisma`. Klien: `lib/db.ts`.
 | `SearchTerm` | Kata kunci pencarian teragregasi | `count`, `zeroCount` (berapa kali 0 hasil), `lastResults` |
 | `BioProfile` / `BioLink` | Linktree `/links` | `BioLink.kind` LINK / DIVIDER, `newTab`, `clicks` |
 
+`CoinEntry` = buku besar koin member (lib/coins.ts): baris + adalah "lot" dengan `remaining` & `expiresAt` sendiri, baris − = pemakaian/hangus/tarik. Saldo = jumlah `remaining` lot yang belum hangus. `ref` unik (mis. `cashback:<orderId>`, `spend:<orderId>`, `signup:<userId>`) membuat setiap transaksi idempoten. `Order.coinsUsed` = koin yang sudah dikurangkan dari `total`; `Order.userId` diisi saat pembeli login.
+
 Pengguna (login) disimpan di **Supabase Auth**, bukan di Prisma. Admin ditandai
 `app_metadata.role = "admin"`.
 

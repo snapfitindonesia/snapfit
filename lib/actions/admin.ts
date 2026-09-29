@@ -2,6 +2,7 @@
 
 import { productSlug, skuify } from "@/lib/slug";
 import { revalidatePath, revalidateTag } from "next/cache";
+import { grantOrderCashback, grantReviewBonus, reverseOrderCoins } from "@/lib/coins";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { cleanupOrphanImages } from "@/lib/upload/cleanup";
@@ -603,6 +604,16 @@ export async function updateOrder(input: OrderUpdateInput): Promise<Result> {
     revalidatePath("/admin/pesanan");
     revalidatePath("/akun/pesanan");
 
+    // Koin member: cashback saat Selesai; batal → koin terpakai kembali & cashback ditarik.
+    if (existing && existing.status !== data.status) {
+      try {
+        if (data.status === "DONE") await grantOrderCashback(updated);
+        if (data.status === "CANCELLED") await reverseOrderCoins(updated.id);
+      } catch (e) {
+        console.error("Proses koin gagal:", e);
+      }
+    }
+
     const email = (updated.address as { email?: string } | null)?.email;
 
     // Email "sedang diproses" saat baru berubah ke PROCESSING
@@ -790,6 +801,7 @@ export async function approveReview(id: string): Promise<Result> {
     await requireAdmin();
     const review = await db.review.update({ where: { id }, data: { approved: true } });
     await revalidateReview(review.productId);
+    await grantReviewBonus(review.id).catch((e) => console.error("Bonus koin ulasan gagal:", e));
     return { ok: true };
   } catch (e) {
     return fail(e);

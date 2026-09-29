@@ -197,6 +197,7 @@ export function TrackOrder({ initialOrder = "" }: { initialOrder?: string }) {
             <dl className="mt-2 space-y-1 border-t border-border pt-2 text-sm">
               <div className="flex justify-between"><dt className="text-muted-foreground">Ongkir</dt><dd>{order.shippingCost > 0 ? formatRupiah(order.shippingCost) : "Gratis"}</dd></div>
               {order.discount > 0 && <div className="flex justify-between"><dt className="text-muted-foreground">Diskon</dt><dd>− {formatRupiah(order.discount)}</dd></div>}
+              {order.coinsUsed > 0 && <div className="flex justify-between"><dt className="text-muted-foreground">Koin SNAPFIT</dt><dd>− {formatRupiah(order.coinsUsed)}</dd></div>}
               <div className="flex justify-between font-semibold"><dt>Total</dt><dd>{formatRupiah(order.total)}</dd></div>
             </dl>
           </div>
