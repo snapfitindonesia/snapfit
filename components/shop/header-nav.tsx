@@ -238,14 +238,19 @@ export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaM
             </div>
           </div>
 
-          {/* Mega-menu mengambang (desktop) */}
+          {/* Gelapkan halaman di belakang mega-menu (gaya Nomad). pointer-events-none → tak mengganggu hover. */}
+          {(open || merekOpen) && (
+            <div aria-hidden className="animate-in fade-in pointer-events-none fixed inset-0 -z-10 hidden bg-black/30 duration-200 md:block" />
+          )}
+
+          {/* Mega-menu mengambang (desktop) — maks. 1280px di tengah, bukan selebar header */}
           {open && (
             <div
-              className="absolute inset-x-0 top-full z-50 hidden pt-2 md:block"
+              className="absolute left-1/2 top-full z-50 hidden w-full max-w-[1280px] -translate-x-1/2 pt-2 md:block"
               onMouseEnter={cancelClose}
               onMouseLeave={scheduleClose}
             >
-              <div className="animate-in fade-in slide-in-from-top-1 flex max-h-[70vh] overflow-hidden rounded-2xl border border-border bg-background shadow-xl duration-200">
+              <div className="animate-in fade-in slide-in-from-top-1 flex max-h-[70vh] overflow-hidden rounded-[25px] border border-border bg-background shadow-2xl duration-200">
                 {/* Kiri: daftar brand */}
                 <div className="w-48 shrink-0 border-r border-border bg-muted/30 p-2">
                   {menu.map((brand, i) => (
@@ -323,11 +328,11 @@ export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaM
           {/* Mega-menu Merek/Brands (desktop) */}
           {merekOpen && merekMenu.length > 0 && (
             <div
-              className="absolute inset-x-0 top-full z-50 hidden pt-2 md:block"
+              className="absolute left-1/2 top-full z-50 hidden w-full max-w-[1280px] -translate-x-1/2 pt-2 md:block"
               onMouseEnter={cancelClose}
               onMouseLeave={scheduleClose}
             >
-              <div className="animate-in fade-in slide-in-from-top-1 flex max-h-[70vh] overflow-hidden rounded-2xl border border-border bg-background shadow-xl duration-200">
+              <div className="animate-in fade-in slide-in-from-top-1 flex max-h-[70vh] overflow-hidden rounded-[25px] border border-border bg-background shadow-2xl duration-200">
                 {/* Kiri: daftar merek */}
                 <div className="w-48 shrink-0 overflow-y-auto border-r border-border bg-muted/30 p-2">
                   {merekMenu.map((m, i) => (
