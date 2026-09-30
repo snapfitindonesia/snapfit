@@ -126,7 +126,7 @@ export function AuthForm({
         </label>
         {error && <p className="text-sm text-destructive">{error}</p>}
         {message && !error && <p className="text-sm text-foreground">{message}</p>}
-        <Button type="submit" className="w-full" disabled={loading || code.length < 6}>
+        <Button type="submit" className="h-[42px] rounded-xl px-4 text-sm w-full" disabled={loading || code.length < 6}>
           {loading && <Loader2 className="size-4 animate-spin" />}
           Verifikasi & masuk
         </Button>
@@ -207,7 +207,7 @@ export function AuthForm({
       {error && <p className="text-sm text-destructive">{error}</p>}
       {message && <p className="text-sm text-foreground">{message}</p>}
 
-      <Button type="submit" className="w-full" disabled={loading}>
+      <Button type="submit" className="h-[42px] rounded-xl px-4 text-sm w-full" disabled={loading}>
         {loading && <Loader2 className="size-4 animate-spin" />}
         {isLogin ? "Masuk" : "Daftar"}
       </Button>

@@ -59,7 +59,7 @@ export function ChangePasswordForm() {
       </label>
       {error && <p className="text-sm text-destructive">{error}</p>}
       {msg && <p className="text-sm text-emerald-600">{msg}</p>}
-      <Button type="submit" disabled={loading}>
+      <Button type="submit" className="h-[42px] rounded-xl px-4 text-sm" disabled={loading}>
         {loading && <Loader2 className="size-4 animate-spin" />}
         Ganti password
       </Button>

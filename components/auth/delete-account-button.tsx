@@ -37,7 +37,7 @@ export function DeleteAccountButton() {
         type="button"
         onClick={onDelete}
         disabled={busy}
-        className="inline-flex items-center gap-2 rounded-md border border-destructive/40 px-3 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive hover:text-white disabled:opacity-60"
+        className="inline-flex h-[42px] items-center gap-2 rounded-xl border border-destructive/40 px-4 text-sm font-medium text-destructive transition-colors hover:bg-destructive hover:text-white disabled:opacity-60"
       >
         {busy ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
         Hapus akun permanen

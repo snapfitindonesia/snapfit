@@ -86,7 +86,7 @@ export function ResetPasswordForm() {
         />
       </label>
       {error && <p className="text-sm text-destructive">{error}</p>}
-      <Button type="submit" className="w-full" disabled={loading}>
+      <Button type="submit" className="h-[42px] rounded-xl px-4 text-sm w-full" disabled={loading}>
         {loading && <Loader2 className="size-4 animate-spin" />}
         Simpan password baru
       </Button>

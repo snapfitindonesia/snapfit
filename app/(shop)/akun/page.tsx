@@ -138,7 +138,7 @@ async function MemberView({ user }: { user: NonNullable<Awaited<ReturnType<typeo
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Halo, {first}!</h1>
           <p className="truncate text-sm text-muted-foreground">{user.email}</p>
         </div>
-        <SignOutButton />
+        <SignOutButton large />
       </div>
 
       {/* Kartu koin */}
@@ -209,7 +209,7 @@ async function MemberView({ user }: { user: NonNullable<Awaited<ReturnType<typeo
           <div className="mt-3 flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border p-8 text-center">
             <ShoppingBag className="size-7 text-muted-foreground" />
             <p className="text-sm text-muted-foreground">Belum ada pesanan. Yuk, temukan case yang pas untuk HP-mu.</p>
-            <Link href="/produk" className="inline-flex h-10 items-center rounded-full bg-foreground px-5 text-sm font-semibold text-background hover:opacity-90">
+            <Link href="/produk" className="inline-flex h-[42px] items-center rounded-xl bg-foreground px-5 text-sm font-semibold text-background hover:opacity-90">
               Mulai belanja
             </Link>
           </div>
