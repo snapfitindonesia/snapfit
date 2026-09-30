@@ -27,7 +27,7 @@ function Cta({ label, href, dark = false, className }: { label: string; href: st
     <Link
       href={href}
       className={cn(
-        "inline-flex h-10 items-center gap-1.5 rounded-full px-5 text-sm font-medium transition-colors",
+        "inline-flex h-[42px] items-center gap-1.5 rounded-full px-5 text-sm font-medium transition-colors",
         dark ? "bg-white text-neutral-950 hover:bg-white/85" : "bg-foreground text-background hover:bg-foreground/85",
         className,
       )}
@@ -126,7 +126,7 @@ function Hero({ s, first }: { s: SectionOf<"hero">; first: boolean }) {
               <Link
                 href={s.ctaHref}
                 className={cn(
-                  "mt-5 inline-flex h-12 items-center rounded-full px-6 text-base font-bold transition-opacity hover:opacity-85",
+                  "mt-5 inline-flex h-[42px] items-center rounded-full px-6 text-base font-bold transition-opacity hover:opacity-85",
                   light ? "bg-foreground text-background" : "bg-white text-neutral-950",
                 )}
               >
@@ -197,11 +197,11 @@ function Categories({ s }: { s: SectionOf<"categories"> }) {
           <li key={c.href + c.label}>
             <Link
               href={c.href}
-              className="group flex h-12 items-center gap-3 rounded-full border border-border bg-background pl-5 pr-2 text-sm font-medium transition-colors hover:border-foreground sm:h-14"
+              className="group flex h-[42px] items-center gap-3 rounded-full border border-border bg-background pl-5 pr-1.5 text-sm font-medium transition-colors hover:border-foreground"
             >
               {c.label}
               {c.image ? (
-                <span className="relative size-9 overflow-hidden rounded-full bg-muted sm:size-10">
+                <span className="relative size-8 overflow-hidden rounded-full bg-muted">
                   <Image src={c.image} alt="" fill sizes="40px" className="object-contain mix-blend-multiply" />
                 </span>
               ) : (
@@ -386,7 +386,7 @@ function Cards({ s }: { s: SectionOf<"cards"> }) {
               <span>
                 <span className="block text-2xl font-semibold tracking-tight">{c.title}</span>
                 {c.text && <span className="mt-1.5 block max-w-sm text-sm text-white/80">{c.text}</span>}
-                {c.ctaLabel && <span className="mt-4 inline-flex h-9 items-center gap-1.5 rounded-full bg-white px-4 text-sm font-medium text-neutral-950">{c.ctaLabel} <ArrowRight className="size-4" aria-hidden /></span>}
+                {c.ctaLabel && <span className="mt-4 inline-flex h-[42px] items-center gap-1.5 rounded-full bg-white px-5 text-sm font-medium text-neutral-950">{c.ctaLabel} <ArrowRight className="size-4" aria-hidden /></span>}
               </span>
             </Link>
           ) : (

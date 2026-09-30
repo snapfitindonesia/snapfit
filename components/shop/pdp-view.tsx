@@ -532,7 +532,7 @@ export function PdpView({
                       aria-pressed={selected}
                       aria-label={c.name}
                       className={cn(
-                        "inline-flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-sm transition-colors",
+                        "inline-flex h-[42px] items-center gap-2 rounded-xl border px-3 text-sm transition-colors",
                         selected
                           ? "border-primary bg-primary/5 font-medium text-primary ring-1 ring-primary"
                           : "border-border hover:border-foreground",
@@ -565,7 +565,7 @@ export function PdpView({
                     aria-pressed={selected}
                     disabled={disabled}
                     className={cn(
-                      "rounded-lg border px-3 py-1.5 text-sm transition-colors",
+                      "h-[42px] rounded-xl border px-3.5 text-sm transition-colors",
                       selected
                         ? "border-primary bg-primary/5 font-medium text-primary ring-1 ring-primary"
                         : "border-border hover:border-foreground",

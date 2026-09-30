@@ -106,7 +106,7 @@ export function VoucherPicker({
                     type="button"
                     onClick={() => onApply(r.code)}
                     disabled={applyingCode !== null}
-                    className="inline-flex shrink-0 items-center gap-1 rounded-md bg-foreground px-3 py-1.5 text-xs font-medium text-background hover:opacity-90 disabled:opacity-60"
+                    className="inline-flex h-[42px] shrink-0 items-center gap-1 rounded-xl bg-foreground px-4 text-sm font-medium text-background hover:opacity-90 disabled:opacity-60"
                   >
                     {applyingCode === r.code && <Loader2 className="size-3.5 animate-spin" />}
                     {conflicts.length ? "Ganti" : "Pakai"}

@@ -108,10 +108,10 @@ export default async function PromoPage({ params }: { params: Promise<{ slug: st
             <p className="text-sm text-muted-foreground">{other.schedule}</p>
           </div>
           <div className="flex gap-3">
-            <Link href={`/promo/${other.slug}`} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-sm font-medium hover:border-foreground">
+            <Link href={`/promo/${other.slug}`} className="inline-flex h-[42px] items-center gap-1.5 whitespace-nowrap rounded-xl border border-border px-4 text-sm font-medium hover:border-foreground">
               Lihat {other.title} <ArrowRight className="size-4" />
             </Link>
-            <Link href="/produk" className="inline-flex items-center rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90">
+            <Link href="/produk" className="inline-flex h-[42px] items-center whitespace-nowrap rounded-xl bg-foreground px-4 text-sm font-medium text-background hover:opacity-90">
               Semua produk
             </Link>
           </div>

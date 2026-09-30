@@ -43,10 +43,10 @@ export function NotFoundContent() {
               name="q"
               type="search"
               placeholder="Cari case, tempered glass, tipe HP…"
-              className="h-11 w-full rounded-md border border-border bg-background pl-9 pr-3 text-sm outline-none focus:border-foreground"
+              className="h-[42px] w-full rounded-xl border border-border bg-background pl-9 pr-3 text-sm outline-none focus:border-foreground"
             />
           </label>
-          <Button type="submit" size="lg" className="h-11">
+          <Button type="submit" size="lg">
             Cari
           </Button>
         </form>
@@ -69,7 +69,7 @@ export function NotFoundContent() {
               <li key={b.label}>
                 <Link
                   href={b.href}
-                  className="inline-flex h-9 items-center rounded-full border border-border px-4 text-sm font-medium transition-colors hover:border-foreground"
+                  className="inline-flex h-[42px] items-center rounded-full border border-border px-4 text-sm font-medium transition-colors hover:border-foreground"
                 >
                   {b.label}
                 </Link>
