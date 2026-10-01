@@ -19,7 +19,10 @@ const color = z
   .default("")
   .refine((v) => v === "" || /^#[0-9a-fA-F]{6}$/.test(v), "Warna harus format #RRGGBB");
 
-const base = { id: z.string().min(1).max(40), active: z.boolean().default(true) };
+// Jarak atas/bawah tiap bagian (Admin → Konten Beranda): "auto" = jarak bawaan bagian itu.
+export const SPACE_OPTIONS = ["auto", "0", "xs", "sm", "md", "lg"] as const;
+const space = z.enum(SPACE_OPTIONS).default("auto");
+const base = { id: z.string().min(1).max(40), active: z.boolean().default(true), padTop: space, padBottom: space };
 
 const cta = { ctaLabel: text(40), ctaHref: link };
 

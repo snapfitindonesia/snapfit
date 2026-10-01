@@ -96,6 +96,15 @@ const HERO_HINT = "2400 × 1350 px (16:9). Tampil utuh tanpa terpotong — tingg
 const HERO_MOBILE_HINT = "1080 × 1350 px (4:5). Tampil utuh di HP. Teks di bagian atas: taruh produk di setengah bawah. Tanpa foto ini, foto desktop dipotong otomatis.";
 const MOBILE_HINT = "Opsional. Potrait (±4:5) untuk HP — tanpa ini foto desktop dipotong otomatis.";
 
+const SPACE_LABELS: [HomeSection["padTop"], string][] = [
+  ["auto", "Otomatis (bawaan)"],
+  ["0", "Tanpa jarak"],
+  ["xs", "Sangat rapat (HP 12px · desktop 24px)"],
+  ["sm", "Rapat (24px · 32px)"],
+  ["md", "Sedang (48px · 64px)"],
+  ["lg", "Lega (64px · 96px)"],
+];
+
 /* ------------------------- Daftar item (list) ------------------------- */
 
 function ItemList<T extends Record<string, string>>({
@@ -497,6 +506,10 @@ export function HomeEditor({ initial }: { initial: HomeSection[] }) {
               <div className="border-t border-border p-4 sm:p-5">
                 <p className="mb-4 text-xs text-muted-foreground">{info.hint}</p>
                 <Fields s={s} set={(p) => patch(s.id, p)} />
+                <div className="mt-5 grid gap-4 border-t border-border pt-4 sm:grid-cols-2">
+                  <Select label="Jarak atas" value={s.padTop} onChange={(v) => patch(s.id, { padTop: v })} options={SPACE_LABELS} />
+                  <Select label="Jarak bawah" value={s.padBottom} onChange={(v) => patch(s.id, { padBottom: v })} options={SPACE_LABELS} />
+                </div>
               </div>
             )}
           </section>
