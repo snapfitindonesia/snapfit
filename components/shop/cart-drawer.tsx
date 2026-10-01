@@ -9,7 +9,8 @@ import { cn } from "@/lib/utils";
 import { formatRupiah } from "@/lib/format";
 import { useCart } from "@/components/shop/cart-provider";
 import { useStoreUI } from "@/components/shop/store-ui-provider";
-import { applyVoucher } from "@/lib/actions/voucher";
+import { applyVoucher, getActiveVouchers } from "@/lib/actions/voucher";
+import { VoucherPicker, type PickerVoucher } from "@/components/shop/voucher-picker";
 import { MAX_VOUCHERS } from "@/lib/voucher";
 
 type Panel = "note" | "shipping" | "coupon" | null;
@@ -35,6 +36,13 @@ export function CartDrawer({
   const [applying, setApplying] = useState(false);
   const [voucherError, setVoucherError] = useState<string | null>(null);
   const [voucherNotice, setVoucherNotice] = useState<string | null>(null);
+  // Daftar voucher aktif — dimuat sekali saat panel Voucher pertama kali dibuka (tak membebani halaman).
+  const [available, setAvailable] = useState<PickerVoucher[] | null>(null);
+  const [applyingCode, setApplyingCode] = useState<string | null>(null);
+  useEffect(() => {
+    if (panel !== "coupon" || available) return;
+    getActiveVouchers().then(setAvailable).catch(() => setAvailable([]));
+  }, [panel, available]);
 
   // Tutup dengan Esc + kunci scroll body saat terbuka.
   useEffect(() => {
@@ -62,21 +70,24 @@ export function CartDrawer({
   const remaining = Math.max(0, freeShippingMin - subtotal);
   const progress = freeShippingMin > 0 ? Math.min(100, Math.round((subtotal / freeShippingMin) * 100)) : 0;
 
-  async function onApply() {
+  async function onApply(picked?: string) {
     setApplying(true);
+    if (picked) setApplyingCode(picked);
     setVoucherError(null);
     setVoucherNotice(null);
-    const res = await applyVoucher(code, subtotal);
+    const res = await applyVoucher(picked ?? code, subtotal);
     if (res.ok) {
       const v = { code: res.code, label: res.label, discount: res.discount, freeShipping: res.freeShipping, type: res.type, stackable: res.stackable };
       const replaced = addVoucher(v);
       setCode("");
       if (replaced.length) setVoucherNotice(`${replaced.map((r) => r.code).join(", ")} dilepas — tidak bisa digabung dengan ${v.code}.`);
-      else setPanel(null);
+      // Dari daftar: panel tetap terbuka agar bisa menambah voucher gratis ongkir (bisa digabung).
+      else if (!picked) setPanel(null);
     } else {
       setVoucherError(res.error);
     }
     setApplying(false);
+    setApplyingCode(null);
   }
 
   const togglePanel = (p: Panel) => setPanel((cur) => (cur === p ? null : p));
@@ -195,7 +206,7 @@ export function CartDrawer({
             </div>
 
             {panel && (
-              <div className="border-b border-border bg-muted/30 px-4 py-3">
+              <div className="max-h-[50vh] overflow-y-auto overscroll-contain border-b border-border bg-muted/30 px-4 py-3">
                 {panel === "note" && (
                   <textarea
                     value={note}
@@ -239,12 +250,27 @@ export function CartDrawer({
                             placeholder="Kode voucher"
                             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm uppercase outline-none focus:border-foreground"
                           />
-                          <Button size="sm" onClick={onApply} disabled={applying || !code.trim()}>
+                          <Button size="sm" onClick={() => onApply()} disabled={applying || !code.trim()}>
                             {applying && <Loader2 className="size-4 animate-spin" />}Pakai
                           </Button>
                         </div>
                         {voucherError && <p className="mt-1.5 text-xs text-destructive">{voucherError}</p>}
                       </>
+                    )}
+                    {available === null ? (
+                      <p className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+                        <Loader2 className="size-3.5 animate-spin" /> Memuat voucher…
+                      </p>
+                    ) : (
+                      <VoucherPicker
+                        vouchers={available}
+                        subtotal={subtotal}
+                        shippingCost={baseShipping}
+                        shippingKnown={shipKnown}
+                        applied={vouchers}
+                        applyingCode={applyingCode}
+                        onApply={(c) => onApply(c)}
+                      />
                     )}
                   </div>
                 )}
