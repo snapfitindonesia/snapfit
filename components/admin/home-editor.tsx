@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowDown, ArrowUp, ChevronDown, ExternalLink, Eye, EyeOff, Loader2, Plus, RotateCcw, Save, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, Copy, ExternalLink, Eye, EyeOff, Loader2, Plus, RotateCcw, Save, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ImageInput } from "@/components/admin/image-input";
 import { cn } from "@/lib/utils";
@@ -467,6 +467,21 @@ export function HomeEditor({ initial }: { initial: HomeSection[] }) {
               <span className="flex shrink-0 gap-1">
                 <IconBtn label={s.active ? "Sembunyikan" : "Tampilkan"} onClick={() => patch(s.id, { active: !s.active })}>
                   {s.active ? <Eye className="size-3.5" /> : <EyeOff className="size-3.5" />}
+                </IconBtn>
+                <IconBtn
+                  label="Duplikat"
+                  disabled={sections.length >= 30}
+                  onClick={() => {
+                    // Salinan (id baru) tepat di bawah aslinya, langsung terbuka untuk diedit.
+                    const copy = { ...structuredClone(s), id: newId() } as HomeSection;
+                    setSections((all) => {
+                      const k = all.findIndex((x) => x.id === s.id);
+                      return [...all.slice(0, k + 1), copy, ...all.slice(k + 1)];
+                    });
+                    setOpen(copy.id);
+                  }}
+                >
+                  <Copy className="size-3.5" />
                 </IconBtn>
                 <IconBtn label="Naik" onClick={() => move(i, -1)} disabled={i === 0}><ArrowUp className="size-3.5" /></IconBtn>
                 <IconBtn label="Turun" onClick={() => move(i, 1)} disabled={i === sections.length - 1}><ArrowDown className="size-3.5" /></IconBtn>
