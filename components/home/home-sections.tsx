@@ -6,6 +6,7 @@ import { ProductCard } from "@/components/shop/product-card";
 import { ArtImage } from "@/components/home/art-image";
 import { ScrollRow } from "@/components/home/scroll-row";
 import { Parallax } from "@/components/home/parallax";
+import { RichText } from "@/lib/home/rich-text";
 import type { HomeSection, SectionOf } from "@/lib/home/sections";
 import type { HomeData } from "@/lib/home/data";
 
@@ -402,6 +403,94 @@ function Cards({ s }: { s: SectionOf<"cards"> }) {
   );
 }
 
+/* ---------------------------- BLOK CUSTOM ---------------------------- */
+
+const RATIO: Record<string, string> = { "1:1": "aspect-square", "4:5": "aspect-[4/5]", "4:3": "aspect-[4/3]", "16:9": "aspect-video", "3:1": "aspect-[3/1]" };
+const COLS: Record<string, string> = {
+  "1": "grid-cols-1",
+  "2": "grid-cols-1 sm:grid-cols-2",
+  "3": "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3",
+  "4": "grid-cols-2 lg:grid-cols-4",
+};
+const PAD: Record<string, string> = { sm: "py-8 sm:py-10", md: "py-12 sm:py-16", lg: "py-16 sm:py-24" };
+// Lebar foto tiap kolom (atribut sizes) agar varian CDN yang diunduh pas.
+const SIZES: Record<string, string> = {
+  "1": "(min-width: 1600px) 1520px, 100vw",
+  "2": "(min-width: 640px) 50vw, 100vw",
+  "3": "(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw",
+  "4": "(min-width: 1024px) 25vw, 50vw",
+};
+
+/** Blok Custom: kolom foto + judul + teks berformat + tombol, gaya diatur admin. */
+function Custom({ s }: { s: SectionOf<"custom"> }) {
+  const blocks = s.blocks.filter((b) => b.image || b.title || b.text || (b.ctaLabel && b.href));
+  if (!blocks.length && !s.title) return null;
+  const light = s.textColor === "terang";
+  const card = s.style === "kartu";
+  const center = s.align === "center";
+  const side = s.columns === "1" && !s.imageFirst; // 1 kolom: foto di samping (bergantian)
+
+  const photo = (b: (typeof blocks)[number], extra?: string) =>
+    b.image ? (
+      b.ratio === "auto" ? (
+        <Image src={b.image} alt={b.title || ""} width={1600} height={1200} sizes={side ? "(min-width: 768px) 50vw, 100vw" : SIZES[s.columns]} className={cn("h-auto w-full rounded-2xl", extra)} />
+      ) : (
+        <span className={cn("relative block overflow-hidden rounded-2xl bg-muted", RATIO[b.ratio], extra)}>
+          <Image src={b.image} alt={b.title || ""} fill sizes={side ? "(min-width: 768px) 50vw, 100vw" : SIZES[s.columns]} className="object-cover" />
+        </span>
+      )
+    ) : null;
+
+  const body = (b: (typeof blocks)[number]) => (
+    <div className={cn(center && "text-center", side && "md:self-center")}>
+      {b.eyebrow && <p className={cn("text-xs font-bold uppercase tracking-wider", light ? "text-white/70" : "text-muted-foreground")}>{b.eyebrow}</p>}
+      {b.title && <h3 className={cn("font-bold tracking-tight text-balance", s.columns === "1" ? "mt-1 text-2xl sm:text-3xl" : "mt-1 text-lg sm:text-xl")}>{b.title}</h3>}
+      {b.text && (
+        <RichText
+          text={b.text}
+          className={cn("mt-2 space-y-3 text-sm leading-relaxed sm:text-base", light ? "text-white/80" : "text-foreground/75", center && "[&_ol]:inline-block [&_ol]:text-left [&_ul]:inline-block [&_ul]:text-left")}
+        />
+      )}
+      {b.ctaLabel && b.href && <Cta label={b.ctaLabel} href={b.href} dark={light && !card} className="mt-5" />}
+    </div>
+  );
+
+  return (
+    <section
+      className={cn("cv-auto [--cv-h:520px]", PAD[s.spacing], light && "text-white")}
+      style={s.bg ? { backgroundColor: s.bg } : undefined}
+    >
+      <div className={s.width === "full" ? "px-4 sm:px-6 lg:px-10" : WRAP}>
+        {(s.title || s.subtitle) && (
+          <div className={cn("mb-8 sm:mb-10", center ? "mx-auto max-w-3xl text-center" : "max-w-3xl")}>
+            {s.title && <h2 className="text-3xl font-extrabold tracking-[-0.03em] text-balance sm:text-4xl">{s.title}</h2>}
+            {s.subtitle && <p className={cn("mt-3 text-base sm:text-lg", light ? "text-white/75" : "text-muted-foreground")}>{s.subtitle}</p>}
+          </div>
+        )}
+        {side ? (
+          <div className="space-y-10 sm:space-y-14">
+            {blocks.map((b, i) => (
+              <div key={i} className={cn("grid items-center gap-6 md:grid-cols-2 md:gap-12", card && "rounded-3xl p-5 sm:p-8", card && (light ? "bg-white/10" : "bg-background shadow-sm"))}>
+                {photo(b, i % 2 ? "md:order-last" : undefined)}
+                {body(b)}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className={cn("grid gap-5 sm:gap-6", COLS[s.columns])}>
+            {blocks.map((b, i) => (
+              <div key={i} className={cn("flex flex-col gap-4", card && "rounded-3xl p-4 sm:p-5", card && (light ? "bg-white/10" : "bg-background shadow-sm"))}>
+                {photo(b)}
+                {body(b)}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
 /* ------------------------------ RENDER ------------------------------- */
 
 /** Render semua bagian aktif berurutan. Bagian tanpa isi/data otomatis tak tampil. */
@@ -432,6 +521,8 @@ export function HomeSections({ sections, data }: { sections: HomeSection[]; data
             return <Reviews key={s.id} s={s} data={data} />;
           case "cards":
             return <Cards key={s.id} s={s} />;
+          case "custom":
+            return <Custom key={s.id} s={s} />;
         }
       })}
     </>

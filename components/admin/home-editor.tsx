@@ -13,6 +13,7 @@ import {
   newId,
   type HomeSection,
   type SectionType,
+  type SectionOf,
 } from "@/lib/home/sections";
 
 const input = "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-foreground";
@@ -339,12 +340,69 @@ function Fields({ s, set }: { s: HomeSection; set: (patch: Partial<HomeSection>)
           />
         </div>
       );
+    case "custom":
+      return (
+        <div className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Text label="Judul bagian (opsional)" value={s.title} onChange={(v) => set({ title: v })} placeholder="Kenapa SNAPFIT?" />
+            <Text label="Subjudul (opsional)" value={s.subtitle} onChange={(v) => set({ subtitle: v })} />
+          </div>
+          <div className="grid gap-4 rounded-lg border border-border p-3 sm:grid-cols-3">
+            <Select label="Jumlah kolom" value={s.columns} onChange={(v) => set({ columns: v })} options={[["1", "1 kolom"], ["2", "2 kolom"], ["3", "3 kolom"], ["4", "4 kolom (HP: 2)"]]} />
+            <Select label="Gaya blok" value={s.style} onChange={(v) => set({ style: v })} options={[["polos", "Polos"], ["kartu", "Kartu (latar + sudut membulat)"]]} />
+            <Select label="Rata teks" value={s.align} onChange={(v) => set({ align: v })} options={[["left", "Kiri"], ["center", "Tengah"]]} />
+            <Color label="Warna latar (kosong = putih)" value={s.bg} onChange={(v) => set({ bg: v })} />
+            <Select label="Warna teks" value={s.textColor} onChange={(v) => set({ textColor: v })} options={[["gelap", "Gelap (latar terang)"], ["terang", "Putih (latar gelap)"]]} />
+            <Select label="Jarak atas-bawah" value={s.spacing} onChange={(v) => set({ spacing: v })} options={[["sm", "Rapat"], ["md", "Sedang"], ["lg", "Lega"]]} />
+            <Select label="Lebar isi" value={s.width} onChange={(v) => set({ width: v })} options={[["normal", "Normal (sejajar isi situs)"], ["full", "Selebar layar"]]} />
+            {s.columns === "1" && (
+              <div className="sm:col-span-2">
+                <Check label="Foto di atas teks" hint="Matikan: foto di samping teks (kiri-kanan bergantian), seperti blok cerita." checked={s.imageFirst} onChange={(v) => set({ imageFirst: v })} />
+              </div>
+            )}
+          </div>
+          <ItemList
+            name="Blok"
+            max={8}
+            items={s.blocks}
+            blank={{ image: "", ratio: "auto" as SectionOf<"custom">["blocks"][number]["ratio"], eyebrow: "", title: "", text: "", ctaLabel: "", href: "" }}
+            onChange={(blocks) => set({ blocks })}
+            render={(b, up) => (
+              <>
+                <div className="sm:col-span-2">
+                  <Img label="Foto (opsional)" value={b.image} onChange={(v) => up({ image: v })} wide={s.columns === "1"} hint={s.columns === "1" ? "Foto lebar: s/d 2400px." : "Foto produk/lifestyle. Kosongkan untuk blok teks saja."} />
+                </div>
+                <Select
+                  label="Bentuk foto"
+                  value={b.ratio as "auto" | "1:1" | "4:5" | "4:3" | "16:9" | "3:1"}
+                  onChange={(v) => up({ ratio: v })}
+                  options={[["auto", "Asli (tidak dipotong)"], ["1:1", "Persegi 1:1"], ["4:5", "Potret 4:5"], ["4:3", "4:3"], ["16:9", "Lebar 16:9"], ["3:1", "Banner 3:1"]]}
+                />
+                <Text label="Label kecil (opsional)" value={b.eyebrow} onChange={(v) => up({ eyebrow: v })} placeholder="BARU" />
+                <div className="sm:col-span-2"><Text label="Judul" value={b.title} onChange={(v) => up({ title: v })} /></div>
+                <div className="sm:col-span-2">
+                  <Text
+                    label="Teks"
+                    area
+                    value={b.text}
+                    onChange={(v) => up({ text: v })}
+                    hint="Format: **tebal**, *miring*, [teks tautan](/produk). Baris diawali '- ' = poin, '1. ' = nomor. Baris kosong = paragraf baru."
+                  />
+                </div>
+                <Text label="Teks tombol (opsional)" value={b.ctaLabel} onChange={(v) => up({ ctaLabel: v })} placeholder="Lihat produk" />
+                <Text label="Tautan tombol" value={b.href} onChange={(v) => up({ href: v })} placeholder="/produk?q=iphone%2018" />
+              </>
+            )}
+          />
+        </div>
+      );
   }
 }
 
 function summary(s: HomeSection): string {
   if ("title" in s && s.title) return s.title;
   if (s.type === "quote") return s.text.slice(0, 60);
+  if (s.type === "custom") return s.blocks.find((b) => b.title)?.title ?? `${s.columns} kolom`;
   return "";
 }
 

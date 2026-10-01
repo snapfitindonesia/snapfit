@@ -119,6 +119,34 @@ export const cardsSchema = z.object({
   items: z.array(card).max(4).default([]),
 });
 
+// Blok Custom: admin menyusun sendiri 1–4 kolom (foto, judul, teks berformat ringan, tombol) +
+// gaya (latar, warna teks, rata, jarak, gaya kartu). Teks: **tebal**, *miring*, [teks](tautan),
+// baris diawali "- " = poin. Dirender aman (bukan HTML mentah) — lib/home/rich-text.tsx.
+const customBlock = z.object({
+  image: img,
+  ratio: z.enum(["auto", "1:1", "4:5", "4:3", "16:9", "3:1"]).default("auto"),
+  eyebrow: text(40),
+  title: text(120),
+  text: text(1200),
+  ctaLabel: text(40),
+  href: link,
+});
+export const customSchema = z.object({
+  ...base,
+  type: z.literal("custom"),
+  title: text(120),
+  subtitle: text(300),
+  columns: z.enum(["1", "2", "3", "4"]).default("2"),
+  width: z.enum(["normal", "full"]).default("normal"),
+  align: z.enum(["left", "center"]).default("left"),
+  bg: color,
+  textColor: z.enum(["gelap", "terang"]).default("gelap"),
+  spacing: z.enum(["sm", "md", "lg"]).default("md"),
+  style: z.enum(["polos", "kartu"]).default("polos"),
+  imageFirst: z.boolean().default(true), // 1 kolom: foto di atas (false = foto di samping kiri/kanan bergantian)
+  blocks: z.array(customBlock).max(8).default(() => [customBlock.parse({}), customBlock.parse({})]),
+});
+
 export const sectionSchema = z.discriminatedUnion("type", [
   heroSchema,
   productsSchema,
@@ -129,6 +157,7 @@ export const sectionSchema = z.discriminatedUnion("type", [
   communitySchema,
   reviewsSchema,
   cardsSchema,
+  customSchema,
 ]);
 export const sectionsSchema = z.array(sectionSchema).max(30);
 
@@ -147,6 +176,7 @@ export const SECTION_INFO: Record<SectionType, { label: string; hint: string; wi
   community: { label: "Komunitas", hint: "Foto pelanggan bergeser ke samping. Tersembunyi bila belum ada foto.", wide: true },
   reviews: { label: "Banner ulasan", hint: "Angka ulasan asli. Tersembunyi bila belum ada ulasan.", wide: true },
   cards: { label: "Kartu info", hint: "2–4 kartu bergambar (Tentang, Garansi, dll).", wide: false },
+  custom: { label: "Blok Custom", hint: "Susun sendiri: 1–4 kolom berisi foto, judul, teks, tombol + warna latar & gaya.", wide: false },
 };
 
 export const newId = () => Math.random().toString(36).slice(2, 10);

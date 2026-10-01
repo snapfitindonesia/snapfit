@@ -142,6 +142,14 @@ bar bawah (HP), dan tombol WhatsApp melayang.
 - PDP menampilkan "Member dapat X koin cashback" (dihitung dari harga, PDP tetap ISR).
 - Pembeli: **Akun → Koin SNAPFIT** (`/akun/koin`, saldo, yang segera hangus, riwayat, aturan).
 
+### Blok Custom (beranda)
+- Jenis bagian "Blok Custom" di Admin → Konten Beranda: 1–4 kolom (HP: 1, atau 2 untuk 4 kolom),
+  tiap blok = foto (bentuk asli/1:1/4:5/4:3/16:9/3:1), label kecil, judul, teks berformat, tombol.
+  Gaya: polos/kartu, rata kiri/tengah, warna latar & teks, jarak, lebar normal/selebar layar;
+  1 kolom bisa foto di samping (kiri-kanan bergantian). Maks 8 blok per bagian.
+- Teks: `**tebal**`, `*miring*`, `[teks](/tautan)`, baris "- " poin, "1. " nomor — dirender aman
+  (`lib/home/rich-text.tsx`, bukan HTML mentah).
+
 ### Bundle di keranjang
 - Drawer keranjang menampilkan "Sering dibeli bersama" (varian pilihan Admin → Bundle Keranjang,
   SiteSetting `cart.bundles`, `lib/bundles.ts`). Dimuat saat keranjang dibuka, di-cache (tag storefront).
