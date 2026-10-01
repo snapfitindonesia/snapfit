@@ -11,6 +11,7 @@ import { useCart } from "@/components/shop/cart-provider";
 import { useStoreUI } from "@/components/shop/store-ui-provider";
 import { applyVoucher, getActiveVouchers } from "@/lib/actions/voucher";
 import { VoucherPicker, type PickerVoucher } from "@/components/shop/voucher-picker";
+import { CartBundles } from "@/components/shop/cart-bundles";
 import { MAX_VOUCHERS } from "@/lib/voucher";
 
 type Panel = "note" | "shipping" | "coupon" | null;
@@ -193,6 +194,8 @@ export function CartDrawer({
               ))}
             </ul>
           )}
+          {/* Bundle pilihan admin — di bawah daftar barang, ikut tergulir */}
+          {items.length > 0 && <CartBundles open={cartOpen} onNavigate={closeCart} />}
         </div>
 
         {/* Footer */}

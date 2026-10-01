@@ -55,6 +55,7 @@ const GROUPS: NavGroup[] = [
       { href: "/admin/banner", label: "Banner" },
       { href: "/admin/menu", label: "Menu Header" },
       { href: "/admin/overview", label: "Overview Produk" },
+      { href: "/admin/bundle", label: "Bundle Keranjang" },
       { href: "/admin/linktree", label: "Linktree" },
     ],
   },

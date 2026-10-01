@@ -142,6 +142,12 @@ bar bawah (HP), dan tombol WhatsApp melayang.
 - PDP menampilkan "Member dapat X koin cashback" (dihitung dari harga, PDP tetap ISR).
 - Pembeli: **Akun → Koin SNAPFIT** (`/akun/koin`, saldo, yang segera hangus, riwayat, aturan).
 
+### Bundle di keranjang
+- Drawer keranjang menampilkan "Sering dibeli bersama" (varian pilihan Admin → Bundle Keranjang,
+  SiteSetting `cart.bundles`, `lib/bundles.ts`). Dimuat saat keranjang dibuka, di-cache (tag storefront).
+  Tombol + menambah varian itu langsung (harga = setelah diskon aktif). Harga khusus bundle belum ada.
+- Panel Voucher di drawer juga menampilkan daftar voucher aktif (VoucherPicker yang sama dengan checkout).
+
 ### Keranjang ditinggal
 - Saat pembeli mengisi **email atau nomor HP** di checkout, isi keranjang + kontak
   disimpan sebagai draf (`CheckoutDraft`, 1,5 detik setelah berhenti mengetik).
