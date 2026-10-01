@@ -355,6 +355,11 @@ function Fields({ s, set }: { s: HomeSection; set: (patch: Partial<HomeSection>)
             <Select label="Warna teks" value={s.textColor} onChange={(v) => set({ textColor: v })} options={[["gelap", "Gelap (latar terang)"], ["terang", "Putih (latar gelap)"]]} />
             <Select label="Jarak atas-bawah" value={s.spacing} onChange={(v) => set({ spacing: v })} options={[["sm", "Rapat"], ["md", "Sedang"], ["lg", "Lega"]]} />
             <Select label="Lebar isi" value={s.width} onChange={(v) => set({ width: v })} options={[["normal", "Normal (sejajar isi situs)"], ["full", "Selebar layar"]]} />
+            {s.columns !== "1" && (
+              <div className="sm:col-span-3">
+                <Check label="Di HP: geser ke samping (slide)" hint="Matikan: di HP blok tersusun ke bawah." checked={s.mobileSlide} onChange={(v) => set({ mobileSlide: v })} />
+              </div>
+            )}
             {s.columns === "1" && (
               <div className="sm:col-span-2">
                 <Check label="Foto di atas teks" hint="Matikan: foto di samping teks (kiri-kanan bergantian), seperti blok cerita." checked={s.imageFirst} onChange={(v) => set({ imageFirst: v })} />

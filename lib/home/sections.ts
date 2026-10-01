@@ -144,6 +144,7 @@ export const customSchema = z.object({
   spacing: z.enum(["sm", "md", "lg"]).default("md"),
   style: z.enum(["polos", "kartu"]).default("polos"),
   imageFirst: z.boolean().default(true), // 1 kolom: foto di atas (false = foto di samping kiri/kanan bergantian)
+  mobileSlide: z.boolean().default(true), // ≥2 kolom: di HP jadi baris geser (slide), bukan tumpukan
   blocks: z.array(customBlock).max(8).default(() => [customBlock.parse({}), customBlock.parse({})]),
 });
 

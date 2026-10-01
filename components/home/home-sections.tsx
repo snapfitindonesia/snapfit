@@ -409,6 +409,8 @@ const COLS: Record<string, string> = {
   "3": "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3",
   "4": "grid-cols-2 lg:grid-cols-4",
 };
+// Mode geser di HP: grid baru berlaku mulai ≥640px.
+const SLIDE_COLS: Record<string, string> = { "1": "", "2": "sm:grid-cols-2", "3": "sm:grid-cols-2 lg:grid-cols-3", "4": "sm:grid-cols-2 lg:grid-cols-4" };
 const PAD: Record<string, string> = { sm: "py-8 sm:py-10", md: "py-12 sm:py-16", lg: "py-16 sm:py-24" };
 // Lebar foto tiap kolom (atribut sizes) agar varian CDN yang diunduh pas.
 const SIZES: Record<string, string> = {
@@ -426,6 +428,7 @@ function Custom({ s }: { s: SectionOf<"custom"> }) {
   const card = s.style === "kartu";
   const center = s.align === "center";
   const side = s.columns === "1" && !s.imageFirst; // 1 kolom: foto di samping (bergantian)
+  const slide = s.columns !== "1" && s.mobileSlide && blocks.length > 1; // HP: geser
 
   const hasText = (b: (typeof blocks)[number]) => !!(b.eyebrow || b.title || b.text || (b.ctaLabel && b.href));
   const photo = (b: (typeof blocks)[number], extra?: string) =>
@@ -475,9 +478,17 @@ function Custom({ s }: { s: SectionOf<"custom"> }) {
             ))}
           </div>
         ) : (
-          <div className={cn("grid gap-5 sm:gap-6", COLS[s.columns])}>
+          <div
+            className={cn(
+              "gap-5 sm:gap-6",
+              slide
+                ? // HP: baris geser (kartu berikut mengintip di tepi); ≥640px: grid biasa
+                  cn("-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-px-4 px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:grid sm:overflow-visible sm:px-0 sm:pb-0 [&::-webkit-scrollbar]:hidden", SLIDE_COLS[s.columns])
+                : cn("grid", COLS[s.columns]),
+            )}
+          >
             {blocks.map((b, i) => (
-              <div key={i} className={cn("flex flex-col", card ? "overflow-hidden rounded-3xl" : "gap-4", card && hasText(b) && (light ? "bg-white/10" : "bg-background shadow-sm"))}>
+              <div key={i} className={cn("flex flex-col", slide && "w-[78%] shrink-0 snap-start sm:w-auto", card ? "overflow-hidden rounded-3xl" : "gap-4", card && hasText(b) && (light ? "bg-white/10" : "bg-background shadow-sm"))}>
                 {photo(b)}
                 {hasText(b) && <div className={cn(card && "p-4 sm:p-5")}>{body(b)}</div>}
               </div>
