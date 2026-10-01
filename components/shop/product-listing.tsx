@@ -219,7 +219,7 @@ export function ProductListing({
           onChange={(e) => setQ(e.target.value)}
           placeholder="Cari produk…"
           aria-label="Cari produk"
-          className="w-full rounded-full border border-border bg-background py-2.5 pl-11 pr-4 text-sm outline-none transition-colors focus:border-foreground"
+          className="w-full rounded-[5px] border border-border bg-background py-2.5 pl-11 pr-4 text-sm outline-none transition-colors focus:border-foreground"
         />
       </div>
 
@@ -255,7 +255,7 @@ export function ProductListing({
           {model && (
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <span className="text-sm text-muted-foreground">Model:</span>
-              <span className="inline-flex items-center gap-1 rounded-full border border-foreground bg-foreground px-3 py-1 text-sm font-medium text-background">{model}</span>
+              <span className="inline-flex items-center gap-1 rounded-[5px] border border-foreground bg-foreground px-3 py-1 text-sm font-medium text-background">{model}</span>
             </div>
           )}
 

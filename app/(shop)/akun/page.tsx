@@ -52,7 +52,7 @@ async function GuestView() {
         <section className="relative isolate order-last overflow-hidden bg-neutral-950 p-7 text-white sm:p-10 lg:order-first">
           <div aria-hidden className="absolute -right-24 -top-24 -z-10 size-72 rounded-full bg-brand/40 blur-3xl" />
           <div aria-hidden className="absolute -bottom-32 -left-16 -z-10 size-72 rounded-full bg-amber-500/20 blur-3xl" />
-          <span className="inline-block rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide">Member SNAPFIT</span>
+          <span className="inline-block rounded-[5px] bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide">Member SNAPFIT</span>
           <h2 className="mt-4 text-2xl font-extrabold leading-tight tracking-tight sm:text-4xl">
             Belanja lebih hemat, pesanan lebih mudah dipantau.
           </h2>
@@ -159,7 +159,7 @@ async function MemberView({ user }: { user: NonNullable<Awaited<ReturnType<typeo
               {coins.cashback.percent > 0 && ` · cashback ${pct(coins.cashback.percent)}${coins.cashback.promo ? ` (${coins.cashback.promo})` : ""}`}
             </span>
             {coins.expiringSoon > 0 && (
-              <span className="mt-2 inline-block rounded-full bg-amber-400/20 px-2.5 py-0.5 text-xs font-medium text-amber-200">
+              <span className="mt-2 inline-block rounded-[5px] bg-amber-400/20 px-2.5 py-0.5 text-xs font-medium text-amber-200">
                 {coins.expiringSoon.toLocaleString("id-ID")} koin hangus minggu ini
               </span>
             )}
@@ -201,7 +201,7 @@ async function MemberView({ user }: { user: NonNullable<Awaited<ReturnType<typeo
                 {formatRupiah(lastOrder.total)} · {lastOrder._count.items} produk
               </span>
             </span>
-            <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${(STATUS[lastOrder.status] ?? STATUS.PENDING).cls}`}>
+            <span className={`shrink-0 rounded-[5px] px-2.5 py-1 text-xs font-medium ${(STATUS[lastOrder.status] ?? STATUS.PENDING).cls}`}>
               {(STATUS[lastOrder.status] ?? { label: lastOrder.status }).label}
             </span>
           </Link>

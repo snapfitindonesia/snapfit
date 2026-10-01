@@ -191,7 +191,7 @@ export function DiscountManager({ discounts, products }: { discounts: Discount[]
               <span className="rounded bg-foreground px-2 py-0.5 text-xs font-semibold text-background">-{d.percent}%</span>
               <span className={`text-xs font-medium ${status(d).cls}`}>{status(d).label}</span>
               {d.campaign && (
-                <span className="rounded-full bg-brand/10 px-2 py-0.5 text-[11px] font-medium text-brand-ink">
+                <span className="rounded-[5px] bg-brand/10 px-2 py-0.5 text-[11px] font-medium text-brand-ink">
                   {CAMPAIGNS[d.campaign as CampaignSlug]?.title ?? d.campaign}
                 </span>
               )}

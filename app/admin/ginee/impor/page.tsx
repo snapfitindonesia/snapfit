@@ -20,7 +20,7 @@ export default function GineeImportPage() {
         </Link>
         <h1 className="text-xl font-semibold">Impor Produk dari Ginee</h1>
         <span
-          className={`ml-2 rounded-full px-2.5 py-0.5 text-xs font-medium ${
+          className={`ml-2 rounded-[5px] px-2.5 py-0.5 text-xs font-medium ${
             configured ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"
           }`}
         >

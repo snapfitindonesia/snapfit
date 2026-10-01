@@ -309,8 +309,8 @@ export function CartDrawer({
             {/* Progress gratis ongkir */}
             {freeShippingMin > 0 && flatShipping && (
               <div className="px-4 pt-3">
-                <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                  <div className="h-full rounded-full bg-brand transition-all duration-500" style={{ width: `${freeShip ? 100 : progress}%` }} />
+                <div className="h-2 w-full overflow-hidden rounded-[5px] bg-muted">
+                  <div className="h-full rounded-[5px] bg-brand transition-all duration-500" style={{ width: `${freeShip ? 100 : progress}%` }} />
                 </div>
                 <p className="mt-1.5 text-center text-xs text-muted-foreground">
                   {freeShip ? (

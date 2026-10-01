@@ -118,7 +118,7 @@ export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaM
       <div className="mx-auto max-w-[100rem] px-4 sm:px-6 lg:px-10">
         <div className="relative">
           {/* Bar mengambang */}
-          <div className="relative flex h-14 items-center gap-3 rounded-[20px] bg-background px-4 shadow-[0_0_0_1px_rgba(0,0,0,.06),0_1px_1px_-.5px_rgba(0,0,0,.06),0_3px_3px_-1.5px_rgba(0,0,0,.06),0_6px_6px_-3px_rgba(0,0,0,.06),0_12px_12px_-6px_rgba(0,0,0,.06),0_24px_24px_-12px_rgba(0,0,0,.06)] sm:px-6 lg:h-[70px] lg:rounded-[25px] lg:px-8">
+          <div className="relative flex h-14 items-center gap-3 rounded-[5px] bg-background px-4 shadow-[0_0_0_1px_rgba(0,0,0,.06),0_1px_1px_-.5px_rgba(0,0,0,.06),0_3px_3px_-1.5px_rgba(0,0,0,.06),0_6px_6px_-3px_rgba(0,0,0,.06),0_12px_12px_-6px_rgba(0,0,0,.06),0_24px_24px_-12px_rgba(0,0,0,.06)] sm:px-6 lg:h-[70px] lg:rounded-[5px] lg:px-8">
             {/* Hamburger (mobile) */}
             <button
               type="button"
@@ -251,7 +251,7 @@ export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaM
               onMouseEnter={cancelClose}
               onMouseLeave={scheduleClose}
             >
-              <div className="animate-in fade-in slide-in-from-top-1 flex max-h-[70vh] overflow-hidden rounded-[25px] border border-border bg-background shadow-2xl duration-200">
+              <div className="animate-in fade-in slide-in-from-top-1 flex max-h-[70vh] overflow-hidden rounded-[5px] border border-border bg-background shadow-2xl duration-200">
                 {/* Kiri: daftar brand */}
                 <div className="w-48 shrink-0 border-r border-border bg-muted/30 p-2">
                   {menu.map((brand, i) => (
@@ -333,7 +333,7 @@ export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaM
               onMouseEnter={cancelClose}
               onMouseLeave={scheduleClose}
             >
-              <div className="animate-in fade-in slide-in-from-top-1 flex max-h-[70vh] overflow-hidden rounded-[25px] border border-border bg-background shadow-2xl duration-200">
+              <div className="animate-in fade-in slide-in-from-top-1 flex max-h-[70vh] overflow-hidden rounded-[5px] border border-border bg-background shadow-2xl duration-200">
                 {/* Kiri: daftar merek */}
                 <div className="w-48 shrink-0 overflow-y-auto border-r border-border bg-muted/30 p-2">
                   {merekMenu.map((m, i) => (
@@ -433,7 +433,7 @@ export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaM
                                                   key={m.slug ?? m.label}
                                                   href={m.slug ? `/kategori/${m.slug}` : `/produk?tipe=${line.slug}&model=${encodeURIComponent(m.label)}`}
                                                   onClick={closeMobile}
-                                                  className="inline-block rounded-full border border-border px-2.5 py-0.5 text-xs text-muted-foreground"
+                                                  className="inline-block rounded-[5px] border border-border px-2.5 py-0.5 text-xs text-muted-foreground"
                                                 >
                                                   {m.label}
                                                 </Link>
@@ -467,7 +467,7 @@ export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaM
                                 key={m.name}
                                 href={merekHref(m.name)}
                                 onClick={closeMobile}
-                                className="inline-block rounded-full border border-border px-3 py-1 text-sm text-muted-foreground"
+                                className="inline-block rounded-[5px] border border-border px-3 py-1 text-sm text-muted-foreground"
                               >
                                 {m.name}
                               </Link>
@@ -529,7 +529,7 @@ export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaM
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="Cari produk…"
                     aria-label="Cari produk"
-                    className="w-full rounded-full border border-border bg-background py-2.5 pl-11 pr-10 text-sm outline-none focus:border-foreground"
+                    className="w-full rounded-[5px] border border-border bg-background py-2.5 pl-11 pr-10 text-sm outline-none focus:border-foreground"
                   />
                   <button
                     type="button"

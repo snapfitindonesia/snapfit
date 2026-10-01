@@ -201,7 +201,7 @@ export function ReviewManager({ products, rows }: { products: ProductOption[]; r
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-sm font-medium">{r.author}</span>
                 <Stars value={r.rating} />
-                {!r.approved && <span className="rounded-full bg-amber-200 px-2 py-0.5 text-[11px] font-medium text-amber-900">Menunggu persetujuan</span>}
+                {!r.approved && <span className="rounded-[5px] bg-amber-200 px-2 py-0.5 text-[11px] font-medium text-amber-900">Menunggu persetujuan</span>}
                 {r.verified && <span className="inline-flex items-center gap-0.5 text-[11px] font-medium text-emerald-700"><BadgeCheck className="size-3.5" /> Pembeli</span>}
               </div>
               <p className="text-xs text-muted-foreground">{r.productName}</p>

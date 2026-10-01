@@ -28,7 +28,7 @@ function Cta({ label, href, dark = false, className }: { label: string; href: st
     <Link
       href={href}
       className={cn(
-        "inline-flex h-[42px] items-center gap-1.5 rounded-full px-5 text-sm font-medium transition-colors",
+        "inline-flex h-[42px] items-center gap-1.5 rounded-[5px] px-5 text-sm font-medium transition-colors",
         dark ? "bg-white text-neutral-950 hover:bg-white/85" : "bg-foreground text-background hover:bg-foreground/85",
         className,
       )}
@@ -77,11 +77,10 @@ function Hero({ s, first }: { s: SectionOf<"hero">; first: boolean }) {
       <div className={cn(WRAP, first ? "pt-3 sm:pt-4" : "py-6")}>
       <section
         className={cn(
-          "rounded-[20px] lg:rounded-[25px]",
-          // Tinggi = rasio foto (desktop 2400×1350 = 16:9, HP 1080×1920 = 9:16) → foto tampil UTUH,
-          // tak terpotong. Tanpa foto HP: HP pakai tinggi 95% layar (foto desktop dipotong otomatis).
-          "relative isolate flex overflow-hidden md:aspect-video lg:items-center",
-          s.imageMobile ? "aspect-[9/16]" : "h-[95svh] max-h-[1000px] min-h-[640px] md:h-auto md:max-h-none md:min-h-0",
+          "rounded-[5px] lg:rounded-[5px]",
+          // Tinggi = rasio foto (desktop 2400×1350 = 16:9, HP 1080×1350 = 4:5) → foto tampil UTUH.
+          // Tanpa foto HP: foto desktop dipotong otomatis ke 4:5 (bagian tengah).
+          "relative isolate flex aspect-[4/5] overflow-hidden md:aspect-video lg:items-center",
           !light && "text-white",
         )}
         style={{ backgroundColor: s.bg || (light ? "#f2f1ee" : "#1a0d08") }}
@@ -104,7 +103,7 @@ function Hero({ s, first }: { s: SectionOf<"hero">; first: boolean }) {
           <div className="mx-auto max-w-[40rem] lg:mx-0 lg:max-w-[48rem]">
             {s.eyebrow && (
               <span
-                className="inline-block rounded-full px-2.5 pb-[3px] pt-1 text-[11px] font-bold uppercase leading-none tracking-wide text-white lg:text-xs"
+                className="inline-block rounded-[5px] px-2.5 pb-[3px] pt-1 text-[11px] font-bold uppercase leading-none tracking-wide text-white lg:text-xs"
                 style={{ backgroundColor: s.badgeBg || "#005bd3" }}
               >
                 {s.eyebrow}
@@ -123,7 +122,7 @@ function Hero({ s, first }: { s: SectionOf<"hero">; first: boolean }) {
               <Link
                 href={s.ctaHref}
                 className={cn(
-                  "mt-5 inline-flex h-[42px] items-center rounded-full px-6 text-base font-bold transition-opacity hover:opacity-85",
+                  "mt-5 inline-flex h-[42px] items-center rounded-[5px] px-6 text-base font-bold transition-opacity hover:opacity-85",
                   light ? "bg-foreground text-background" : "bg-white text-neutral-950",
                 )}
               >
@@ -195,7 +194,7 @@ function Categories({ s }: { s: SectionOf<"categories"> }) {
           <li key={c.href + c.label}>
             <Link
               href={c.href}
-              className="group flex h-[42px] items-center gap-3 rounded-full border border-border bg-background pl-5 pr-1.5 text-sm font-medium transition-colors hover:border-foreground"
+              className="group flex h-[42px] items-center gap-3 rounded-[5px] border border-border bg-background pl-5 pr-1.5 text-sm font-medium transition-colors hover:border-foreground"
             >
               {c.label}
               {c.image ? (
@@ -235,7 +234,7 @@ function Features({ s }: { s: SectionOf<"features"> }) {
             )}
           </div>
           <div className="flex flex-col items-center justify-center px-6 py-10 text-center sm:px-12">
-            {f.eyebrow && <span className="rounded-full bg-foreground px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-background">{f.eyebrow}</span>}
+            {f.eyebrow && <span className="rounded-[5px] bg-foreground px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-background">{f.eyebrow}</span>}
             <h3 className="mt-3 text-2xl font-semibold tracking-tight text-balance sm:text-3xl">{f.title}</h3>
             {f.text && <p className="mt-3 max-w-sm text-sm text-muted-foreground text-pretty sm:text-base">{f.text}</p>}
             <Cta label={f.ctaLabel} href={f.href} className="mt-6" />
@@ -384,7 +383,7 @@ function Cards({ s }: { s: SectionOf<"cards"> }) {
               <span>
                 <span className="block text-2xl font-semibold tracking-tight">{c.title}</span>
                 {c.text && <span className="mt-1.5 block max-w-sm text-sm text-white/80">{c.text}</span>}
-                {c.ctaLabel && <span className="mt-4 inline-flex h-[42px] items-center gap-1.5 rounded-full bg-white px-5 text-sm font-medium text-neutral-950">{c.ctaLabel} <ArrowRight className="size-4" aria-hidden /></span>}
+                {c.ctaLabel && <span className="mt-4 inline-flex h-[42px] items-center gap-1.5 rounded-[5px] bg-white px-5 text-sm font-medium text-neutral-950">{c.ctaLabel} <ArrowRight className="size-4" aria-hidden /></span>}
               </span>
             </Link>
           ) : (

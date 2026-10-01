@@ -82,7 +82,7 @@ export function LandingView({
             <Link
               key={c.href}
               href={c.href}
-              className="rounded-full border border-border px-3 py-1.5 text-sm transition-colors hover:border-foreground"
+              className="rounded-[5px] border border-border px-3 py-1.5 text-sm transition-colors hover:border-foreground"
             >
               {c.name} <span className="text-muted-foreground">({c.count})</span>
             </Link>

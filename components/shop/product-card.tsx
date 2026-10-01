@@ -29,7 +29,7 @@ export function ProductCard({ product, priority = false }: { product: ProductLis
           </span>
         )}
         {hasDiscount && (
-          <span className="absolute right-2 top-2 rounded-full bg-primary px-2 py-0.5 text-[11px] font-semibold text-primary-foreground">
+          <span className="absolute right-2 top-2 rounded-[5px] bg-primary px-2 py-0.5 text-[11px] font-semibold text-primary-foreground">
             -{product.discountPercent}%
           </span>
         )}

@@ -53,7 +53,7 @@ export default async function MyCoinsPage() {
             <b>{n(coins.expiringSoon)} koin</b> hangus {fmt(new Date(coins.expiringAt))}. Pakai di checkout sebelum hilang.
           </p>
         )}
-        <Link href="/produk" className="mt-4 inline-flex h-10 items-center rounded-full bg-amber-950 px-5 text-sm font-semibold text-white hover:opacity-90">
+        <Link href="/produk" className="mt-4 inline-flex h-10 items-center rounded-[5px] bg-amber-950 px-5 text-sm font-semibold text-white hover:opacity-90">
           Belanja pakai koin
         </Link>
       </div>

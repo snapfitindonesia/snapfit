@@ -146,7 +146,7 @@ function PromoEditor({ promos, base, onChange }: { promos: CoinPromo[]; base: nu
             <div key={p.id} className="rounded-md border border-border p-3">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-medium">{KIND_LABEL[p.kind]}</span>
-                <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${status.cls}`}>{status.text}</span>
+                <span className={`rounded-[5px] px-2 py-0.5 text-[11px] font-medium ${status.cls}`}>{status.text}</span>
                 <label className="ml-auto flex items-center gap-1.5 text-xs">
                   <input type="checkbox" checked={p.active} onChange={(e) => set(i, { active: e.target.checked })} className="accent-foreground" /> Aktif
                 </label>
@@ -190,7 +190,7 @@ function PromoEditor({ promos, base, onChange }: { promos: CoinPromo[]; base: nu
       {promos.length < 10 && (
         <div className="mt-3 flex flex-wrap gap-2">
           {(["payday-sale", "tanggal-kembar", "custom"] as const).map((k) => (
-            <button key={k} type="button" onClick={() => add(k)} className="rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:border-foreground">
+            <button key={k} type="button" onClick={() => add(k)} className="rounded-[5px] border border-border px-3 py-1.5 text-xs font-medium hover:border-foreground">
               + {KIND_LABEL[k]}
             </button>
           ))}

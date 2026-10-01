@@ -117,7 +117,7 @@ export function VoucherPicker({
               {r.state === "short" && (
                 <div className="mt-2">
                   <div className="h-1.5 overflow-hidden rounded-full bg-muted" aria-hidden>
-                    <div className="h-full rounded-full bg-brand" style={{ width: `${Math.min(100, (subtotal / r.minPurchase) * 100)}%` }} />
+                    <div className="h-full rounded-[5px] bg-brand" style={{ width: `${Math.min(100, (subtotal / r.minPurchase) * 100)}%` }} />
                   </div>
                   <p className="mt-1.5 text-xs">
                     Belanja <b>{formatRupiah(r.shortfall)}</b> lagi untuk pakai voucher ini.

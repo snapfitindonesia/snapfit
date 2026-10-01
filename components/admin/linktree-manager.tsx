@@ -112,7 +112,7 @@ function BackgroundSettings({ p, setP }: { p: BioProfileInput; setP: (p: BioProf
                 key={m.value}
                 type="button"
                 onClick={() => setMode(m.value)}
-                className={`rounded-full border px-3 py-1 text-xs font-medium ${picked === m.value ? "border-foreground bg-foreground text-background" : "border-border hover:bg-muted"}`}
+                className={`rounded-[5px] border px-3 py-1 text-xs font-medium ${picked === m.value ? "border-foreground bg-foreground text-background" : "border-border hover:bg-muted"}`}
               >
                 {m.label}
               </button>

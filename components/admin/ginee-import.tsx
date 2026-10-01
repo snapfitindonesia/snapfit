@@ -136,7 +136,7 @@ export function GineeImport() {
           <button
             key={q}
             onClick={() => search(q)}
-            className="rounded-full border border-border px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
+            className="rounded-[5px] border border-border px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
           >
             {q}
           </button>
@@ -190,7 +190,7 @@ export function GineeImport() {
                   <p className="text-xs text-muted-foreground">{it.variantCount} varian · stok gudang {it.stockKnown ? it.stock : "?"}{it.productIds.length > 1 && ` · gabungan ${it.productIds.length} produk Ginee bernama sama`}
                   {isEmpty(it) && <span className="ml-1.5 rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700">HABIS</span>}</p>
                 </div>
-                <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700">✓ Sudah diimpor</span>
+                <span className="rounded-[5px] bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700">✓ Sudah diimpor</span>
               </div>
             );
           }

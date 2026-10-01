@@ -344,7 +344,7 @@ export function ProductForm({ categories, mereks = [], initial }: { categories: 
                 {extraCategoryIds.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-2">
                     {extraCategoryIds.map((cid) => (
-                      <span key={cid} className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2.5 py-1 text-xs">
+                      <span key={cid} className="inline-flex items-center gap-1.5 rounded-[5px] border border-border bg-muted/40 px-2.5 py-1 text-xs">
                         {catLabel(categories, cid)}
                         <button
                           type="button"

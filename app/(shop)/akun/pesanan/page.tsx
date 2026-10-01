@@ -56,7 +56,7 @@ export default async function MyOrdersPage() {
                       {o.createdAt.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
                     </p>
                   </div>
-                  <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${st.cls}`}>{st.label}</span>
+                  <span className={`rounded-[5px] px-2.5 py-1 text-xs font-medium ${st.cls}`}>{st.label}</span>
                 </div>
 
                 <ul className="mt-3 space-y-1.5 text-sm">

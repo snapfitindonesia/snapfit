@@ -69,7 +69,7 @@ export function NotFoundContent() {
               <li key={b.label}>
                 <Link
                   href={b.href}
-                  className="inline-flex h-[42px] items-center rounded-full border border-border px-4 text-sm font-medium transition-colors hover:border-foreground"
+                  className="inline-flex h-[42px] items-center rounded-[5px] border border-border px-4 text-sm font-medium transition-colors hover:border-foreground"
                 >
                   {b.label}
                 </Link>

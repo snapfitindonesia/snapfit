@@ -168,7 +168,7 @@ export default async function AdminDashboardPage() {
                   <span className="font-medium">{formatRupiah(val)}</span>
                 </div>
                 <div className="mt-1 h-1.5 rounded-full bg-muted">
-                  <div className="h-full rounded-full bg-brand" style={{ width: `${(val / cityMax) * 100}%` }} />
+                  <div className="h-full rounded-[5px] bg-brand" style={{ width: `${(val / cityMax) * 100}%` }} />
                 </div>
               </div>
             )) : <p className="text-sm text-muted-foreground">Belum ada data lokasi.</p>}
@@ -243,7 +243,7 @@ export default async function AdminDashboardPage() {
               <div key={o.id} className="flex items-center justify-between gap-3 border-b border-border/60 pb-2 last:border-0">
                 <span className="font-mono text-xs">{o.midtransOrderId ?? o.id.slice(0, 8)}</span>
                 <span className="truncate text-xs text-muted-foreground">{(o.address as Addr)?.name ?? "—"}</span>
-                <span className="rounded-full bg-muted px-2 py-0.5 text-xs">{o.status}</span>
+                <span className="rounded-[5px] bg-muted px-2 py-0.5 text-xs">{o.status}</span>
                 <span className="font-medium">{formatRupiah(o.total)}</span>
               </div>
             ))}

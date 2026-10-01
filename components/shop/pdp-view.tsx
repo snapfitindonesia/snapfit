@@ -377,7 +377,7 @@ export function PdpView({
             ))}
           </div>
           {hasDiscount && (
-            <span className="absolute left-4 top-4 rounded-full bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground">
+            <span className="absolute left-4 top-4 rounded-[5px] bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground">
               -{product.discountPercent}%
             </span>
           )}
@@ -485,7 +485,7 @@ export function PdpView({
             <Coins className="size-3.5 text-amber-600" />
             Member dapat <b className="font-semibold text-foreground">{coinCashback(finalPrice).toLocaleString("id-ID")} koin</b> cashback
             {coinPromo && (
-              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+              <span className="rounded-[5px] bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
                 {coinCashbackPercent.toLocaleString("id-ID")}% · {coinPromo}
               </span>
             )}
@@ -505,7 +505,7 @@ export function PdpView({
                   type="button"
                   onClick={() => copyVoucher(v.code)}
                   title={`Salin kode ${v.code}${v.minPurchase > 0 ? ` · min. ${formatRupiah(v.minPurchase)}` : ""}`}
-                  className="group flex items-center gap-1.5 rounded-full border border-brand/40 bg-brand/5 px-3 py-1 text-xs font-medium text-brand-ink transition-colors hover:bg-brand/10"
+                  className="group flex items-center gap-1.5 rounded-[5px] border border-brand/40 bg-brand/5 px-3 py-1 text-xs font-medium text-brand-ink transition-colors hover:bg-brand/10"
                 >
                   {copiedCode === v.code ? <Check className="size-3.5" /> : <Ticket className="size-3.5" />}
                   {copiedCode === v.code ? "Kode disalin" : v.label}
@@ -811,7 +811,7 @@ export function PdpView({
           </div>
 
           {photos.length > 1 && (
-            <p className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white/10 px-3 py-1 text-xs text-white">
+            <p className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-[5px] bg-white/10 px-3 py-1 text-xs text-white">
               {photoIndex + 1} / {photos.length}
             </p>
           )}

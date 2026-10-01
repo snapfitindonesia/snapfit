@@ -9,7 +9,7 @@ export default function LoadingProducts() {
       </div>
       <div className="flex gap-2">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-8 w-24 rounded-full bg-muted" />
+          <div key={i} className="h-8 w-24 rounded-[5px] bg-muted" />
         ))}
       </div>
       <div className="mt-6 grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 xl:grid-cols-4">

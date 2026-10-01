@@ -101,9 +101,9 @@ function OrderRow({ order }: { order: AdminOrder }) {
           <span className="font-mono text-xs">{order.midtransOrderId ?? order.id.slice(0, 8)}</span>
         </button>
         <span className="text-sm text-muted-foreground">{order.address?.name ?? "—"}</span>
-        {order.member && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800">Member</span>}
+        {order.member && <span className="rounded-[5px] bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800">Member</span>}
         <span className="text-sm font-semibold">{formatRupiah(order.total)}</span>
-        <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${badge.cls}`}>{badge.label}</span>
+        <span className={`rounded-[5px] px-2.5 py-1 text-xs font-medium ${badge.cls}`}>{badge.label}</span>
       </div>
 
       {/* Alur aksi kontekstual */}

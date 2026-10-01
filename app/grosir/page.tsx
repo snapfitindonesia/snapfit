@@ -117,7 +117,7 @@ export default async function GrosirLandingPage() {
         <div className="pointer-events-none absolute -bottom-24 -left-24 size-72 rounded-full bg-brand/10 blur-3xl" />
         <div className="relative mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20">
           <div className="mx-auto max-w-3xl text-center">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-brand/15 px-3 py-1 text-xs font-semibold text-brand ring-1 ring-brand/30">
+            <span className="inline-flex items-center gap-1.5 rounded-[5px] bg-brand/15 px-3 py-1 text-xs font-semibold text-brand ring-1 ring-brand/30">
               <BadgeCheck className="size-3.5" /> Authorized Distributor · 19+ Merek Dunia
             </span>
 
@@ -144,7 +144,7 @@ export default async function GrosirLandingPage() {
                   {formatRupiah(OFFER.priceFrom)}
                   <span className="text-base font-bold">/pcs</span>
                 </span>
-                <span className="rounded-full bg-brand-ink px-2.5 py-1 text-xs font-bold text-brand-foreground">
+                <span className="rounded-[5px] bg-brand-ink px-2.5 py-1 text-xs font-bold text-brand-foreground">
                   HEMAT {savePercent}%
                 </span>
               </div>
@@ -202,7 +202,7 @@ export default async function GrosirLandingPage() {
             ].map((t, i, arr) => (
               <div key={t.label} className={`relative rounded-2xl border bg-background p-4 text-center sm:p-6 ${i === arr.length - 1 ? "border-brand ring-1 ring-brand" : "border-border"}`}>
                 {i === arr.length - 1 && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-brand-ink px-3 py-0.5 text-xs font-semibold text-brand-foreground">Paling Hemat</span>
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-[5px] bg-brand-ink px-3 py-0.5 text-xs font-semibold text-brand-foreground">Paling Hemat</span>
                 )}
                 <p className="text-sm font-medium text-muted-foreground">{t.label}</p>
                 <p className="mt-2 text-2xl font-bold text-brand sm:text-3xl">-{t.off}</p>
@@ -349,7 +349,7 @@ export default async function GrosirLandingPage() {
                     </div>
                   </div>
                 </div>
-                <span className="mt-3 inline-flex w-fit rounded-full bg-muted px-2 py-0.5 text-[11px] text-foreground/70">
+                <span className="mt-3 inline-flex w-fit rounded-[5px] bg-muted px-2 py-0.5 text-[11px] text-foreground/70">
                   {t.variasi}
                 </span>
                 <p className="mt-3 line-clamp-4 min-h-[5rem] text-sm leading-relaxed text-muted-foreground">

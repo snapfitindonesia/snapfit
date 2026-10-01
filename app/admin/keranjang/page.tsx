@@ -106,7 +106,7 @@ function Stat({ label, value }: { label: string; value: number }) {
 
 function Badge({ icon, text }: { icon: React.ReactNode; text: string }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-foreground/80">
+    <span className="inline-flex items-center gap-1 rounded-[5px] bg-muted px-2 py-0.5 text-foreground/80">
       {icon} {text}
     </span>
   );
