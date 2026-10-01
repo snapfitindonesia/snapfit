@@ -427,12 +427,13 @@ function Custom({ s }: { s: SectionOf<"custom"> }) {
   const center = s.align === "center";
   const side = s.columns === "1" && !s.imageFirst; // 1 kolom: foto di samping (bergantian)
 
+  const hasText = (b: (typeof blocks)[number]) => !!(b.eyebrow || b.title || b.text || (b.ctaLabel && b.href));
   const photo = (b: (typeof blocks)[number], extra?: string) =>
     b.image ? (
       b.ratio === "auto" ? (
-        <Image src={b.image} alt={b.title || ""} width={1600} height={1200} sizes={side ? "(min-width: 768px) 50vw, 100vw" : SIZES[s.columns]} className={cn("h-auto w-full rounded-2xl", extra)} />
+        <Image src={b.image} alt={b.title || ""} width={1600} height={1200} sizes={side ? "(min-width: 768px) 50vw, 100vw" : SIZES[s.columns]} className={cn("h-auto w-full", !card && "rounded-2xl", extra)} />
       ) : (
-        <span className={cn("relative block overflow-hidden rounded-2xl bg-muted", RATIO[b.ratio], extra)}>
+        <span className={cn("relative block overflow-hidden bg-muted", !card && "rounded-2xl", RATIO[b.ratio], extra)}>
           <Image src={b.image} alt={b.title || ""} fill sizes={side ? "(min-width: 768px) 50vw, 100vw" : SIZES[s.columns]} className="object-cover" />
         </span>
       )
@@ -467,18 +468,18 @@ function Custom({ s }: { s: SectionOf<"custom"> }) {
         {side ? (
           <div className="space-y-10 sm:space-y-14">
             {blocks.map((b, i) => (
-              <div key={i} className={cn("grid items-center gap-6 md:grid-cols-2 md:gap-12", card && "rounded-3xl p-5 sm:p-8", card && (light ? "bg-white/10" : "bg-background shadow-sm"))}>
+              <div key={i} className={cn("grid items-center md:grid-cols-2", card ? "overflow-hidden rounded-3xl" : "gap-6 md:gap-12", card && hasText(b) && (light ? "bg-white/10" : "bg-background shadow-sm"))}>
                 {photo(b, i % 2 ? "md:order-last" : undefined)}
-                {body(b)}
+                {hasText(b) && <div className={cn(card && "p-6 sm:p-10")}>{body(b)}</div>}
               </div>
             ))}
           </div>
         ) : (
           <div className={cn("grid gap-5 sm:gap-6", COLS[s.columns])}>
             {blocks.map((b, i) => (
-              <div key={i} className={cn("flex flex-col gap-4", card && "rounded-3xl p-4 sm:p-5", card && (light ? "bg-white/10" : "bg-background shadow-sm"))}>
+              <div key={i} className={cn("flex flex-col", card ? "overflow-hidden rounded-3xl" : "gap-4", card && hasText(b) && (light ? "bg-white/10" : "bg-background shadow-sm"))}>
                 {photo(b)}
-                {body(b)}
+                {hasText(b) && <div className={cn(card && "p-4 sm:p-5")}>{body(b)}</div>}
               </div>
             ))}
           </div>
