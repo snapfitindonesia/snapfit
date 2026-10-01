@@ -420,7 +420,8 @@ const SIZES: Record<string, string> = {
 };
 
 /** Blok Custom: kolom foto + judul + teks berformat + tombol, gaya diatur admin. */
-function Custom({ s }: { s: SectionOf<"custom"> }) {
+/** `afterHero`: tepat di bawah hero → jarak atas = jarak antar-blok (bukan padding bagian). */
+function Custom({ s, afterHero = false }: { s: SectionOf<"custom">; afterHero?: boolean }) {
   const blocks = s.blocks.filter((b) => b.image || b.title || b.text || (b.ctaLabel && b.href));
   if (!blocks.length && !s.title) return null;
   const light = s.textColor === "terang";
@@ -457,7 +458,13 @@ function Custom({ s }: { s: SectionOf<"custom"> }) {
 
   return (
     <section
-      className={cn("cv-auto [--cv-h:520px]", PAD[s.spacing], light && "text-white")}
+      className={cn(
+        "cv-auto [--cv-h:520px]",
+        PAD[s.spacing],
+        // Di bawah hero (tanpa latar sendiri/judul): jarak dari hero = jarak antar-blok.
+        afterHero && !s.bg && !s.title && !s.subtitle && (slide ? "pt-3 sm:pt-6" : "pt-5 sm:pt-6"),
+        light && "text-white",
+      )}
       style={s.bg ? { backgroundColor: s.bg } : undefined}
     >
       <div className={s.width === "full" ? "px-4 sm:px-6 lg:px-10" : WRAP}>
@@ -479,11 +486,10 @@ function Custom({ s }: { s: SectionOf<"custom"> }) {
         ) : (
           <div
             className={cn(
-              "gap-5 sm:gap-6",
               slide
                 ? // HP: baris geser (kartu berikut mengintip di tepi); ≥640px: grid biasa
-                  cn("-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-px-4 px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:grid sm:overflow-visible sm:px-0 sm:pb-0 [&::-webkit-scrollbar]:hidden", SLIDE_COLS[s.columns])
-                : cn("grid", COLS[s.columns]),
+                  cn("-mx-4 flex snap-x snap-mandatory gap-3 sm:gap-6 overflow-x-auto scroll-px-4 px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:grid sm:overflow-visible sm:px-0 sm:pb-0 [&::-webkit-scrollbar]:hidden", SLIDE_COLS[s.columns])
+                : cn("grid gap-5 sm:gap-6", COLS[s.columns]),
             )}
           >
             {blocks.map((b, i) => (
@@ -530,7 +536,7 @@ export function HomeSections({ sections, data }: { sections: HomeSection[]; data
           case "cards":
             return <Cards key={s.id} s={s} />;
           case "custom":
-            return <Custom key={s.id} s={s} />;
+            return <Custom key={s.id} s={s} afterHero={i > 0 && active[i - 1].type === "hero"} />;
         }
       })}
     </>
