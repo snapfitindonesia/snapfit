@@ -69,21 +69,19 @@ function Hero({ s, first }: { s: SectionOf<"hero">; first: boolean }) {
   const dark = s.theme === "gelap";
   const Heading = first ? "h1" : "h2";
   if (s.mode === "foto" && s.image) {
-    // Gaya Nomad (diukur dari nomadgoods.com): foto full-bleed mulai dari paling atas layar, di belakang
-    // bilah pengumuman & header kapsul; tinggi ±90% layar (95% di HP). Teks: desktop kiri-tengah dalam
-    // kolom 1600px sejajar isi (tepi 40px), HP rata tengah di atas. Badge → subjudul → judul besar → tombol pil putih.
-    // Tema terang (foto berlatar terang) → teks gelap & bilah pengumuman tetap hitam.
+    // Hero di dalam kolom isi situs (maks 1600px, sejajar header kapsul & bagian lain), sudut membulat
+    // seperti kapsul header, di BAWAH header. Teks: desktop kiri-tengah, HP rata tengah di atas.
+    // Badge → subjudul → judul besar → tombol pil.
     const light = s.theme === "terang";
-    const overlay = first && !light;
     return (
+      <div className={cn(WRAP, first ? "pt-3 sm:pt-4" : "py-6")}>
       <section
-        {...(overlay ? { "data-hero-overlay": "" } : {})}
         className={cn(
+          "rounded-[20px] lg:rounded-[25px]",
           // Tinggi = rasio foto (desktop 2400×1350 = 16:9, HP 1080×1920 = 9:16) → foto tampil UTUH,
           // tak terpotong. Tanpa foto HP: HP pakai tinggi 95% layar (foto desktop dipotong otomatis).
           "relative isolate flex overflow-hidden md:aspect-video lg:items-center",
           s.imageMobile ? "aspect-[9/16]" : "h-[95svh] max-h-[1000px] min-h-[640px] md:h-auto md:max-h-none md:min-h-0",
-          first && "-mt-[calc(var(--announce-h)+var(--nav-h))]",
           !light && "text-white",
         )}
         style={{ backgroundColor: s.bg || (light ? "#f2f1ee" : "#1a0d08") }}
@@ -94,15 +92,13 @@ function Hero({ s, first }: { s: SectionOf<"hero">; first: boolean }) {
         </div>
         {!light && (
           <>
-            {/* Gelap tipis di atas (bilah pengumuman & header) + di sisi teks agar selalu terbaca */}
-            <div aria-hidden className="absolute inset-x-0 top-0 -z-10 h-48 bg-gradient-to-b from-black/45 to-transparent" />
+            {/* Gelap tipis di sisi teks agar selalu terbaca */}
             <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-b from-black/35 via-transparent to-transparent lg:bg-gradient-to-r lg:from-black/40 lg:via-black/10 lg:to-transparent" />
           </>
         )}
         <div
           className={cn(
-            "mx-auto w-full max-w-[100rem] px-5 text-center sm:px-8 lg:px-10 lg:text-left",
-            first ? "pt-[calc(var(--announce-h)+var(--nav-h)+2rem)] lg:pt-[calc(var(--announce-h)+var(--nav-h))]" : "pt-12 lg:pt-0",
+            "w-full px-6 pt-10 text-center sm:px-10 lg:px-14 lg:pt-0 lg:text-left",
           )}
         >
           <div className="mx-auto max-w-[40rem] lg:mx-0 lg:max-w-[48rem]">
@@ -137,6 +133,7 @@ function Hero({ s, first }: { s: SectionOf<"hero">; first: boolean }) {
           </div>
         </div>
       </section>
+      </div>
     );
   }
   // Mode produk: latar warna + foto produk (latar putih foto katalog dilebur ke warna latar).
