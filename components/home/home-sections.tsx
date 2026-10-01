@@ -488,7 +488,7 @@ function Custom({ s }: { s: SectionOf<"custom"> }) {
             )}
           >
             {blocks.map((b, i) => (
-              <div key={i} className={cn("flex flex-col", slide && "w-[78%] shrink-0 snap-start sm:w-auto", card ? "overflow-hidden rounded-3xl" : "gap-4", card && hasText(b) && (light ? "bg-white/10" : "bg-background shadow-sm"))}>
+              <div key={i} className={cn("flex flex-col", slide && cn("shrink-0 snap-start sm:w-auto", s.columns === "4" ? "w-[45%]" : "w-[62%]"), card ? "overflow-hidden rounded-3xl" : "gap-4", card && hasText(b) && (light ? "bg-white/10" : "bg-background shadow-sm"))}>
                 {photo(b)}
                 {hasText(b) && <div className={cn(card && "p-4 sm:p-5")}>{body(b)}</div>}
               </div>
