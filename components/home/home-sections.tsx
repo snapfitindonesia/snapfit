@@ -307,7 +307,7 @@ function Community({ s, data }: { s: SectionOf<"community">; data: HomeData }) {
   const shots = (s.source === "ulasan" ? data.shots : s.items).filter((x) => x.image);
   if (shots.length < 3) return null; // terlalu sedikit → tampak kosong; sembunyikan
   // Gaya "From the Nomad Community": judul besar di tengah, baris foto di dalam kolom isi situs (sejajar
-  // bagian lain; HP menembus tepi layar seperti deretan produk), kartu 4:5, keterangan di bawah. Foto → produk.
+  // bagian lain; HP menembus tepi layar seperti deretan produk), kartu 9:16 (Story IG), keterangan di bawah. Foto → produk.
   return (
     <section className={cn(WRAP, "cv-auto py-14 [--cv-h:560px] sm:py-20")}>
       {s.title && (
@@ -322,7 +322,7 @@ function Community({ s, data }: { s: SectionOf<"community">; data: HomeData }) {
           const alt = x.caption ? "" : "Foto SNAPFIT";
           const body = (
             <>
-              <span className="relative block aspect-[4/5] overflow-hidden rounded-2xl bg-muted">
+              <span className="relative block aspect-[9/16] overflow-hidden rounded-2xl bg-muted">
                 <Image
                   src={x.image}
                   alt={alt}

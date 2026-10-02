@@ -297,7 +297,7 @@ function Fields({ s, set }: { s: HomeSection; set: (patch: Partial<HomeSection>)
               onChange={(items) => set({ items })}
               render={(it, up) => (
                 <>
-                  <div className="sm:col-span-2"><Img label="Foto (potrait 4:5)" value={it.image} onChange={(v) => up({ image: v })} /></div>
+                  <div className="sm:col-span-2"><Img label="Foto (Story 9:16 · 1080 × 1920)" value={it.image} onChange={(v) => up({ image: v })} hint="Ukuran Story Instagram. Objek utama di tengah." /></div>
                   <Text label="Keterangan (di bawah foto)" value={it.caption} onChange={(v) => up({ caption: v })} placeholder="Case AirPods 4 Aramid / @namapelanggan" />
                   <Text label="Tautan produk" value={it.href} onChange={(v) => up({ href: v })} placeholder="/produk/nama-produk" hint="Salin dari alamat halaman produk (bagian setelah snapfit.id)." />
                 </>
