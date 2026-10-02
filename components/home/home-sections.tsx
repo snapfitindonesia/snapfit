@@ -185,7 +185,7 @@ function Products({ s, data, eager }: { s: SectionOf<"products">; data: HomeData
       <SectionHead title={s.title} subtitle={s.subtitle} ctaLabel={s.ctaLabel} ctaHref={s.ctaHref} />
       <ScrollRow label={s.title || "Produk"} className={BLEED}>
         {items.map((p, i) => (
-          <div key={p.id} className="w-[44vw] shrink-0 snap-start sm:w-[30vw] lg:w-[calc((100%-3.75rem)/4.4)]">
+          <div key={p.id} className="w-[44vw] shrink-0 snap-start sm:w-[calc((100%-3.75rem)/3.4)] xl:w-[calc((100%-3.75rem)/4.4)]">
             <ProductCard product={p} priority={eager && i < 2} />
           </div>
         ))}
