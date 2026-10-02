@@ -93,7 +93,7 @@ function Hero({ s, first, tightNext = false }: { s: SectionOf<"hero">; first: bo
           "rounded-[5px] lg:rounded-[5px]",
           // Tinggi = rasio foto (desktop 2400×1350 = 16:9, HP 1080×1350 = 4:5) → foto tampil UTUH.
           // Tanpa foto HP: foto desktop dipotong otomatis ke 4:5 (bagian tengah).
-          "relative isolate flex aspect-[4/5] overflow-hidden md:aspect-video lg:items-center",
+          "relative isolate flex aspect-[4/5] overflow-hidden md:aspect-video md:items-center",
           !light && "text-white",
         )}
         style={{ backgroundColor: s.bg || (light ? "#f2f1ee" : "#1a0d08") }}
@@ -105,15 +105,15 @@ function Hero({ s, first, tightNext = false }: { s: SectionOf<"hero">; first: bo
         {!light && (
           <>
             {/* Gelap tipis di sisi teks agar selalu terbaca */}
-            <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-b from-black/35 via-transparent to-transparent lg:bg-gradient-to-r lg:from-black/40 lg:via-black/10 lg:to-transparent" />
+            <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-b from-black/35 via-transparent to-transparent md:bg-gradient-to-r md:from-black/40 md:via-black/10 md:to-transparent" />
           </>
         )}
         <div
           className={cn(
-            "w-full px-6 pt-10 text-center sm:px-10 lg:px-14 lg:pt-0 lg:text-left",
+            "w-full px-6 pt-10 text-center sm:px-10 md:pt-0 md:text-left lg:px-14",
           )}
         >
-          <div className="mx-auto max-w-[40rem] lg:mx-0 lg:max-w-[48rem]">
+          <div className="mx-auto max-w-[40rem] md:mx-0 md:max-w-[26rem] lg:max-w-[36rem] xl:max-w-[48rem]">
             {s.eyebrow && (
               <span
                 className="inline-block rounded-[5px] px-2.5 pb-[3px] pt-1 text-[11px] font-bold uppercase leading-none tracking-wide text-white lg:text-xs"
@@ -122,9 +122,9 @@ function Hero({ s, first, tightNext = false }: { s: SectionOf<"hero">; first: bo
                 {s.eyebrow}
               </span>
             )}
-            {s.kicker && <p className="mt-2 text-xl font-bold leading-[0.95] tracking-[-0.04em] sm:text-2xl lg:mt-1.5 lg:text-[33px]">{s.kicker}</p>}
+            {s.kicker && <p className="mt-2 text-xl font-bold leading-[0.95] tracking-[-0.04em] sm:text-2xl md:text-xl lg:mt-1.5 lg:text-2xl xl:text-[33px]">{s.kicker}</p>}
             {s.title && (
-              <Heading className="mt-1 text-[40px] font-extrabold leading-[0.95] tracking-[-0.04em] text-balance sm:text-6xl lg:text-[77px]">
+              <Heading className="mt-1 text-[40px] font-extrabold leading-[0.95] tracking-[-0.04em] text-balance sm:text-5xl md:text-[44px] lg:text-[56px] xl:text-[77px]">
                 {s.title}
               </Heading>
             )}
@@ -421,8 +421,8 @@ const COLS: Record<string, string> = {
   "3": "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3",
   "4": "grid-cols-2 lg:grid-cols-4",
 };
-// Mode geser di HP: grid baru berlaku mulai ≥640px.
-const SLIDE_COLS: Record<string, string> = { "1": "", "2": "sm:grid-cols-2", "3": "sm:grid-cols-2 lg:grid-cols-3", "4": "sm:grid-cols-2 lg:grid-cols-4" };
+// Mode geser di HP & tablet: grid baru berlaku mulai ≥1024px.
+const SLIDE_COLS: Record<string, string> = { "1": "", "2": "lg:grid-cols-2", "3": "lg:grid-cols-3", "4": "lg:grid-cols-4" };
 const PAD: Record<string, string> = { sm: "py-8 sm:py-10", md: "py-12 sm:py-16", lg: "py-16 sm:py-24" };
 // Lebar foto tiap kolom (atribut sizes) agar varian CDN yang diunduh pas.
 const SIZES: Record<string, string> = {
@@ -505,12 +505,12 @@ function Custom({ s, tightPrev = false, tightNext = false }: { s: SectionOf<"cus
             className={cn(
               slide
                 ? // HP: baris geser (kartu berikut mengintip di tepi); ≥640px: grid biasa
-                  cn("-mx-4 flex snap-x snap-mandatory gap-3 sm:gap-6 overflow-x-auto scroll-px-4 px-4 [scrollbar-width:none] sm:mx-0 sm:grid sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden", SLIDE_COLS[s.columns])
+                  cn("-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-px-4 px-4 [scrollbar-width:none] sm:-mx-6 sm:gap-6 sm:scroll-px-6 sm:px-6 lg:mx-0 lg:grid lg:overflow-visible lg:px-0 [&::-webkit-scrollbar]:hidden", SLIDE_COLS[s.columns])
                 : cn("grid gap-5 sm:gap-6", COLS[s.columns]),
             )}
           >
             {blocks.map((b, i) => (
-              <div key={i} className={cn("flex flex-col", slide && cn("shrink-0 snap-start sm:w-auto", s.columns === "4" ? "w-[45%]" : "w-[62%]"), card ? "overflow-hidden rounded-3xl" : "gap-4", card && hasText(b) && (light ? "bg-white/10" : "bg-background shadow-sm"))}>
+              <div key={i} className={cn("flex flex-col", slide && cn("shrink-0 snap-start lg:w-auto", s.columns === "4" ? "w-[45%] sm:w-[calc((100%-3rem)/3.3)]" : "w-[62%] sm:w-[calc((100%-1.5rem)/2.2)]"), card ? "overflow-hidden rounded-3xl" : "gap-4", card && hasText(b) && (light ? "bg-white/10" : "bg-background shadow-sm"))}>
                 {photo(b)}
                 {hasText(b) && <div className={cn(card && "p-4 sm:p-5")}>{body(b)}</div>}
               </div>
