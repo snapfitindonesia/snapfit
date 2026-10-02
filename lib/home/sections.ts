@@ -19,21 +19,7 @@ const color = z
   .default("")
   .refine((v) => v === "" || /^#[0-9a-fA-F]{6}$/.test(v), "Warna harus format #RRGGBB");
 
-// Jarak atas/bawah tiap bagian (Admin → Konten Beranda): "auto" = jarak bawaan bagian itu.
-// "custom" = angka sendiri (px) untuk HP & desktop.
-export const SPACE_OPTIONS = ["auto", "0", "xs", "sm", "md", "lg", "custom"] as const;
-const space = z.enum(SPACE_OPTIONS).default("auto");
-const px = z.number().int().min(0).max(400).default(0);
-const base = {
-  id: z.string().min(1).max(40),
-  active: z.boolean().default(true),
-  padTop: space,
-  padBottom: space,
-  padTopM: px, // custom: jarak atas HP (px)
-  padTopD: px, // custom: jarak atas desktop ≥640px (px)
-  padBottomM: px,
-  padBottomD: px,
-};
+const base = { id: z.string().min(1).max(40), active: z.boolean().default(true) };
 
 const cta = { ctaLabel: text(40), ctaHref: link };
 

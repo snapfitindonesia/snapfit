@@ -507,39 +507,6 @@ function Custom({ s, afterHero = false }: { s: SectionOf<"custom">; afterHero?: 
 
 /* ------------------------------ RENDER ------------------------------- */
 
-// Timpa padding atas/bawah elemen teratas bagian (section / pembungkus hero). Kelas statis agar
-// terbaca Tailwind; "!" = menang atas padding bawaan bagian. HP / ≥640px.
-const PAD_TOP: Record<string, string> = {
-  "0": "[&>*]:pt-0!",
-  xs: "[&>*]:pt-3! sm:[&>*]:pt-6!",
-  sm: "[&>*]:pt-6! sm:[&>*]:pt-8!",
-  md: "[&>*]:pt-12! sm:[&>*]:pt-16!",
-  lg: "[&>*]:pt-16! sm:[&>*]:pt-24!",
-  custom: "[&>*]:pt-(--sp-tm)! sm:[&>*]:pt-(--sp-td)!", // nilai dari style (angka admin)
-};
-const PAD_BOTTOM: Record<string, string> = {
-  "0": "[&>*]:pb-0!",
-  xs: "[&>*]:pb-3! sm:[&>*]:pb-6!",
-  sm: "[&>*]:pb-6! sm:[&>*]:pb-8!",
-  md: "[&>*]:pb-12! sm:[&>*]:pb-16!",
-  lg: "[&>*]:pb-16! sm:[&>*]:pb-24!",
-  custom: "[&>*]:pb-(--sp-bm)! sm:[&>*]:pb-(--sp-bd)!",
-};
-
-function Spaced({ s, children }: { s: HomeSection; children: React.ReactNode }) {
-  const cls = cn(PAD_TOP[s.padTop], PAD_BOTTOM[s.padBottom]);
-  if (!cls) return <>{children}</>;
-  const style = {
-    ...(s.padTop === "custom" ? { "--sp-tm": `${s.padTopM}px`, "--sp-td": `${s.padTopD}px` } : {}),
-    ...(s.padBottom === "custom" ? { "--sp-bm": `${s.padBottomM}px`, "--sp-bd": `${s.padBottomD}px` } : {}),
-  } as React.CSSProperties;
-  return (
-    <div className={cls} style={style}>
-      {children}
-    </div>
-  );
-}
-
 /** Render semua bagian aktif berurutan. Bagian tanpa isi/data otomatis tak tampil. */
 export function HomeSections({ sections, data }: { sections: HomeSection[]; data: HomeData }) {
   const active = sections.filter((s) => s.active);
@@ -547,9 +514,7 @@ export function HomeSections({ sections, data }: { sections: HomeSection[]; data
   const firstProducts = active.findIndex((s) => s.type === "products");
   return (
     <>
-      {active.map((s, i) => (
-        <Spaced key={s.id} s={s}>
-          {(() => {
+      {active.map((s, i) => {
         switch (s.type) {
           case "hero":
             return <Hero key={s.id} s={s} first={i === firstHero && i === 0} />;
@@ -573,9 +538,7 @@ export function HomeSections({ sections, data }: { sections: HomeSection[]; data
           case "custom":
             return <Custom key={s.id} s={s} afterHero={i > 0 && active[i - 1].type === "hero"} />;
         }
-          })()}
-        </Spaced>
-      ))}
+      })}
     </>
   );
 }
