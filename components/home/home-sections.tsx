@@ -63,9 +63,22 @@ function SectionHead({ title, subtitle, ctaLabel, ctaHref }: { title: string; su
   );
 }
 
+/* ------------------------- JARAK BAGIAN "RAPAT" ------------------------- */
+
+// Hero foto & Blok Custom tanpa judul/latar yang berurutan → jarak di antaranya sama dengan jarak
+// antar-kartu slide (12px HP / 24px desktop), berapa pun jumlah & urutannya.
+const TIGHT_TOP = "pt-3 sm:pt-6";
+function isTight(s: HomeSection | undefined): boolean {
+  if (!s) return false;
+  if (s.type === "hero") return s.mode === "foto" && !!s.image;
+  if (s.type === "custom") return !s.bg && !s.title && !s.subtitle;
+  return false;
+}
+
 /* ------------------------------- HERO -------------------------------- */
 
-function Hero({ s, first }: { s: SectionOf<"hero">; first: boolean }) {
+/** `tightNext`: bagian berikut juga "rapat" (hero/Blok Custom foto) → tanpa jarak bawah (jarak diberi bagian berikut). */
+function Hero({ s, first, tightNext = false }: { s: SectionOf<"hero">; first: boolean; tightNext?: boolean }) {
   const dark = s.theme === "gelap";
   const Heading = first ? "h1" : "h2";
   if (s.mode === "foto" && s.image) {
@@ -74,7 +87,7 @@ function Hero({ s, first }: { s: SectionOf<"hero">; first: boolean }) {
     // Badge → subjudul → judul besar → tombol pil.
     const light = s.theme === "terang";
     return (
-      <div className={cn(WRAP, first ? "pt-3 sm:pt-4" : "py-6")}>
+      <div className={cn(WRAP, first ? "pt-3 sm:pt-4" : TIGHT_TOP, !first && !tightNext && "pb-6")}>
       <section
         className={cn(
           "rounded-[5px] lg:rounded-[5px]",
@@ -420,8 +433,11 @@ const SIZES: Record<string, string> = {
 };
 
 /** Blok Custom: kolom foto + judul + teks berformat + tombol, gaya diatur admin. */
-/** `afterHero`: tepat di bawah hero → jarak atas = jarak antar-blok (bukan padding bagian). */
-function Custom({ s, afterHero = false }: { s: SectionOf<"custom">; afterHero?: boolean }) {
+/**
+ * `tightPrev`/`tightNext`: bersebelahan dengan bagian "rapat" (hero / Blok Custom foto) → jarak
+ * di antaranya = jarak antar-blok (TIGHT_TOP), bukan padding bagian.
+ */
+function Custom({ s, tightPrev = false, tightNext = false }: { s: SectionOf<"custom">; tightPrev?: boolean; tightNext?: boolean }) {
   const blocks = s.blocks.filter((b) => b.image || b.title || b.text || (b.ctaLabel && b.href));
   if (!blocks.length && !s.title) return null;
   const light = s.textColor === "terang";
@@ -462,7 +478,8 @@ function Custom({ s, afterHero = false }: { s: SectionOf<"custom">; afterHero?: 
         "cv-auto [--cv-h:520px]",
         PAD[s.spacing],
         // Di bawah hero (tanpa latar sendiri/judul): jarak dari hero = jarak antar-blok.
-        afterHero && !s.bg && !s.title && !s.subtitle && (slide ? "pt-3 sm:pt-6" : "pt-5 sm:pt-6"),
+        isTight(s) && tightPrev && TIGHT_TOP,
+        isTight(s) && tightNext && "pb-0 sm:pb-0",
         light && "text-white",
       )}
       style={s.bg ? { backgroundColor: s.bg } : undefined}
@@ -488,7 +505,7 @@ function Custom({ s, afterHero = false }: { s: SectionOf<"custom">; afterHero?: 
             className={cn(
               slide
                 ? // HP: baris geser (kartu berikut mengintip di tepi); ≥640px: grid biasa
-                  cn("-mx-4 flex snap-x snap-mandatory gap-3 sm:gap-6 overflow-x-auto scroll-px-4 px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:grid sm:overflow-visible sm:px-0 sm:pb-0 [&::-webkit-scrollbar]:hidden", SLIDE_COLS[s.columns])
+                  cn("-mx-4 flex snap-x snap-mandatory gap-3 sm:gap-6 overflow-x-auto scroll-px-4 px-4 [scrollbar-width:none] sm:mx-0 sm:grid sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden", SLIDE_COLS[s.columns])
                 : cn("grid gap-5 sm:gap-6", COLS[s.columns]),
             )}
           >
@@ -517,7 +534,7 @@ export function HomeSections({ sections, data }: { sections: HomeSection[]; data
       {active.map((s, i) => {
         switch (s.type) {
           case "hero":
-            return <Hero key={s.id} s={s} first={i === firstHero && i === 0} />;
+            return <Hero key={s.id} s={s} first={i === firstHero && i === 0} tightNext={isTight(active[i + 1])} />;
           case "products":
             // Deretan produk pertama biasanya di/dekat layar pertama → tanpa cv-auto.
             return <Products key={s.id} s={s} data={data} eager={i === firstProducts && i <= 1} />;
@@ -536,7 +553,7 @@ export function HomeSections({ sections, data }: { sections: HomeSection[]; data
           case "cards":
             return <Cards key={s.id} s={s} />;
           case "custom":
-            return <Custom key={s.id} s={s} afterHero={i > 0 && active[i - 1].type === "hero"} />;
+            return <Custom key={s.id} s={s} tightPrev={i > 0 && isTight(active[i - 1])} tightNext={isTight(active[i + 1])} />;
         }
       })}
     </>
