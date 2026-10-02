@@ -99,7 +99,17 @@ export async function SiteFooter() {
 
         <div className="flex flex-col gap-2 border-t border-border py-6 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
           <p>© {new Date().getFullYear()} SNAPFIT. Semua hak dilindungi.</p>
-          <p>Dibuat di Indonesia.</p>
+          <p>
+            Dibuat di Indonesia · Powered by{" "}
+            <a
+              href="https://www.digitalinagency.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-foreground underline-offset-2 hover:underline"
+            >
+              DIGITALIN Marketing Agency
+            </a>
+          </p>
         </div>
       </div>
     </footer>
