@@ -515,6 +515,7 @@ const PAD_TOP: Record<string, string> = {
   sm: "[&>*]:pt-6! sm:[&>*]:pt-8!",
   md: "[&>*]:pt-12! sm:[&>*]:pt-16!",
   lg: "[&>*]:pt-16! sm:[&>*]:pt-24!",
+  custom: "[&>*]:pt-(--sp-tm)! sm:[&>*]:pt-(--sp-td)!", // nilai dari style (angka admin)
 };
 const PAD_BOTTOM: Record<string, string> = {
   "0": "[&>*]:pb-0!",
@@ -522,11 +523,21 @@ const PAD_BOTTOM: Record<string, string> = {
   sm: "[&>*]:pb-6! sm:[&>*]:pb-8!",
   md: "[&>*]:pb-12! sm:[&>*]:pb-16!",
   lg: "[&>*]:pb-16! sm:[&>*]:pb-24!",
+  custom: "[&>*]:pb-(--sp-bm)! sm:[&>*]:pb-(--sp-bd)!",
 };
 
 function Spaced({ s, children }: { s: HomeSection; children: React.ReactNode }) {
   const cls = cn(PAD_TOP[s.padTop], PAD_BOTTOM[s.padBottom]);
-  return cls ? <div className={cls}>{children}</div> : <>{children}</>;
+  if (!cls) return <>{children}</>;
+  const style = {
+    ...(s.padTop === "custom" ? { "--sp-tm": `${s.padTopM}px`, "--sp-td": `${s.padTopD}px` } : {}),
+    ...(s.padBottom === "custom" ? { "--sp-bm": `${s.padBottomM}px`, "--sp-bd": `${s.padBottomD}px` } : {}),
+  } as React.CSSProperties;
+  return (
+    <div className={cls} style={style}>
+      {children}
+    </div>
+  );
 }
 
 /** Render semua bagian aktif berurutan. Bagian tanpa isi/data otomatis tak tampil. */

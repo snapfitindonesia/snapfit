@@ -103,7 +103,28 @@ const SPACE_LABELS: [HomeSection["padTop"], string][] = [
   ["sm", "Rapat (24px · 32px)"],
   ["md", "Sedang (48px · 64px)"],
   ["lg", "Lega (64px · 96px)"],
+  ["custom", "Custom (isi angka)"],
 ];
+
+/** Kolom angka px untuk jarak custom. */
+function Px({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
+  return (
+    <label className="block">
+      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className="mt-1 flex items-center rounded-md border border-border bg-background focus-within:border-foreground">
+        <input
+          type="number"
+          min={0}
+          max={400}
+          value={value}
+          onChange={(e) => onChange(Math.max(0, Math.min(400, Math.round(Number(e.target.value) || 0))))}
+          className="w-full bg-transparent px-3 py-2 text-sm outline-none"
+        />
+        <span className="pr-3 text-xs text-muted-foreground">px</span>
+      </span>
+    </label>
+  );
+}
 
 /* ------------------------- Daftar item (list) ------------------------- */
 
@@ -507,8 +528,24 @@ export function HomeEditor({ initial }: { initial: HomeSection[] }) {
                 <p className="mb-4 text-xs text-muted-foreground">{info.hint}</p>
                 <Fields s={s} set={(p) => patch(s.id, p)} />
                 <div className="mt-5 grid gap-4 border-t border-border pt-4 sm:grid-cols-2">
-                  <Select label="Jarak atas" value={s.padTop} onChange={(v) => patch(s.id, { padTop: v })} options={SPACE_LABELS} />
-                  <Select label="Jarak bawah" value={s.padBottom} onChange={(v) => patch(s.id, { padBottom: v })} options={SPACE_LABELS} />
+                  <div className="space-y-2">
+                    <Select label="Jarak atas" value={s.padTop} onChange={(v) => patch(s.id, { padTop: v, ...(v === "custom" && !s.padTopM && !s.padTopD ? { padTopM: 24, padTopD: 48 } : {}) })} options={SPACE_LABELS} />
+                    {s.padTop === "custom" && (
+                      <div className="grid grid-cols-2 gap-2">
+                        <Px label="HP" value={s.padTopM} onChange={(v) => patch(s.id, { padTopM: v })} />
+                        <Px label="Desktop" value={s.padTopD} onChange={(v) => patch(s.id, { padTopD: v })} />
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Select label="Jarak bawah" value={s.padBottom} onChange={(v) => patch(s.id, { padBottom: v, ...(v === "custom" && !s.padBottomM && !s.padBottomD ? { padBottomM: 24, padBottomD: 48 } : {}) })} options={SPACE_LABELS} />
+                    {s.padBottom === "custom" && (
+                      <div className="grid grid-cols-2 gap-2">
+                        <Px label="HP" value={s.padBottomM} onChange={(v) => patch(s.id, { padBottomM: v })} />
+                        <Px label="Desktop" value={s.padBottomD} onChange={(v) => patch(s.id, { padBottomD: v })} />
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
