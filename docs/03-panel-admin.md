@@ -31,6 +31,7 @@ Grup bisa dibuka/tutup; grup halaman aktif selalu terbuka; pilihan diingat di br
 | Diskon | `/admin/diskon` | Diskon persen untuk varian terpilih, dengan periode mulai–selesai |
 | Ongkir per Provinsi | `/admin/ongkir` | Tarif 1 kg pertama + per kg berikutnya + estimasi untuk 38 provinsi; isi cepat per pulau |
 | Voucher | `/admin/voucher` | Kode voucher: potongan harga atau gratis ongkir, minimal belanja, batas manfaat, **Bisa digabung** (potongan + gratis ongkir) |
+| Warna Situs | `/admin/warna` | 5 warna (latar situs, kartu & panel, teks, tombol utama, aksen) + pratinjau; disimpan di SiteSetting `theme.colors`, disuntik sebagai variabel CSS di `app/layout.tsx` (`lib/theme-colors.ts`); teks tombol otomatis putih/hitam |
 | Bundle Keranjang | `/admin/bundle` | "Sering dibeli bersama" di drawer keranjang: pilih varian spesifik (maks 12), urutan, judul, aktif/nonaktif. Yang sudah di keranjang / stok habis / diarsip otomatis disembunyikan |
 | Email Otomatis | `/admin/email` | Pratinjau 9 email otomatis (data pembeli fiktif, produk asli) + kirim contoh ke inbox (subjek [UJI], 1 kuota Resend) |
 | Koin Member | `/admin/koin` | Saldo beredar (kewajiban toko), koin diberikan/dipakai bulan ini, saldo terbesar, transaksi terbaru, koreksi manual per email |

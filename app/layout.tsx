@@ -6,6 +6,8 @@ import { FacebookPixel } from "@/components/tracking/facebook-pixel";
 import { GoogleAnalytics } from "@/components/tracking/google-analytics";
 import { Suspense } from "react";
 import { preconnect } from "react-dom";
+import { getThemeColors } from "@/lib/theme-settings";
+import { themeCss } from "@/lib/theme-colors";
 
 const geistSans = Geist({
   variable: "--font-sans",
@@ -44,21 +46,29 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   // Koneksi awal ke CDN foto (banner/kartu = elemen LCP, beda domain dari halaman).
   // Pixel & GA4 SENGAJA tidak di-preconnect — skripnya baru dimuat saat interaksi
   // (useDeferredLoad), preconnect di awal hanya berebut jaringan dengan LCP.
   preconnect("https://cdn.snapfit.id");
+  // Warna situs dari Admin → Warna Situs (kosong = bawaan di styles/globals.css).
+  const colors = await getThemeColors();
+  const css = themeCss(colors);
   return (
     <html
       lang="id"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      {css && (
+        <head>
+          <style id="theme-colors" dangerouslySetInnerHTML={{ __html: css }} />
+        </head>
+      )}
       <body className="min-h-full flex flex-col">
         {/* Progress bar navigasi — feedback instan tiap klik pindah halaman */}
-        <NextTopLoader color="#171717" height={3} showSpinner={false} shadow="0 0 8px #171717" />
+        <NextTopLoader color={colors.primary} height={3} showSpinner={false} shadow={`0 0 8px ${colors.primary}`} />
         <Suspense>
           <FacebookPixel />
         </Suspense>
