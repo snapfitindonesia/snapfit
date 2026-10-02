@@ -130,6 +130,9 @@ const customBlock = z.object({
   text: text(1200),
   ctaLabel: text(40),
   href: link,
+  // Ukuran asli foto (diisi otomatis saat Simpan, lib/home/image-size.ts) → ruang foto "Asli" pas sejak awal (tanpa CLS).
+  imgW: z.number().int().min(1).max(20000).optional(),
+  imgH: z.number().int().min(1).max(20000).optional(),
 });
 export const customSchema = z.object({
   ...base,

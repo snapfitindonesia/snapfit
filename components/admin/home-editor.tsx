@@ -98,7 +98,7 @@ const MOBILE_HINT = "Opsional. Potrait (±4:5) untuk HP — tanpa ini foto deskt
 
 /* ------------------------- Daftar item (list) ------------------------- */
 
-function ItemList<T extends Record<string, string>>({
+function ItemList<T extends Record<string, unknown>>({
   items,
   onChange,
   blank,

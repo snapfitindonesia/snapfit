@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { sectionsSchema, type HomeSection } from "@/lib/home/sections";
 import { HOME_KEY, HOME_TAG } from "@/lib/home/data";
+import { fillImageSizes } from "@/lib/home/image-size";
 
 /** Simpan konten beranda (Admin → Konten Beranda). */
 export async function saveHomeSections(sections: HomeSection[]): Promise<{ ok: boolean; error?: string }> {
@@ -19,6 +20,7 @@ export async function saveHomeSections(sections: HomeSection[]): Promise<{ ok: b
     return { ok: false, error: `Bagian #${Number(i?.path?.[0] ?? 0) + 1}: ${i?.message ?? "data tidak valid"}` };
   }
   if (new Set(parsed.data.map((s) => s.id)).size !== parsed.data.length) return { ok: false, error: "ID bagian ganda." };
+  await fillImageSizes(parsed.data);
   await db.siteSetting.upsert({
     where: { key: HOME_KEY },
     create: { key: HOME_KEY, value: parsed.data },

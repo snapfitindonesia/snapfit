@@ -450,7 +450,7 @@ function Custom({ s, tightPrev = false, tightNext = false }: { s: SectionOf<"cus
   const photo = (b: (typeof blocks)[number], extra?: string) =>
     b.image ? (
       b.ratio === "auto" ? (
-        <Image src={b.image} alt={b.title || ""} width={1600} height={1200} sizes={side ? "(min-width: 768px) 50vw, 100vw" : SIZES[s.columns]} className={cn("h-auto w-full", !card && "rounded-2xl", extra)} />
+        <Image src={b.image} alt={b.title || ""} width={b.imgW ?? 1600} height={b.imgH ?? 1200} sizes={side ? "(min-width: 768px) 50vw, 100vw" : SIZES[s.columns]} className={cn("h-auto w-full", !card && "rounded-2xl", extra)} />
       ) : (
         <span className={cn("relative block overflow-hidden bg-muted", !card && "rounded-2xl", RATIO[b.ratio], extra)}>
           <Image src={b.image} alt={b.title || ""} fill sizes={side ? "(min-width: 768px) 50vw, 100vw" : SIZES[s.columns]} className="object-cover" />
@@ -475,7 +475,9 @@ function Custom({ s, tightPrev = false, tightNext = false }: { s: SectionOf<"cus
   return (
     <section
       className={cn(
-        "cv-auto [--cv-h:520px]",
+        // Deretan foto rapat (tanpa judul/latar) biasanya dekat layar pertama & pendek → tanpa cv-auto
+        // (perkiraan tinggi 520px justru menggeser halaman = CLS).
+        !isTight(s) && "cv-auto [--cv-h:520px]",
         PAD[s.spacing],
         // Di bawah hero (tanpa latar sendiri/judul): jarak dari hero = jarak antar-blok.
         isTight(s) && tightPrev && TIGHT_TOP,
