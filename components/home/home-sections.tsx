@@ -306,17 +306,17 @@ function Banner({ s }: { s: SectionOf<"banner"> }) {
 function Community({ s, data }: { s: SectionOf<"community">; data: HomeData }) {
   const shots = (s.source === "ulasan" ? data.shots : s.items).filter((x) => x.image);
   if (shots.length < 3) return null; // terlalu sedikit → tampak kosong; sembunyikan
-  // Gaya "From the Nomad Community": judul besar di tengah, baris foto SELEBAR LAYAR (terpotong di
-  // tepi), kartu 4:5 bersudut, keterangan di bawah, panah bulat putih di tepi. Foto → halaman produk.
+  // Gaya "From the Nomad Community": judul besar di tengah, baris foto di dalam kolom isi situs (sejajar
+  // bagian lain; HP menembus tepi layar seperti deretan produk), kartu 4:5, keterangan di bawah. Foto → produk.
   return (
-    <section className="cv-auto py-14 [--cv-h:560px] sm:py-20">
+    <section className={cn(WRAP, "cv-auto py-14 [--cv-h:560px] sm:py-20")}>
       {s.title && (
         <h2 className="mb-7 px-4 text-center text-3xl font-extrabold tracking-[-0.03em] text-balance sm:mb-9 sm:text-4xl lg:text-[46px]">
           {s.title}
         </h2>
       )}
       {s.subtitle && <p className="-mt-4 mb-8 px-4 text-center text-sm text-muted-foreground sm:-mt-5">{s.subtitle}</p>}
-      <ScrollRow label={s.title || "Galeri SNAPFIT"} edge className="px-4 scroll-px-4">
+      <ScrollRow label={s.title || "Galeri SNAPFIT"} className={BLEED}>
         {shots.map((x, i) => {
           // Ada keterangan → itulah teks tautannya; alt dikosongkan agar tak dibaca dua kali.
           const alt = x.caption ? "" : "Foto SNAPFIT";
@@ -327,7 +327,7 @@ function Community({ s, data }: { s: SectionOf<"community">; data: HomeData }) {
                   src={x.image}
                   alt={alt}
                   fill
-                  sizes="(min-width: 1024px) 300px, (min-width: 640px) 30vw, 44vw"
+                  sizes="(min-width: 1600px) 280px, (min-width: 1024px) 18vw, (min-width: 640px) 30vw, 44vw"
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
                 />
               </span>
@@ -335,7 +335,7 @@ function Community({ s, data }: { s: SectionOf<"community">; data: HomeData }) {
             </>
           );
           return (
-            <div key={i} className="group w-[44vw] shrink-0 snap-start sm:w-[30vw] lg:w-[clamp(220px,14.2vw,300px)]">
+            <div key={i} className="group w-[44vw] shrink-0 snap-start sm:w-[30vw] lg:w-[calc((100%-6.25rem)/5.4)]">
               {x.href ? (
                 <Link href={x.href}>{body}</Link>
               ) : (
