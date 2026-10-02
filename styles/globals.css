@@ -59,7 +59,7 @@
      untuk masuk ke belakangnya (components/home/home-sections.tsx). SAMAKAN dengan komponennya. */
   --announce-h: 2.5rem;
   --nav-h: 4.25rem; /* pt 0.625rem + kapsul 3.5rem (+ sedikit) */
-  --background: oklch(1 0 0);
+  --background: #fffefa; /* latar situs (krem sangat muda, permintaan client Okt 2026) */
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
