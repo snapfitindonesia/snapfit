@@ -100,7 +100,7 @@ export async function SiteFooter() {
         <div className="flex flex-col gap-2 border-t border-border py-6 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
           <p>© {new Date().getFullYear()} SNAPFIT. Semua hak dilindungi.</p>
           <p>
-            Dibuat di Indonesia · Powered by{" "}
+            Dibuat di D.I. Yogyakarta · Powered by{" "}
             <a
               href="https://www.digitalinagency.com/"
               target="_blank"
