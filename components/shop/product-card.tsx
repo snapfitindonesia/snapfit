@@ -21,7 +21,7 @@ export function ProductCard({ product, priority = false }: { product: ProductLis
           fill
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
           priority={priority}
-          className="object-contain p-3 transition-transform duration-300 group-hover:scale-105"
+          className="object-cover transition-transform duration-300 group-hover:scale-105"
         />
         {product.brand && (
           <span className="absolute left-3 top-3 z-10 rounded-lg bg-neutral-800 px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm">
