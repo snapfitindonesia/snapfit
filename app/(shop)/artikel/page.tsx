@@ -36,7 +36,7 @@ export default async function ArticlesPage({ searchParams }: { searchParams: Pro
       {items.length ? (
         <ArticleGrid items={items} headingLevel={2} />
       ) : (
-        <p className="rounded-[5px] border border-dashed border-border p-10 text-center text-sm text-muted-foreground">Belum ada artikel.</p>
+        <h2 className="rounded-[5px] border border-dashed border-border p-10 text-center text-sm font-normal text-muted-foreground">Belum ada artikel.</h2>
       )}
 
       {pages > 1 && (
