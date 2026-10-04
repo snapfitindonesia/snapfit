@@ -4,6 +4,8 @@ import { productSlug, skuify } from "@/lib/slug";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { withItemImages } from "@/lib/email-items";
 import { STOREFRONT_TAG } from "@/lib/storefront-cache";
+import { productPath } from "@/lib/product-url";
+import { nextShortId, slugForName } from "@/lib/product-url-server";
 import { grantOrderCashback, grantReviewBonus, reverseOrderCoins } from "@/lib/coins";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/require-admin";
@@ -51,7 +53,9 @@ export async function createProduct(input: ProductInput): Promise<Result> {
     const data = productSchema.parse(input);
     const product = await db.product.create({
       data: {
-        slug: data.slug,
+        // URL: teks dari judul + ID tetap (lib/product-url.ts)
+        slug: await slugForName(data.name),
+        shortId: await nextShortId(),
         name: data.name,
         brand: data.brand || null,
         description: data.description || null,
@@ -100,11 +104,13 @@ export async function updateProduct(id: string, input: ProductInput): Promise<Re
       select: { coverImage: true, images: true, variants: { select: { image: true } } },
     });
 
+    const newSlug = await slugForName(data.name, id); // teks URL ikut judul terbaru (ID tetap)
+    const before = await db.product.findUnique({ where: { id }, select: { slug: true, shortId: true } });
     await db.$transaction([
       db.product.update({
         where: { id },
         data: {
-          slug: data.slug,
+          slug: newSlug,
           name: data.name,
           brand: data.brand || null,
           description: data.description || null,
@@ -138,7 +144,8 @@ export async function updateProduct(id: string, input: ProductInput): Promise<Re
       ),
     ]);
     revalidatePath("/admin/produk");
-    revalidatePath(`/produk/${data.slug}`);
+    revalidatePath(productPath({ slug: newSlug, shortId: before?.shortId ?? null }));
+    if (before) revalidatePath(productPath(before)); // URL lama → kini dialihkan
     revalidateStorefront();
     // Hapus gambar lama yang kini tak terpakai (cover diganti, foto galeri/varian dibuang).
     if (old) {
@@ -241,7 +248,7 @@ export async function setProductsArchived(ids: string[], archived: boolean): Pro
   try {
     await requireAdmin();
     if (!ids.length) return { ok: true };
-    const products = await db.product.findMany({ where: { id: { in: ids } }, select: { slug: true } });
+    const products = await db.product.findMany({ where: { id: { in: ids } }, select: { slug: true, shortId: true } });
     await db.product.updateMany({
       where: { id: { in: ids } },
       data: { archived, archivedBy: archived ? "admin" : null },
@@ -249,7 +256,7 @@ export async function setProductsArchived(ids: string[], archived: boolean): Pro
     revalidatePath("/admin/produk");
     revalidateStorefront();
     revalidatePath("/sitemap.xml");
-    for (const pr of products) revalidatePath(`/produk/${pr.slug}`); // PDP → 404 / tampil lagi
+    for (const pr of products) revalidatePath(productPath(pr)); // PDP → 404 / tampil lagi
     return { ok: true };
   } catch (e) {
     return fail(e);
@@ -345,8 +352,11 @@ export async function bulkUpdateProducts(
 
   let productsUpdated = 0;
   for (const [pid, pf] of productFields) {
-    const d: { name?: string; brand?: string | null } = {};
-    if (pf.name !== undefined) d.name = pf.name;
+    const d: { name?: string; brand?: string | null; slug?: string } = {};
+    if (pf.name !== undefined) {
+      d.name = pf.name;
+      d.slug = await slugForName(pf.name, pid); // teks URL ikut judul baru (ID tetap; URL lama dialihkan)
+    }
     if (pf.brand !== undefined) d.brand = pf.brand;
     if (Object.keys(d).length) {
       try {
@@ -458,6 +468,7 @@ export async function bulkImportProducts(rows: BulkRow[]): Promise<BulkResult> {
       await db.product.create({
         data: {
           slug,
+          shortId: await nextShortId(), // ID tetap di URL
           name: (head.name ?? slug).trim(),
           description: (head.description ?? "").trim() || null,
           coverImage: cover,
@@ -803,8 +814,8 @@ export async function reorderNavLinks(ids: string[]): Promise<Result> {
 /* ============================ ULASAN ============================ */
 
 async function revalidateReview(productId: string) {
-  const p = await db.product.findUnique({ where: { id: productId }, select: { slug: true } });
-  if (p) revalidatePath(`/produk/${p.slug}`);
+  const p = await db.product.findUnique({ where: { id: productId }, select: { slug: true, shortId: true } });
+  if (p) revalidatePath(productPath(p));
   revalidatePath("/admin/ulasan");
 }
 

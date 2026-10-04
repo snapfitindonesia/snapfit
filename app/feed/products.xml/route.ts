@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { productPath } from "@/lib/product-url";
 import { applyDiscount, activeDiscountPercent } from "@/lib/format";
 import { isPlaceholderPrice } from "@/lib/price-guard";
 
@@ -29,7 +30,7 @@ export async function GET() {
   const items: string[] = [];
   for (const p of products) {
     const gallery = Array.isArray(p.images) ? (p.images as string[]) : [];
-    const link = `${SITE}/produk/${p.slug}`;
+    const link = `${SITE}${productPath(p)}`;
     const brand = p.brand || "SNAPFIT";
     const desc = (p.description || p.name).slice(0, 4000);
     for (const v of p.variants) {
@@ -92,7 +93,7 @@ function fetchProducts() {
     where: { archived: false },
     orderBy: { createdAt: "desc" },
     select: {
-      id: true, slug: true, name: true, description: true, brand: true, coverImage: true, images: true,
+      id: true, slug: true, shortId: true, name: true, description: true, brand: true, coverImage: true, images: true,
       category: { select: { name: true } },
       variants: {
         select: {

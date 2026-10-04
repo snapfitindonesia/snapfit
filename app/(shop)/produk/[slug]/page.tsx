@@ -1,9 +1,10 @@
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
+import { productPath } from "@/lib/product-url";
 import { preconnect } from "react-dom";
 import { slugify } from "@/lib/seo-pages";
 import type { Metadata } from "next";
 import {
-  getProductBySlug,
+  getProductBySegment,
   getRelatedProducts,
   getProductReviews,
 } from "@/lib/actions/product";
@@ -32,10 +33,13 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const product = await getProductBySlug(slug);
+  const found = await getProductBySegment(slug);
   // Di sini (bukan hanya di halaman): metadata diproses sebelum streaming untuk bot → status
-  // HTTP 404 sungguhan (loading.tsx membuat notFound() di halaman terkirim sebagai 200).
-  if (!product) notFound();
+  // HTTP 404 / pengalihan sungguhan (bukan halaman 200).
+  if (!found) notFound();
+  // URL lama (slug sebelum format ID) / teks judul lama → 308 permanen ke URL kanonik.
+  if (found.canonical !== slug) permanentRedirect(`/produk/${found.canonical}`);
+  const product = found.product;
   const title = `${product.name} | SNAPFIT Indonesia`;
   // Deskripsi meta: ringkas (±155 karakter), tanpa bullet/baris baru dari teks marketplace.
   const clean = (product.description ?? "")
@@ -53,12 +57,12 @@ export async function generateMetadata({
   return {
     title: product.name, // + template "| SNAPFIT Indonesia" dari layout
     description,
-    alternates: { canonical: `/produk/${product.slug}` },
+    alternates: { canonical: productPath(product) },
     openGraph: {
       title,
       description,
       type: "website",
-      url: `/produk/${product.slug}`,
+      url: productPath(product),
       images: image ? [{ url: image, width: 1000, height: 1000, alt: product.name }] : undefined,
     },
     twitter: {
@@ -76,8 +80,10 @@ export default async function ProductDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const product = await getProductBySlug(slug); // RSC: muat awal server-side
-  if (!product) notFound();
+  const found = await getProductBySegment(slug); // RSC: muat awal server-side
+  if (!found) notFound();
+  if (found.canonical !== slug) permanentRedirect(`/produk/${found.canonical}`);
+  const product = found.product;
 
   // Buka koneksi ke server foto lebih awal (foto utama = LCP halaman ini).
   try {
@@ -101,6 +107,7 @@ export default async function ProductDetailPage({
   // Bentuk data serializable untuk Client Component (tanpa Date dsb.)
   const pdpProduct: PdpProduct = {
     slug: product.slug,
+    shortId: product.shortId,
     name: product.name,
     description: product.description,
     overview,

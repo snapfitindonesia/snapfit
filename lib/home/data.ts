@@ -1,6 +1,7 @@
 // Server: baca konten beranda + data dinamis tiap bagian (produk, angka ulasan, foto ulasan).
 import { unstable_cache } from "next/cache";
 import { db } from "@/lib/db";
+import { productPath } from "@/lib/product-url";
 import { getProducts, getFeaturedProducts, type ProductListItem } from "@/lib/actions/product";
 import { DEFAULT_SECTIONS, sectionsSchema, type HomeSection } from "@/lib/home/sections";
 
@@ -75,9 +76,9 @@ async function reviewShots(): Promise<ReviewShot[]> {
     where: { approved: true, OR: [{ photo: { not: null } }, { image: { not: null } }], product: { archived: false } },
     orderBy: { createdAt: "desc" },
     take: 12,
-    select: { photo: true, image: true, author: true, product: { select: { slug: true } } },
+    select: { photo: true, image: true, author: true, product: { select: { slug: true, shortId: true } } },
   });
   return rows
-    .map((r) => ({ image: (r.photo || r.image) ?? "", caption: r.author, href: `/produk/${r.product.slug}` }))
+    .map((r) => ({ image: (r.photo || r.image) ?? "", caption: r.author, href: productPath(r.product) }))
     .filter((r) => r.image);
 }

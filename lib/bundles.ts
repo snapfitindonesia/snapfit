@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { productSegment } from "@/lib/product-url";
 import { applyDiscount, activeDiscountPercent } from "@/lib/format";
 import { isPlaceholderPrice } from "@/lib/price-guard";
 import { storefrontCached } from "@/lib/storefront-cache";
@@ -29,7 +30,7 @@ export async function loadBundleItems(variantIds: string[]): Promise<BundleItem[
       stock: true,
       image: true,
       discounts: { select: { percent: true, active: true, startAt: true, endAt: true } },
-      product: { select: { slug: true, name: true, coverImage: true, archived: true } },
+      product: { select: { slug: true, shortId: true, name: true, coverImage: true, archived: true } },
     },
   });
   const byId = new Map(variants.map((v) => [v.id, v]));
@@ -38,7 +39,7 @@ export async function loadBundleItems(variantIds: string[]): Promise<BundleItem[
     .filter((v): v is NonNullable<typeof v> => !!v && v.stock > 0 && !v.product.archived && !isPlaceholderPrice(v.price))
     .map((v) => ({
       variantId: v.id,
-      productSlug: v.product.slug,
+      productSlug: productSegment(v.product), // segmen URL
       productName: v.product.name,
       variantName: v.name,
       image: v.image || v.product.coverImage,

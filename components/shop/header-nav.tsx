@@ -13,6 +13,7 @@ import { useStoreUI } from "@/components/shop/store-ui-provider";
 import type { MegaMenuBrand, MerekMenuItem, ProductListItem, NavLinkItem } from "@/lib/actions/product";
 import { merekHref } from "@/lib/slug";
 import logo from "@/logosnapfit.png";
+import { productPath } from "@/lib/product-url";
 
 export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaMenuBrand[]; merekMenu?: MerekMenuItem[]; navLinks?: NavLinkItem[] }) {
   const { authed, openLogin } = useStoreUI();
@@ -562,7 +563,7 @@ export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaM
                       {results.map((p) => (
                         <li key={p.id}>
                           <Link
-                            href={`/produk/${p.slug}`}
+                            href={productPath(p)}
                             onClick={closeSearch}
                             className="flex items-center gap-3 rounded-md px-2 py-2 hover:bg-accent"
                           >

@@ -60,6 +60,14 @@ sellableStock(v)       // 0 bila harganya dummy, selain itu v.stock
 Dipakai di daftar produk, PDP, checkout (ditolak), dan feed (dilewati).
 **Jangan** memakai ambang nominal (mis. ≥ 900rb) — case premium asli berharga Rp945rb–1,9jt.
 
+### URL produk (sejak Okt 2026)
+- Format `/produk/<teks-dari-judul>-<shortId>` (`lib/product-url.ts`). `Product.shortId` = ID angka TETAP
+  (mulai 1001, diberi saat produk dibuat: form, impor CSV, impor Ginee — `nextShortId`, unik dijaga app).
+  `Product.slug` = teks dari judul TERBARU (form/edit massal memperbarui otomatis, `slugForName`, tetap unik).
+- `Product.legacySlug` = slug URL lama sebelum format ID. Halaman produk (`getProductBySegment`):
+  segmen kanonik → tampil; slug/slug lama persis atau ID dengan teks lama → 308 permanen ke kanonik; lainnya 404.
+- Sitemap, feed Google/Meta, kartu, keranjang, bundle, "Lengkapi dengan", menu merek, JSON-LD & canonical memakai URL kanonik.
+
 ### Produk diarsipkan
 - Admin → Produk: tombol **Arsipkan/Tampilkan** (per produk & massal) + tab **Diarsipkan**. Arsip admin
   = `archivedBy: "admin"`; arsip otomatis sinkron = `"ginee"`. Sinkron Ginee hanya memulihkan yang `"ginee"`.

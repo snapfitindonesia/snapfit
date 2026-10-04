@@ -1,5 +1,6 @@
 "use client";
 
+import { productPath, productSegment } from "@/lib/product-url";
 import { useRouter } from "next/navigation";
 import { ShoppingBag, Check } from "lucide-react";
 import { useState } from "react";
@@ -33,13 +34,13 @@ export function AddToCartButton({ product }: { product: ProductListItem }) {
 
   function onClick() {
     if (multiVariant) {
-      router.push(`/produk/${product.slug}`);
+      router.push(productPath(product));
       return;
     }
     const v = product.defaultVariant!;
     addItem({
       variantId: v.id,
-      productSlug: product.slug,
+      productSlug: productSegment(product),
       name: `${product.name} — ${v.name}`,
       price: v.price,
       image: v.image,

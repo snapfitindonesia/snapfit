@@ -3,6 +3,7 @@ import { applyDiscount, activeDiscountPercent } from "@/lib/format";
 import { isPlaceholderPrice, sellableStock } from "@/lib/price-guard";
 import type { ProductQuery } from "@/lib/validations/product";
 import { storefrontCached } from "@/lib/storefront-cache";
+import { parseProductSegment, productSegment } from "@/lib/product-url";
 
 // Catatan: harga produk = harga varian termurah. Dataset dev kecil, jadi sort by harga
 // & paginasi dilakukan in-memory (konsisten lintas mode). Saat skala besar, denormalisasi
@@ -11,6 +12,7 @@ import { storefrontCached } from "@/lib/storefront-cache";
 export type ProductListItem = {
   id: string;
   slug: string;
+  shortId: number | null; // URL: productPath() di lib/product-url.ts
   name: string;
   brand: string | null;
   coverImage: string;
@@ -157,14 +159,14 @@ export const getMerekMenu = storefrontCached("merek-menu", [] as MerekMenuItem[]
     const products = await db.product.findMany({
       where: { archived: false, brand: { in: names }, variants: { some: { stock: { gt: 0 } } } },
       orderBy: { createdAt: "desc" },
-      select: { id: true, slug: true, name: true, coverImage: true, brand: true },
+      select: { id: true, slug: true, shortId: true, name: true, coverImage: true, brand: true },
       take: 600,
     });
     const byBrand = new Map<string, MerekMenuProduct[]>();
     for (const p of products) {
       if (!p.brand) continue;
       const arr = byBrand.get(p.brand) ?? [];
-      if (arr.length < perMerek) arr.push({ id: p.id, slug: p.slug, name: p.name, coverImage: p.coverImage });
+      if (arr.length < perMerek) arr.push({ id: p.id, slug: productSegment(p), name: p.name, coverImage: p.coverImage }); // slug = segmen URL
       byBrand.set(p.brand, arr);
     }
     return merek
@@ -273,6 +275,7 @@ export async function getProducts(query: ProductQuery, opts: { ids?: string[] } 
       return {
         id: p.id,
         slug: p.slug,
+        shortId: p.shortId,
         name: p.name,
         brand: p.brand ?? null,
         coverImage: p.coverImage,
@@ -369,6 +372,32 @@ export async function getFeaturedProducts(take = 8): Promise<ProductListItem[]> 
   }
 }
 
+const PDP_INCLUDE = {
+  category: { select: { name: true, slug: true } },
+  variants: {
+    orderBy: [{ color: "asc" as const }, { price: "asc" as const }],
+    include: { discounts: { select: { percent: true, active: true, startAt: true, endAt: true } } },
+  },
+};
+
+/**
+ * Cari produk dari segmen URL /produk/<segmen>. Hasil `canonical` = segmen kanonik
+ * (<slug>-<shortId>); bila ≠ segmen yang diminta → halaman mengalihkan 301 ke kanonik.
+ * Urutan: (a) segmen kanonik persis → (b) slug/slug lama persis (URL lama, sebelum format ID)
+ * → (c) ID cocok tapi teks lama (judul sudah diganti). Tak ketemu / diarsipkan → null (404).
+ */
+export async function getProductBySegment(segment: string) {
+  const { id } = parseProductSegment(segment);
+  const byId = id ? await db.product.findFirst({ where: { shortId: id }, include: PDP_INCLUDE }) : null;
+  let product = byId && productSegment(byId) === segment ? byId : null;
+  if (!product) {
+    product =
+      (await db.product.findFirst({ where: { OR: [{ slug: segment }, { legacySlug: segment }] }, include: PDP_INCLUDE })) ?? byId;
+  }
+  if (!product || product.archived) return null;
+  return { product: withVariantPricing(product), canonical: productSegment(product) };
+}
+
 export async function getProductBySlug(slug: string) {
   const product = await db.product.findUnique({
     where: { slug },
@@ -381,7 +410,12 @@ export async function getProductBySlug(slug: string) {
     },
   });
   if (!product || product.archived) return null; // diarsipkan → 404
+  return withVariantPricing(product);
+}
 
+type PdpRaw = NonNullable<Awaited<ReturnType<typeof db.product.findFirst<{ include: typeof PDP_INCLUDE }>>>>;
+
+function withVariantPricing(product: PdpRaw) {
   // Diskon PER-VARIAN → tiap varian bawa discountPercent-nya sendiri.
   const variants = product.variants.map((v) => ({
     ...v,

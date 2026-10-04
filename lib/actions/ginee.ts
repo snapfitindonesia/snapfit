@@ -3,6 +3,7 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { STOREFRONT_TAG } from "@/lib/storefront-cache";
 import { db } from "@/lib/db";
+import { nextShortId } from "@/lib/product-url-server";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { isGineeConfigured } from "@/lib/ginee/config";
 import {
@@ -256,6 +257,7 @@ export async function importGineeProducts(inputs: ImportInput[]): Promise<Import
       await db.product.create({
         data: {
           slug,
+          shortId: await nextShortId(), // ID tetap di URL
           name: mapped.name,
           brand: guessMerek(mapped.name, merekNames),
           description: mapped.description || null,

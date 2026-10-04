@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { CAMPAIGN_SLUGS } from "@/lib/campaigns";
 import { db } from "@/lib/db";
+import { productPath } from "@/lib/product-url";
 import { listLandingPages } from "@/lib/seo-pages";
 
 const SITE = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.snapfit.id").replace(/\/$/, "");
@@ -24,12 +25,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
     const products = await db.product.findMany({
       where: { archived: false },
-      select: { slug: true, createdAt: true },
+      select: { slug: true, shortId: true, createdAt: true },
       orderBy: { createdAt: "desc" },
       take: 5000,
     });
     productPages = products.map((p) => ({
-      url: `${SITE}/produk/${p.slug}`,
+      url: `${SITE}${productPath(p)}`,
       lastModified: p.createdAt,
       changeFrequency: "weekly",
       priority: 0.8,

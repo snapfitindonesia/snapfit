@@ -33,6 +33,7 @@ export default async function EditProductPage({
       initial={{
             id: product.id,
             slug: product.slug,
+            shortId: product.shortId,
             name: product.name,
             brand: product.brand,
             description: product.description,

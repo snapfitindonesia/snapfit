@@ -1,3 +1,4 @@
+import { productPath } from "@/lib/product-url";
 import Link from "next/link";
 import { ChevronRight, SlidersHorizontal } from "lucide-react";
 import { ProductCard } from "@/components/shop/product-card";
@@ -50,7 +51,7 @@ export function LandingView({
         itemListElement: items.slice(0, 30).map((p, i) => ({
           "@type": "ListItem",
           position: i + 1,
-          url: `${SITE}/produk/${p.slug}`,
+          url: `${SITE}${productPath(p)}`,
           name: p.name,
         })),
       },

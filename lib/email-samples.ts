@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { productPath } from "@/lib/product-url";
 import * as E from "@/lib/email";
 import { withItemImages } from "@/lib/email-items";
 import { isPlaceholderPrice } from "@/lib/price-guard";
@@ -28,7 +29,7 @@ export async function buildEmailSample(key: EmailSampleKey): Promise<{ subject: 
     where: { product: { archived: false }, stock: { gt: 0 } },
     orderBy: { product: { createdAt: "desc" } },
     take: 12,
-    include: { product: { select: { name: true, slug: true, coverImage: true } } },
+    include: { product: { select: { name: true, slug: true, shortId: true, coverImage: true } } },
   });
   const picked = variants.filter((v) => !isPlaceholderPrice(v.price)).slice(0, 2);
   const items = await withItemImages(
@@ -71,7 +72,7 @@ export async function buildEmailSample(key: EmailSampleKey): Promise<{ subject: 
     case "ulasan":
       return E.reviewRequestEmail(
         order,
-        picked.map((v) => ({ name: v.product.name, url: `${site}/produk/${v.product.slug}`, image: E.emailImage(v.image || v.product.coverImage) })),
+        picked.map((v) => ({ name: v.product.name, url: `${site}${productPath(v.product)}`, image: E.emailImage(v.image || v.product.coverImage) })),
       );
     case "keranjang":
       return E.abandonedCartEmail({

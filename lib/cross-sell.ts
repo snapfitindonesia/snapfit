@@ -1,6 +1,7 @@
 // "Lengkapi dengan" di PDP: case ↔ tempered glass / pelindung lensa untuk TIPE HP
 // yang sama. Dihitung di server saat ISR PDP (cache 5 mnt) — bukan per pengunjung.
 import { db } from "@/lib/db";
+import { productSegment } from "@/lib/product-url";
 import { activeDiscountPercent, applyDiscount } from "@/lib/format";
 import { isPlaceholderPrice } from "@/lib/price-guard";
 import { COMPANION_KINDS, productKind, typeKey, type ProductKind } from "@/lib/product-kind";
@@ -43,6 +44,7 @@ export async function getCompanions(product: {
     select: {
       id: true,
       slug: true,
+      shortId: true,
       name: true,
       variants: {
         where: { stock: { gt: 0 } },
@@ -74,7 +76,7 @@ export async function getCompanions(product: {
         cur.price = Math.min(cur.price, price);
       }
     }
-    if (byKey.size) out.push({ productId: c.id, slug: c.slug, name: c.name, kind, options: [...byKey.values()] });
+    if (byKey.size) out.push({ productId: c.id, slug: productSegment(c), name: c.name, kind, options: [...byKey.values()] }); // slug = segmen URL
   }
   // Prioritas jenis (glass sebelum lens), lalu yang paling banyak tipe cocok.
   out.sort((a, b) => targets.indexOf(a.kind) - targets.indexOf(b.kind) || b.options.length - a.options.length);

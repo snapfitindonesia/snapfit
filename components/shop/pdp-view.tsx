@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { productPath, productSegment } from "@/lib/product-url";
 import { formatRupiah, applyDiscount } from "@/lib/format";
 import { useCart } from "@/components/shop/cart-provider";
 import { useStoreUI } from "@/components/shop/store-ui-provider";
@@ -44,6 +45,7 @@ export type PdpVariant = {
 
 export type PdpProduct = {
   slug: string;
+  shortId: number | null;
   name: string;
   description: string | null;
   overview: string[]; // poin Overview (isian produk atau default admin)
@@ -225,7 +227,7 @@ export function PdpView({
     addItem(
       {
         variantId: variant!.id,
-        productSlug: product.slug,
+        productSlug: productSegment(product), // segmen URL (link kembali dari keranjang)
         name: `${product.name} — ${variant!.name}`,
         price: finalPrice,
         image: variant!.image,
@@ -641,7 +643,7 @@ export function PdpView({
               product.name,
               `Varian: ${variant.name}`,
               ...(outOfStock ? ["(stok di web habis — apakah masih ada?)"] : []),
-              `https://www.snapfit.id/produk/${product.slug}`,
+              `https://www.snapfit.id${productPath(product)}`,
             ].join("\n"),
           )}
           target="_blank"

@@ -18,7 +18,9 @@ datasource db {
 
 model Product {
   id          String     @id @default(cuid())
-  slug        String     @unique
+  slug        String     @unique // teks URL = dari judul TERBARU (lib/product-url.ts)
+  shortId     Int? // ID angka TETAP di URL: /produk/<slug>-<shortId> (unik dijaga app: lib/product-url.ts nextShortId)
+  legacySlug  String? // slug URL lama (sebelum format ID, Okt 2026) → dialihkan 301 ke URL baru
   name        String
   brand       String? // merek aksesori (mis. Ringke, Spigen, SNAPFIT) — tampil sbg badge di kartu
   description String?
@@ -40,6 +42,9 @@ model Product {
   variants    Variant[]
   reviews     Review[]
   createdAt   DateTime   @default(now())
+
+  @@index([shortId])
+  @@index([legacySlug])
 }
 
 model Review {
