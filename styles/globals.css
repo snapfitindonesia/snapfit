@@ -207,3 +207,23 @@ main:has(> [data-newsletter]:last-child) + footer {
   margin-top: 0;
   border-top: 0;
 }
+
+/* "Warna latar bagian" beranda (components/home/home-sections.tsx → withBg). Latar gelap: token teks dibalik
+   ke putih; elemen berlatar kartu putih (.bg-card) di dalamnya kembali bertinta gelap. */
+[data-tone="dark"] {
+  --foreground: #ffffff;
+  --background: var(--sec-bg);
+  --muted: rgb(255 255 255 / 0.1);
+  --muted-foreground: rgb(255 255 255 / 0.72);
+  --border: rgb(255 255 255 / 0.16);
+  --brand-ink: #fdba74;
+  color: var(--foreground);
+}
+[data-tone="dark"] .bg-card {
+  --foreground: oklch(0.145 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.48 0 0);
+  --border: oklch(0.922 0 0);
+  --brand-ink: #b93f0e;
+  color: var(--foreground);
+}

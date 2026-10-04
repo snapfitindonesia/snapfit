@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { saveHomeSections } from "@/lib/actions/home";
 import {
   DEFAULT_SECTIONS,
+  SECTION_BG_TYPES,
   SECTION_INFO,
   blankSection,
   newId,
@@ -562,6 +563,19 @@ export function HomeEditor({ initial }: { initial: HomeSection[] }) {
               <div className="border-t border-border p-4 sm:p-5">
                 <p className="mb-4 text-xs text-muted-foreground">{info.hint}</p>
                 <Fields s={s} set={(p) => patch(s.id, p)} />
+                {SECTION_BG_TYPES.includes(s.type) && (
+                  <div className="mt-4 grid gap-4 border-t border-dashed border-border pt-4 sm:grid-cols-2">
+                    <Color label="Warna latar bagian" value={s.sectionBg} onChange={(v) => patch(s.id, { sectionBg: v })} />
+                    <p className="self-end pb-2 text-xs text-muted-foreground">
+                      Kosongkan = latar bawaan. Latar gelap → teks otomatis putih.
+                      {s.sectionBg && (
+                        <button type="button" className="ml-2 underline" onClick={() => patch(s.id, { sectionBg: "" })}>
+                          Hapus warna
+                        </button>
+                      )}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </section>

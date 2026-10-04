@@ -19,7 +19,9 @@ const color = z
   .default("")
   .refine((v) => v === "" || /^#[0-9a-fA-F]{6}$/.test(v), "Warna harus format #RRGGBB");
 
-const base = { id: z.string().min(1).max(40), active: z.boolean().default(true) };
+// sectionBg: warna latar bagian (kosong = bawaan). Dipakai bagian yang tak punya pengaturan latar sendiri
+// (lihat SECTION_BG_TYPES); teks otomatis putih bila latarnya gelap.
+const base = { id: z.string().min(1).max(40), active: z.boolean().default(true), sectionBg: color };
 
 const cta = { ctaLabel: text(40), ctaHref: link };
 
@@ -233,6 +235,15 @@ export const SECTION_INFO: Record<SectionType, { label: string; hint: string; wi
   newsletter: { label: "Langganan email", hint: "Form email + kode voucher opsional. Letakkan paling bawah (sebelum footer).", wide: true },
   custom: { label: "Blok Custom", hint: "Susun sendiri: 1–4 kolom berisi foto, judul, teks, tombol + warna latar & gaya.", wide: false },
 };
+
+/** Jenis bagian yang memakai "Warna latar bagian" (sectionBg). Hero/banner/ulasan/custom punya latar sendiri. */
+export const SECTION_BG_TYPES: SectionType[] = ["products", "categories", "features", "quote", "community", "cards", "articles", "testimonials", "newsletter"];
+
+/** Latar gelap? (luminans relatif < 0,18 → teks putih). */
+export function isDarkColor(hex: string): boolean {
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * r! + 0.7152 * g! + 0.0722 * b! < 0.18;
+}
 
 export const newId = () => Math.random().toString(36).slice(2, 10);
 

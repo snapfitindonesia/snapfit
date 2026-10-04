@@ -10,7 +10,7 @@ import { ArtImage } from "@/components/home/art-image";
 import { ScrollRow } from "@/components/home/scroll-row";
 import { Parallax } from "@/components/home/parallax";
 import { RichText } from "@/lib/home/rich-text";
-import type { HomeSection, SectionOf } from "@/lib/home/sections";
+import { isDarkColor, SECTION_BG_TYPES, type HomeSection, type SectionOf } from "@/lib/home/sections";
 import type { HomeData } from "@/lib/home/data";
 
 /*
@@ -576,18 +576,25 @@ function Newsletter({ s }: { s: SectionOf<"newsletter"> }) {
   // *teks* di judul → gradasi oranye (pengganti biru→cyan referensi, mengikuti warna brand).
   const title = s.title.split(/(\*[^*]+\*)/g);
   const perks = s.perks.split(/\r?\n/).map((p) => p.trim()).filter(Boolean).slice(0, 4);
+  // Warna latar bagian (opsional) menggantikan hitam bawaan; latar terang → teks gelap.
+  const light = !!s.sectionBg && !isDarkColor(s.sectionBg);
   return (
     <section
       data-newsletter
-      className="overflow-hidden bg-[radial-gradient(900px_460px_at_90%_10%,rgb(242_101_34/0.22),transparent_60%),radial-gradient(700px_380px_at_0%_100%,rgb(251_191_36/0.14),transparent_60%)] bg-[#0b0a09] py-[70px] text-center text-white sm:py-[100px]"
+      className={cn(
+        "overflow-hidden bg-[radial-gradient(900px_460px_at_90%_10%,rgb(242_101_34/0.22),transparent_60%),radial-gradient(700px_380px_at_0%_100%,rgb(251_191_36/0.14),transparent_60%)] py-[70px] text-center sm:py-[100px]",
+        light ? "text-foreground" : "text-white",
+        !s.sectionBg && "bg-[#0b0a09]",
+      )}
+      style={s.sectionBg ? { backgroundColor: s.sectionBg } : undefined}
     >
       <div className="mx-auto max-w-[720px] px-4 sm:px-6">
-        <LineEyebrow dark>{s.eyebrow}</LineEyebrow>
+        <LineEyebrow dark={!light}>{s.eyebrow}</LineEyebrow>
         {s.title && (
-          <h2 className={cn(H2_OMNIX, "mb-3.5 text-white")}>
+          <h2 className={cn(H2_OMNIX, "mb-3.5", light ? "text-foreground" : "text-white")}>
             {title.map((p, i) =>
               p.length > 2 && p.startsWith("*") && p.endsWith("*") ? (
-                <span key={i} className="bg-gradient-to-r from-[#f26522] to-[#fbbf24] bg-clip-text text-transparent">
+                <span key={i} className={cn("bg-gradient-to-r bg-clip-text text-transparent", light ? "from-[#b93f0e] to-[#e0561a]" : "from-[#f26522] to-[#fbbf24]")}>
                   {p.slice(1, -1)}
                 </span>
               ) : (
@@ -596,13 +603,13 @@ function Newsletter({ s }: { s: SectionOf<"newsletter"> }) {
             )}
           </h2>
         )}
-        {s.text && <p className="mb-8 text-base text-white/72 sm:text-[17px]">{s.text}</p>}
-        <NewsletterForm sectionId={s.id} placeholder={s.placeholder} buttonLabel={s.buttonLabel} successText={s.successText} />
+        {s.text && <p className={cn("mb-8 text-base sm:text-[17px]", light ? "text-foreground/75" : "text-white/72")}>{s.text}</p>}
+        <NewsletterForm light={light} sectionId={s.id} placeholder={s.placeholder} buttonLabel={s.buttonLabel} successText={s.successText} />
         {perks.length > 0 && (
           <ul className="mt-7 flex flex-wrap items-center justify-center gap-x-7 gap-y-2.5">
             {perks.map((p) => (
-              <li key={p} className="inline-flex items-center gap-1.5 text-[13px] text-white/70">
-                <Check className="size-3.5 text-[#fdba74]" strokeWidth={2.4} aria-hidden />
+              <li key={p} className={cn("inline-flex items-center gap-1.5 text-[13px]", light ? "text-foreground/75" : "text-white/70")}>
+                <Check className={cn("size-3.5", light ? "text-brand-ink" : "text-[#fdba74]")} strokeWidth={2.4} aria-hidden />
                 {p}
               </li>
             ))}
@@ -615,6 +622,24 @@ function Newsletter({ s }: { s: SectionOf<"newsletter"> }) {
 
 /* ------------------------------ RENDER ------------------------------- */
 
+/**
+ * "Warna latar bagian" (sectionBg): bungkus bagian dengan latar pilihan admin. Latar gelap → token teks
+ * dibalik jadi putih (data-tone="dark", styles/globals.css); kartu putih di dalamnya tetap bertinta gelap.
+ * Langganan email mengatur latarnya sendiri.
+ */
+function withBg(s: HomeSection, el: React.ReactNode): React.ReactNode {
+  if (!el || !s.sectionBg || !SECTION_BG_TYPES.includes(s.type) || s.type === "newsletter") return el;
+  return (
+    <div
+      key={s.id}
+      data-tone={isDarkColor(s.sectionBg) ? "dark" : "light"}
+      style={{ backgroundColor: s.sectionBg, "--sec-bg": s.sectionBg } as React.CSSProperties}
+    >
+      {el}
+    </div>
+  );
+}
+
 /** Render semua bagian aktif berurutan. Bagian tanpa isi/data otomatis tak tampil. */
 export function HomeSections({ sections, data }: { sections: HomeSection[]; data: HomeData }) {
   const active = sections.filter((s) => s.active);
@@ -622,7 +647,7 @@ export function HomeSections({ sections, data }: { sections: HomeSection[]; data
   const firstProducts = active.findIndex((s) => s.type === "products");
   return (
     <>
-      {active.map((s, i) => {
+      {active.map((s, i) => withBg(s, (() => {
         switch (s.type) {
           case "hero":
             return <Hero key={s.id} s={s} first={i === firstHero && i === 0} tightNext={isTight(active[i + 1])} />;
@@ -652,7 +677,7 @@ export function HomeSections({ sections, data }: { sections: HomeSection[]; data
           case "newsletter":
             return <Newsletter key={s.id} s={s} />;
         }
-      })}
+      })()))}
     </>
   );
 }
