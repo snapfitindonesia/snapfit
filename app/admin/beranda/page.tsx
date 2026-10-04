@@ -1,10 +1,10 @@
-import { getHomeSections } from "@/lib/home/data";
+import { getHomeSectionsFresh } from "@/lib/home/data";
 import { HomeEditor } from "@/components/admin/home-editor";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminBerandaPage() {
-  const sections = await getHomeSections();
+  const sections = await getHomeSectionsFresh();
   return (
     <div className="max-w-4xl">
       <h1 className="text-xl font-semibold">Konten Beranda</h1>

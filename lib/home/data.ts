@@ -28,6 +28,14 @@ export async function getHomeSections(): Promise<HomeSection[]> {
   return parsed.success ? parsed.data : DEFAULT_SECTIONS;
 }
 
+/** Untuk editor admin: langsung dari DB (tanpa cache) — agar admin selalu mengedit versi terbaru. */
+export async function getHomeSectionsFresh(): Promise<HomeSection[]> {
+  const saved = (await db.siteSetting.findUnique({ where: { key: HOME_KEY } }))?.value ?? null;
+  if (saved == null) return DEFAULT_SECTIONS;
+  const parsed = sectionsSchema.safeParse(saved);
+  return parsed.success ? parsed.data : DEFAULT_SECTIONS;
+}
+
 export type ReviewStats = { total: number; fiveStar: number; avg: number };
 export type ReviewShot = { image: string; caption: string; href: string };
 
