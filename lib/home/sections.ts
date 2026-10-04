@@ -259,11 +259,11 @@ const PRESETS: Partial<Record<SectionType, Record<string, unknown>>> = {
   },
   newsletter: {
     eyebrow: "Gabung jadi orang dalam",
-    title: "Dapatkan *voucher spesial* untuk pesanan pertamamu.",
+    title: "Jadi yang pertama tahu *produk baru & promo*.",
     text: "Tinggalkan email — kami kabari produk baru, stok yang kembali tersedia, dan promo khusus pelanggan. Berhenti kapan saja.",
     placeholder: "email@kamu.com",
     buttonLabel: "Langganan",
-    perks: "Voucher pesanan pertama\nAkses awal produk baru\nTanpa spam",
+    perks: "Info produk baru lebih awal\nPromo khusus pelanggan\nTanpa spam",
     successText: "Terima kasih! Cek email-mu ya.",
   },
 };
