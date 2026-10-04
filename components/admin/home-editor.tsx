@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ArrowDown, ArrowUp, ChevronDown, Copy, ExternalLink, Eye, EyeOff, Loader2, Plus, RotateCcw, Save, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -338,6 +339,70 @@ function Fields({ s, set }: { s: HomeSection; set: (patch: Partial<HomeSection>)
               </>
             )}
           />
+        </div>
+      );
+    case "articles":
+      return (
+        <div className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Text label="Label kecil (atas judul)" value={s.eyebrow} onChange={(v) => set({ eyebrow: v })} placeholder="Dari jurnal SNAPFIT" />
+            <Select label="Jumlah artikel" value={String(s.limit)} onChange={(v) => set({ limit: Number(v) })} options={[["3", "3 artikel"], ["6", "6 artikel"]]} />
+            <div className="sm:col-span-2"><Text label="Judul" value={s.title} onChange={(v) => set({ title: v })} /></div>
+            <div className="sm:col-span-2"><Text label="Subjudul" value={s.subtitle} onChange={(v) => set({ subtitle: v })} area /></div>
+            {cta}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Artikel diambil otomatis dari <Link href="/admin/artikel" target="_blank" className="underline">Admin → Artikel</Link> (terbaru dulu). Bagian ini tersembunyi bila belum ada artikel terbit.
+          </p>
+        </div>
+      );
+    case "testimonials":
+      return (
+        <div className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Text label="Label kecil (atas judul)" value={s.eyebrow} onChange={(v) => set({ eyebrow: v })} placeholder="Cerita pelanggan" />
+            <Text label="Judul" value={s.title} onChange={(v) => set({ title: v })} />
+            <div className="sm:col-span-2"><Text label="Subjudul" value={s.subtitle} onChange={(v) => set({ subtitle: v })} area /></div>
+            <div className="sm:col-span-2">
+              <Text label="Baris rating (opsional)" value={s.trust} onChange={(v) => set({ trust: v })} placeholder="**4,9** dari **1.200+** ulasan pembeli" hint="Tampil di bawah subjudul dengan ★★★★★. Apit dengan **dua bintang** untuk tebal. Isi dengan angka yang benar." />
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">Kartu berjalan naik-turun (berhenti saat disorot). Desktop 3 kolom, tablet 2, HP 1. Disarankan minimal 6 ulasan.</p>
+          <ItemList
+            name="Ulasan"
+            max={30}
+            items={s.items}
+            blank={{ name: "", meta: "", text: "", rating: 5, avatar: "", verified: true }}
+            onChange={(items) => set({ items })}
+            render={(it, up) => (
+              <>
+                <Text label="Nama" value={it.name} onChange={(v) => up({ name: v })} placeholder="Rina A." />
+                <Text label="Keterangan" value={it.meta} onChange={(v) => up({ meta: v })} placeholder="Case iPhone 17 Pro · Jakarta" />
+                <div className="sm:col-span-2"><Text label="Isi ulasan" value={it.text} onChange={(v) => up({ text: v })} area /></div>
+                <Select label="Bintang" value={String(it.rating)} onChange={(v) => up({ rating: Number(v) })} options={[["5", "★★★★★ (5)"], ["4", "★★★★ (4)"], ["3", "★★★ (3)"], ["2", "★★ (2)"], ["1", "★ (1)"]]} />
+                <Check label="Tampilkan “Terverifikasi”" hint="Hanya untuk pembeli asli." checked={it.verified} onChange={(v) => up({ verified: v })} />
+                <div className="sm:col-span-2"><Img label="Foto profil (opsional, persegi)" value={it.avatar} onChange={(v) => up({ avatar: v })} hint="Tanpa foto: inisial nama." /></div>
+              </>
+            )}
+          />
+        </div>
+      );
+    case "newsletter":
+      return (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Text label="Label kecil (atas judul)" value={s.eyebrow} onChange={(v) => set({ eyebrow: v })} />
+          <Text label="Judul" value={s.title} onChange={(v) => set({ title: v })} hint="Apit kata dengan *bintang* untuk warna gradasi, mis. Dapatkan *voucher spesial*." />
+          <div className="sm:col-span-2"><Text label="Teks" value={s.text} onChange={(v) => set({ text: v })} area /></div>
+          <Text label="Contoh isian email" value={s.placeholder} onChange={(v) => set({ placeholder: v })} placeholder="email@kamu.com" />
+          <Text label="Teks tombol" value={s.buttonLabel} onChange={(v) => set({ buttonLabel: v })} placeholder="Langganan" />
+          <Text label="Keuntungan (satu per baris)" value={s.perks} onChange={(v) => set({ perks: v })} area hint="Maks. 4 baris, tampil dengan tanda ✓." />
+          <Text label="Pesan setelah berlangganan" value={s.successText} onChange={(v) => set({ successText: v })} area />
+          <div className="sm:col-span-2">
+            <Text label="Kode voucher (opsional)" value={s.voucherCode} onChange={(v) => set({ voucherCode: v.toUpperCase() })} placeholder="LANGGANAN10" hint="Tampil setelah berlangganan & dikirim ke email pelanggan. Buat dulu vouchernya di Penjualan → Voucher. Kosongkan bila tanpa voucher." />
+          </div>
+          <p className="text-xs text-muted-foreground sm:col-span-2">
+            Daftar email pelanggan: <Link href="/admin/langganan" target="_blank" className="underline">Pelanggan → Langganan Email</Link>. Letakkan bagian ini paling bawah agar menempel ke footer.
+          </p>
         </div>
       );
     case "custom":

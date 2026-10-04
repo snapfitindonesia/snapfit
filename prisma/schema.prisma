@@ -309,3 +309,28 @@ model CoinEntry {
   @@index([userId, createdAt])
   @@index([expiresAt])
 }
+
+/// Artikel / jurnal (Admin → Artikel). Isi = teks berformat ringan (lib/article-content.tsx), bukan HTML mentah.
+model Article {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  excerpt     String   @default("")
+  content     String   @default("")
+  coverImage  String?
+  author      String   @default("Tim SNAPFIT")
+  tags        String[] @default([])
+  published   Boolean  @default(false)
+  publishedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([published, publishedAt])
+}
+
+/// Pelanggan newsletter (bagian "Langganan" di beranda) — Admin → Langganan Email.
+model Subscriber {
+  email     String   @id
+  source    String   @default("beranda")
+  createdAt DateTime @default(now())
+}

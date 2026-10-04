@@ -51,5 +51,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // abaikan — sitemap tetap terbit
   }
 
-  return [...staticPages, ...landingPages, ...productPages];
+  // Artikel terbit.
+  let articlePages: MetadataRoute.Sitemap = [];
+  try {
+    const rows = await db.article.findMany({ where: { published: true, publishedAt: { lte: now } }, select: { slug: true, updatedAt: true } });
+    articlePages = rows.map((a) => ({ url: `${SITE}/artikel/${a.slug}`, lastModified: a.updatedAt, changeFrequency: "monthly" as const, priority: 0.6 }));
+    if (rows.length) articlePages.unshift({ url: `${SITE}/artikel`, lastModified: now, changeFrequency: "weekly", priority: 0.6 });
+  } catch {
+    // abaikan
+  }
+
+  return [...staticPages, ...landingPages, ...articlePages, ...productPages];
 }

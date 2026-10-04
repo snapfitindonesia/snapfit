@@ -55,7 +55,7 @@ export function RichText({ text, className }: { text: string; className?: string
 
 const TOKEN = /(\*\*[^*]+\*\*|\*[^*\s][^*]*\*|\[[^\]]+\]\([^)\s]+\))/g;
 
-function inline(s: string): ReactNode[] {
+export function inline(s: string): ReactNode[] {
   const out: ReactNode[] = [];
   let last = 0;
   for (const m of s.matchAll(TOKEN)) {

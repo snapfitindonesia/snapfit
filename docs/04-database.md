@@ -96,3 +96,8 @@ MagEasy, …); produk tanpa merek jelas → "SNAPFIT".
   file `db/snapfit-YYYY-MM-DD.json.gz` (±120KB), disimpan 30 hari (`lib/backup.ts`).
 - Mencakup semua tabel Prisma. **Tidak** mencakup akun Supabase Auth & file foto.
 - Restore: lihat [10-operasional](10-operasional.md#restore-database).
+
+## Artikel & langganan email (Okt 2026)
+- `Article` — jurnal/artikel (Admin → Tampilan Toko → Artikel). Isi = teks berformat ringan (`lib/article-content.tsx`: `## judul`, `- poin`, `> kutipan`, `![ket](foto)`, `**tebal**`). Publik: `/artikel`, `/artikel/<slug>` (ISR, JSON-LD BlogPosting, masuk sitemap). Tanggal terbit di masa depan = terjadwal.
+- `Subscriber` — email dari bagian beranda "Langganan email" (`lib/actions/newsletter.ts`, honeypot anti-bot, kode voucher dibaca dari pengaturan bagian di server). Admin → Pelanggan → Langganan Email (+ unduh CSV).
+- Bagian beranda baru (`lib/home/sections.ts`): `articles`, `testimonials` (ulasan ditulis admin, kolom berjalan CSS murni), `newsletter`.

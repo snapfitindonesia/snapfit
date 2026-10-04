@@ -516,3 +516,21 @@ export function welcomeEmail(opts: { name?: string | null; bonus: number; cashba
     }),
   };
 }
+
+/** Ke pelanggan newsletter baru (bagian "Langganan" beranda). Kode voucher opsional. */
+export function newsletterWelcomeEmail(opts: { voucherCode?: string; voucherNote?: string }) {
+  const code = (opts.voucherCode ?? "").trim();
+  return {
+    subject: code ? `Kode voucher-mu: ${code} 🎁` : "Terima kasih sudah berlangganan SNAPFIT 🎉",
+    html: shell({
+      preheader: code ? `Pakai kode ${code} saat checkout di snapfit.id.` : "Kamu akan jadi yang pertama tahu produk baru & promo SNAPFIT.",
+      greeting: "Terima kasih sudah bergabung!",
+      intro:
+        "Mulai sekarang kamu akan jadi yang pertama tahu produk baru, stok yang kembali tersedia, dan promo khusus pelanggan. Kami hanya mengirim yang penting — tanpa spam.",
+      body:
+        (code ? highlight("Kode voucher", code, opts.voucherNote || "Masukkan kode ini di kolom voucher saat checkout.") : "") +
+        button("Mulai Belanja", `${SITE}/produk`) +
+        note(`Ingin berhenti berlangganan? Cukup balas email ini dengan kata “berhenti”.`),
+    }),
+  };
+}

@@ -45,7 +45,7 @@ export default async function HomePage() {
   } catch {
     // pakai bawaan
   }
-  let data: HomeData = { products: {}, reviews: null, shots: [] };
+  let data: HomeData = { products: {}, reviews: null, shots: [], articles: [] };
   try {
     data = await loadHomeData(sections);
   } catch {

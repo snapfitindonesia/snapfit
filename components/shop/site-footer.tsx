@@ -30,6 +30,7 @@ const COLUMNS: { title: string; links: FooterLink[] }[] = [
     title: "SNAPFIT",
     links: [
       { label: "Tentang", href: "#" },
+      { label: "Artikel", href: "/artikel" },
       { label: "Kebijakan Privasi", href: "/privacy" },
       { label: "Syarat & Ketentuan", href: "/terms" },
     ],

@@ -151,6 +151,51 @@ export const customSchema = z.object({
   blocks: z.array(customBlock).max(8).default(() => [customBlock.parse({}), customBlock.parse({})]),
 });
 
+// Artikel terbaru (Admin → Artikel) — grid kartu ala "From the journal". Tersembunyi bila belum ada artikel.
+export const articlesSchema = z.object({
+  ...base,
+  type: z.literal("articles"),
+  eyebrow: text(60),
+  title: text(120),
+  subtitle: text(300),
+  limit: z.number().int().min(3).max(6).default(3),
+  ...cta,
+});
+
+// Ulasan pelanggan yang DITULIS ADMIN (bukan dari ulasan produk): kolom kartu berjalan vertikal.
+const testimonial = z.object({
+  name: text(60),
+  meta: text(80), // mis. "Case iPhone 17 Pro · Jakarta"
+  text: text(400),
+  rating: z.number().int().min(1).max(5).default(5),
+  avatar: img,
+  verified: z.boolean().default(true),
+});
+export const testimonialsSchema = z.object({
+  ...base,
+  type: z.literal("testimonials"),
+  eyebrow: text(60),
+  title: text(120),
+  subtitle: text(300),
+  // Baris kepercayaan di bawah judul: **tebal** didukung. Kosong = tak tampil.
+  trust: text(160),
+  items: z.array(testimonial).max(30).default([]),
+});
+
+// Langganan email (sebelum footer). Judul: bagian di antara *bintang* diberi warna gradasi.
+export const newsletterSchema = z.object({
+  ...base,
+  type: z.literal("newsletter"),
+  eyebrow: text(60),
+  title: text(120),
+  text: text(300),
+  placeholder: text(60),
+  buttonLabel: text(30),
+  perks: text(200), // satu keuntungan per baris (maks 4 tampil)
+  voucherCode: text(30), // opsional: ditampilkan & dikirim via email setelah berlangganan
+  successText: text(200),
+});
+
 export const sectionSchema = z.discriminatedUnion("type", [
   heroSchema,
   productsSchema,
@@ -162,6 +207,9 @@ export const sectionSchema = z.discriminatedUnion("type", [
   reviewsSchema,
   cardsSchema,
   customSchema,
+  articlesSchema,
+  testimonialsSchema,
+  newsletterSchema,
 ]);
 export const sectionsSchema = z.array(sectionSchema).max(30);
 
@@ -180,6 +228,9 @@ export const SECTION_INFO: Record<SectionType, { label: string; hint: string; wi
   community: { label: "Komunitas", hint: "Foto pelanggan bergeser ke samping. Tersembunyi bila belum ada foto.", wide: true },
   reviews: { label: "Banner ulasan", hint: "Angka ulasan asli. Tersembunyi bila belum ada ulasan.", wide: true },
   cards: { label: "Kartu info", hint: "2–4 kartu bergambar (Tentang, Garansi, dll).", wide: false },
+  articles: { label: "Artikel terbaru", hint: "Kartu artikel terbaru dari Admin → Artikel. Tersembunyi bila belum ada artikel.", wide: false },
+  testimonials: { label: "Ulasan pelanggan (berjalan)", hint: "Kartu ulasan yang Anda tulis sendiri, berjalan naik-turun. Tersembunyi bila belum ada ulasan.", wide: true },
+  newsletter: { label: "Langganan email", hint: "Form email + kode voucher opsional. Letakkan paling bawah (sebelum footer).", wide: true },
   custom: { label: "Blok Custom", hint: "Susun sendiri: 1–4 kolom berisi foto, judul, teks, tombol + warna latar & gaya.", wide: false },
 };
 
@@ -187,8 +238,35 @@ export const newId = () => Math.random().toString(36).slice(2, 10);
 
 /** Bagian kosong per jenis (tombol "Tambah bagian" di admin). */
 export function blankSection(type: SectionType): HomeSection {
-  return sectionSchema.parse({ id: newId(), type });
+  return sectionSchema.parse({ id: newId(), type, ...(PRESETS[type] ?? {}) });
 }
+
+/** Isi awal bagian baru (teks draf — ubah di editor). */
+const PRESETS: Partial<Record<SectionType, Record<string, unknown>>> = {
+  articles: {
+    eyebrow: "Dari jurnal SNAPFIT",
+    title: "Belanja lebih cerdas. Baca lebih dalam.",
+    subtitle: "Panduan memilih case & aksesori, ditulis oleh tim yang memakainya setiap hari.",
+    ctaLabel: "Lihat semua artikel",
+    ctaHref: "/artikel",
+  },
+  testimonials: {
+    eyebrow: "Cerita pelanggan",
+    title: "Disukai oleh yang memakainya.",
+    subtitle: "Ulasan jujur dari pembeli SNAPFIT di seluruh Indonesia.",
+    trust: "",
+    items: [],
+  },
+  newsletter: {
+    eyebrow: "Gabung jadi orang dalam",
+    title: "Dapatkan *voucher spesial* untuk pesanan pertamamu.",
+    text: "Tinggalkan email — kami kabari produk baru, stok yang kembali tersedia, dan promo khusus pelanggan. Berhenti kapan saja.",
+    placeholder: "email@kamu.com",
+    buttonLabel: "Langganan",
+    perks: "Voucher pesanan pertama\nAkses awal produk baru\nTanpa spam",
+    successText: "Terima kasih! Cek email-mu ya.",
+  },
+};
 
 /**
  * Isi bawaan (sebelum admin menyimpan apa pun). Teks = DRAF untuk direvisi client;

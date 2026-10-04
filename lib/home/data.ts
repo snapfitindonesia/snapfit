@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { productPath } from "@/lib/product-url";
 import { getProducts, getFeaturedProducts, type ProductListItem } from "@/lib/actions/product";
 import { DEFAULT_SECTIONS, sectionsSchema, type HomeSection } from "@/lib/home/sections";
+import { getPublishedArticles, type ArticleCardData } from "@/lib/articles";
 
 export const HOME_KEY = "home.sections";
 export const HOME_TAG = "home-sections";
@@ -35,6 +36,7 @@ export type HomeData = {
   products: Record<string, ProductListItem[]>; // per id bagian "products"
   reviews: ReviewStats | null;
   shots: ReviewShot[];
+  articles: ArticleCardData[];
 };
 
 async function productsFor(s: Extract<HomeSection, { type: "products" }>): Promise<ProductListItem[]> {
@@ -48,8 +50,9 @@ export async function loadHomeData(sections: HomeSection[]): Promise<HomeData> {
   const active = sections.filter((s) => s.active);
   const needReviews = active.some((s) => s.type === "reviews");
   const needShots = active.some((s) => s.type === "community" && s.source === "ulasan");
+  const articleLimit = Math.max(0, ...active.map((s) => (s.type === "articles" ? s.limit : 0)));
 
-  const [productEntries, reviews, shots] = await Promise.all([
+  const [productEntries, reviews, shots, articles] = await Promise.all([
     Promise.all(
       active
         .filter((s): s is Extract<HomeSection, { type: "products" }> => s.type === "products")
@@ -57,8 +60,9 @@ export async function loadHomeData(sections: HomeSection[]): Promise<HomeData> {
     ),
     needReviews ? reviewStats().catch(() => null) : null,
     needShots ? reviewShots().catch(() => []) : [],
+    articleLimit ? getPublishedArticles(articleLimit).catch(() => []) : [],
   ]);
-  return { products: Object.fromEntries(productEntries), reviews, shots };
+  return { products: Object.fromEntries(productEntries), reviews, shots, articles };
 }
 
 async function reviewStats(): Promise<ReviewStats> {

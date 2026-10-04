@@ -1,5 +1,8 @@
 import Link from "next/link";
-import { ArrowRight, Star } from "lucide-react";
+import { ArrowRight, Check, Star } from "lucide-react";
+import { ArticleGrid } from "@/components/articles/article-card";
+import { Testimonials } from "@/components/home/testimonials";
+import { NewsletterForm } from "@/components/home/newsletter-form";
 import { cn } from "@/lib/utils";
 import Image from "@/components/ui/image";
 import { ProductCard } from "@/components/shop/product-card";
@@ -524,6 +527,92 @@ function Custom({ s, tightPrev = false, tightNext = false }: { s: SectionOf<"cus
   );
 }
 
+/* --------------------- ARTIKEL & LANGGANAN (ala Omnix) -------------------- */
+
+/** Garis kecil + teks kapital di atas judul (eyebrow ala Omnix). */
+function LineEyebrow({ children, dark = false }: { children: React.ReactNode; dark?: boolean }) {
+  if (!children) return null;
+  return (
+    <p
+      className={cn(
+        "mb-3.5 inline-flex items-center gap-2 text-xs font-semibold tracking-[0.12em] uppercase before:h-0.5 before:w-[22px] before:rounded-[2px]",
+        dark ? "text-[#fdba74] before:bg-[#fdba74]" : "text-brand-ink before:bg-brand",
+      )}
+    >
+      {children}
+    </p>
+  );
+}
+
+const H2_OMNIX = "text-[30px] leading-[1.12] font-semibold tracking-[-0.015em] text-balance sm:text-[34px] lg:text-[48px]";
+
+function Articles({ s, data }: { s: SectionOf<"articles">; data: HomeData }) {
+  const items = data.articles.slice(0, s.limit);
+  if (!items.length) return null;
+  return (
+    <section className={cn(WRAP, "cv-auto py-[60px] [--cv-h:900px] sm:py-20 lg:py-[110px]")}>
+      <div className="mb-9 flex flex-col items-start gap-4 md:flex-row md:items-end md:justify-between md:gap-[30px] lg:mb-[50px]">
+        <div className="max-w-[640px]">
+          <LineEyebrow>{s.eyebrow}</LineEyebrow>
+          {s.title && <h2 className={cn(H2_OMNIX, "mb-3.5")}>{s.title}</h2>}
+          {s.subtitle && <p className="text-[17px] leading-[1.65] text-foreground/75">{s.subtitle}</p>}
+        </div>
+        {s.ctaLabel && s.ctaHref && (
+          <Link
+            href={s.ctaHref}
+            className="inline-flex shrink-0 items-center gap-2 border-b-2 border-foreground pb-1 text-[14.5px] font-semibold transition-all duration-200 ease-[cubic-bezier(.2,.8,.2,1)] hover:gap-3 hover:border-brand-ink hover:text-brand-ink"
+          >
+            {s.ctaLabel}
+            <ArrowRight className="size-3.5" strokeWidth={2.4} aria-hidden />
+          </Link>
+        )}
+      </div>
+      <ArticleGrid items={items} />
+    </section>
+  );
+}
+
+function Newsletter({ s }: { s: SectionOf<"newsletter"> }) {
+  // *teks* di judul → gradasi oranye (pengganti biru→cyan referensi, mengikuti warna brand).
+  const title = s.title.split(/(\*[^*]+\*)/g);
+  const perks = s.perks.split(/\r?\n/).map((p) => p.trim()).filter(Boolean).slice(0, 4);
+  return (
+    <section
+      data-newsletter
+      className="overflow-hidden bg-[radial-gradient(900px_460px_at_90%_10%,rgb(242_101_34/0.22),transparent_60%),radial-gradient(700px_380px_at_0%_100%,rgb(251_191_36/0.14),transparent_60%)] bg-[#0b0a09] py-[70px] text-center text-white sm:py-[100px]"
+    >
+      <div className="mx-auto max-w-[720px] px-4 sm:px-6">
+        <LineEyebrow dark>{s.eyebrow}</LineEyebrow>
+        {s.title && (
+          <h2 className={cn(H2_OMNIX, "mb-3.5 text-white")}>
+            {title.map((p, i) =>
+              p.length > 2 && p.startsWith("*") && p.endsWith("*") ? (
+                <span key={i} className="bg-gradient-to-r from-[#f26522] to-[#fbbf24] bg-clip-text text-transparent">
+                  {p.slice(1, -1)}
+                </span>
+              ) : (
+                p
+              ),
+            )}
+          </h2>
+        )}
+        {s.text && <p className="mb-8 text-base text-white/72 sm:text-[17px]">{s.text}</p>}
+        <NewsletterForm sectionId={s.id} placeholder={s.placeholder} buttonLabel={s.buttonLabel} successText={s.successText} />
+        {perks.length > 0 && (
+          <ul className="mt-7 flex flex-wrap items-center justify-center gap-x-7 gap-y-2.5">
+            {perks.map((p) => (
+              <li key={p} className="inline-flex items-center gap-1.5 text-[13px] text-white/70">
+                <Check className="size-3.5 text-[#fdba74]" strokeWidth={2.4} aria-hidden />
+                {p}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </section>
+  );
+}
+
 /* ------------------------------ RENDER ------------------------------- */
 
 /** Render semua bagian aktif berurutan. Bagian tanpa isi/data otomatis tak tampil. */
@@ -556,6 +645,12 @@ export function HomeSections({ sections, data }: { sections: HomeSection[]; data
             return <Cards key={s.id} s={s} />;
           case "custom":
             return <Custom key={s.id} s={s} tightPrev={i > 0 && isTight(active[i - 1])} tightNext={isTight(active[i + 1])} />;
+          case "articles":
+            return <Articles key={s.id} s={s} data={data} />;
+          case "testimonials":
+            return <Testimonials key={s.id} s={s} />;
+          case "newsletter":
+            return <Newsletter key={s.id} s={s} />;
         }
       })}
     </>
