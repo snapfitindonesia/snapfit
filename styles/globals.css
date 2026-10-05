@@ -58,7 +58,7 @@
   /* Tinggi bilah atas (announcement + header mengambang) — dipakai hero full-bleed beranda
      untuk masuk ke belakangnya (components/home/home-sections.tsx). SAMAKAN dengan komponennya. */
   --announce-h: 2.5rem;
-  --nav-h: 4.25rem; /* pt 0.625rem + kapsul 3.5rem (+ sedikit) */
+  --nav-h: 3.5rem; /* bilah header 56px (components/shop/header-nav.tsx) */
   --background: #fffefa; /* latar situs (krem sangat muda, permintaan client Okt 2026) */
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -161,7 +161,7 @@ html:has([data-hero-overlay]) [data-announce] {
 }
 @media (min-width: 1024px) {
   :root {
-    --nav-h: 5rem; /* pt 0.625rem + kapsul 70px */
+    --nav-h: 70px; /* bilah header desktop */
   }
 }
 

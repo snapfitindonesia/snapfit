@@ -22,6 +22,13 @@ export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaM
   const [activeBrand, setActiveBrand] = useState(0); // brand aktif di panel kanan
   const [activeMerek, setActiveMerek] = useState(0); // merek aktif di panel kanan
   const [mobileOpen, setMobileOpen] = useState(false); // drawer mobile
+  const [scrolled, setScrolled] = useState(false); // sudah di-scroll → garis bawah berganti bayangan
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
   const [openMenuIds, setOpenMenuIds] = useState<Set<string>>(new Set()); // accordion menu mobile
   const [openBrandKeys, setOpenBrandKeys] = useState<Set<string>>(new Set()); // accordion brand mobile
   const toggleMenu = (id: string) => setOpenMenuIds((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
@@ -113,13 +120,21 @@ export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaM
   }
 
   return (
-    // Kapsul mengambang gaya Nomad, sedikit LEBIH SEMPIT dari kolom isi situs (maks 1440px) — menjorok 8/16/40px
-    // dari tepi hero agar tak terlihat "sejajar tanggung"; tinggi 70px di desktop. Tinggi total (pt + kapsul) = --nav-h di styles/globals.css.
-    <div className="sticky top-0 z-40 pt-2.5">
-      <div className="mx-auto max-w-[90rem] px-4 sm:px-6 lg:px-10">
-        <div className="relative mx-2 sm:mx-4 lg:mx-10">
-          {/* Bar mengambang */}
-          <div className="relative flex h-14 items-center gap-3 rounded-[5px] bg-background px-4 shadow-[0_0_0_1px_rgba(0,0,0,.06),0_1px_1px_-.5px_rgba(0,0,0,.06),0_3px_3px_-1.5px_rgba(0,0,0,.06),0_6px_6px_-3px_rgba(0,0,0,.06),0_12px_12px_-6px_rgba(0,0,0,.06),0_24px_24px_-12px_rgba(0,0,0,.06)] sm:px-6 lg:h-[70px] lg:rounded-[5px] lg:px-8">
+    // Bilah penuh selebar layar (isi sejajar kolom situs, maks 1440px), menempel di atas saat scroll.
+    // Latar semi-transparan + blur; di paling atas bergaris tipis, setelah di-scroll berganti bayangan lembut.
+    // Tinggi 56px (HP) / 70px (desktop) = --nav-h di styles/globals.css.
+    <div className="sticky top-0 z-40">
+      {/* Lapisan latar terpisah: backdrop-filter di elemen induk akan "mengurung" overlay fixed di dalam header */}
+      <div
+        aria-hidden
+        className={cn(
+          "absolute inset-0 border-b bg-background/80 backdrop-blur-xl backdrop-saturate-150 transition-[box-shadow,border-color] duration-300",
+          scrolled ? "border-transparent shadow-[0_10px_30px_-12px_rgba(0,0,0,0.18)]" : "border-border",
+        )}
+      />
+      <div className="relative mx-auto max-w-[90rem] px-4 sm:px-6 lg:px-10">
+        <div className="relative">
+          <div className="relative flex h-14 items-center gap-3 lg:h-[70px]">
             {/* Hamburger (mobile) */}
             <button
               type="button"
