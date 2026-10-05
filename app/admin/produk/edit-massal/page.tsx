@@ -9,7 +9,7 @@ export default async function BulkEditPage() {
   const products = await db.product.findMany({
     orderBy: { createdAt: "desc" },
     select: {
-      id: true, name: true, brand: true,
+      id: true, name: true, brand: true, description: true,
       variants: {
         orderBy: [{ color: "asc" }, { price: "asc" }],
         select: { id: true, color: true, type: true, sku: true, price: true, stock: true, weight: true, name: true },
@@ -18,7 +18,7 @@ export default async function BulkEditPage() {
   });
 
   const rows: EditRow[] = products.flatMap((p) =>
-    p.variants.map((v) => ({
+    p.variants.map((v, i) => ({
       variantId: v.id,
       productId: p.id,
       nama_produk: p.name,
@@ -28,6 +28,7 @@ export default async function BulkEditPage() {
       harga: v.price,
       stok: v.stock,
       berat: v.weight,
+      deskripsi: i === 0 ? (p.description ?? "") : "",
     })),
   );
 

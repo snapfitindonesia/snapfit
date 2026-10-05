@@ -16,9 +16,10 @@ export type EditRow = {
   harga: number;
   stok: number;
   berat: number;
+  deskripsi: string; // hanya terisi di baris PERTAMA tiap produk (baris lain kosong = tidak diubah)
 };
 
-const HEADERS = ["variantId", "productId", "nama_produk", "brand", "varian", "sku", "harga", "stok", "berat"] as const;
+const HEADERS = ["variantId", "productId", "nama_produk", "brand", "varian", "sku", "harga", "stok", "berat", "deskripsi"] as const;
 
 // Pemisah kolom file unduhan: titik koma — Excel berbahasa Indonesia langsung membukanya sebagai
 // tabel (pemisah daftar Windows ID = ";"). Upload menerima ; , atau Tab (dideteksi dari baris judul),
@@ -73,7 +74,7 @@ export function BulkEdit({ rows }: { rows: EditRow[] }) {
 
   function download() {
     const body = rows
-      .map((r) => [r.variantId, r.productId, r.nama_produk, r.brand, r.varian, r.sku, r.harga, r.stok, r.berat].map(cell).join(SEP))
+      .map((r) => [r.variantId, r.productId, r.nama_produk, r.brand, r.varian, r.sku, r.harga, r.stok, r.berat, r.deskripsi].map(cell).join(SEP))
       .join("\n");
     const csv = HEADERS.join(SEP) + "\n" + body + "\n";
     // BOM agar Excel baca UTF-8 dengan benar.
@@ -125,7 +126,7 @@ export function BulkEdit({ rows }: { rows: EditRow[] }) {
           <li><b>Jangan ubah</b> kolom <code>variantId</code> &amp; <code>productId</code> — itu kunci pencocokan. Kolom <code>varian</code> hanya acuan.</li>
           <li>Simpan tetap sebagai <b>CSV</b> (Excel: File → Save, pilih <i>Keep current format</i>), lalu upload di bawah &amp; klik Terapkan. Pemisah titik koma, koma, atau Tab semuanya terbaca.</li>
         </ol>
-        <p className="mt-2 text-xs text-muted-foreground">Kosongkan sel <code>brand</code> = hapus merek produk. Sel <code>harga/stok</code> kosong = tidak diubah.</p>
+        <p className="mt-2 text-xs text-muted-foreground">Kosongkan sel <code>brand</code> = hapus merek produk. Sel <code>harga/stok</code> kosong = tidak diubah. Kolom <code>deskripsi</code> (paling kanan) hanya terisi di baris pertama tiap produk — edit di situ; sel kosong = deskripsi tidak diubah. Ganti baris di dalam sel Excel: <kbd>Alt+Enter</kbd>.</p>
         <div className="mt-4 flex flex-wrap gap-2">
           <Button type="button" variant="outline" size="sm" onClick={download}>
             <Download className="size-4" /> Unduh CSV ({rows.length} varian)

@@ -297,6 +297,7 @@ export type BulkEditRow = {
   harga?: string;
   stok?: string;
   berat?: string;
+  deskripsi?: string; // kosong = tidak diubah
 };
 
 const toInt = (s?: string) => {
@@ -320,7 +321,7 @@ export async function bulkUpdateProducts(
   let variantsUpdated = 0;
   let skipped = 0;
   const errors: string[] = [];
-  const productFields = new Map<string, { name?: string; brand?: string | null }>();
+  const productFields = new Map<string, { name?: string; brand?: string | null; description?: string }>();
 
   for (const r of rows) {
     const vid = r.variantId?.trim();
@@ -346,18 +347,20 @@ export async function bulkUpdateProducts(
       const pf = productFields.get(pid) ?? {};
       if (r.nama_produk !== undefined && r.nama_produk.trim() !== "") pf.name = r.nama_produk.trim();
       if (r.brand !== undefined) pf.brand = r.brand.trim() || null;
+      if (r.deskripsi !== undefined && r.deskripsi.trim() !== "") pf.description = r.deskripsi.replace(/\r\n?/g, "\n").trim();
       productFields.set(pid, pf);
     }
   }
 
   let productsUpdated = 0;
   for (const [pid, pf] of productFields) {
-    const d: { name?: string; brand?: string | null; slug?: string } = {};
+    const d: { name?: string; brand?: string | null; slug?: string; description?: string } = {};
     if (pf.name !== undefined) {
       d.name = pf.name;
       d.slug = await slugForName(pf.name, pid); // teks URL ikut judul baru (ID tetap; URL lama dialihkan)
     }
     if (pf.brand !== undefined) d.brand = pf.brand;
+    if (pf.description !== undefined) d.description = pf.description;
     if (Object.keys(d).length) {
       try {
         await db.product.update({ where: { id: pid }, data: d });
@@ -370,6 +373,7 @@ export async function bulkUpdateProducts(
 
   revalidatePath("/admin/produk");
   revalidateStorefront();
+  if (productsUpdated) revalidatePath("/produk/[slug]", "page"); // judul/deskripsi baru langsung tampil di PDP
   return { ok: true, variantsUpdated, productsUpdated, skipped, errors };
 }
 
