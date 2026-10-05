@@ -6,7 +6,7 @@ import Link from "next/link";
 export function AnnouncementBar() {
   return (
     <div data-announce className="relative z-30 flex h-(--announce-h) items-center bg-foreground text-background">
-      <div className="mx-auto w-full max-w-[100rem] truncate px-4 text-center text-xs font-semibold sm:text-sm lg:px-10">
+      <div className="mx-auto w-full max-w-[90rem] truncate px-4 text-center text-xs font-semibold sm:text-sm lg:px-10">
         <span className="sm:hidden">Voucher ongkir s/d Rp20rb ·{" "}</span>
         <span className="hidden sm:inline">Voucher GRATISONGKIR: potongan ongkir s/d Rp20rb, min. belanja Rp150rb ·{" "}</span>
         <Link href="/produk" className="underline underline-offset-2">

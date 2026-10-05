@@ -16,10 +16,10 @@ import type { HomeData } from "@/lib/home/data";
 /*
  * Beranda "bercerita" (referensi: Nomad). Lebar gabungan: hero, banner cerita, komunitas &
  * banner ulasan SELEBAR LAYAR; deretan produk, kategori, blok gambar+teks & kartu dibatasi
- * max-w-[100rem] (1600px). Bagian di bawah layar pertama memakai cv-auto (render ditunda sampai dekat).
+ * max-w-[90rem] (1440px). Bagian di bawah layar pertama memakai cv-auto (render ditunda sampai dekat).
  */
 
-const WRAP = "mx-auto max-w-[100rem] px-4 sm:px-6 lg:px-10";
+const WRAP = "mx-auto max-w-[90rem] px-4 sm:px-6 lg:px-10";
 // Baris geser: di HP/tablet menembus tepi layar (kartu berikut mengintip); di desktop tetap di
 // dalam kolom isi agar halaman simetris (menembus kanan di layar lebar terlihat berat sebelah).
 const BLEED = "-mx-4 px-4 scroll-px-4 sm:-mx-6 sm:px-6 sm:scroll-px-6 lg:mx-0 lg:px-0 lg:scroll-px-0";
@@ -85,7 +85,7 @@ function Hero({ s, first, tightNext = false }: { s: SectionOf<"hero">; first: bo
   const dark = s.theme === "gelap";
   const Heading = first ? "h1" : "h2";
   if (s.mode === "foto" && s.image) {
-    // Hero di dalam kolom isi situs (maks 1600px, sejajar header kapsul & bagian lain), sudut membulat
+    // Hero di dalam kolom isi situs (maks 1440px, sejajar header kapsul & bagian lain), sudut membulat
     // seperti kapsul header, di BAWAH header. Teks: desktop kiri-tengah, HP rata tengah di atas.
     // Badge → subjudul → judul besar → tombol pil.
     const light = s.theme === "terang";
@@ -330,7 +330,7 @@ function Community({ s, data }: { s: SectionOf<"community">; data: HomeData }) {
                   src={x.image}
                   alt={alt}
                   fill
-                  sizes="(min-width: 1600px) 280px, (min-width: 1024px) 18vw, (min-width: 640px) 30vw, 44vw"
+                  sizes="(min-width: 1440px) 250px, (min-width: 1024px) 18vw, (min-width: 640px) 30vw, 44vw"
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
                 />
               </span>
@@ -429,7 +429,7 @@ const SLIDE_COLS: Record<string, string> = { "1": "", "2": "lg:grid-cols-2", "3"
 const PAD: Record<string, string> = { sm: "py-8 sm:py-10", md: "py-12 sm:py-16", lg: "py-16 sm:py-24" };
 // Lebar foto tiap kolom (atribut sizes) agar varian CDN yang diunduh pas.
 const SIZES: Record<string, string> = {
-  "1": "(min-width: 1600px) 1520px, 100vw",
+  "1": "(min-width: 1440px) 1360px, 100vw",
   "2": "(min-width: 640px) 50vw, 100vw",
   "3": "(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw",
   "4": "(min-width: 1024px) 25vw, 50vw",

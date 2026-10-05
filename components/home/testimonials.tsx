@@ -8,7 +8,7 @@ export function Testimonials({ s }: { s: SectionOf<"testimonials"> }) {
   const trust = s.trust.split(/(\*\*[^*]+\*\*)/g);
   return (
     <section className={`cv-auto relative overflow-hidden py-[72px] [--cv-h:900px] sm:py-24 lg:pt-[110px] lg:pb-[120px] ${s.sectionBg ? "" : "bg-muted"}`}>
-      <div className="mx-auto max-w-[100rem] px-4 sm:px-6 lg:px-10">
+      <div className="mx-auto max-w-[90rem] px-4 sm:px-6 lg:px-10">
         <div className="relative z-[2] mx-auto mb-14 max-w-[720px] text-center">
           {s.eyebrow && (
             <div className="mb-[22px] inline-flex items-center gap-[9px] rounded-[5px] border border-foreground/[0.08] bg-card py-[7px] pr-3.5 pl-[11px] text-[11.5px] font-bold tracking-[0.06em] uppercase shadow-[0_1px_2px_rgba(15,23,42,0.04)]">

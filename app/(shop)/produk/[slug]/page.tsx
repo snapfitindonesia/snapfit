@@ -163,7 +163,7 @@ export default async function ProductDetailPage({
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       {/* Above-fold: kartu putih mengambang di atas latar abu-abu (ala Nomad) */}
       <section className="bg-muted/40">
-        <div className="mx-auto max-w-[100rem] px-4 py-8 sm:px-6 lg:px-10 sm:py-12">
+        <div className="mx-auto max-w-[90rem] px-4 py-8 sm:px-6 lg:px-10 sm:py-12">
           <PdpView
             product={pdpProduct}
             vouchers={vouchers.map((v) => ({ code: v.code, label: v.label, minPurchase: v.minPurchase }))}
@@ -174,7 +174,7 @@ export default async function ProductDetailPage({
         </div>
       </section>
 
-      <div className="mx-auto max-w-[100rem] px-4 sm:px-6 lg:px-10">
+      <div className="mx-auto max-w-[90rem] px-4 sm:px-6 lg:px-10">
         {related.length > 0 && (
           <section className="mt-16">
             <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">

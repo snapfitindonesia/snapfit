@@ -24,7 +24,7 @@ export async function ProductListPage({ params = {} }: { params?: ListParams }) 
   ]);
 
   return (
-    <div className="mx-auto max-w-[100rem] px-4 py-8 sm:px-6 lg:px-10 sm:py-12">
+    <div className="mx-auto max-w-[90rem] px-4 py-8 sm:px-6 lg:px-10 sm:py-12">
       <header className="mb-8">
         <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
           Semua Produk

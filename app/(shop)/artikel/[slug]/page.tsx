@@ -102,7 +102,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
       </div>
 
       {others.length > 0 && (
-        <section className="mx-auto mt-20 max-w-[100rem] px-4 sm:px-6 lg:px-10">
+        <section className="mx-auto mt-20 max-w-[90rem] px-4 sm:px-6 lg:px-10">
           <h2 className="mb-8 text-2xl font-semibold tracking-tight sm:text-3xl">Artikel lainnya</h2>
           <ArticleGrid items={others} />
         </section>

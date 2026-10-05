@@ -22,7 +22,7 @@ export default async function ArticlesPage({ searchParams }: { searchParams: Pro
   const pages = Math.max(1, Math.ceil(total / PER_PAGE));
 
   return (
-    <div className="mx-auto max-w-[100rem] px-4 py-12 sm:px-6 sm:py-16 lg:px-10">
+    <div className="mx-auto max-w-[90rem] px-4 py-12 sm:px-6 sm:py-16 lg:px-10">
       <div className="mb-9 max-w-[640px] sm:mb-12">
         <p className="mb-3.5 inline-flex items-center gap-2 text-xs font-semibold tracking-[0.12em] text-brand-ink uppercase before:h-0.5 before:w-[22px] before:rounded-[2px] before:bg-brand">
           Jurnal SNAPFIT
