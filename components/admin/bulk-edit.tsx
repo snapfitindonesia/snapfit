@@ -20,13 +20,30 @@ export type EditRow = {
 
 const HEADERS = ["variantId", "productId", "nama_produk", "brand", "varian", "sku", "harga", "stok", "berat"] as const;
 
-// Bungkus sel CSV bila mengandung koma/kutip/baris baru.
+// Pemisah kolom file unduhan: titik koma — Excel berbahasa Indonesia langsung membukanya sebagai
+// tabel (pemisah daftar Windows ID = ";"). Upload menerima ; , atau Tab (dideteksi dari baris judul),
+// jadi file yang disimpan ulang dari Excel/Google Sheets mana pun tetap terbaca.
+const SEP = ";";
+
+// Bungkus sel bila mengandung pemisah/kutip/baris baru.
 function cell(v: string | number): string {
   const s = String(v ?? "");
-  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  return /[";,\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
-function parseCSV(text: string): string[][] {
+/** Pemisah dari baris judul: yang paling sering muncul di antara ; , dan Tab. */
+function detectSep(text: string): string {
+  const first = text.split(/\r?\n/, 1)[0] ?? "";
+  const count = (ch: string) => first.split(ch).length - 1;
+  return [";", ",", "\t"].sort((a, b) => count(b) - count(a))[0]!;
+}
+
+function parseCSV(input: string): string[][] {
+  // Buang BOM & baris "sep=;" (penanda pemisah gaya Excel) bila ada.
+  let text = input.replace(/^﻿/, "");
+  const sepLine = text.match(/^sep=(.)\r?\n/i);
+  const sep = sepLine ? sepLine[1]! : detectSep(text);
+  if (sepLine) text = text.slice(sepLine[0].length);
   const rows: string[][] = [];
   let row: string[] = [];
   let cur = "";
@@ -38,7 +55,7 @@ function parseCSV(text: string): string[][] {
       else cur += c;
     } else {
       if (c === '"') q = true;
-      else if (c === ",") { row.push(cur); cur = ""; }
+      else if (c === sep) { row.push(cur); cur = ""; }
       else if (c === "\n") { row.push(cur); rows.push(row); row = []; cur = ""; }
       else if (c === "\r") { /* skip */ }
       else cur += c;
@@ -56,9 +73,9 @@ export function BulkEdit({ rows }: { rows: EditRow[] }) {
 
   function download() {
     const body = rows
-      .map((r) => [r.variantId, r.productId, r.nama_produk, r.brand, r.varian, r.sku, r.harga, r.stok, r.berat].map(cell).join(","))
+      .map((r) => [r.variantId, r.productId, r.nama_produk, r.brand, r.varian, r.sku, r.harga, r.stok, r.berat].map(cell).join(SEP))
       .join("\n");
-    const csv = HEADERS.join(",") + "\n" + body + "\n";
+    const csv = HEADERS.join(SEP) + "\n" + body + "\n";
     // BOM agar Excel baca UTF-8 dengan benar.
     const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
     const a = document.createElement("a");
@@ -106,7 +123,7 @@ export function BulkEdit({ rows }: { rows: EditRow[] }) {
           <li><b>Unduh CSV</b> berisi semua varian ({rows.length} baris) → buka di Excel/Google Sheets.</li>
           <li>Edit kolom <code>harga</code>, <code>stok</code>, <code>sku</code>, <code>berat</code> (per varian) atau <code>nama_produk</code>/<code>brand</code> (per produk).</li>
           <li><b>Jangan ubah</b> kolom <code>variantId</code> &amp; <code>productId</code> — itu kunci pencocokan. Kolom <code>varian</code> hanya acuan.</li>
-          <li>Simpan sebagai <b>CSV</b>, lalu upload di bawah &amp; klik Terapkan.</li>
+          <li>Simpan tetap sebagai <b>CSV</b> (Excel: File → Save, pilih <i>Keep current format</i>), lalu upload di bawah &amp; klik Terapkan. Pemisah titik koma, koma, atau Tab semuanya terbaca.</li>
         </ol>
         <p className="mt-2 text-xs text-muted-foreground">Kosongkan sel <code>brand</code> = hapus merek produk. Sel <code>harga/stok</code> kosong = tidak diubah.</p>
         <div className="mt-4 flex flex-wrap gap-2">
