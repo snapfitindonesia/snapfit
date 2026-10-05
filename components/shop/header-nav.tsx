@@ -113,11 +113,11 @@ export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaM
   }
 
   return (
-    // Kapsul mengambang gaya Nomad, selebar kolom isi situs (maks 1440px, tepi sama dengan isi
-    // halaman), tinggi 70px di desktop. Tinggi total (pt + kapsul) = --nav-h di styles/globals.css.
+    // Kapsul mengambang gaya Nomad, sedikit LEBIH SEMPIT dari kolom isi situs (maks 1440px) — menjorok 8/16/40px
+    // dari tepi hero agar tak terlihat "sejajar tanggung"; tinggi 70px di desktop. Tinggi total (pt + kapsul) = --nav-h di styles/globals.css.
     <div className="sticky top-0 z-40 pt-2.5">
       <div className="mx-auto max-w-[90rem] px-4 sm:px-6 lg:px-10">
-        <div className="relative">
+        <div className="relative mx-2 sm:mx-4 lg:mx-10">
           {/* Bar mengambang */}
           <div className="relative flex h-14 items-center gap-3 rounded-[5px] bg-background px-4 shadow-[0_0_0_1px_rgba(0,0,0,.06),0_1px_1px_-.5px_rgba(0,0,0,.06),0_3px_3px_-1.5px_rgba(0,0,0,.06),0_6px_6px_-3px_rgba(0,0,0,.06),0_12px_12px_-6px_rgba(0,0,0,.06),0_24px_24px_-12px_rgba(0,0,0,.06)] sm:px-6 lg:h-[70px] lg:rounded-[5px] lg:px-8">
             {/* Hamburger (mobile) */}
