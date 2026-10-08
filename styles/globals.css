@@ -227,3 +227,14 @@ main:has(> [data-newsletter]:last-child) + footer {
   --brand-ink: #b93f0e;
   color: var(--foreground);
 }
+
+/* iPhone/iPad: Safari otomatis memperbesar halaman saat kolom isian berhuruf < 16px diketuk.
+   Di layar sentuh semua kolom isian 16px → tak ada auto-zoom; pinch-zoom tetap bisa (aksesibilitas).
+   Sengaja di luar @layer agar menang atas utilitas text-sm/text-xs. */
+@media (hover: none) and (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
