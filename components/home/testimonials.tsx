@@ -1,4 +1,6 @@
 import type { SectionOf } from "@/lib/home/sections";
+import { cn } from "@/lib/utils";
+import { TYPE } from "@/lib/typography";
 import { Stars, TestimonialsMarquee } from "@/components/home/testimonials-marquee";
 
 // Ulasan pelanggan (ditulis admin) — kepala bagian di server, kolom berjalan di testimonials-marquee.tsx.
@@ -17,9 +19,9 @@ export function Testimonials({ s }: { s: SectionOf<"testimonials"> }) {
             </div>
           )}
           {s.title && (
-            <h2 className="mb-4 text-[30px] leading-[1.12] font-semibold tracking-[-0.015em] text-balance sm:text-[34px] lg:text-[48px]">{s.title}</h2>
+            <h2 className={cn(TYPE.h2, "mb-4")}>{s.title}</h2>
           )}
-          {s.subtitle && <p className="mx-auto mb-5 max-w-[560px] text-[15px] leading-[1.6] text-muted-foreground">{s.subtitle}</p>}
+          {s.subtitle && <p className={cn(TYPE.sub, "mx-auto mb-5 max-w-[560px] text-muted-foreground")}>{s.subtitle}</p>}
           {s.trust && (
             <p className="inline-flex flex-wrap items-center justify-center gap-x-3.5 gap-y-1 text-sm text-foreground/75">
               <Stars n={5} className="text-base" />

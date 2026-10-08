@@ -9,6 +9,7 @@ import {
   getProductReviews,
 } from "@/lib/actions/product";
 import { PdpView, type PdpProduct } from "@/components/shop/pdp-view";
+import { TYPE } from "@/lib/typography";
 import { ProductCard } from "@/components/shop/product-card";
 import { ProductReviews } from "@/components/shop/product-reviews";
 import { getActiveVouchers } from "@/lib/actions/voucher";
@@ -177,7 +178,7 @@ export default async function ProductDetailPage({
       <div className="mx-auto max-w-[90rem] px-4 sm:px-6 lg:px-10">
         {related.length > 0 && (
           <section className="mt-16">
-            <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">
+            <h2 className={TYPE.h2}>
               Mungkin kamu butuhkan
             </h2>
             <div className="mt-6 grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">

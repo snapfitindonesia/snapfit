@@ -1,6 +1,8 @@
 import Link from "next/link";
 import Image from "@/components/ui/image";
 import { formatArticleDate, type ArticleCardData } from "@/lib/articles";
+import { cn } from "@/lib/utils";
+import { TYPE } from "@/lib/typography";
 
 /**
  * Kartu artikel (beranda & /artikel) — referensi Omnix "From the journal": hover kartu naik 5px +
@@ -27,13 +29,13 @@ export function ArticleCard({ a, headingLevel = 3 }: { a: ArticleCardData; headi
           <time dateTime={a.publishedAt} className="whitespace-nowrap">{formatArticleDate(a.publishedAt)}</time>
           {a.author && <span className="truncate font-semibold uppercase text-foreground">{a.author}</span>}
         </div>
-        <H className="text-[19px] leading-[1.3] font-bold text-foreground transition-colors duration-[220ms] group-hover:text-brand-ink">
+        <H className={cn(TYPE.h3, "text-foreground transition-colors duration-[220ms] group-hover:text-brand-ink")}>
           {/* Seluruh kartu dapat diklik (tautan meluas lewat ::after) */}
           <Link href={`/artikel/${a.slug}`} className="after:absolute after:inset-0">
             {a.title}
           </Link>
         </H>
-        {a.excerpt && <p className="line-clamp-4 flex-1 text-sm leading-[1.65] text-muted-foreground">{a.excerpt}</p>}
+        {a.excerpt && <p className={cn(TYPE.body, "line-clamp-4 flex-1 text-muted-foreground")}>{a.excerpt}</p>}
         {a.tags.length > 0 && (
           <div className="mt-auto flex flex-wrap gap-[7px] pt-1.5">
             {a.tags.map((t) => (

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArticleGrid } from "@/components/articles/article-card";
+import { TYPE } from "@/lib/typography";
 import { countPublishedArticles, getPublishedArticles } from "@/lib/articles";
 
 export const revalidate = 300;
@@ -27,8 +28,8 @@ export default async function ArticlesPage({ searchParams }: { searchParams: Pro
         <p className="mb-3.5 inline-flex items-center gap-2 text-xs font-semibold tracking-[0.12em] text-brand-ink uppercase before:h-0.5 before:w-[22px] before:rounded-[2px] before:bg-brand">
           Jurnal SNAPFIT
         </p>
-        <h1 className="text-[30px] leading-[1.12] font-semibold tracking-[-0.015em] sm:text-[34px] lg:text-[48px]">Artikel & panduan</h1>
-        <p className="mt-3.5 text-[17px] leading-[1.65] text-foreground/75">
+        <h1 className={TYPE.h2}>Artikel & panduan</h1>
+        <p className={`${TYPE.sub} mt-3.5 text-foreground/75`}>
           Panduan memilih case & aksesori, tips merawat perangkat, dan cerita terbaru dari kami.
         </p>
       </div>

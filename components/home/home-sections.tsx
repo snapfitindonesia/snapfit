@@ -4,6 +4,7 @@ import { ArticleGrid } from "@/components/articles/article-card";
 import { Testimonials } from "@/components/home/testimonials";
 import { NewsletterForm } from "@/components/home/newsletter-form";
 import { cn } from "@/lib/utils";
+import { TYPE } from "@/lib/typography";
 import Image from "@/components/ui/image";
 import { ProductCard } from "@/components/shop/product-card";
 import { ArtImage } from "@/components/home/art-image";
@@ -54,8 +55,8 @@ function SectionHead({ title, subtitle, ctaLabel, ctaHref }: { title: string; su
   return (
     <div className="mb-6 flex items-end justify-between gap-4 sm:mb-8">
       <div>
-        <h2 className="text-2xl font-semibold tracking-tight text-balance sm:text-3xl">{title}</h2>
-        {subtitle && <p className="mt-1.5 text-sm text-muted-foreground">{subtitle}</p>}
+        <h2 className={TYPE.h2}>{title}</h2>
+        {subtitle && <p className={cn(TYPE.sub, "mt-2 text-muted-foreground")}>{subtitle}</p>}
       </div>
       {ctaLabel && ctaHref && (
         <Link href={ctaHref} className="shrink-0 text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
@@ -204,7 +205,7 @@ function Categories({ s }: { s: SectionOf<"categories"> }) {
   if (!items.length) return null;
   return (
     <section className={cn(WRAP, "cv-auto py-10 [--cv-h:180px] sm:py-12")}>
-      {s.title && <h2 className="mb-5 text-center text-2xl font-semibold tracking-tight sm:text-3xl">{s.title}</h2>}
+      {s.title && <h2 className={cn(TYPE.h2, "mb-6 text-center")}>{s.title}</h2>}
       <ul className="flex flex-wrap justify-center gap-2.5 sm:gap-3">
         {items.map((c) => (
           <li key={c.href + c.label}>
@@ -235,7 +236,7 @@ function Features({ s }: { s: SectionOf<"features"> }) {
   if (!items.length) return null;
   return (
     <section className={cn(WRAP, "cv-auto space-y-4 py-10 [--cv-h:1400px] sm:space-y-5 sm:py-12")}>
-      {s.title && <h2 className="mb-2 text-center text-2xl font-semibold tracking-tight sm:text-3xl">{s.title}</h2>}
+      {s.title && <h2 className={cn(TYPE.h2, "mb-6 text-center")}>{s.title}</h2>}
       {items.map((f, i) => (
         <article key={i} className="grid overflow-hidden rounded-2xl border border-border bg-background md:grid-cols-2">
           <div className={cn("relative aspect-[4/3] bg-muted md:aspect-auto md:min-h-[380px]", i % 2 === 1 && "md:order-last")}>
@@ -251,8 +252,8 @@ function Features({ s }: { s: SectionOf<"features"> }) {
           </div>
           <div className="flex flex-col items-center justify-center px-6 py-10 text-center sm:px-12">
             {f.eyebrow && <span className="rounded-[5px] bg-foreground px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-background">{f.eyebrow}</span>}
-            <h3 className="mt-3 text-2xl font-semibold tracking-tight text-balance sm:text-3xl">{f.title}</h3>
-            {f.text && <p className="mt-3 max-w-sm text-sm text-muted-foreground text-pretty sm:text-base">{f.text}</p>}
+            <h3 className={cn(TYPE.h3, "mt-3")}>{f.title}</h3>
+            {f.text && <p className={cn(TYPE.body, "mt-3 max-w-sm text-muted-foreground text-pretty")}>{f.text}</p>}
             <Cta label={f.ctaLabel} href={f.href} className="mt-6" />
           </div>
         </article>
@@ -296,8 +297,8 @@ function Banner({ s }: { s: SectionOf<"banner"> }) {
       )}
       <div className={cn(WRAP, "flex flex-col items-center py-20 text-center sm:py-28", photo && "min-h-[440px] justify-center md:min-h-[520px]")}>
         <Eyebrow dark={dark}>{s.eyebrow}</Eyebrow>
-        {s.title && <h2 className="mt-3 max-w-2xl text-3xl font-semibold tracking-tight text-balance sm:text-5xl">{s.title}</h2>}
-        {s.text && <p className={cn("mt-4 max-w-xl text-base text-pretty sm:text-lg", dark ? "text-white/80" : "text-foreground/70")}>{s.text}</p>}
+        {s.title && <h2 className={cn(TYPE.h2, "mt-3 max-w-2xl")}>{s.title}</h2>}
+        {s.text && <p className={cn(TYPE.sub, "mt-4 max-w-xl", dark ? "text-white/80" : "text-foreground/70")}>{s.text}</p>}
         <Cta label={s.ctaLabel} href={s.ctaHref} dark={dark} className="mt-7" />
       </div>
     </section>
@@ -314,11 +315,11 @@ function Community({ s, data }: { s: SectionOf<"community">; data: HomeData }) {
   return (
     <section className={cn(WRAP, "cv-auto py-14 [--cv-h:560px] sm:py-20")}>
       {s.title && (
-        <h2 className="mb-7 px-4 text-center text-3xl font-extrabold tracking-[-0.03em] text-balance sm:mb-9 sm:text-4xl lg:text-[46px]">
+        <h2 className={cn(TYPE.h2, "mb-7 px-4 text-center sm:mb-9")}>
           {s.title}
         </h2>
       )}
-      {s.subtitle && <p className="-mt-4 mb-8 px-4 text-center text-sm text-muted-foreground sm:-mt-5">{s.subtitle}</p>}
+      {s.subtitle && <p className={cn(TYPE.sub, "-mt-4 mb-8 px-4 text-center text-muted-foreground sm:-mt-5")}>{s.subtitle}</p>}
       <ScrollRow label={s.title || "Galeri SNAPFIT"} className={BLEED}>
         {shots.map((x, i) => {
           // Ada keterangan → itulah teks tautannya; alt dikosongkan agar tak dibaca dua kali.
@@ -374,8 +375,8 @@ function Reviews({ s, data }: { s: SectionOf<"reviews">; data: HomeData }) {
             <Star key={i} className="size-5 fill-current" aria-hidden />
           ))}
         </div>
-        {s.title && <h2 className="mt-4 text-3xl font-semibold tracking-tight text-balance sm:text-5xl">{fill(s.title)}</h2>}
-        {s.text && <p className="mt-3 max-w-xl text-base text-white/80">{fill(s.text)}</p>}
+        {s.title && <h2 className={cn(TYPE.h2, "mt-4")}>{fill(s.title)}</h2>}
+        {s.text && <p className={cn(TYPE.sub, "mt-3 max-w-xl text-white/80")}>{fill(s.text)}</p>}
         <Cta label={s.ctaLabel} href={s.ctaHref} dark className="mt-7" />
       </div>
     </section>
@@ -389,7 +390,7 @@ function Cards({ s }: { s: SectionOf<"cards"> }) {
   if (!items.length) return null;
   return (
     <section className={cn(WRAP, "cv-auto py-12 [--cv-h:520px] sm:py-16")}>
-      {s.title && <h2 className="mb-6 text-center text-2xl font-semibold tracking-tight sm:mb-8 sm:text-3xl">{s.title}</h2>}
+      {s.title && <h2 className={cn(TYPE.h2, "mb-6 text-center sm:mb-8")}>{s.title}</h2>}
       <div className={cn("grid gap-4 sm:gap-5", items.length > 1 && "sm:grid-cols-2", items.length === 3 && "lg:grid-cols-3", items.length >= 4 && "lg:grid-cols-4")}>
         {items.map((c, i) =>
           c.image ? (
@@ -404,8 +405,8 @@ function Cards({ s }: { s: SectionOf<"cards"> }) {
             </Link>
           ) : (
             <div key={i} className="flex flex-col items-start rounded-2xl bg-muted/60 p-6 sm:p-8">
-              <h3 className="text-xl font-semibold tracking-tight">{c.title}</h3>
-              {c.text && <p className="mt-2 max-w-sm text-sm text-muted-foreground">{c.text}</p>}
+              <h3 className={TYPE.h3}>{c.title}</h3>
+              {c.text && <p className={cn(TYPE.body, "mt-2 max-w-sm text-muted-foreground")}>{c.text}</p>}
               <Cta label={c.ctaLabel} href={c.href} className="mt-5" />
             </div>
           ),
@@ -475,14 +476,14 @@ function Custom({ s, tightPrev = false, tightNext = false }: { s: SectionOf<"cus
     <div className={cn(center && "text-center", side && "md:self-center")}>
       {b.eyebrow && <p className={cn("text-xs font-bold uppercase tracking-wider", light ? "text-white/70" : "text-muted-foreground")}>{b.eyebrow}</p>}
       {b.title && (
-        <h3 className={cn("font-bold tracking-tight text-balance", s.columns === "1" ? "mt-1 text-2xl sm:text-3xl" : "mt-1 text-lg sm:text-xl")}>
+        <h3 className={cn(TYPE.h3, "mt-1")}>
           {b.href ? <Link href={b.href} className="hover:underline underline-offset-4">{b.title}</Link> : b.title}
         </h3>
       )}
       {b.text && (
         <RichText
           text={b.text}
-          className={cn("mt-2 space-y-3 text-sm leading-relaxed sm:text-base", light ? "text-white/80" : "text-foreground/75", center && "[&_ol]:inline-block [&_ol]:text-left [&_ul]:inline-block [&_ul]:text-left")}
+          className={cn(TYPE.body, "mt-2 space-y-3", light ? "text-white/80" : "text-foreground/75", center && "[&_ol]:inline-block [&_ol]:text-left [&_ul]:inline-block [&_ul]:text-left")}
         />
       )}
       {b.ctaLabel && b.href && <Cta label={b.ctaLabel} href={b.href} dark={light && !card} className="mt-5" />}
@@ -506,8 +507,8 @@ function Custom({ s, tightPrev = false, tightNext = false }: { s: SectionOf<"cus
       <div className={s.width === "full" ? "px-4 sm:px-6 lg:px-10" : WRAP}>
         {(s.title || s.subtitle) && (
           <div className={cn("mb-8 sm:mb-10", center ? "mx-auto max-w-3xl text-center" : "max-w-3xl")}>
-            {s.title && <h2 className="text-3xl font-extrabold tracking-[-0.03em] text-balance sm:text-4xl">{s.title}</h2>}
-            {s.subtitle && <p className={cn("mt-3 text-base sm:text-lg", light ? "text-white/75" : "text-muted-foreground")}>{s.subtitle}</p>}
+            {s.title && <h2 className={TYPE.h2}>{s.title}</h2>}
+            {s.subtitle && <p className={cn(TYPE.sub, "mt-3", light ? "text-white/75" : "text-muted-foreground")}>{s.subtitle}</p>}
           </div>
         )}
         {side ? (
@@ -558,7 +559,7 @@ function LineEyebrow({ children, dark = false }: { children: React.ReactNode; da
   );
 }
 
-const H2_OMNIX = "text-[30px] leading-[1.12] font-semibold tracking-[-0.015em] text-balance sm:text-[34px] lg:text-[48px]";
+const H2_OMNIX = TYPE.h2;
 
 function Articles({ s, data }: { s: SectionOf<"articles">; data: HomeData }) {
   const items = data.articles.slice(0, s.limit);
@@ -569,7 +570,7 @@ function Articles({ s, data }: { s: SectionOf<"articles">; data: HomeData }) {
         <div className="max-w-[640px]">
           <LineEyebrow>{s.eyebrow}</LineEyebrow>
           {s.title && <h2 className={cn(H2_OMNIX, "mb-3.5")}>{s.title}</h2>}
-          {s.subtitle && <p className="text-[17px] leading-[1.65] text-foreground/75">{s.subtitle}</p>}
+          {s.subtitle && <p className={cn(TYPE.sub, "text-foreground/75")}>{s.subtitle}</p>}
         </div>
         {s.ctaLabel && s.ctaHref && (
           <Link
@@ -617,7 +618,7 @@ function Newsletter({ s }: { s: SectionOf<"newsletter"> }) {
             )}
           </h2>
         )}
-        {s.text && <p className={cn("mb-8 text-base sm:text-[17px]", light ? "text-foreground/75" : "text-white/72")}>{s.text}</p>}
+        {s.text && <p className={cn(TYPE.sub, "mb-8", light ? "text-foreground/75" : "text-white/72")}>{s.text}</p>}
         <NewsletterForm light={light} sectionId={s.id} placeholder={s.placeholder} buttonLabel={s.buttonLabel} successText={s.successText} />
         {perks.length > 0 && (
           <ul className="mt-7 flex flex-wrap items-center justify-center gap-x-7 gap-y-2.5">
