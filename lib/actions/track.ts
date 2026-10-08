@@ -3,7 +3,8 @@
 import { headers } from "next/headers";
 import { db } from "@/lib/db";
 import { normalizePhoneID } from "@/lib/wa";
-import { isManualPayment, MANUAL_BANK } from "@/lib/payment";
+import { isManualPayment } from "@/lib/payment";
+import { getBankAccounts } from "@/lib/bank-settings";
 import { limitAction } from "@/lib/security/ratelimit";
 
 export type TrackedOrder = {
@@ -21,7 +22,7 @@ export type TrackedOrder = {
   discount: number;
   coinsUsed: number;
   total: number;
-  bank: { bank: string; accountNumber: string; accountName: string } | null; // hanya bila menunggu transfer
+  banks: { bank: string; accountNumber: string; accountName: string }[] | null; // hanya bila menunggu transfer
 };
 
 type Result = { ok: true; order: TrackedOrder } | { ok: false; error: string };
@@ -74,7 +75,7 @@ export async function trackOrder(input: { orderNo: string; contact: string }): P
       discount: order.discount,
       coinsUsed: order.coinsUsed,
       total: order.total,
-      bank: pendingTransfer ? MANUAL_BANK : null,
+      banks: pendingTransfer ? await getBankAccounts() : null,
     },
   };
 }

@@ -264,14 +264,22 @@ function shell(opts: { preheader: string; greeting: string; intro: string; body:
 
 type Bank = { bank: string; accountNumber: string; accountName: string };
 
-/** Kotak rekening tujuan transfer + jumlah. */
-function bankBox(bank: Bank, total: number): string {
+/** Kotak rekening tujuan transfer (1–4 rekening, Admin → Rekening Transfer) + jumlah. */
+function bankBox(banks: Bank[], total: number): string {
+  const accounts = banks
+    .map(
+      (bank, i) => `
+      <div style="padding:${i ? 12 : 0}px 0 ${i === banks.length - 1 ? 14 : 0}px;${i ? `border-top:1px solid ${C.line};` : ""}">
+        <div style="font-size:12px;color:${C.muted}">${esc(bank.bank)} · a/n ${esc(bank.accountName)}</div>
+        <div style="font-size:26px;font-weight:800;letter-spacing:1.5px;color:${C.ink};padding-top:4px">${esc(bank.accountNumber)}</div>
+      </div>`,
+    )
+    .join("");
   return block(`
-  ${sectionTitle("Transfer ke rekening")}
+  ${sectionTitle(banks.length > 1 ? "Transfer ke salah satu rekening" : "Transfer ke rekening")}
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:${C.soft};border-radius:14px">
     <tr><td style="padding:18px 20px">
-      <div style="font-size:12px;color:${C.muted}">${esc(bank.bank)} · a/n ${esc(bank.accountName)}</div>
-      <div style="font-size:26px;font-weight:800;letter-spacing:1.5px;color:${C.ink};padding:4px 0 14px">${esc(bank.accountNumber)}</div>
+      ${accounts}
       <div style="border-top:1px solid ${C.line};padding-top:12px;font-size:12px;color:${C.muted}">Jumlah transfer (tepat)</div>
       <div style="font-size:24px;font-weight:800;color:${C.brand};padding-top:2px">${formatRupiah(total)}</div>
     </td></tr>
@@ -280,7 +288,8 @@ function bankBox(bank: Bank, total: number): string {
 }
 
 /** Ke pembeli, sesaat setelah checkout (transfer manual): instruksi bayar. */
-export function orderPlacedEmail(order: OrderLike, items: ItemLike[], bank: Bank) {
+export function orderPlacedEmail(order: OrderLike, items: ItemLike[], banks: Bank[]) {
+  const bank = banks[0]!;
   return {
     subject: `[SNAPFIT] Selesaikan pembayaran pesanan ${order.midtransOrderId}`,
     html: shell({
@@ -289,7 +298,7 @@ export function orderPlacedEmail(order: OrderLike, items: ItemLike[], bank: Bank
       greeting: `Pesananmu sudah kami terima, ${firstName(order)}`,
       intro: `Satu langkah lagi: selesaikan transfer di bawah ini. Pesanan segera kami proses setelah pembayaran terverifikasi.`,
       body:
-        bankBox(bank, order.total) +
+        bankBox(banks, order.total) +
         note(`Sudah transfer? <strong style="color:${C.ink}">Balas email ini dengan bukti transfer</strong> agar lebih cepat kami proses.`) +
         button("Lihat Pesanan", orderUrl(order)) +
         details(order, items, { withTotals: true }),
@@ -298,7 +307,7 @@ export function orderPlacedEmail(order: OrderLike, items: ItemLike[], bank: Bank
 }
 
 /** Ke pembeli, pesanan belum dibayar beberapa jam setelah checkout. */
-export function paymentReminderEmail(order: OrderLike, items: ItemLike[], bank: Bank) {
+export function paymentReminderEmail(order: OrderLike, items: ItemLike[], banks: Bank[]) {
   return {
     subject: `Pesananmu menunggu pembayaran ⏳ — ${order.midtransOrderId}`,
     html: shell({
@@ -307,7 +316,7 @@ export function paymentReminderEmail(order: OrderLike, items: ItemLike[], bank: 
       greeting: `Pesananmu masih menunggu, ${firstName(order)}`,
       intro: `Produknya masih kami simpan untukmu. Selesaikan transfer agar pesanan bisa segera dikirim. Abaikan email ini jika kamu sudah membayar.`,
       body:
-        bankBox(bank, order.total) +
+        bankBox(banks, order.total) +
         button("Lihat Pesanan", orderUrl(order)) +
         details(order, items) +
         note("Ada kendala atau ingin mengubah pesanan? Cukup balas email ini."),

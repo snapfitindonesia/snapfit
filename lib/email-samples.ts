@@ -3,7 +3,7 @@ import { productPath } from "@/lib/product-url";
 import * as E from "@/lib/email";
 import { withItemImages } from "@/lib/email-items";
 import { isPlaceholderPrice } from "@/lib/price-guard";
-import { MANUAL_BANK } from "@/lib/payment";
+import { getBankAccounts } from "@/lib/bank-settings";
 import { getCoinRules } from "@/lib/coins-settings";
 
 // Contoh email untuk Admin → Email (pratinjau & kirim uji). Data pembeli FIKTIF; produk = produk
@@ -60,9 +60,9 @@ export async function buildEmailSample(key: EmailSampleKey): Promise<{ subject: 
   const site = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.snapfit.id").replace(/\/$/, "");
   switch (key) {
     case "dipesan":
-      return E.orderPlacedEmail(order, items, MANUAL_BANK);
+      return E.orderPlacedEmail(order, items, await getBankAccounts());
     case "pengingat-bayar":
-      return E.paymentReminderEmail(order, items, MANUAL_BANK);
+      return E.paymentReminderEmail(order, items, await getBankAccounts());
     case "dibayar":
       return E.orderConfirmationEmail(order, items);
     case "dikemas":

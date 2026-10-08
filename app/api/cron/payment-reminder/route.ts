@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { sendEmail, paymentReminderEmail } from "@/lib/email";
 import { withItemImages } from "@/lib/email-items";
-import { isManualPayment, MANUAL_BANK } from "@/lib/payment";
+import { isManualPayment } from "@/lib/payment";
+import { getBankAccounts } from "@/lib/bank-settings";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -41,7 +42,7 @@ export async function GET(req: NextRequest) {
     const email = (order.address as { email?: string } | null)?.email;
     if (!email) continue;
     try {
-      await sendEmail({ to: email, ...paymentReminderEmail(order, await withItemImages(order.items), MANUAL_BANK) });
+      await sendEmail({ to: email, ...paymentReminderEmail(order, await withItemImages(order.items), await getBankAccounts()) });
       await db.order.update({ where: { id: order.id }, data: { paymentReminderAt: new Date() } });
       sent++;
     } catch (e) {

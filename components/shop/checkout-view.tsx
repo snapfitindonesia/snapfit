@@ -104,7 +104,7 @@ type Bank = { bank: string; accountNumber: string; accountName: string };
 export function CheckoutView({
   manualPayment,
   flatShipping,
-  bank,
+  banks,
   flatCost = 5000,
   freeShippingMin = 0,
   freeShippingMax = 0,
@@ -112,7 +112,7 @@ export function CheckoutView({
 }: {
   manualPayment: boolean;
   flatShipping: boolean;
-  bank: Bank;
+  banks: Bank[];
   flatCost?: number;
   freeShippingMin?: number;
   freeShippingMax?: number;
@@ -476,13 +476,17 @@ export function CheckoutView({
             <div className="mt-4 rounded-lg border border-border bg-muted/30 p-4 text-sm">
               <p className="font-medium">Transfer Bank Manual</p>
               <p className="mt-1 text-muted-foreground">
-                Setelah pesanan dibuat, transfer ke rekening <b>{bank.bank}</b> berikut. Pesanan
+                Setelah pesanan dibuat, transfer ke {banks.length > 1 ? "salah satu rekening" : <>rekening <b>{banks[0]?.bank}</b></>} berikut. Pesanan
                 diproses setelah pembayaran kami verifikasi.
               </p>
-              <div className="mt-3 rounded-md border border-border bg-background p-3">
-                <p className="text-xs text-muted-foreground">{bank.bank}</p>
-                <p className="font-mono text-base font-semibold">{bank.accountNumber}</p>
-                <p className="text-sm">a/n {bank.accountName}</p>
+              <div className="mt-3 divide-y divide-border rounded-md border border-border bg-background">
+                {banks.map((bank) => (
+                  <div key={bank.bank + bank.accountNumber} className="p-3">
+                    <p className="text-xs text-muted-foreground">{bank.bank}</p>
+                    <p className="font-mono text-base font-semibold">{bank.accountNumber}</p>
+                    <p className="text-sm">a/n {bank.accountName}</p>
+                  </div>
+                ))}
               </div>
             </div>
           </section>

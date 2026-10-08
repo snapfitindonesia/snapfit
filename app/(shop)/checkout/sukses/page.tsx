@@ -3,7 +3,8 @@ import { CheckCircle2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatRupiah } from "@/lib/format";
 import { getOrderSummary } from "@/lib/actions/order";
-import { isManualPayment, MANUAL_BANK } from "@/lib/payment";
+import { isManualPayment } from "@/lib/payment";
+import { getBankAccounts } from "@/lib/bank-settings";
 import { PurchaseTracker } from "@/components/tracking/purchase-tracker";
 import { GoogleCustomerReviews } from "@/components/tracking/google-customer-reviews";
 
@@ -31,6 +32,7 @@ export default async function CheckoutSuccessPage({
   }
 
   const awaitingPayment = order.status === "PENDING" && isManualPayment();
+  const banks = awaitingPayment ? await getBankAccounts() : [];
   const addr = (order.address ?? {}) as { email?: string; phone?: string };
 
   return (
@@ -78,12 +80,16 @@ export default async function CheckoutSuccessPage({
         <div className="mt-8 rounded-xl border border-amber-300 bg-amber-50 p-5">
           <p className="text-sm font-semibold text-amber-900">Instruksi Pembayaran</p>
           <p className="mt-1 text-sm text-amber-800">
-            Transfer tepat sejumlah total ke rekening berikut:
+            Transfer tepat sejumlah total ke {banks.length > 1 ? "salah satu rekening" : "rekening"} berikut:
           </p>
           <div className="mt-3 rounded-lg border border-amber-200 bg-white p-4">
-            <p className="text-xs text-muted-foreground">{MANUAL_BANK.bank}</p>
-            <p className="font-mono text-lg font-bold">{MANUAL_BANK.accountNumber}</p>
-            <p className="text-sm">a/n {MANUAL_BANK.accountName}</p>
+            {banks.map((bank, i) => (
+              <div key={bank.bank + bank.accountNumber} className={i ? "mt-3 border-t border-amber-200 pt-3" : undefined}>
+                <p className="text-xs text-muted-foreground">{bank.bank}</p>
+                <p className="font-mono text-lg font-bold">{bank.accountNumber}</p>
+                <p className="text-sm">a/n {bank.accountName}</p>
+              </div>
+            ))}
             <div className="my-3 border-t border-amber-200" />
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Jumlah transfer</span>

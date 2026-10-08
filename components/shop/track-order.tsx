@@ -138,13 +138,19 @@ export function TrackOrder({ initialOrder = "" }: { initialOrder?: string }) {
           )}
 
           {/* Instruksi bayar (transfer manual) */}
-          {order.bank && (
+          {order.banks && order.banks.length > 0 && (
             <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm">
               <p className="font-semibold text-amber-900">Selesaikan pembayaran</p>
               <p className="mt-1 text-amber-800">
-                Transfer <b>{formatRupiah(order.total)}</b> ke {order.bank.bank} <b className="font-mono">{order.bank.accountNumber}</b> a/n{" "}
-                {order.bank.accountName}.
+                Transfer <b>{formatRupiah(order.total)}</b> ke {order.banks.length > 1 ? "salah satu rekening" : "rekening"} berikut:
               </p>
+              <ul className="mt-2 space-y-1 text-amber-900">
+                {order.banks.map((b) => (
+                  <li key={b.bank + b.accountNumber}>
+                    {b.bank} <b className="font-mono">{b.accountNumber}</b> a/n {b.accountName}
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
 

@@ -9,9 +9,10 @@ import { SETTINGS_TAG } from "@/lib/overview";
 import { ZONES_TAG } from "@/lib/shipping-zone";
 import { STOREFRONT_TAG } from "@/lib/storefront-cache";
 import { THEME_TAG } from "@/lib/theme-settings";
+import { BANKS_TAG } from "@/lib/bank-settings";
 
 // SEMUA tag cache data (unstable_cache) — tambahkan di sini bila membuat tag baru.
-const ALL_TAGS = [STOREFRONT_TAG, HOME_TAG, ARTICLES_TAG, THEME_TAG, COIN_RULES_TAG, SETTINGS_TAG, ZONES_TAG, "vouchers"];
+const ALL_TAGS = [STOREFRONT_TAG, HOME_TAG, ARTICLES_TAG, THEME_TAG, COIN_RULES_TAG, SETTINGS_TAG, ZONES_TAG, BANKS_TAG, "vouchers"];
 
 /**
  * "Segarkan Semua" (Admin): hapus seluruh cache toko — data (tag di atas) + semua halaman ISR

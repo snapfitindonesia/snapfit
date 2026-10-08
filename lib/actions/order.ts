@@ -12,7 +12,8 @@ import {
 import { getShippingRates } from "@/lib/biteship";
 import { createShipment } from "@/lib/biteship";
 import { createSnapToken, isMidtransMock } from "@/lib/midtrans";
-import { isManualPayment, isFlatShipping, MANUAL_BANK } from "@/lib/payment";
+import { isManualPayment, isFlatShipping } from "@/lib/payment";
+import { getBankAccounts } from "@/lib/bank-settings";
 import { zoneQuote } from "@/lib/shipping-zone";
 import { canCombine, computeVoucherBenefit, MAX_VOUCHERS, type VoucherLike } from "@/lib/voucher";
 import { sendEmail, orderConfirmationEmail, orderPlacedEmail, adminNewOrderEmail } from "@/lib/email";
@@ -136,7 +137,7 @@ async function notifyNewOrder(
   const admins = (process.env.ADMIN_NOTIFY_EMAIL || "admin@snapfit.id").split(",").map((s) => s.trim()).filter(Boolean);
   const waUrl = waLink(a.phone, `Halo ${a.name ?? ""}, terima kasih sudah berbelanja di SNAPFIT 🙏 Pesanan ${order.midtransOrderId} sudah kami terima.`);
   const jobs: Promise<unknown>[] = admins.map((to) => sendEmail({ to, ...adminNewOrderEmail(order, items, { manual, waUrl }) }));
-  if (manual && a.email) jobs.push(sendEmail({ to: a.email, ...orderPlacedEmail(order, items, MANUAL_BANK) }));
+  if (manual && a.email) jobs.push(sendEmail({ to: a.email, ...orderPlacedEmail(order, items, await getBankAccounts()) }));
   for (const r of await Promise.allSettled(jobs)) {
     if (r.status === "rejected") console.error("Email pesanan baru gagal:", r.reason);
   }
@@ -213,7 +214,7 @@ export async function createOrder(input: CreateOrderInput) {
       mock: false,
       manual: true,
       total: grandTotal,
-      bank: MANUAL_BANK,
+      bank: (await getBankAccounts())[0]!,
     };
   }
 
@@ -245,7 +246,7 @@ export async function createOrder(input: CreateOrderInput) {
     mock: snap.mock,
     manual: false,
     total: grandTotal,
-    bank: MANUAL_BANK,
+    bank: (await getBankAccounts())[0]!,
   };
 }
 

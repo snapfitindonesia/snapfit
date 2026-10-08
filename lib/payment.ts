@@ -24,12 +24,7 @@ export function freeShippingSubsidy(subtotal: number, cost: number): number {
   return FREE_SHIPPING_MAX > 0 ? Math.min(cost, FREE_SHIPPING_MAX) : cost;
 }
 
-/** Rekening tujuan transfer manual. Override via env bila perlu. */
-export const MANUAL_BANK = {
-  bank: process.env.MANUAL_BANK_NAME ?? "BCA",
-  accountNumber: process.env.MANUAL_BANK_NUMBER ?? "2680177875",
-  accountName: process.env.MANUAL_BANK_HOLDER ?? "Sisca Hendrawan",
-};
+// Rekening tujuan transfer manual: Admin → Rekening Transfer (lib/bank-settings.ts → getBankAccounts).
 
 /** True = transfer manual (default). Set PAYMENT_MODE=midtrans utk Midtrans. */
 export function isManualPayment(): boolean {
