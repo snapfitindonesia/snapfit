@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/supabase/server";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { AdminMobileNav } from "@/components/admin/admin-mobile-nav";
+import { PurgeCacheButton } from "@/components/admin/purge-cache-button";
 
 // Proteksi (login + role admin + MFA) ditegakkan di middleware.ts (fail-closed).
 export default async function AdminLayout({
@@ -23,7 +24,8 @@ export default async function AdminLayout({
         <div className="flex-1 overflow-y-auto px-3 py-2">
           <AdminNav />
         </div>
-        <div className="border-t border-border p-3">
+        <div className="space-y-3 border-t border-border p-3">
+          <PurgeCacheButton />
           {user?.email && (
             <p className="truncate px-2 pb-2 text-xs text-muted-foreground">{user.email}</p>
           )}
@@ -41,6 +43,9 @@ export default async function AdminLayout({
             </span>
             <span className="text-sm font-semibold">SNAPFIT Admin</span>
           </Link>
+          <div className="ml-auto">
+            <PurgeCacheButton compact />
+          </div>
         </div>
       </header>
 
