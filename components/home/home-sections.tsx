@@ -450,7 +450,17 @@ function Custom({ s, tightPrev = false, tightNext = false }: { s: SectionOf<"cus
   const slide = s.columns !== "1" && s.mobileSlide && blocks.length > 1; // HP: geser
 
   const hasText = (b: (typeof blocks)[number]) => !!(b.eyebrow || b.title || b.text || (b.ctaLabel && b.href));
-  const photo = (b: (typeof blocks)[number], extra?: string) =>
+  // Ada tautan → foto (dan judul) bisa diklik, dengan atau tanpa tombol.
+  const photo = (b: (typeof blocks)[number], extra?: string) => {
+    const img = rawPhoto(b, extra);
+    if (!img || !b.href) return img;
+    return (
+      <Link href={b.href} aria-label={b.title || b.ctaLabel || "Lihat"} className="block transition-opacity hover:opacity-90">
+        {img}
+      </Link>
+    );
+  };
+  const rawPhoto = (b: (typeof blocks)[number], extra?: string) =>
     b.image ? (
       b.ratio === "auto" ? (
         <Image src={b.image} alt={b.title || ""} width={b.imgW ?? 1600} height={b.imgH ?? 1200} sizes={side ? "(min-width: 768px) 50vw, 100vw" : SIZES[s.columns]} className={cn("h-auto w-full", !card && "rounded-2xl", extra)} />
@@ -464,7 +474,11 @@ function Custom({ s, tightPrev = false, tightNext = false }: { s: SectionOf<"cus
   const body = (b: (typeof blocks)[number]) => (
     <div className={cn(center && "text-center", side && "md:self-center")}>
       {b.eyebrow && <p className={cn("text-xs font-bold uppercase tracking-wider", light ? "text-white/70" : "text-muted-foreground")}>{b.eyebrow}</p>}
-      {b.title && <h3 className={cn("font-bold tracking-tight text-balance", s.columns === "1" ? "mt-1 text-2xl sm:text-3xl" : "mt-1 text-lg sm:text-xl")}>{b.title}</h3>}
+      {b.title && (
+        <h3 className={cn("font-bold tracking-tight text-balance", s.columns === "1" ? "mt-1 text-2xl sm:text-3xl" : "mt-1 text-lg sm:text-xl")}>
+          {b.href ? <Link href={b.href} className="hover:underline underline-offset-4">{b.title}</Link> : b.title}
+        </h3>
+      )}
       {b.text && (
         <RichText
           text={b.text}
