@@ -95,9 +95,9 @@ function Hero({ s, first, tightNext = false }: { s: SectionOf<"hero">; first: bo
       <section
         className={cn(
           "rounded-[5px] lg:rounded-[5px]",
-          // Tinggi = rasio foto (desktop 2400×1350 = 16:9, HP 1080×1350 = 4:5) → foto tampil UTUH.
+          // Tinggi = rasio foto (desktop 2400×1200 = 2:1, HP 1080×1350 = 4:5) → foto tampil UTUH.
           // Tanpa foto HP: foto desktop dipotong otomatis ke 4:5 (bagian tengah).
-          "relative isolate flex aspect-[4/5] overflow-hidden md:aspect-video md:items-center",
+          "relative isolate flex aspect-[4/5] overflow-hidden md:aspect-[2/1] md:items-center",
           !light && "text-white",
         )}
         style={{ backgroundColor: s.bg || (light ? "#f2f1ee" : "#1a0d08") }}

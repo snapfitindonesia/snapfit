@@ -94,7 +94,7 @@ function Check({ label, hint, checked, onChange }: { label: string; hint?: strin
 }
 
 const WIDE_HINT = "Foto lebar: min. 2400px, landscape (±16:9). Disimpan s/d 2400px.";
-const HERO_HINT = "2400 × 1350 px (16:9). Tampil utuh tanpa terpotong — tinggi hero mengikuti foto. Teks di kiri: sisakan ruang kosong di sisi kiri.";
+const HERO_HINT = "Landscape 2:1 — 2400 × 1200 px (paling tajam) atau minimal 1200 × 600 px. Tampil utuh tanpa terpotong. Teks di kiri: sisakan ruang kosong di sisi kiri.";
 const HERO_MOBILE_HINT = "1080 × 1350 px (4:5). Tampil utuh di HP. Teks di bagian atas: taruh produk di setengah bawah. Tanpa foto ini, foto desktop dipotong otomatis.";
 const MOBILE_HINT = "Opsional. Potrait (±4:5) untuk HP — tanpa ini foto desktop dipotong otomatis.";
 
