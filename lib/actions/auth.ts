@@ -1,8 +1,7 @@
 "use server";
 
-import { headers } from "next/headers";
 import { z } from "zod";
-import { limitAction, limitLogin } from "@/lib/security/ratelimit";
+import { limitAction, limitLogin, requestIp } from "@/lib/security/ratelimit";
 import { createSupabaseServerClient, getCurrentUser } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { verifyTurnstile } from "@/lib/security/turnstile";
@@ -14,18 +13,13 @@ type AuthResult = { ok: boolean; error?: string; message?: string; needsOtp?: bo
 // Error SELALU generic (docs/06): jangan bocorkan apakah email terdaftar.
 const GENERIC = "Email atau password salah.";
 
-async function clientIp(): Promise<string> {
-  const h = await headers();
-  return h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-}
-
 export async function signIn(input: Credentials): Promise<AuthResult> {
   const parsed = credentialsSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: GENERIC };
 
   const okCaptcha = await verifyTurnstile(
     parsed.data.turnstileToken ?? null,
-    await clientIp(),
+    await requestIp(),
   );
   if (!okCaptcha) return { ok: false, error: "Verifikasi keamanan gagal." };
 
@@ -48,7 +42,7 @@ export async function signUp(input: Credentials): Promise<AuthResult> {
 
   const okCaptcha = await verifyTurnstile(
     parsed.data.turnstileToken ?? null,
-    await clientIp(),
+    await requestIp(),
   );
   if (!okCaptcha) return { ok: false, error: "Verifikasi keamanan gagal." };
 
@@ -107,7 +101,7 @@ export async function verifySignupOtp(input: { email: string; code: string }): P
   const parsed = otpSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Kode tidak valid." };
   // Anti tebak kode: maks 5 percobaan/menit/IP (+ limit bawaan Supabase).
-  const { success } = await limitLogin(await clientIp());
+  const { success } = await limitLogin(await requestIp());
   if (!success) return { ok: false, error: "Terlalu banyak percobaan. Tunggu sebentar lalu coba lagi." };
 
   const supabase = await createSupabaseServerClient();
@@ -124,7 +118,7 @@ export async function verifySignupOtp(input: { email: string; code: string }): P
 export async function resendSignupOtp(email: string): Promise<AuthResult> {
   const parsed = z.string().trim().email().safeParse(email);
   if (!parsed.success) return { ok: false, error: "Email tidak valid." };
-  const { success } = await limitAction("otp-resend", await clientIp(), 3, "10 m");
+  const { success } = await limitAction("otp-resend", await requestIp(), 3, "10 m");
   if (!success) return { ok: false, error: "Terlalu sering. Coba lagi beberapa menit lagi." };
   const supabase = await createSupabaseServerClient();
   if (!supabase) return { ok: false, error: "Auth belum dikonfigurasi." };

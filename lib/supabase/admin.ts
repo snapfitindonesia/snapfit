@@ -1,3 +1,4 @@
+import "server-only"; // kunci service-role Supabase — JANGAN pernah sampai ke browser
 import { createClient } from "@supabase/supabase-js";
 import { SUPABASE_URL, isSupabaseConfigured } from "./config";
 

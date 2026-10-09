@@ -1,10 +1,9 @@
 "use server";
 
 import { randomBytes } from "node:crypto";
-import { headers } from "next/headers";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { limitAction } from "@/lib/security/ratelimit";
+import { limitAction, requestIp } from "@/lib/security/ratelimit";
 import { normalizeEmail, normalizePhone, sellableDraftItems, type DraftItem } from "@/lib/cart-draft";
 
 const draftSchema = z.object({
@@ -17,11 +16,6 @@ const draftSchema = z.object({
     .min(1)
     .max(50),
 });
-
-async function clientIp(): Promise<string> {
-  const h = await headers();
-  return (h.get("x-forwarded-for") ?? "").split(",")[0].trim() || h.get("x-real-ip") || "anon";
-}
 
 /**
  * Simpan/perbarui draf checkout (dipanggil dari /checkout saat kontak diisi).
@@ -37,7 +31,7 @@ export async function saveCheckoutDraft(input: z.input<typeof draftSchema>): Pro
   const phone = normalizePhone(d.phone);
   if (!email && !phone) return { ok: false };
 
-  const rl = await limitAction("draft", await clientIp(), 20, "60 s");
+  const rl = await limitAction("draft", await requestIp(), 20, "60 s");
   if (!rl.success) return { ok: false };
 
   const items = await sellableDraftItems(d.items);
@@ -63,7 +57,7 @@ export async function saveCheckoutDraft(input: z.input<typeof draftSchema>): Pro
 /** Tautan "pulihkan keranjang" (email/WA) → item yang masih bisa dibeli. */
 export async function restoreCheckoutDraft(token: string): Promise<{ ok: boolean; items: DraftItem[] }> {
   if (!/^[a-f0-9]{32}$/.test(token)) return { ok: false, items: [] };
-  const rl = await limitAction("draft-restore", await clientIp(), 20, "60 s");
+  const rl = await limitAction("draft-restore", await requestIp(), 20, "60 s");
   if (!rl.success) return { ok: false, items: [] };
 
   const draft = await db.checkoutDraft.findUnique({ where: { token } });

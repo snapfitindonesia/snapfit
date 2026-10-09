@@ -7,6 +7,8 @@ import { STOREFRONT_TAG } from "@/lib/storefront-cache";
 import { productPath } from "@/lib/product-url";
 import { nextShortId, slugForName } from "@/lib/product-url-server";
 import { grantOrderCashback, grantReviewBonus, reverseOrderCoins } from "@/lib/coins";
+import { z } from "zod";
+import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { cleanupOrphanImages } from "@/lib/upload/cleanup";
@@ -311,17 +313,50 @@ const toInt = (s?: string) => {
   return Number.isNaN(n) ? undefined : n;
 };
 
-/** Update massal varian (harga/stok/sku/berat) + produk (nama/brand) by ID. */
+// Batas file Edit Massal (katalog ±1.600 varian; sisakan ruang tumbuh).
+const MAX_BULK_ROWS = 10_000;
+const bulkRowSchema = z
+  .object({
+    variantId: z.string().max(64).optional(),
+    productId: z.string().max(64).optional(),
+    nama_produk: z.string().max(300, "Nama produk maks. 300 karakter").optional(),
+    brand: z.string().max(100, "Merek maks. 100 karakter").optional(),
+    sku: z.string().max(100, "SKU maks. 100 karakter").optional(),
+    harga: z.string().max(20).optional(),
+    stok: z.string().max(20).optional(),
+    berat: z.string().max(20).optional(),
+    deskripsi: z.string().max(20_000, "Deskripsi maks. 20.000 karakter").optional(),
+  })
+  .passthrough(); // kolom lain (mis. "varian") diabaikan
+
+/** Jalankan operasi DB per kelompok (paralel dalam transaksi) — jauh lebih cepat dari satu per satu. */
+async function inChunks<T>(items: T[], size: number, run: (item: T) => Prisma.PrismaPromise<unknown>) {
+  for (let i = 0; i < items.length; i += size) await db.$transaction(items.slice(i, i + size).map(run));
+}
+
+/**
+ * Update massal varian (harga/stok/sku/berat) + produk (nama/brand/deskripsi) by ID.
+ * HANYA yang benar-benar berubah yang ditulis (dibandingkan dengan data sekarang) → upload ulang file
+ * utuh tak lagi menulis ulang ribuan baris / mengganti slug; ditulis per kelompok 50 dalam transaksi.
+ */
 export async function bulkUpdateProducts(
-  rows: BulkEditRow[],
+  input: BulkEditRow[],
 ): Promise<{ ok: boolean; variantsUpdated: number; productsUpdated: number; skipped: number; errors: string[] }> {
   try {
     await requireAdmin();
   } catch {
     return { ok: false, variantsUpdated: 0, productsUpdated: 0, skipped: 0, errors: ["Tidak diizinkan."] };
   }
+  if (!Array.isArray(input) || input.length > MAX_BULK_ROWS) {
+    return { ok: false, variantsUpdated: 0, productsUpdated: 0, skipped: 0, errors: [`File terlalu besar: maks. ${MAX_BULK_ROWS.toLocaleString("id-ID")} baris.`] };
+  }
+  const parsed = z.array(bulkRowSchema).safeParse(input);
+  if (!parsed.success) {
+    const i = parsed.error.issues[0];
+    return { ok: false, variantsUpdated: 0, productsUpdated: 0, skipped: 0, errors: [`Baris ${Number(i?.path?.[0] ?? 0) + 2}: ${i?.message ?? "data tidak valid"}`] };
+  }
+  const rows = parsed.data as BulkEditRow[];
 
-  let variantsUpdated = 0;
   let skipped = 0;
   const errors: string[] = [];
   const productFields = new Map<string, { name?: string; brand?: string | null; description?: string }>();
@@ -341,57 +376,76 @@ export async function bulkUpdateProducts(
   }
   if (badCells.size) errors.push(`Diabaikan ${badCells.size} sel berisi error Excel (mis. #NAME?): ${[...badCells].slice(0, 5).join(", ")}${badCells.size > 5 ? ", …" : ""}`);
 
+  // Data sekarang (1 query varian + 1 query produk) → bandingkan, tulis hanya yang berubah.
+  const vids = [...new Set(rows.map((r) => r.variantId?.trim()).filter((x): x is string => !!x))];
+  const current = new Map(
+    (await db.variant.findMany({ where: { id: { in: vids } }, select: { id: true, productId: true, sku: true, price: true, stock: true, weight: true } })).map((v) => [v.id, v]),
+  );
+
+  const variantUpdates: { id: string; data: { sku?: string | null; price?: number; stock?: number; weight?: number } }[] = [];
+  const seenVariant = new Set<string>();
   for (const r of rows) {
     const vid = r.variantId?.trim();
     if (!vid) { skipped++; continue; }
-    const data: { sku?: string | null; price?: number; stock?: number; weight?: number } = {};
-    if (r.sku !== undefined) data.sku = r.sku.trim() || null;
-    const price = toInt(r.harga); if (price !== undefined) data.price = Math.max(0, price);
-    const stock = toInt(r.stok); if (stock !== undefined) data.stock = Math.max(0, stock);
-    const weight = toInt(r.berat); if (weight !== undefined && weight > 0) data.weight = weight;
-
-    if (Object.keys(data).length) {
-      try {
-        await db.variant.update({ where: { id: vid }, data });
-        variantsUpdated++;
-      } catch {
-        skipped++;
-        errors.push(`Varian ${vid.slice(0, 12)} gagal / tak ditemukan.`);
-        continue;
-      }
-    }
+    const cur = current.get(vid);
+    if (!cur) { skipped++; errors.push(`Varian ${vid.slice(0, 12)} tak ditemukan.`); continue; }
+    // productId di baris harus milik varian ini (cegah baris tergeser di Excel menimpa produk lain).
     const pid = r.productId?.trim();
-    if (pid) {
-      const pf = productFields.get(pid) ?? {};
-      if (r.nama_produk !== undefined && r.nama_produk.trim() !== "") pf.name = r.nama_produk.trim();
-      if (r.brand !== undefined) pf.brand = r.brand.trim() || null;
-      if (r.deskripsi !== undefined && r.deskripsi.trim() !== "") pf.description = r.deskripsi.replace(/\r\n?/g, "\n").trim();
-      productFields.set(pid, pf);
-    }
+    if (pid && pid !== cur.productId) { skipped++; errors.push(`Baris varian ${vid.slice(0, 12)}: productId tidak cocok — dilewati.`); continue; }
+    if (seenVariant.has(vid)) continue; // baris ganda: pakai yang pertama
+    seenVariant.add(vid);
+
+    const data: { sku?: string | null; price?: number; stock?: number; weight?: number } = {};
+    if (r.sku !== undefined) { const v = r.sku.trim() || null; if (v !== cur.sku) data.sku = v; }
+    const price = toInt(r.harga); if (price !== undefined && Math.max(0, price) !== cur.price) data.price = Math.max(0, price);
+    const stock = toInt(r.stok); if (stock !== undefined && Math.max(0, stock) !== cur.stock) data.stock = Math.max(0, stock);
+    const weight = toInt(r.berat); if (weight !== undefined && weight > 0 && weight !== cur.weight) data.weight = weight;
+    if (Object.keys(data).length) variantUpdates.push({ id: vid, data });
+
+    const pf = productFields.get(cur.productId) ?? {};
+    if (r.nama_produk !== undefined && r.nama_produk.trim() !== "") pf.name = r.nama_produk.trim();
+    if (r.brand !== undefined) pf.brand = r.brand.trim() || null;
+    if (r.deskripsi !== undefined && r.deskripsi.trim() !== "") pf.description = r.deskripsi.replace(/\r\n?/g, "\n").trim();
+    productFields.set(cur.productId, pf);
   }
 
-  let productsUpdated = 0;
+  let variantsUpdated = 0;
+  try {
+    await inChunks(variantUpdates, 50, (u) => db.variant.update({ where: { id: u.id }, data: u.data }));
+    variantsUpdated = variantUpdates.length;
+  } catch (e) {
+    errors.push(`Sebagian varian gagal disimpan: ${e instanceof Error ? e.message.slice(0, 120) : "?"}`);
+  }
+
+  const curProducts = new Map(
+    (await db.product.findMany({ where: { id: { in: [...productFields.keys()] } }, select: { id: true, name: true, brand: true, description: true } })).map((p) => [p.id, p]),
+  );
+  const productUpdates: { id: string; data: { name?: string; brand?: string | null; slug?: string; description?: string } }[] = [];
   for (const [pid, pf] of productFields) {
+    const cur = curProducts.get(pid);
+    if (!cur) continue;
     const d: { name?: string; brand?: string | null; slug?: string; description?: string } = {};
-    if (pf.name !== undefined) {
+    if (pf.name !== undefined && pf.name !== cur.name) {
       d.name = pf.name;
       d.slug = await slugForName(pf.name, pid); // teks URL ikut judul baru (ID tetap; URL lama dialihkan)
     }
-    if (pf.brand !== undefined) d.brand = pf.brand;
-    if (pf.description !== undefined) d.description = pf.description;
-    if (Object.keys(d).length) {
-      try {
-        await db.product.update({ where: { id: pid }, data: d });
-        productsUpdated++;
-      } catch {
-        errors.push(`Produk ${pid.slice(0, 12)} gagal.`);
-      }
-    }
+    if (pf.brand !== undefined && pf.brand !== cur.brand) d.brand = pf.brand;
+    if (pf.description !== undefined && pf.description !== (cur.description ?? "").replace(/\r\n?/g, "\n").trim()) d.description = pf.description;
+    if (Object.keys(d).length) productUpdates.push({ id: pid, data: d });
+  }
+  let productsUpdated = 0;
+  try {
+    await inChunks(productUpdates, 50, (u) => db.product.update({ where: { id: u.id }, data: u.data }));
+    productsUpdated = productUpdates.length;
+  } catch (e) {
+    errors.push(`Sebagian produk gagal disimpan: ${e instanceof Error ? e.message.slice(0, 120) : "?"}`);
   }
 
-  revalidatePath("/admin/produk");
-  revalidateStorefront();
-  if (productsUpdated) revalidatePath("/produk/[slug]", "page"); // judul/deskripsi baru langsung tampil di PDP
+  if (variantsUpdated || productsUpdated) {
+    revalidatePath("/admin/produk");
+    revalidateStorefront();
+    if (productsUpdated) revalidatePath("/produk/[slug]", "page"); // judul/deskripsi baru langsung tampil di PDP
+  }
   return { ok: true, variantsUpdated, productsUpdated, skipped, errors };
 }
 

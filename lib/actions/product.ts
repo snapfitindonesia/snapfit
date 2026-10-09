@@ -1,3 +1,4 @@
+import "server-only"; // modul data toko (bukan "use server"): hanya untuk Server Component / route
 import { cache } from "react";
 import { db } from "@/lib/db";
 import { applyDiscount, activeDiscountPercent } from "@/lib/format";

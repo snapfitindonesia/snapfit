@@ -4,6 +4,7 @@
 // Sekarang filter/cari/urut/halaman dihitung di memori dari indeks ini (lib/actions/product.ts).
 // Segar: tiap 5 menit, atau langsung via revalidateTag(CATALOG_TAG / STOREFRONT_TAG) saat produk,
 // stok (pembayaran, batal, sinkron Ginee) atau diskon berubah.
+import "server-only";
 import { unstable_cache } from "next/cache";
 import { db } from "@/lib/db";
 import { STOREFRONT_TAG } from "@/lib/storefront-cache";

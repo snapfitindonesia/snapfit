@@ -1,8 +1,7 @@
 "use server";
 
-import { headers } from "next/headers";
 import { db } from "@/lib/db";
-import { limitAction } from "@/lib/security/ratelimit";
+import { limitAction, requestIp } from "@/lib/security/ratelimit";
 
 /** Rapikan kata kunci: huruf kecil, spasi tunggal, maks 60 karakter. */
 function normalizeTerm(raw: string): string {
@@ -18,8 +17,7 @@ export async function logSearch(rawTerm: string, results: number): Promise<void>
   if (term.length < 2) return;
   const n = Math.max(0, Math.min(10_000, Math.floor(Number(results) || 0)));
 
-  const h = await headers();
-  const ip = (h.get("x-forwarded-for") ?? "").split(",")[0].trim() || h.get("x-real-ip") || "anon";
+  const ip = await requestIp();
   const rl = await limitAction("search-log", ip, 30, "60 s");
   if (!rl.success) return;
 

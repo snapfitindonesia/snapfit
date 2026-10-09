@@ -1,11 +1,10 @@
 "use server";
 
-import { headers } from "next/headers";
 import { db } from "@/lib/db";
 import { normalizePhoneID } from "@/lib/wa";
 import { isManualPayment } from "@/lib/payment";
 import { getBankAccounts } from "@/lib/bank-settings";
-import { limitAction } from "@/lib/security/ratelimit";
+import { limitAction, requestIp } from "@/lib/security/ratelimit";
 
 export type TrackedOrder = {
   orderNo: string;
@@ -43,8 +42,7 @@ export async function trackOrder(input: { orderNo: string; contact: string }): P
   if (!orderNo || !contact) return { ok: false, error: "Isi nomor pesanan dan email/nomor HP." };
 
   // Batasi percobaan per IP (cegah menebak nomor pesanan orang lain).
-  const h = await headers();
-  const ip = (h.get("x-forwarded-for") ?? "").split(",")[0].trim() || h.get("x-real-ip") || "anon";
+  const ip = await requestIp();
   const rl = await limitAction("track", ip, 10, "60 s");
   if (!rl.success) return { ok: false, error: "Terlalu banyak percobaan. Coba lagi 1 menit lagi." };
 

@@ -4,6 +4,8 @@ import { db } from "@/lib/db";
 import { BulkEdit, type EditRow } from "@/components/admin/bulk-edit";
 
 export const dynamic = "force-dynamic";
+// Server Action Edit Massal ikut batas waktu halaman ini (file besar: ribuan baris).
+export const maxDuration = 300;
 
 export default async function BulkEditPage() {
   const products = await db.product.findMany({
