@@ -3,6 +3,7 @@ import { applyDiscount, activeDiscountPercent } from "@/lib/format";
 import { isPlaceholderPrice, sellableStock } from "@/lib/price-guard";
 import type { ProductQuery } from "@/lib/validations/product";
 import { storefrontCached } from "@/lib/storefront-cache";
+import { getCatalog } from "@/lib/catalog";
 import { parseProductSegment, productSegment } from "@/lib/product-url";
 
 // Catatan: harga produk = harga varian termurah. Dataset dev kecil, jadi sort by harga
@@ -184,74 +185,38 @@ function searchTerms(q: string | undefined): string[] {
 export async function getProducts(query: ProductQuery, opts: { ids?: string[] } = {}): Promise<ProductListResult> {
   const { tipe, model, perangkat, brands, minPrice: priceMin, maxPrice: priceMax, grosir, featured, q, sort, skip, take } = query;
 
-  // Gabungan slug perangkat: dari facet "perangkat" + tipe (link masuk).
-  const deviceSlugs = [...new Set([...(perangkat ?? []), ...(tipe ? [tipe] : [])])];
-  const deviceWhere = deviceSlugs.length
-    ? {
-        OR: [
-          { category: { slug: { in: deviceSlugs } } },
-          { category: { parent: { slug: { in: deviceSlugs } } } },
-          { category: { parent: { parent: { slug: { in: deviceSlugs } } } } },
-          { extraCategories: { some: { slug: { in: deviceSlugs } } } },
-          { extraCategories: { some: { parent: { slug: { in: deviceSlugs } } } } },
-          { extraCategories: { some: { parent: { parent: { slug: { in: deviceSlugs } } } } } },
-        ],
-      }
-    : null;
+  // Dari indeks katalog ter-cache (lib/catalog.ts) — BUKAN query DB per panggilan. Semantik filter sama
+  // dengan versi query Prisma sebelumnya (diuji 32 kombinasi kueri, hasil identik).
+  const catalog = await getCatalog();
 
+  // Gabungan slug perangkat: dari facet "perangkat" + tipe (link masuk). Cocok bila kategori utama/
+  // tambahan produk ATAU induk/kakeknya termasuk.
+  const deviceSlugs = [...new Set([...(perangkat ?? []), ...(tipe ? [tipe] : [])])];
   // Filter brand (OR antar brand); "__none__" = produk tanpa brand.
   const brandNames = (brands ?? []).filter((b) => b !== "__none__");
   const wantNoBrand = (brands ?? []).includes("__none__");
-  const brandWhere =
-    brands && brands.length
-      ? {
-          OR: [
-            ...(brandNames.length ? [{ brand: { in: brandNames } }] : []),
-            ...(wantNoBrand ? [{ brand: null }] : []),
-          ],
-        }
-      : null;
-
   // Pencarian per kata (bukan frasa utuh): "snapfit s26" cocok dgn "SNAPFIT Case … Galaxy S26".
-  // Tiap kata boleh ada di nama, merek, atau nama/tipe varian (mis. "lilac", "s26 ultra").
-  const searchWhere = searchTerms(q).map((t) => {
-    const has = { contains: t, mode: "insensitive" as const };
-    return { OR: [{ name: has }, { brand: has }, { variants: { some: { OR: [{ name: has }, { type: has }] } } }] };
-  });
+  // Tiap kata harus ada di nama, merek, atau nama/tipe salah satu varian (huruf besar/kecil bebas).
+  const terms = searchTerms(q);
+  const idSet = opts.ids ? new Set(opts.ids) : null;
 
-  const products = await db.product.findMany({
-    where: {
-      archived: false, // produk diarsipkan (mis. dihapus di Ginee) tak tampil
-      ...(opts.ids ? { id: { in: opts.ids } } : {}),
-      // Facet perangkat + brand digabung dengan AND (antar-facet = irisan;
-      // dalam facet = OR, sudah dibungkus di deviceWhere/brandWhere).
-      // Kata kunci: tiap kata harus cocok (nama/merek/varian) — digabung AND dengan facet.
-      ...((deviceWhere || brandWhere || searchWhere.length)
-        ? { AND: [...(deviceWhere ? [deviceWhere] : []), ...(brandWhere ? [brandWhere] : []), ...searchWhere] }
-        : {}),
-      // model tingkat 3: produk punya varian dengan type persis
-      ...(model ? { variants: { some: { type: model } } } : {}),
-      // hanya produk yang ditandai untuk halaman grosir
-      ...(grosir ? { isGrosir: true } : {}),
-      // hanya produk unggulan (homepage)
-      ...(featured ? { featured: true } : {}),
-    },
-    include: {
-      category: { select: { name: true, slug: true } },
-      reviews: { where: { approved: true }, select: { rating: true } },
-      variants: {
-        select: {
-          id: true,
-          name: true,
-          image: true,
-          price: true,
-          stock: true,
-          discounts: { select: { percent: true, active: true, startAt: true, endAt: true } },
-        },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const products = catalog
+    .filter((p) => !idSet || idSet.has(p.id))
+    .filter((p) => !deviceSlugs.length || deviceSlugs.some((d) => p.deviceSlugs.includes(d)))
+    .filter((p) => !brands?.length || (p.brand ? brandNames.includes(p.brand) : wantNoBrand))
+    .filter((p) => terms.every((t) => p.haystack.includes(t)))
+    .filter((p) => !model || p.variantTypes.includes(model))
+    .filter((p) => !grosir || p.isGrosir)
+    .filter((p) => !featured || p.featured)
+    .map((p) => ({
+      ...p,
+      reviews: { sum: p.ratingSum, count: p.ratingCount },
+      category: p.categorySlug ? { name: p.categoryName ?? "", slug: p.categorySlug } : null,
+      variants: p.variants.map((v) => ({
+        ...v,
+        discounts: v.discounts.map((d) => ({ ...d, startAt: d.startAt == null ? null : new Date(d.startAt), endAt: d.endAt == null ? null : new Date(d.endAt) })),
+      })),
+    }));
 
   const mapped: ProductListItem[] = products
     // Varian berharga placeholder (Rp999.999 dst) dianggap tak tersedia.
@@ -270,8 +235,8 @@ export async function getProducts(query: ProductQuery, opts: { ids?: string[] } 
       const inStockPriced = priced.filter((x) => x.v.stock > 0);
       const cheapestInStock = (inStockPriced.length ? inStockPriced : priced).reduce((a, b) => (b.final < a.final ? b : a));
       const variantCount = p.variants.filter((v) => v.stock > 0).length;
-      const ratingCount = p.reviews.length;
-      const ratingAvg = ratingCount ? p.reviews.reduce((s, r) => s + r.rating, 0) / ratingCount : 0;
+      const ratingCount = p.reviews.count;
+      const ratingAvg = ratingCount ? p.reviews.sum / ratingCount : 0;
       return {
         id: p.id,
         slug: p.slug,

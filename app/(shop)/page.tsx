@@ -3,6 +3,7 @@ import { STORE_WA_DISPLAY } from "@/lib/contact";
 import { getHomeSections, loadHomeData, type HomeData } from "@/lib/home/data";
 import { DEFAULT_SECTIONS, type HomeSection } from "@/lib/home/sections";
 import { HomeSections } from "@/components/home/home-sections";
+import { buildFallback } from "@/lib/build-fallback";
 
 // ISR: beranda di-cache (cepat), regenerasi tiap 5 menit; simpan di Admin → Konten Beranda
 // memperbarui langsung (revalidatePath("/")).
@@ -38,18 +39,19 @@ const SITE_JSON_LD = [
 ];
 
 export default async function HomePage() {
-  // Tahan-banting: DB ngadat saat build/ISR → tetap tampil dengan isi bawaan.
+  // DB ngadat SAAT BUILD → isi bawaan. Saat regenerasi ISR → error dilempar sehingga beranda lama yang
+  // benar tetap disajikan (bukan beranda kosong yang ikut ter-cache). Lihat lib/build-fallback.ts.
   let sections: HomeSection[] = DEFAULT_SECTIONS;
   try {
     sections = await getHomeSections();
-  } catch {
-    // pakai bawaan
+  } catch (e) {
+    sections = buildFallback(e, DEFAULT_SECTIONS);
   }
   let data: HomeData = { products: {}, reviews: null, shots: [], articles: [] };
   try {
     data = await loadHomeData(sections);
-  } catch {
-    // bagian dinamis tak tampil
+  } catch (e) {
+    data = buildFallback(e, data);
   }
 
   // H1 = judul hero pertama (bila hero ada di paling atas); selain itu H1 tersembunyi untuk SEO.

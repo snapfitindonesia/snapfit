@@ -1,6 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { CATALOG_TAG } from "@/lib/catalog";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { applyDiscount, activeDiscountPercent } from "@/lib/format";
@@ -312,6 +313,7 @@ export async function handlePaidOrder(
       }),
     ),
   );
+  revalidateTag(CATALOG_TAG); // stok berubah → daftar produk (stok habis tersembunyi) segar
   deducted.forEach((r, i) => {
     if (r.count === 0) console.error(`[stok] Stok tak cukup saat ${midtransOrderId} lunas: varian ${items[i]!.variantId} × ${items[i]!.qty}`);
   });

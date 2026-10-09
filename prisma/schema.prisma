@@ -45,6 +45,8 @@ model Product {
 
   @@index([shortId])
   @@index([legacySlug])
+  @@index([categoryId])
+  @@index([archived, createdAt]) // daftar produk toko (tak diarsip, terbaru)
 }
 
 model Review {
@@ -79,6 +81,8 @@ model Variant {
   image     String // 1 foto per varian
   weight    Int     @default(200) // berat gram — utk ongkir Biteship (lihat docs/05)
   discounts Discount[] @relation("DiscountVariants") // diskon per-varian
+
+  @@index([productId]) // Postgres tak membuat indeks FK otomatis — dipakai tiap PDP/daftar produk
 }
 
 model Category {
@@ -174,6 +178,9 @@ model Order {
   createdAt DateTime @default(now())
 
   @@index([reviewToken])
+  @@index([userId, createdAt]) // Akun → Pesanan Saya
+  @@index([status, createdAt]) // admin pesanan, cron pengingat bayar
+  @@index([shippedAt]) // cron ajakan ulas
 }
 
 model OrderItem {
@@ -184,6 +191,8 @@ model OrderItem {
   name      String // snapshot nama saat beli
   price     Int // snapshot harga saat beli
   qty       Int
+
+  @@index([orderId])
 }
 
 // Halaman link-in-bio (/links) — profil tunggal (id "main") + daftar tombol.

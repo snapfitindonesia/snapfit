@@ -5,6 +5,7 @@ import { productPath } from "@/lib/product-url";
 import { getProducts, getFeaturedProducts, type ProductListItem } from "@/lib/actions/product";
 import { DEFAULT_SECTIONS, sectionsSchema, type HomeSection } from "@/lib/home/sections";
 import { getPublishedArticles, type ArticleCardData } from "@/lib/articles";
+import { buildFallback } from "@/lib/build-fallback";
 
 export const HOME_KEY = "home.sections";
 export const HOME_TAG = "home-sections";
@@ -64,11 +65,11 @@ export async function loadHomeData(sections: HomeSection[]): Promise<HomeData> {
     Promise.all(
       active
         .filter((s): s is Extract<HomeSection, { type: "products" }> => s.type === "products")
-        .map(async (s) => [s.id, await productsFor(s).catch(() => [])] as const),
+        .map(async (s) => [s.id, await productsFor(s).catch((e) => buildFallback(e, []))] as const),
     ),
-    needReviews ? reviewStats().catch(() => null) : null,
-    needShots ? reviewShots().catch(() => []) : [],
-    articleLimit ? getPublishedArticles(articleLimit).catch(() => []) : [],
+    needReviews ? reviewStats().catch((e) => buildFallback(e, null)) : null,
+    needShots ? reviewShots().catch((e) => buildFallback(e, [])) : [],
+    articleLimit ? getPublishedArticles(articleLimit).catch((e) => buildFallback(e, [])) : [],
   ]);
   return { products: Object.fromEntries(productEntries), reviews, shots, articles };
 }
