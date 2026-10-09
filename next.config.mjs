@@ -4,6 +4,14 @@ const extraHosts = (process.env.NEXT_PUBLIC_IMAGE_HOSTS ?? "")
   .map((h) => h.trim())
   .filter(Boolean);
 
+// Supabase Storage milik sendiri (cadangan upload bila R2 tak aktif, app/api/admin/upload).
+let supabaseHost = null;
+try {
+  supabaseHost = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").hostname || null;
+} catch {
+  supabaseHost = null;
+}
+
 const nextConfig = {
   // `radix-ui` adalah barrel: tanpa ini `import { Slot }` (tombol) ikut menarik
   // Dialog/DropdownMenu/Popover (±70KB gzip) ke setiap halaman toko.
@@ -33,23 +41,15 @@ const nextConfig = {
     // Cache hasil optimasi lebih lama (gambar produk jarang berubah).
     minimumCacheTTL: 2678400, // 31 hari
     // Domain yang boleh dioptimasi next/image (lihat docs/07-deployment-dns.md).
+    // SEMPIT sengaja: wildcard (**.r2.dev, CDN marketplace) membuat siapa pun bisa memakai
+    // /_next/image kita untuk gambar dari bucket/host mana saja → kuota transformasi Vercel habis.
+    // Semua foto toko kini di cdn.snapfit.id (impor Ginee disalin ke CDN, lib/upload/mirror.ts) dan
+    // foto marketplace yang tersisa dilayani loader langsung (lib/image-loader.ts, tanpa /_next/image).
+    // Host tambahan: env NEXT_PUBLIC_IMAGE_HOSTS (dipisah koma).
     remotePatterns: [
+      { protocol: "https", hostname: "cdn.snapfit.id" }, // CDN aset produksi (R2 + Cloudflare)
       { protocol: "https", hostname: "placehold.co" }, // dev/placeholder
-      { protocol: "https", hostname: "cdn.snapfit.id" }, // CDN aset produksi
-      { protocol: "https", hostname: "**.r2.dev" }, // Cloudflare R2 public bucket
-      { protocol: "https", hostname: "**.r2.cloudflarestorage.com" }, // R2 (jaga-jaga)
-      { protocol: "https", hostname: "cdn.shopify.com" }, // foto katalog impor (sementara)
-      { protocol: "https", hostname: "cf.shopee.co.id" }, // foto master produk Ginee (Shopee CDN)
-      { protocol: "https", hostname: "**.susercontent.com" }, // foto Shopee (mirror)
-      // Foto master produk Ginee bisa dari CDN marketplace mana pun:
-      { protocol: "https", hostname: "**.ibyteimg.com" }, // TikTok Shop
-      { protocol: "https", hostname: "**.tiktokcdn.com" }, // TikTok (cadangan)
-      { protocol: "https", hostname: "**.slatic.net" }, // Lazada
-      { protocol: "https", hostname: "**.tokopedia.net" }, // Tokopedia
-      { protocol: "https", hostname: "images.tokopedia.com" }, // Tokopedia
-      { protocol: "https", hostname: "**.static-src.com" }, // Blibli
-      { protocol: "https", hostname: "**.bmdstatic.com" }, // Blibli (cadangan)
-      { protocol: "https", hostname: "**.ginee.com" }, // CDN Ginee (cdn-public-prod-oss.ginee.com)
+      ...(supabaseHost ? [{ protocol: "https", hostname: supabaseHost, pathname: "/storage/v1/object/public/**" }] : []),
       ...extraHosts.map((hostname) => ({ protocol: "https", hostname })),
     ],
   },

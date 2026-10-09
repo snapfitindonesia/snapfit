@@ -333,6 +333,10 @@ export function CheckoutView({
     setPlacing(true);
     try {
       const result = await createOrder({ address: parsed.data, items: cartLines, rateId, voucherCodes: applied.map((v) => v.code), note, useCoins: coinsUsed > 0 });
+      if ("error" in result) {
+        setPayError(result.error);
+        return;
+      }
       saveContact({ ...EMPTY, ...parsed.data, email: parsed.data.email ?? "" });
       if (result.manual) {
         // Transfer manual: order PENDING → arahkan ke halaman instruksi transfer.

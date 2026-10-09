@@ -4,6 +4,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { getHomeSections } from "@/lib/home/data";
 import { newsletterWelcomeEmail, sendEmail } from "@/lib/email";
+import { limitAction, requestIp } from "@/lib/security/ratelimit";
 
 export type SubscribeResult = { ok: boolean; error?: string; voucherCode?: string; already?: boolean };
 
@@ -18,6 +19,10 @@ export async function subscribeNewsletter(input: { email: string; sectionId: str
   const parsed = email.safeParse(input.email);
   if (!parsed.success) return { ok: false, error: "Alamat email tidak valid." };
   const addr = parsed.data;
+
+  // Anti spam / email-bombing: maks. 3 langganan per 10 menit per IP.
+  const rl = await limitAction("newsletter", await requestIp(), 3, "10 m");
+  if (!rl.success) return { ok: false, error: "Terlalu banyak percobaan. Coba lagi beberapa menit lagi." };
 
   const section = (await getHomeSections().catch(() => [])).find((s) => s.id === input.sectionId && s.type === "newsletter");
   const voucherCode = section?.type === "newsletter" ? section.voucherCode.trim() || undefined : undefined;

@@ -27,6 +27,8 @@ import { getCurrentUser } from "@/lib/supabase/server";
 import { getCoinBalance, spendCoins } from "@/lib/coins";
 import { activeCashback, maxCoinsUsable } from "@/lib/coins-rules";
 import { getCoinRules } from "@/lib/coins-settings";
+import { limitAction, requestIp } from "@/lib/security/ratelimit";
+import { ZodError } from "zod";
 
 /**
  * Hitung ULANG order dari DB (harga varian + diskon + ongkir) — JANGAN percaya
@@ -143,10 +145,37 @@ async function notifyNewOrder(
   }
 }
 
-export async function createOrder(input: CreateOrderInput) {
+export type CreateOrderResult = Awaited<ReturnType<typeof placeOrder>>;
+
+/**
+ * Checkout publik. Dibatasi per IP (anti bot/spam pesanan & email): 5/menit, 20/jam.
+ * Error dikembalikan sebagai { error } — pesan Error yang dilempar Server Action disembunyikan Next di
+ * produksi, jadi pembeli dulu hanya melihat pesan generik (mis. untuk "stok tidak cukup").
+ */
+export async function createOrder(input: CreateOrderInput): Promise<CreateOrderResult | { error: string }> {
+  const ip = await requestIp();
+  const [perMin, perHour] = await Promise.all([limitAction("order", ip, 5, "60 s"), limitAction("order-h", ip, 20, "60 m")]);
+  if (!perMin.success || !perHour.success) return { error: "Terlalu banyak pesanan dari perangkat ini. Coba lagi beberapa saat lagi." };
+  try {
+    return await placeOrder(input);
+  } catch (e) {
+    if (e instanceof ZodError) return { error: e.issues[0]?.message ?? "Data pesanan tidak valid." };
+    console.error("[checkout] gagal membuat pesanan:", e);
+    return { error: e instanceof Error && e.message.length < 200 ? e.message : "Gagal membuat pesanan. Coba lagi." };
+  }
+}
+
+/** Gabungkan baris keranjang dengan varian sama (stok dicek terhadap JUMLAH, bukan per baris). */
+function mergeLines(lines: CartLine[]): CartLine[] {
+  const m = new Map<string, number>();
+  for (const l of lines) m.set(l.variantId, (m.get(l.variantId) ?? 0) + l.qty);
+  return [...m].map(([variantId, qty]) => ({ variantId, qty }));
+}
+
+async function placeOrder(input: CreateOrderInput) {
   const data = createOrderSchema.parse(input);
   const { items, subtotal, shippingCost, discount, voucherCode, total, rate } = await computeOrder(
-    data.items,
+    mergeLines(data.items),
     data.address.postalCode,
     data.rateId,
     [...(data.voucherCodes ?? []), ...(data.voucherCode ? [data.voucherCode] : [])],
@@ -214,7 +243,6 @@ export async function createOrder(input: CreateOrderInput) {
       mock: false,
       manual: true,
       total: grandTotal,
-      bank: (await getBankAccounts())[0]!,
     };
   }
 
@@ -246,7 +274,6 @@ export async function createOrder(input: CreateOrderInput) {
     mock: snap.mock,
     manual: false,
     total: grandTotal,
-    bank: (await getBankAccounts())[0]!,
   };
 }
 

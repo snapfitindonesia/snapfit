@@ -36,6 +36,23 @@ export async function limitAction(
   return { success, skipped: false };
 }
 
+/** Seperti limitAction tapi TANPA memakai jatah: true = kuota `name` untuk `key` sudah habis. */
+export async function isLimited(
+  name: string,
+  key: string,
+  max: number,
+  window: `${number} s` | `${number} m`,
+): Promise<boolean> {
+  if (!isUpstashConfigured()) return false;
+  let l = generic.get(name);
+  if (!l) {
+    l = new Ratelimit({ redis: Redis.fromEnv(), limiter: Ratelimit.slidingWindow(max, window), prefix: `rl_${name}` });
+    generic.set(name, l);
+  }
+  const { remaining } = await l.getRemaining(key);
+  return remaining <= 0;
+}
+
 export async function limitLogin(
   ip: string,
 ): Promise<{ success: boolean; skipped: boolean }> {
@@ -43,4 +60,11 @@ export async function limitLogin(
   if (!l) return { success: true, skipped: true };
   const { success } = await l.limit(`login_${ip}`);
   return { success, skipped: false };
+}
+
+/** IP pengunjung dari header proxy Vercel (untuk kunci rate-limit). Server Action / route handler. */
+export async function requestIp(): Promise<string> {
+  const { headers } = await import("next/headers");
+  const h = await headers();
+  return (h.get("x-forwarded-for") ?? "").split(",")[0]!.trim() || h.get("x-real-ip") || "anon";
 }

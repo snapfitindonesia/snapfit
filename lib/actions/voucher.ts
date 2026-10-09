@@ -1,6 +1,7 @@
 "use server";
 
 import { unstable_cache } from "next/cache";
+import { isLimited, limitAction, requestIp } from "@/lib/security/ratelimit";
 import { db } from "@/lib/db";
 import { computeVoucherBenefit, voucherLabel, type VoucherLike } from "@/lib/voucher";
 import { FLAT_SHIPPING_COST, freeShippingSubsidy, isFlatShipping } from "@/lib/payment";
@@ -57,11 +58,21 @@ export type ApplyVoucherResult =
  */
 /** `shippingEstimate`: ongkir dari quote checkout (hanya estimasi — createOrder menghitung ulang). */
 export async function applyVoucher(code: string, subtotal: number, shippingEstimate?: number): Promise<ApplyVoucherResult> {
-  const trimmed = code.trim().toUpperCase();
+  const trimmed = code.trim().toUpperCase().slice(0, 40);
   if (!trimmed) return { ok: false, error: "Masukkan kode voucher." };
 
+  // Anti tebak kode: maks. 10 kode SALAH / 10 menit / IP. Hanya kode salah yang dihitung, jadi
+  // cek ulang voucher yang sudah terpasang (tiap isi keranjang berubah) tak pernah terblokir.
+  const ip = await requestIp();
+  if (await isLimited("voucher-miss", ip, 10, "10 m")) {
+    return { ok: false, error: "Terlalu banyak kode voucher salah. Coba lagi 10 menit lagi." };
+  }
+
   const voucher = await db.voucher.findUnique({ where: { code: trimmed } });
-  if (!voucher || !voucher.active) return { ok: false, error: "Voucher tidak ditemukan / tidak aktif." };
+  if (!voucher || !voucher.active) {
+    await limitAction("voucher-miss", ip, 10, "10 m");
+    return { ok: false, error: "Voucher tidak ditemukan / tidak aktif." };
+  }
 
   // Estimasi sisa ongkir (setelah gratis ongkir) untuk voucher GRATIS_ONGKIR: dari quote
   // checkout bila ada, else tarif flat dikurangi gratis ongkir.
