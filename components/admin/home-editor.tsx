@@ -169,6 +169,7 @@ function Fields({ s, set }: { s: HomeSection; set: (patch: Partial<HomeSection>)
         <div className="grid gap-4 sm:grid-cols-2">
           <Select label="Mode" value={s.mode} onChange={(v) => set({ mode: v })} options={[["produk", "Produk — latar warna + foto produk"], ["foto", "Foto penuh selebar layar + teks"]]} />
           <Select label="Warna teks" value={s.theme} onChange={(v) => set({ theme: v })} options={[["terang", "Gelap (untuk latar terang)"], ["gelap", "Putih (untuk latar gelap)"]]} />
+          <Select label="Ukuran teks" value={s.textSize} onChange={(v) => set({ textSize: v })} options={[["besar", "Besar"], ["sedang", "Sedang"], ["kecil", "Kecil"]]} />
           <div className="sm:col-span-2">
             <Img label={s.mode === "foto" ? "Foto (desktop)" : "Foto produk"} value={s.image} onChange={(v) => set({ image: v })} wide={s.mode === "foto"} hint={s.mode === "foto" ? HERO_HINT : "Foto produk berlatar putih — putihnya melebur ke warna latar."} />
           </div>

@@ -38,6 +38,8 @@ export const heroSchema = z.object({
   eyebrow: text(60), // badge kecil (mis. "BARU")
   badgeBg: color, // warna badge (kosong = biru ala Nomad #005bd3)
   kicker: text(80), // subjudul tebal DI ATAS judul (mis. "Siap untuk iPhone 18")
+  // Ukuran teks hero (judul + subjudul atas). "besar" = ukuran awal.
+  textSize: z.enum(["kecil", "sedang", "besar"]).default("besar"),
   title: text(120),
   subtitle: text(240),
   ...cta,

@@ -81,6 +81,23 @@ function isTight(s: HomeSection | undefined): boolean {
 
 /* ------------------------------- HERO -------------------------------- */
 
+// Ukuran teks hero (Admin → Konten Beranda → Hero → "Ukuran teks"). HP / ≥640 / ≥768 / ≥1024 / ≥1280.
+const HERO_TITLE = {
+  besar: "text-[40px] sm:text-5xl md:text-[44px] lg:text-[56px] xl:text-[77px]",
+  sedang: "text-[34px] sm:text-[40px] md:text-[38px] lg:text-[46px] xl:text-[60px]",
+  kecil: "text-[28px] sm:text-[32px] md:text-[32px] lg:text-[38px] xl:text-[48px]",
+} as const;
+const HERO_KICKER = {
+  besar: "text-xl sm:text-2xl md:text-xl lg:text-2xl xl:text-[33px]",
+  sedang: "text-lg sm:text-xl md:text-lg lg:text-xl xl:text-[27px]",
+  kecil: "text-base sm:text-lg md:text-base lg:text-lg xl:text-[22px]",
+} as const;
+const HERO_TITLE_PRODUK = {
+  besar: "text-4xl sm:text-5xl lg:text-6xl",
+  sedang: "text-[32px] sm:text-[40px] lg:text-5xl",
+  kecil: "text-[28px] sm:text-[32px] lg:text-[40px]",
+} as const;
+
 /** `tightNext`: bagian berikut juga "rapat" (hero/Blok Custom foto) → tanpa jarak bawah (jarak diberi bagian berikut). */
 function Hero({ s, first, tightNext = false }: { s: SectionOf<"hero">; first: boolean; tightNext?: boolean }) {
   const dark = s.theme === "gelap";
@@ -126,9 +143,9 @@ function Hero({ s, first, tightNext = false }: { s: SectionOf<"hero">; first: bo
                 {s.eyebrow}
               </span>
             )}
-            {s.kicker && <p className="mt-2 text-xl font-bold leading-[0.95] tracking-[-0.04em] sm:text-2xl md:text-xl lg:mt-1.5 lg:text-2xl xl:text-[33px]">{s.kicker}</p>}
+            {s.kicker && <p className={cn("mt-2 font-bold tracking-[-0.04em] lg:mt-1.5", HERO_KICKER[s.textSize], "leading-[0.95]")}>{s.kicker}</p>}
             {s.title && (
-              <Heading className="mt-1 text-[40px] font-extrabold leading-[0.95] tracking-[-0.04em] text-balance sm:text-5xl md:text-[44px] lg:text-[56px] xl:text-[77px]">
+              <Heading className={cn("mt-1 font-extrabold tracking-[-0.04em] text-balance", HERO_TITLE[s.textSize], "leading-[0.95]")}>
                 {s.title}
               </Heading>
             )}
@@ -158,7 +175,7 @@ function Hero({ s, first, tightNext = false }: { s: SectionOf<"hero">; first: bo
       <div className={cn(WRAP, "grid items-center gap-6 py-10 sm:py-14 md:min-h-[560px] md:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] md:gap-10 md:py-12 lg:min-h-[660px]")}>
         <div className="max-w-xl">
           <Eyebrow dark={dark}>{s.eyebrow}</Eyebrow>
-          {s.title && <Heading className="mt-3 text-4xl font-semibold tracking-tight text-balance sm:text-5xl lg:text-6xl">{s.title}</Heading>}
+          {s.title && <Heading className={cn("mt-3 font-semibold tracking-tight text-balance", HERO_TITLE_PRODUK[s.textSize])}>{s.title}</Heading>}
           {s.subtitle && <p className={cn("mt-4 text-base text-pretty sm:text-lg", dark ? "text-white/80" : "text-foreground/70")}>{s.subtitle}</p>}
           <Cta label={s.ctaLabel} href={s.ctaHref} dark={dark} className="mt-7" />
         </div>
