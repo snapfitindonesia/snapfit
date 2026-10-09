@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { db } from "@/lib/db";
 import { applyDiscount, activeDiscountPercent } from "@/lib/format";
 import { isPlaceholderPrice, sellableStock } from "@/lib/price-guard";
@@ -351,7 +352,8 @@ const PDP_INCLUDE = {
  * Urutan: (a) segmen kanonik persis → (b) slug/slug lama persis (URL lama, sebelum format ID)
  * → (c) ID cocok tapi teks lama (judul sudah diganti). Tak ketemu / diarsipkan → null (404).
  */
-export async function getProductBySegment(segment: string) {
+// React cache(): metadata & halaman PDP memanggil ini dengan segmen yang sama → 1 query per render, bukan 2.
+export const getProductBySegment = cache(async (segment: string) => {
   const { id } = parseProductSegment(segment);
   const byId = id ? await db.product.findFirst({ where: { shortId: id }, include: PDP_INCLUDE }) : null;
   let product = byId && productSegment(byId) === segment ? byId : null;
@@ -361,7 +363,7 @@ export async function getProductBySegment(segment: string) {
   }
   if (!product || product.archived) return null;
   return { product: withVariantPricing(product), canonical: productSegment(product) };
-}
+});
 
 export async function getProductBySlug(slug: string) {
   const product = await db.product.findUnique({

@@ -4,6 +4,7 @@ import { getHomeSections, loadHomeData, type HomeData } from "@/lib/home/data";
 import { DEFAULT_SECTIONS, type HomeSection } from "@/lib/home/sections";
 import { HomeSections } from "@/components/home/home-sections";
 import { buildFallback } from "@/lib/build-fallback";
+import { jsonLdHtml } from "@/lib/json-ld";
 
 // ISR: beranda di-cache (cepat), regenerasi tiap 5 menit; simpan di Admin → Konten Beranda
 // memperbarui langsung (revalidatePath("/")).
@@ -60,7 +61,7 @@ export default async function HomePage() {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(SITE_JSON_LD) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdHtml(SITE_JSON_LD)} />
       {!heroH1 && <h1 className="sr-only">SNAPFIT Indonesia — Case & Aksesori HP</h1>}
       <HomeSections sections={sections} data={data} />
     </>

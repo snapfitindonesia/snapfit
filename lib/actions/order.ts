@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath, revalidateTag } from "next/cache";
+import { after } from "next/server";
 import { CATALOG_TAG } from "@/lib/catalog";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/require-admin";
@@ -228,11 +229,15 @@ async function placeOrder(input: CreateOrderInput) {
     return created;
   });
 
-  await notifyNewOrder(order, items, isManualPayment());
-  // Keranjang ditinggal: kontak ini sudah memesan → jangan diingatkan.
-  await markDraftsConverted(data.address.email, data.address.phone).catch((e) =>
-    console.error("Tandai draf checkout gagal:", e),
-  );
+  // Email (admin + instruksi bayar) & tandai draf dijalankan SETELAH respons → pembeli langsung diarahkan
+  // ke halaman sukses tanpa menunggu email terkirim.
+  after(async () => {
+    await notifyNewOrder(order, items, isManualPayment());
+    // Keranjang ditinggal: kontak ini sudah memesan → jangan diingatkan.
+    await markDraftsConverted(data.address.email, data.address.phone).catch((e) =>
+      console.error("Tandai draf checkout gagal:", e),
+    );
+  });
 
   // Mode TRANSFER MANUAL (Midtrans belum aktif): tak buat Snap token.
   // Order PENDING → pembeli transfer → admin konfirmasi (markOrderPaid).
@@ -341,61 +346,66 @@ export async function handlePaidOrder(
     ? await db.order.update({ where: { id: order.id }, data: { trackingNo } })
     : await db.order.findUniqueOrThrow({ where: { id: order.id } });
 
-  // Email konfirmasi (docs/08) — jangan gagalkan order kalau email error
-  const addressData = updated.address as { email?: string; name?: string; phone?: string; address?: string; city?: string; province?: string; district?: string; postalCode?: string } | null;
-  const email = addressData?.email;
-  if (email) {
-    try {
-      const tpl = orderConfirmationEmail(updated, await withItemImages(items));
-      await sendEmail({ to: email, ...tpl });
-    } catch (e) {
-      console.error("Email konfirmasi gagal:", e);
-    }
-  }
-
-  // Push ke Ginee (best-effort) — hanya item produk hasil impor Ginee. Ginee
-  // otomatis mengurangi stok gudang. Jangan gagalkan order kalau push gagal.
-  if (isGineeConfigured() && !updated.gineePushedAt) {
-    try {
-      const variants = await db.variant.findMany({
-        where: { id: { in: items.map((i) => i.variantId) } },
-        select: { id: true, sku: true, weight: true, product: { select: { gineeProductId: true } } },
-      });
-      const gineeItems = items
-        .map((it) => {
-          const v = variants.find((x) => x.id === it.variantId);
-          if (!v || !v.product.gineeProductId || !v.sku) return null;
-          return { sku: v.sku, quantity: it.qty, actualPrice: it.price, weight: v.weight };
-        })
-        .filter((x): x is NonNullable<typeof x> => x !== null);
-
-      if (gineeItems.length) {
-        const res = await pushOrderToGinee({
-          externalOrderSn: updated.midtransOrderId ?? updated.id,
-          customer: { name: addressData?.name ?? "Pelanggan", email, phone: addressData?.phone ?? "" },
-          address: {
-            province: addressData?.province,
-            city: addressData?.city,
-            district: addressData?.district,
-            postalCode: addressData?.postalCode,
-            fullAddress: addressData?.address ?? "-",
-          },
-          items: gineeItems,
-          payAmount: updated.total,
-        });
-        if (res.ok) {
-          await db.order.update({
-            where: { id: updated.id },
-            data: { gineePushedAt: new Date(), gineeOrderSn: res.orderSn ?? null },
-          });
-        } else {
-          console.error("Push Ginee gagal:", res.error);
-        }
+  // Email konfirmasi & push Ginee dijalankan SETELAH respons dikirim (after): webhook Midtrans / tombol
+  // admin langsung dapat balasan (tak timeout → tak dikirim ulang). Klaim atomik di atas menjamin
+  // blok ini hanya jalan sekali per pesanan.
+  after(async () => {
+    // Email konfirmasi (docs/08) — jangan gagalkan order kalau email error
+    const addressData = updated.address as { email?: string; name?: string; phone?: string; address?: string; city?: string; province?: string; district?: string; postalCode?: string } | null;
+    const email = addressData?.email;
+    if (email) {
+      try {
+        const tpl = orderConfirmationEmail(updated, await withItemImages(items));
+        await sendEmail({ to: email, ...tpl });
+      } catch (e) {
+        console.error("Email konfirmasi gagal:", e);
       }
-    } catch (e) {
-      console.error("Push Ginee error:", e);
     }
-  }
+
+    // Push ke Ginee (best-effort) — hanya item produk hasil impor Ginee. Ginee
+    // otomatis mengurangi stok gudang. Jangan gagalkan order kalau push gagal.
+    if (isGineeConfigured() && !updated.gineePushedAt) {
+      try {
+        const variants = await db.variant.findMany({
+          where: { id: { in: items.map((i) => i.variantId) } },
+          select: { id: true, sku: true, weight: true, product: { select: { gineeProductId: true } } },
+        });
+        const gineeItems = items
+          .map((it) => {
+            const v = variants.find((x) => x.id === it.variantId);
+            if (!v || !v.product.gineeProductId || !v.sku) return null;
+            return { sku: v.sku, quantity: it.qty, actualPrice: it.price, weight: v.weight };
+          })
+          .filter((x): x is NonNullable<typeof x> => x !== null);
+
+        if (gineeItems.length) {
+          const res = await pushOrderToGinee({
+            externalOrderSn: updated.midtransOrderId ?? updated.id,
+            customer: { name: addressData?.name ?? "Pelanggan", email, phone: addressData?.phone ?? "" },
+            address: {
+              province: addressData?.province,
+              city: addressData?.city,
+              district: addressData?.district,
+              postalCode: addressData?.postalCode,
+              fullAddress: addressData?.address ?? "-",
+            },
+            items: gineeItems,
+            payAmount: updated.total,
+          });
+          if (res.ok) {
+            await db.order.update({
+              where: { id: updated.id },
+              data: { gineePushedAt: new Date(), gineeOrderSn: res.orderSn ?? null },
+            });
+          } else {
+            console.error("Push Ginee gagal:", res.error);
+          }
+        }
+      } catch (e) {
+        console.error("Push Ginee error:", e);
+      }
+    }
+  });
 
   return { alreadyProcessed: false, orderId: updated.id, status: updated.status };
 }

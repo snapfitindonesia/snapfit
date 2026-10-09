@@ -1,4 +1,5 @@
 import { notFound, permanentRedirect } from "next/navigation";
+import { jsonLdHtml } from "@/lib/json-ld";
 import { productPath } from "@/lib/product-url";
 import { preconnect } from "react-dom";
 import { slugify } from "@/lib/seo-pages";
@@ -161,7 +162,7 @@ export default async function ProductDetailPage({
 
   return (
     <div className="pb-32 md:pb-12">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdHtml(jsonLd)} />
       {/* Above-fold: kartu putih mengambang di atas latar abu-abu (ala Nomad) */}
       <section className="bg-muted/40">
         <div className="mx-auto max-w-[90rem] px-4 py-8 sm:px-6 lg:px-10 sm:py-12">

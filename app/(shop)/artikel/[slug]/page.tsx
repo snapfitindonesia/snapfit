@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import Image from "@/components/ui/image";
 import { ArticleGrid } from "@/components/articles/article-card";
+import { jsonLdHtml } from "@/lib/json-ld";
 import { TYPE } from "@/lib/typography";
 import { ArticleContent, plainText } from "@/lib/article-content";
 import { formatArticleDate, getArticleBySlug, getPublishedArticles, readingMinutes } from "@/lib/articles";
@@ -60,7 +61,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
 
   return (
     <div className="pb-8">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdHtml(jsonLd)} />
       <article className="mx-auto max-w-[760px] px-4 pt-8 sm:px-6 sm:pt-12">
         <Link href="/artikel" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
           <ChevronLeft className="size-4" aria-hidden /> Semua artikel

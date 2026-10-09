@@ -1,4 +1,5 @@
 import { productPath } from "@/lib/product-url";
+import { jsonLdHtml } from "@/lib/json-ld";
 import Link from "next/link";
 import { ChevronRight, SlidersHorizontal } from "lucide-react";
 import { ProductCard } from "@/components/shop/product-card";
@@ -60,7 +61,7 @@ export function LandingView({
 
   return (
     <div className="mx-auto max-w-[90rem] px-4 py-8 sm:px-6 lg:px-10 sm:py-12">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdHtml(jsonLd)} />
 
       <nav aria-label="Breadcrumb" className="mb-4 flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
         {trail.map((c) => (

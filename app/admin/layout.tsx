@@ -1,15 +1,20 @@
 import Link from "next/link";
-import { getCurrentUser } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+import { checkAdmin } from "@/lib/auth/require-admin";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { AdminMobileNav } from "@/components/admin/admin-mobile-nav";
 import { PurgeCacheButton } from "@/components/admin/purge-cache-button";
 
-// Proteksi (login + role admin + MFA) ditegakkan di middleware.ts (fail-closed).
+// Proteksi (login + role admin + MFA) ditegakkan di middleware.ts (fail-closed). Layout ini MENGULANG cek
+// login + role di server (lapisan kedua bila middleware terlewati). MFA halaman tetap di middleware (layout
+// ini juga membungkus /admin/mfa); MFA aksi admin dicek di requireAdmin.
 export default async function AdminLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const user = await getCurrentUser();
+  const access = await checkAdmin({ skipMfa: true });
+  if (!access.ok) redirect(access.reason === "login" ? "/masuk?next=/admin" : "/?reason=forbidden");
+  const user = { email: access.email };
 
   return (
     <div className="min-h-dvh bg-muted/30">
