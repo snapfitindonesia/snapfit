@@ -326,6 +326,21 @@ export async function bulkUpdateProducts(
   const errors: string[] = [];
   const productFields = new Map<string, { name?: string; brand?: string | null; description?: string }>();
 
+  // Sel rusak dari Excel (teks diawali = + - @ dianggap rumus → "#NAME?", "#VALUE!", dst.) → abaikan sel itu,
+  // jangan timpa data asli.
+  const XL_ERROR = /^#(NAME\?|VALUE!|REF!|DIV\/0!|N\/A|NUM!|NULL!|SPILL!|CALC!)/;
+  const badCells = new Set<string>();
+  for (const r of rows) {
+    for (const k of ["nama_produk", "brand", "sku", "deskripsi"] as const) {
+      const val = r[k]?.trim();
+      if (val && XL_ERROR.test(val)) {
+        badCells.add(`${k} (${(r.productId ?? r.variantId ?? "").slice(0, 10)})`);
+        r[k] = undefined;
+      }
+    }
+  }
+  if (badCells.size) errors.push(`Diabaikan ${badCells.size} sel berisi error Excel (mis. #NAME?): ${[...badCells].slice(0, 5).join(", ")}${badCells.size > 5 ? ", …" : ""}`);
+
   for (const r of rows) {
     const vid = r.variantId?.trim();
     if (!vid) { skipped++; continue; }

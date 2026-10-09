@@ -11,7 +11,19 @@ export const bankAccountSchema = z.object({
     .pipe(z.string().min(5, "Nomor rekening minimal 5 angka").max(20, "Nomor rekening terlalu panjang")),
   accountName: z.string().trim().min(2, "Nama pemilik wajib diisi").max(60),
 });
-export const bankAccountsSchema = z.array(bankAccountSchema).min(1, "Minimal 1 rekening").max(4, "Maksimal 4 rekening");
+export const bankAccountsSchema = z
+  .array(bankAccountSchema)
+  .min(1, "Minimal 1 rekening")
+  .max(4, "Maksimal 4 rekening")
+  .superRefine((list, ctx) => {
+    // Rekening sama (bank + nomor) tak boleh dua kali — pembeli bingung & key daftar ganda di halaman.
+    const seen = new Set<string>();
+    list.forEach((a, i) => {
+      const key = `${a.bank.toLowerCase()}|${a.accountNumber}`;
+      if (seen.has(key)) ctx.addIssue({ code: "custom", path: [i], message: "Rekening ini sudah ada di daftar (ganda)" });
+      seen.add(key);
+    });
+  });
 
 export type BankAccount = z.infer<typeof bankAccountSchema>;
 

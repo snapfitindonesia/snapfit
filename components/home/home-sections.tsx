@@ -469,11 +469,14 @@ function Custom({ s, tightPrev = false, tightNext = false }: { s: SectionOf<"cus
 
   const hasText = (b: (typeof blocks)[number]) => !!(b.eyebrow || b.title || b.text || (b.ctaLabel && b.href));
   // Ada tautan → foto (dan judul) bisa diklik, dengan atau tanpa tombol.
+  // `extra` (mis. md:order-last pada tata letak samping) dipasang di elemen TERLUAR — Link bila ada —
+  // karena hanya anak langsung grid yang terpengaruh `order`.
   const photo = (b: (typeof blocks)[number], extra?: string) => {
-    const img = rawPhoto(b, extra);
-    if (!img || !b.href) return img;
+    if (!b.href) return rawPhoto(b, extra);
+    const img = rawPhoto(b);
+    if (!img) return null;
     return (
-      <Link href={b.href} aria-label={b.title || b.ctaLabel || "Lihat"} className="block transition-opacity hover:opacity-90">
+      <Link href={b.href} aria-label={b.title || b.ctaLabel || "Lihat"} className={cn("block transition-opacity hover:opacity-90", extra)}>
         {img}
       </Link>
     );

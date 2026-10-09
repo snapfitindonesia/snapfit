@@ -28,8 +28,11 @@ const SEP = ";";
 
 // Bungkus sel bila mengandung pemisah/kutip/baris baru.
 function cell(v: string | number): string {
-  const s = String(v ?? "");
-  return /[";,\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  let s = String(v ?? "");
+  // Teks diawali = + - @ dianggap RUMUS oleh Excel (jadi "#NAME?" lalu menimpa data saat diupload ulang).
+  // Awali dengan Tab: tak terlihat di Excel, sel tetap teks, dan terbuang otomatis saat upload (nilai di-trim).
+  if (typeof v === "string" && /^[=+\-@]/.test(s)) s = `\t${s}`;
+  return /[";,\n\t]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
 /** Pemisah dari baris judul: yang paling sering muncul di antara ; , dan Tab. */

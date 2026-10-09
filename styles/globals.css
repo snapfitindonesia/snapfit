@@ -232,9 +232,8 @@ main:has(> [data-newsletter]:last-child) + footer {
    Di layar sentuh semua kolom isian 16px → tak ada auto-zoom; pinch-zoom tetap bisa (aksesibilitas).
    Sengaja di luar @layer agar menang atas utilitas text-sm/text-xs. */
 @media (hover: none) and (pointer: coarse) {
-  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
-  select,
-  textarea {
+  /* Hanya MENAIKKAN ke 16px — kolom yang sengaja lebih besar (text-lg ke atas, mis. kode OTP) tak disentuh. */
+  :is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"]), select, textarea):not(.text-lg, .text-xl, .text-2xl, .text-3xl, .text-4xl) {
     font-size: 16px;
   }
 }
