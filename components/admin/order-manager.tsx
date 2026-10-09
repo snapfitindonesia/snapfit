@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { formatRupiah } from "@/lib/format";
 import { updateOrder } from "@/lib/actions/admin";
 import { markOrderPaid } from "@/lib/actions/order";
-import { ORDER_STATUSES } from "@/lib/validations/admin";
+import { ORDER_STATUSES, ORDER_TRANSITIONS, RESTOCK_ON_CANCEL, type OrderStatus } from "@/lib/validations/admin";
 import { waLink, waProcessingMessage, waShippedMessage, waReviewMessage } from "@/lib/wa";
 
 export type AdminOrder = {
@@ -241,7 +241,10 @@ function OrderRow({ order }: { order: AdminOrder }) {
                 onChange={(e) => setManualStatus(e.target.value)}
                 className="rounded-md border border-border bg-background px-2 py-1 text-xs"
               >
-                {ORDER_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                {/* Hanya status saat ini + perubahan yang diizinkan (lib/validations/admin.ts) */}
+                {[order.status as OrderStatus, ...(ORDER_TRANSITIONS[order.status as OrderStatus] ?? [])].map((s) => (
+                  <option key={s} value={s}>{STATUS_BADGE[s]?.label ?? s}{s === order.status ? " (sekarang)" : ""}</option>
+                ))}
               </select>
               <input
                 value={trackingNo}
@@ -258,6 +261,15 @@ function OrderRow({ order }: { order: AdminOrder }) {
                 {busy === "manual" && <Loader2 className="size-3.5 animate-spin" />} Simpan
               </Button>
             </div>
+            <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+              {order.status === "PENDING" && "Lunas hanya lewat tombol Konfirmasi Bayar (stok berkurang & email konfirmasi terkirim). "}
+              {manualStatus === "CANCELLED" && manualStatus !== order.status && (RESTOCK_ON_CANCEL.includes(order.status as OrderStatus)
+                ? "Dibatalkan: stok dikembalikan otomatis & koin member dikembalikan. "
+                : order.status === "PENDING"
+                  ? "Dibatalkan: koin member yang terpakai dikembalikan. "
+                  : "Dibatalkan setelah dikirim: stok TIDAK dikembalikan otomatis (sesuaikan stok bila barang retur). ")}
+              {order.status === "CANCELLED" && "Pesanan dibatalkan bersifat final."}
+            </p>
           </details>
         </div>
       )}

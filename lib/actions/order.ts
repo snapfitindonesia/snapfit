@@ -257,14 +257,27 @@ export async function handlePaidOrder(
 ) {
   const order = await db.order.findUnique({ where: { midtransOrderId } });
   if (!order) throw new Error("Order tidak ditemukan.");
-  if (order.status === "PAID" || order.status === "SHIPPED" || order.status === "DONE") {
-    return { alreadyProcessed: true, orderId: order.id, status: order.status };
+
+  // KLAIM ATOMIK PENDING → PAID: hanya SATU pemanggil yang menang (retry webhook Midtrans, webhook
+  // bersamaan dengan admin "Konfirmasi Bayar", klik ganda). Yang kalah tak mengurangi stok / kirim
+  // email / push Ginee lagi. Pesanan yang sudah DIBATALKAN (koinnya sudah dikembalikan) tak bisa jadi lunas.
+  const claim = await db.order.updateMany({
+    where: { id: order.id, status: "PENDING" },
+    data: { status: "PAID", paymentStatus },
+  });
+  if (claim.count === 0) {
+    const now = await db.order.findUnique({ where: { id: order.id }, select: { status: true } });
+    if (now?.status === "CANCELLED") {
+      console.error(`[bayar] Pembayaran masuk untuk pesanan BATAL ${midtransOrderId} — cek & refund manual.`);
+      return { alreadyProcessed: false, cancelled: true, orderId: order.id, status: "CANCELLED" };
+    }
+    return { alreadyProcessed: true, orderId: order.id, status: now?.status ?? order.status };
   }
 
   const items = await db.orderItem.findMany({ where: { orderId: order.id } });
 
-  // Kurangi stok (best-effort, tak menurunkan di bawah 0)
-  await db.$transaction(
+  // Kurangi stok (tak pernah di bawah 0). Stok tak cukup → dicatat (oversell perlu dicek admin).
+  const deducted = await db.$transaction(
     items.map((it) =>
       db.variant.updateMany({
         where: { id: it.variantId, stock: { gte: it.qty } },
@@ -272,6 +285,9 @@ export async function handlePaidOrder(
       }),
     ),
   );
+  deducted.forEach((r, i) => {
+    if (r.count === 0) console.error(`[stok] Stok tak cukup saat ${midtransOrderId} lunas: varian ${items[i]!.variantId} × ${items[i]!.qty}`);
+  });
 
   // Buat pengiriman via Biteship HANYA di mode Biteship. Mode flat: resi diisi
   // admin manual di langkah "Kirim Pesanan". Best-effort: jangan gagalkan LUNAS.
@@ -292,14 +308,9 @@ export async function handlePaidOrder(
     }
   }
 
-  const updated = await db.order.update({
-    where: { id: order.id },
-    data: {
-      status: "PAID",
-      paymentStatus,
-      ...(trackingNo ? { trackingNo } : {}),
-    },
-  });
+  const updated = trackingNo
+    ? await db.order.update({ where: { id: order.id }, data: { trackingNo } })
+    : await db.order.findUniqueOrThrow({ where: { id: order.id } });
 
   // Email konfirmasi (docs/08) — jangan gagalkan order kalau email error
   const addressData = updated.address as { email?: string; name?: string; phone?: string; address?: string; city?: string; province?: string; district?: string; postalCode?: string } | null;
@@ -381,7 +392,8 @@ export async function markOrderPaid(orderId: string): Promise<{ ok: boolean; err
   const order = await db.order.findUnique({ where: { id: orderId }, select: { midtransOrderId: true, id: true } });
   if (!order) return { ok: false, error: "Order tidak ditemukan." };
   try {
-    await handlePaidOrder(order.midtransOrderId ?? order.id, "manual-transfer");
+    const r = await handlePaidOrder(order.midtransOrderId ?? order.id, "manual-transfer");
+    if ("cancelled" in r && r.cancelled) return { ok: false, error: "Pesanan ini sudah dibatalkan — tidak bisa ditandai lunas." };
     revalidatePath("/admin/pesanan");
     revalidatePath("/akun/pesanan");
     return { ok: true };

@@ -111,6 +111,24 @@ export const voucherSchema = z.object({
 });
 
 export const ORDER_STATUSES = ["PENDING", "PAID", "PROCESSING", "SHIPPED", "DONE", "CANCELLED"] as const;
+export type OrderStatus = (typeof ORDER_STATUSES)[number];
+
+/**
+ * Perubahan status MANUAL yang diizinkan (Admin → Pesanan → "Ubah manual").
+ * PENDING → PAID sengaja TIDAK ada: lunas hanya lewat "Konfirmasi Bayar" / webhook (handlePaidOrder)
+ * supaya stok berkurang, Ginee terisi & email konfirmasi terkirim. DIBATALKAN = final.
+ */
+export const ORDER_TRANSITIONS: Record<OrderStatus, readonly OrderStatus[]> = {
+  PENDING: ["CANCELLED"],
+  PAID: ["PROCESSING", "SHIPPED", "CANCELLED"],
+  PROCESSING: ["PAID", "SHIPPED", "CANCELLED"],
+  SHIPPED: ["PROCESSING", "DONE", "CANCELLED"],
+  DONE: ["CANCELLED"], // cashback sudah diberikan saat Selesai → hanya bisa dibatalkan (cashback ditarik)
+  CANCELLED: [],
+};
+
+/** Status yang stoknya SUDAH dikurangi tapi barang belum keluar → batal = stok dikembalikan. */
+export const RESTOCK_ON_CANCEL: readonly OrderStatus[] = ["PAID", "PROCESSING"];
 
 export const orderUpdateSchema = z.object({
   id: z.string().min(1),

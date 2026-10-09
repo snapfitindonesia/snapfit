@@ -21,6 +21,9 @@ import {
   merekSchema,
   reviewSchema,
   orderUpdateSchema,
+  ORDER_TRANSITIONS,
+  RESTOCK_ON_CANCEL,
+  type OrderStatus,
   type ProductInput,
   type BannerInput,
   type CategoryInput,
@@ -637,16 +640,40 @@ export async function updateOrder(input: OrderUpdateInput): Promise<Result> {
       where: { id: data.id },
       include: { items: true },
     });
+    if (!existing) return { ok: false, error: "Pesanan tidak ditemukan." };
+    const from = existing.status as OrderStatus;
+    const changed = from !== data.status;
+    // Hanya perubahan yang diizinkan (lib/validations/admin.ts). Lunas WAJIB lewat "Konfirmasi Bayar".
+    if (changed && !ORDER_TRANSITIONS[from]?.includes(data.status)) {
+      return {
+        ok: false,
+        error:
+          data.status === "PAID" && from === "PENDING"
+            ? "Untuk menandai lunas, pakai tombol Konfirmasi Bayar (agar stok berkurang & email konfirmasi terkirim)."
+            : `Status tidak bisa diubah dari ${from} ke ${data.status}.`,
+      };
+    }
     // Set shippedAt sekali saat pertama kali → SHIPPED (basis timer ajakan ulas)
-    const toShipped = data.status === "SHIPPED" && existing?.status !== "SHIPPED";
-    const updated = await db.order.update({
-      where: { id: data.id },
+    const toShipped = data.status === "SHIPPED" && from !== "SHIPPED";
+    // Atomik: hanya berhasil bila status belum diubah orang/proses lain sejak dibaca (klik ganda, webhook).
+    const res = await db.order.updateMany({
+      where: { id: data.id, status: from },
       data: {
         status: data.status,
         trackingNo: data.trackingNo || null,
-        ...(toShipped && !existing?.shippedAt ? { shippedAt: new Date() } : {}),
+        ...(toShipped && !existing.shippedAt ? { shippedAt: new Date() } : {}),
       },
     });
+    if (res.count === 0) return { ok: false, error: "Status pesanan baru saja berubah. Muat ulang halaman lalu coba lagi." };
+    const updated = await db.order.findUniqueOrThrow({ where: { id: data.id } });
+
+    // Batal sebelum barang dikirim → stok yang sudah dikurangi saat lunas dikembalikan.
+    if (changed && data.status === "CANCELLED" && RESTOCK_ON_CANCEL.includes(from)) {
+      await db.$transaction(
+        existing.items.map((it) => db.variant.updateMany({ where: { id: it.variantId }, data: { stock: { increment: it.qty } } })),
+      );
+      revalidateStorefront();
+    }
     revalidatePath("/admin/pesanan");
     revalidatePath("/akun/pesanan");
 
