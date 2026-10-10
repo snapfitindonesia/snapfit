@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
 import { activeDiscountPercent, applyDiscount } from "@/lib/format";
 import { isPlaceholderPrice, sellableStock } from "@/lib/price-guard";
-import { mergeLines } from "@/lib/cart-lines";
+import { cartTotals, mergeLines } from "@/lib/cart-lines";
 
 afterEach(() => vi.useRealTimers());
 
@@ -61,5 +61,21 @@ describe("mergeLines (keranjang)", () => {
   });
   it("keranjang tanpa duplikat tidak berubah", () => {
     expect(mergeLines([{ variantId: "a", qty: 1 }])).toEqual([{ variantId: "a", qty: 1 }]);
+  });
+});
+
+describe("cartTotals (berat & subtotal — dipakai checkout, cek ongkir & pesanan)", () => {
+  const v = [
+    { id: "a", weight: 200, price: 100_000, discounts: [{ percent: 10, active: true, startAt: null, endAt: null }] },
+    { id: "b", weight: 1500, price: 50_000 },
+  ];
+  it("subtotal pakai harga setelah diskon, berat dijumlah per qty", () => {
+    expect(cartTotals([{ variantId: "a", qty: 2 }, { variantId: "b", qty: 1 }], v)).toEqual({ weight: 1900, subtotal: 230_000, missing: [] });
+  });
+  it("baris varian yang sama dihitung semuanya", () => {
+    expect(cartTotals([{ variantId: "b", qty: 1 }, { variantId: "b", qty: 2 }], v)).toMatchObject({ weight: 4500, subtotal: 150_000 });
+  });
+  it("varian tak ditemukan dilaporkan, tidak dihitung", () => {
+    expect(cartTotals([{ variantId: "x", qty: 1 }, { variantId: "b", qty: 1 }], v)).toEqual({ weight: 1500, subtotal: 50_000, missing: ["x"] });
   });
 });

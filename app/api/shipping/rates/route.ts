@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getShippingRates } from "@/lib/biteship";
 import { ratesRequestSchema } from "@/lib/validations/checkout";
+import { cartTotals } from "@/lib/cart-lines";
 
 // AJAX: cek ongkir. Berat & nilai barang dihitung dari DB (bukan dari client).
 export async function POST(request: Request) {
@@ -23,17 +24,10 @@ export async function POST(request: Request) {
   const { postalCode, items } = parsed.data;
   const variants = await db.variant.findMany({
     where: { id: { in: items.map((i) => i.variantId) } },
-    select: { id: true, weight: true, price: true },
+    select: { id: true, weight: true, price: true, discounts: { select: { percent: true, active: true, startAt: true, endAt: true } } },
   });
-
-  let weightGram = 0;
-  let itemValue = 0;
-  for (const line of items) {
-    const v = variants.find((x) => x.id === line.variantId);
-    if (!v) continue;
-    weightGram += v.weight * line.qty;
-    itemValue += v.price * line.qty;
-  }
+  // Rumus bersama (lib/cart-lines.ts). Nilai barang = harga setelah diskon (nilai yang benar-benar dibayar).
+  const { weight: weightGram, subtotal: itemValue } = cartTotals(items, variants);
   if (weightGram === 0) {
     return NextResponse.json({ error: "Item tidak ditemukan" }, { status: 400 });
   }

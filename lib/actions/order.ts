@@ -30,7 +30,7 @@ import { getCoinBalance, spendCoins } from "@/lib/coins";
 import { activeCashback, maxCoinsUsable } from "@/lib/coins-rules";
 import { getCoinRules } from "@/lib/coins-settings";
 import { limitAction, requestIp } from "@/lib/security/ratelimit";
-import { mergeLines } from "@/lib/cart-lines";
+import { cartTotals, mergeLines } from "@/lib/cart-lines";
 import { ZodError } from "zod";
 
 /**
@@ -68,8 +68,8 @@ async function computeOrder(
     };
   });
 
-  const subtotal = items.reduce((n, i) => n + i.price * i.qty, 0);
-  const totalWeight = items.reduce((n, i) => n + i.weight * i.qty, 0);
+  // Rumus bersama dengan perkiraan ongkir checkout & cek tarif (lib/cart-lines.ts) → angka selalu sama.
+  const { subtotal, weight: totalWeight } = cartTotals(lines, variants);
 
   // Voucher (otoritatif): dihitung ulang dari DB terhadap subtotal & ongkir.
   // Beberapa voucher: maks. satu per jenis, dan hanya bila saling bisa digabung (lib/voucher.ts).

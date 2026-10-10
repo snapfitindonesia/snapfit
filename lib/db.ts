@@ -5,7 +5,8 @@ import { PrismaPg } from "@prisma/adapter-pg";
 // driver `pg` ke pooler Supabase (DATABASE_URL, :6543 mode transaksi). Pool kecil per instance
 // serverless — pooler Supabase yang membagi koneksi ke Postgres.
 function createClient() {
-  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL, max: 5 });
+  // DATABASE_POOL_MAX: hanya diubah di tes (Postgres sementara PGlite menerima 1 koneksi); produksi = 5.
+  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL, max: Number(process.env.DATABASE_POOL_MAX) || 5 });
   return new PrismaClient({ adapter });
 }
 

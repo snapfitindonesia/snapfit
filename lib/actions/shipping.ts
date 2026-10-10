@@ -4,7 +4,7 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/require-admin";
-import { activeDiscountPercent, applyDiscount } from "@/lib/format";
+import { cartTotals } from "@/lib/cart-lines";
 import { zoneQuote, ZONES_TAG, type ZoneQuote } from "@/lib/shipping-zone";
 import { PROVINCES, provinceName } from "@/lib/wilayah";
 
@@ -24,14 +24,7 @@ export async function quoteShipping(input: z.input<typeof quoteSchema>): Promise
     where: { id: { in: parsed.data.items.map((i) => i.variantId) } },
     select: { id: true, weight: true, price: true, discounts: { select: { percent: true, active: true, startAt: true, endAt: true } } },
   });
-  let weight = 0;
-  let subtotal = 0;
-  for (const line of parsed.data.items) {
-    const v = variants.find((x) => x.id === line.variantId);
-    if (!v) continue;
-    weight += v.weight * line.qty;
-    subtotal += applyDiscount(v.price, activeDiscountPercent(v.discounts)) * line.qty;
-  }
+  const { weight, subtotal } = cartTotals(parsed.data.items, variants);
   return zoneQuote(parsed.data.provinceCode, weight, subtotal);
 }
 

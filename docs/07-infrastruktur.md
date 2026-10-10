@@ -124,10 +124,15 @@ Hapus file itu setelahnya, lalu deploy ulang.
 - Deploy cukup `git push` (auto-deploy GitHub) — jangan ditambah `vercel deploy` (jadi 2 deploy).
 
 ## Tes otomatis (Okt 2026)
-- `npm test` menjalankan tes unit logika uang & stok di `tests/` (Vitest, tanpa database/jaringan): voucher
+- `npm test` = 2 kelompok tes (Vitest). **unit** (`tests/*.test.ts`, tanpa database): voucher
   (potongan, batas, gabung), koin (cashback, maks. 30%, promo berjadwal WIB), ongkir per provinsi & gratis ongkir,
   diskon varian & harga placeholder, gabung baris keranjang, aturan status pesanan, validasi checkout,
   rekening transfer, URL produk, dan format CSV Edit Massal.
+- **db** (`tests/db/`): alur nyata ke Postgres SEMENTARA di memori (PGlite, baru per file, skema dari
+  `prisma/schema.prisma`) — buat pesanan (ongkir, voucher, koin, gabung baris, provinsi tanpa kurir), konfirmasi bayar
+  (stok berkurang sekali walau dipanggil berulang; pesanan batal tak bisa lunas), ubah status (stok & koin kembali),
+  Edit Massal, dan kelengkapan backup (tabel baru wajib masuk backup atau daftar pengecualian). Email/Ginee/Upstash/
+  Midtrans dimatikan; produksi tak pernah tersentuh (`tests/support/db-setup.ts`). `DATABASE_POOL_MAX=1` khusus tes.
 - `npm run build` = `vitest run && next build` → **deploy Vercel gagal bila ada tes yang gagal** (versi rusak tak live).
 - Logika murni dipisah agar bisa dites: `lib/shipping-calc.ts`, `lib/cart-lines.ts`, `lib/csv.ts`.
 - Mengubah aturan bisnis (mis. batas koin)? Perbarui tes terkait sekaligus, atau deploy akan berhenti.
