@@ -2,7 +2,11 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/lib/db";
 import { provinceName } from "@/lib/wilayah";
-import { createOrder, handlePaidOrder, markOrderPaid } from "@/lib/actions/order";
+import { createOrder, markOrderPaid } from "@/lib/actions/order";
+import { handlePaidOrder } from "@/lib/orders/paid";
+import { expireUnpaidOrders } from "@/lib/orders/expire";
+import { getCartPrices } from "@/lib/actions/cart";
+import { PENDING_EXPIRE_DAYS } from "@/lib/validations/admin";
 import { updateOrder } from "@/lib/actions/admin";
 import { grantCoins } from "@/lib/coins";
 import { ADDRESS, flushAfter, resetDb, seedStore, setTestUser, stockOf } from "../support/fixtures";
@@ -148,5 +152,41 @@ describe("ubah status manual (admin)", () => {
     await updateOrder({ id: r.orderId, status: "CANCELLED", trackingNo: "" });
     const refund = await db.coinEntry.findFirst({ where: { userId: "user-2", kind: "REFUND" } });
     expect(refund?.amount).toBe(10_000);
+  });
+});
+
+describe("pesanan tak dibayar & stok kurang", () => {
+  it("PENDING > batas hari → dibatalkan otomatis & koin kembali; pesanan baru tak tersentuh", async () => {
+    setTestUser({ id: "user-3" });
+    await grantCoins("user-3", 10_000, "ADJUST", "uji-saldo-3");
+    const lama = await order([{ variantId: "v-hitam", qty: 1 }], { useCoins: true });
+    const baru = await order([{ variantId: "v-biru", qty: 1 }]);
+    await db.order.update({ where: { id: lama.orderId }, data: { createdAt: new Date(Date.now() - (PENDING_EXPIRE_DAYS + 1) * 86_400_000) } });
+
+    expect(await expireUnpaidOrders()).toMatchObject({ cancelled: 1 });
+    expect((await db.order.findUniqueOrThrow({ where: { id: lama.orderId } })).status).toBe("CANCELLED");
+    expect((await db.order.findUniqueOrThrow({ where: { id: baru.orderId } })).status).toBe("PENDING");
+    expect((await db.coinEntry.findFirst({ where: { userId: "user-3", kind: "REFUND" } }))?.amount).toBe(10_000);
+    // pembayaran telat untuk pesanan yang sudah kedaluwarsa tak bisa jadi lunas
+    expect(await markOrderPaid(lama.orderId)).toMatchObject({ ok: false });
+  });
+
+  it("konfirmasi bayar saat stok sudah habis → lunas + peringatan ke admin", async () => {
+    const r = await order([{ variantId: "v-hitam", qty: 3 }]);
+    await db.variant.update({ where: { id: "v-hitam" }, data: { stock: 1 } });
+    const res = await markOrderPaid(r.orderId);
+    await flushAfter();
+    expect(res).toMatchObject({ ok: true, warning: expect.stringMatching(/stok web tidak cukup/) });
+    expect(await stockOf("v-hitam")).toBe(1); // tak pernah minus
+  });
+});
+
+describe("harga keranjang terkini", () => {
+  it("mengikuti diskon aktif & menandai varian tak tersedia", async () => {
+    await db.discount.create({ data: { name: "Uji", percent: 20, active: true, variants: { connect: { id: "v-biru" } } } });
+    const prices = await getCartPrices(["v-biru", "v-dummy", "tidak-ada"]);
+    expect(prices.find((p) => p.variantId === "v-biru")).toMatchObject({ price: 40_000, available: true });
+    expect(prices.find((p) => p.variantId === "v-dummy")).toMatchObject({ available: false });
+    expect(prices).toHaveLength(2);
   });
 });

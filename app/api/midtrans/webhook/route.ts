@@ -4,7 +4,7 @@ import {
   mapPaymentStatus,
   type MidtransNotification,
 } from "@/lib/midtrans";
-import { handlePaidOrder } from "@/lib/actions/order";
+import { handlePaidOrder } from "@/lib/orders/paid";
 import { db } from "@/lib/db";
 import { reverseOrderCoins } from "@/lib/coins";
 

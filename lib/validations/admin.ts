@@ -127,6 +127,9 @@ export const ORDER_TRANSITIONS: Record<OrderStatus, readonly OrderStatus[]> = {
   CANCELLED: [],
 };
 
+/** Pesanan Menunggu Bayar lebih lama dari ini dibatalkan otomatis (cron payment-reminder) → koin kembali. */
+export const PENDING_EXPIRE_DAYS = 3;
+
 /** Status yang stoknya SUDAH dikurangi tapi barang belum keluar → batal = stok dikembalikan. */
 export const RESTOCK_ON_CANCEL: readonly OrderStatus[] = ["PAID", "PROCESSING"];
 

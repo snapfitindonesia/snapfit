@@ -6,8 +6,10 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
+import { getCartPrices } from "@/lib/actions/cart";
 import { applyVoucher } from "@/lib/actions/voucher";
 import { mergeVoucher } from "@/lib/voucher";
 
@@ -15,7 +17,7 @@ export type CartItem = {
   variantId: string;
   productSlug: string;
   name: string;
-  price: number; // rupiah, integer (snapshot saat ditambah)
+  price: number; // rupiah, integer (snapshot saat ditambah; diperbarui refreshPrices)
   image: string;
   qty: number;
 };
@@ -45,6 +47,11 @@ type CartContextValue = {
   removeVoucher: (code: string) => void;
   note: string;
   setNote: (s: string) => void;
+  /** Samakan harga di keranjang dengan harga terkini (flash sale berakhir, harga diubah admin/Ginee). */
+  refreshPrices: () => void;
+  /** Pesan "harga diperbarui" (null = tak ada perubahan). */
+  priceNotice: string | null;
+  dismissPriceNotice: () => void;
 };
 
 const STORAGE_KEY = "snapfit.cart.v1";
@@ -55,6 +62,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
   const [vouchers, setVouchers] = useState<AppliedVoucher[]>([]);
   const [note, setNote] = useState("");
+  const [priceNotice, setPriceNotice] = useState<string | null>(null);
+  const itemsRef = useRef<CartItem[]>([]);
+  itemsRef.current = items;
+  const lastRefresh = useRef(0);
 
   // Muat dari localStorage sekali (client-only, aman untuk SSR)
   useEffect(() => {
@@ -124,6 +135,40 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setNote("");
   }, [commit]);
 
+  const refreshPrices = useCallback(() => {
+    const ids = itemsRef.current.map((i) => i.variantId);
+    if (!ids.length || Date.now() - lastRefresh.current < 15_000) return;
+    lastRefresh.current = Date.now();
+    getCartPrices(ids)
+      .then((prices) => {
+        const byId = new Map(prices.map((p) => [p.variantId, p]));
+        const changed = itemsRef.current.filter((i) => {
+          const p = byId.get(i.variantId);
+          return p && p.available && p.price !== i.price;
+        });
+        if (!changed.length) return;
+        commit((prev) =>
+          prev.map((i) => {
+            const p = byId.get(i.variantId);
+            return p && p.available && p.price !== i.price ? { ...i, price: p.price } : i;
+          }),
+        );
+        setPriceNotice(
+          changed.length === 1
+            ? `Harga "${changed[0]!.name}" diperbarui mengikuti harga terbaru.`
+            : `Harga ${changed.length} produk di keranjang diperbarui mengikuti harga terbaru.`,
+        );
+      })
+      .catch(() => {}); // gagal jaringan → tetap pakai harga lama (server tetap menghitung ulang saat pesan)
+  }, [commit]);
+
+  // Sekali setelah keranjang dimuat dari localStorage (harga bisa basi sejak kunjungan sebelumnya).
+  useEffect(() => {
+    if (hydrated) refreshPrices();
+  }, [hydrated, refreshPrices]);
+
+  const dismissPriceNotice = useCallback(() => setPriceNotice(null), []);
+
   const subtotal = useMemo(() => items.reduce((n, i) => n + i.price * i.qty, 0), [items]);
 
   const addVoucher = useCallback(
@@ -150,8 +195,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo<CartContextValue>(() => {
     const count = items.reduce((n, i) => n + i.qty, 0);
-    return { items, count, subtotal, hydrated, addItem, setQty, removeItem, clear, vouchers, addVoucher, removeVoucher, note, setNote };
-  }, [items, subtotal, hydrated, addItem, setQty, removeItem, clear, vouchers, addVoucher, removeVoucher, note]);
+    return { items, count, subtotal, hydrated, addItem, setQty, removeItem, clear, vouchers, addVoucher, removeVoucher, note, setNote, refreshPrices, priceNotice, dismissPriceNotice };
+  }, [items, subtotal, hydrated, addItem, setQty, removeItem, clear, vouchers, addVoucher, removeVoucher, note, refreshPrices, priceNotice, dismissPriceNotice]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

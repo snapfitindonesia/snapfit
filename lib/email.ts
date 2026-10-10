@@ -1,5 +1,6 @@
 import { formatRupiah } from "@/lib/format";
 import { STORE_WA_DISPLAY, waChatUrl } from "@/lib/contact";
+import { PENDING_EXPIRE_DAYS } from "@/lib/validations/admin";
 
 const FROM = process.env.EMAIL_FROM || "SNAPFIT Indonesia <no-reply@snapfit.id>";
 // Balasan pembeli diarahkan ke inbox yang dibaca (bukan no-reply).
@@ -319,7 +320,7 @@ export function paymentReminderEmail(order: OrderLike, items: ItemLike[], banks:
         bankBox(banks, order.total) +
         button("Lihat Pesanan", orderUrl(order)) +
         details(order, items) +
-        note("Ada kendala atau ingin mengubah pesanan? Cukup balas email ini."),
+        note(`Pesanan yang belum dibayar dalam ${PENDING_EXPIRE_DAYS} hari dibatalkan otomatis. Ada kendala atau ingin mengubah pesanan? Cukup balas email ini.`),
     }),
   };
 }
@@ -342,6 +343,37 @@ export function adminNewOrderEmail(order: OrderLike, items: ItemLike[], opts: { 
           ? block(`<a href="${esc(opts.waUrl)}" style="display:inline-block;background:#1a7f4b;color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;padding:12px 22px;border-radius:999px">Chat pembeli di WhatsApp</a>`, 12)
           : "") +
         details(order, items, { withTotals: true }),
+    }),
+  };
+}
+
+/** Ke admin: masalah yang butuh tindakan manual (push Ginee gagal, stok kurang saat lunas, dsb.). */
+export function adminAlertEmail(opts: { subject: string; title: string; lines: string[] }) {
+  return {
+    subject: `⚠️ ${opts.subject}`,
+    html: shell({
+      preheader: opts.lines[0] ?? opts.title,
+      greeting: opts.title,
+      intro: opts.lines.map(esc).join("<br>"),
+      body: button("Buka Pesanan di Dashboard", `${SITE}/admin/pesanan`),
+    }),
+  };
+}
+
+/** Ke pembeli: pesanan belum dibayar melewati batas waktu → dibatalkan otomatis. */
+export function orderAutoCancelledEmail(order: OrderLike, items: ItemLike[], days: number) {
+  return {
+    subject: `Pesanan ${order.midtransOrderId} dibatalkan otomatis`,
+    html: shell({
+      preheader: `Pembayaran tidak kami terima dalam ${days} hari, jadi pesanan dibatalkan.`,
+      greeting: `Pesananmu dibatalkan, ${firstName(order)}`,
+      intro: `Kami belum menerima pembayaran dalam ${days} hari sejak pesanan dibuat, jadi pesanan ini dibatalkan otomatis${
+        order.coinsUsed ? " dan koin yang kamu pakai sudah dikembalikan" : ""
+      }. Masih mau? Silakan pesan ulang kapan saja.`,
+      body:
+        button("Belanja Lagi", SITE) +
+        details(order, items) +
+        note("Sudah terlanjur transfer? Balas email ini dengan bukti transfer, kami bantu proses."),
     }),
   };
 }

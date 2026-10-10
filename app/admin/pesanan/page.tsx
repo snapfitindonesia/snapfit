@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { OrderManager, type AdminOrder } from "@/components/admin/order-manager";
+import { isGineeConfigured } from "@/lib/ginee/config";
 import { ensureReviewToken, reviewUrl, REVIEWABLE_STATUSES } from "@/lib/review-token";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +15,7 @@ export default async function AdminOrdersPage() {
   const variantIds = [...new Set(orders.flatMap((o) => o.items.map((it) => it.variantId)))];
   const variants = await db.variant.findMany({
     where: { id: { in: variantIds } },
-    select: { id: true, sku: true, image: true },
+    select: { id: true, sku: true, image: true, product: { select: { gineeProductId: true } } },
   });
   const vMap = new Map(variants.map((v) => [v.id, v]));
 
@@ -24,6 +25,7 @@ export default async function AdminOrdersPage() {
     reviewUrls.set(o.id, reviewUrl(await ensureReviewToken(o)));
   }
 
+  const gineeOn = isGineeConfigured();
   const data: AdminOrder[] = orders.map((o) => ({
     id: o.id,
     midtransOrderId: o.midtransOrderId,
@@ -40,6 +42,12 @@ export default async function AdminOrdersPage() {
     createdAt: o.createdAt.toISOString(),
     address: o.address as AdminOrder["address"],
     reviewUrl: reviewUrls.get(o.id) ?? null,
+    // Lunas tapi belum tercatat di Ginee (push gagal) → badge + tombol kirim ulang.
+    gineeMissing:
+      gineeOn &&
+      !o.gineePushedAt &&
+      (o.status === "PAID" || o.status === "PROCESSING") &&
+      o.items.some((it) => { const v = vMap.get(it.variantId); return !!v?.sku && !!v.product.gineeProductId; }),
     items: o.items.map((it) => ({
       id: it.id,
       name: it.name,

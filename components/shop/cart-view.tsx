@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "@/components/ui/image";
+import { PriceNotice } from "@/components/shop/price-notice";
 import Link from "next/link";
 import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -118,6 +119,7 @@ export function CartView() {
       <aside className="lg:col-span-1">
         <div className="rounded-lg border border-border p-5 lg:sticky lg:top-24">
           <h2 className="text-base font-medium">Ringkasan</h2>
+          <PriceNotice className="mt-3" />
           <div className="mt-4 flex items-center justify-between text-sm">
             <span className="text-muted-foreground">
               Subtotal ({count} item)

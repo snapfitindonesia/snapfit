@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { PriceNotice } from "@/components/shop/price-notice";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { trackBeginCheckout } from "@/lib/tracking";
@@ -542,6 +543,7 @@ export function CheckoutView({
             />
           </div>
 
+          <PriceNotice className="mt-4" />
           <dl className="mt-4 space-y-2 text-sm">
             <Row label={`Subtotal (${items.length} produk)`} value={formatRupiah(subtotal)} />
             <Row

@@ -17,9 +17,14 @@ export async function signIn(input: Credentials): Promise<AuthResult> {
   const parsed = credentialsSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: GENERIC };
 
+  // Anti tebak password: maks 5 percobaan/menit/IP. Dicek DI SINI (bukan middleware) karena form login
+  // juga ada di popup di semua halaman toko — Server Action-nya POST ke URL halaman mana pun.
+  const ip = await requestIp();
+  if (!(await limitLogin(ip)).success) return { ok: false, error: "Terlalu banyak percobaan. Tunggu sebentar lalu coba lagi." };
+
   const okCaptcha = await verifyTurnstile(
     parsed.data.turnstileToken ?? null,
-    await requestIp(),
+    ip,
   );
   if (!okCaptcha) return { ok: false, error: "Verifikasi keamanan gagal." };
 
@@ -40,9 +45,14 @@ export async function signUp(input: Credentials): Promise<AuthResult> {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Data tidak valid" };
   }
 
+  // Anti tebak password: maks 5 percobaan/menit/IP. Dicek DI SINI (bukan middleware) karena form login
+  // juga ada di popup di semua halaman toko — Server Action-nya POST ke URL halaman mana pun.
+  const ip = await requestIp();
+  if (!(await limitLogin(ip)).success) return { ok: false, error: "Terlalu banyak percobaan. Tunggu sebentar lalu coba lagi." };
+
   const okCaptcha = await verifyTurnstile(
     parsed.data.turnstileToken ?? null,
-    await requestIp(),
+    ip,
   );
   if (!okCaptcha) return { ok: false, error: "Verifikasi keamanan gagal." };
 

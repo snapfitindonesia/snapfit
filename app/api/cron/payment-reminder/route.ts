@@ -4,15 +4,17 @@ import { sendEmail, paymentReminderEmail } from "@/lib/email";
 import { withItemImages } from "@/lib/email-items";
 import { isManualPayment } from "@/lib/payment";
 import { getBankAccounts } from "@/lib/bank-settings";
+import { expireUnpaidOrders } from "@/lib/orders/expire";
+import { PENDING_EXPIRE_DAYS } from "@/lib/validations/admin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Pengingat bayar (transfer manual): pesanan PENDING ≥ 2 jam & ≤ 3 hari yang
-// belum pernah diingatkan → kirim email sekali. Dipicu Vercel Cron harian
+// 1) Pesanan PENDING > PENDING_EXPIRE_DAYS hari → dibatalkan otomatis (semua mode bayar), koin kembali.
+// 2) Pengingat bayar (transfer manual): pesanan PENDING ≥ 2 jam yang belum pernah diingatkan → email sekali. Dipicu Vercel Cron harian
 // 19:00 WIB (Hobby hanya boleh cron harian). Diamankan CRON_SECRET.
 const MIN_AGE_H = 2;
-const MAX_AGE_D = 3;
+const MAX_AGE_D = PENDING_EXPIRE_DAYS;
 
 function authorized(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET;
@@ -24,7 +26,8 @@ export async function GET(req: NextRequest) {
   if (!authorized(req)) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   }
-  if (!isManualPayment()) return NextResponse.json({ ok: true, skipped: "bukan mode transfer manual" });
+  const expired = await expireUnpaidOrders();
+  if (!isManualPayment()) return NextResponse.json({ ok: true, expired, reminder: "bukan mode transfer manual" });
 
   const now = Date.now();
   const orders = await db.order.findMany({
@@ -49,5 +52,5 @@ export async function GET(req: NextRequest) {
       console.error("Pengingat bayar gagal:", order.midtransOrderId, e);
     }
   }
-  return NextResponse.json({ ok: true, candidates: orders.length, sent });
+  return NextResponse.json({ ok: true, expired, candidates: orders.length, sent });
 }

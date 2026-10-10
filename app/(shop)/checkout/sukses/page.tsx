@@ -1,15 +1,28 @@
 import Link from "next/link";
-import { CheckCircle2, Clock } from "lucide-react";
+import { CheckCircle2, Clock, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatRupiah } from "@/lib/format";
-import { getOrderSummary } from "@/lib/actions/order";
+import { getOrderSummary } from "@/lib/orders/paid";
 import { isManualPayment } from "@/lib/payment";
 import { getBankAccounts } from "@/lib/bank-settings";
 import { PurchaseTracker } from "@/components/tracking/purchase-tracker";
 import { GoogleCustomerReviews } from "@/components/tracking/google-customer-reviews";
+import { PaymentPoll } from "@/components/shop/payment-poll";
+import { PENDING_EXPIRE_DAYS } from "@/lib/validations/admin";
+
+const PAID_STATUSES = ["PAID", "PROCESSING", "SHIPPED", "DONE"];
+const STATUS_LABEL: Record<string, string> = {
+  PENDING: "Menunggu Pembayaran",
+  PAID: "Dibayar",
+  PROCESSING: "Dikemas",
+  SHIPPED: "Dikirim",
+  DONE: "Selesai",
+  CANCELLED: "Dibatalkan",
+};
 
 export const metadata = {
-  title: "Pesanan Berhasil",
+  title: "Status Pesanan",
+  robots: { index: false },
 };
 
 export default async function CheckoutSuccessPage({
@@ -31,14 +44,19 @@ export default async function CheckoutSuccessPage({
     );
   }
 
+  // Tampilan mengikuti status ASLI pesanan (bukan sekadar "sampai di halaman ini"): Midtrans onPending
+  // (VA/QRIS belum dibayar) & pesanan batal tak boleh tampil "Pembayaran berhasil" / tercatat sebagai pembelian.
+  const paid = PAID_STATUSES.includes(order.status);
+  const cancelled = order.status === "CANCELLED";
   const awaitingPayment = order.status === "PENDING" && isManualPayment();
+  const awaitingGateway = order.status === "PENDING" && !isManualPayment();
   const banks = awaitingPayment ? await getBankAccounts() : [];
   const addr = (order.address ?? {}) as { email?: string; phone?: string };
 
   return (
     <div className="mx-auto max-w-lg px-4 py-12 sm:px-6 sm:py-16">
       {/* Event purchase hanya saat sudah dibayar */}
-      {!awaitingPayment && (
+      {paid && (
         <PurchaseTracker
           transactionId={order.midtransOrderId ?? order.id}
           value={order.total}
@@ -53,7 +71,7 @@ export default async function CheckoutSuccessPage({
         />
       )}
       {/* Google Customer Reviews: tawarkan survei hanya untuk pesanan yang sudah dibayar */}
-      {["PAID", "PROCESSING", "SHIPPED", "DONE"].includes(order.status) && (
+      {paid && (
         <GoogleCustomerReviews orderId={order.midtransOrderId ?? order.id} email={addr.email} />
       )}
 
@@ -63,7 +81,25 @@ export default async function CheckoutSuccessPage({
             <Clock className="size-14 text-amber-500" />
             <h1 className="mt-4 text-2xl font-semibold tracking-tight">Pesanan dibuat</h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              Selesaikan pembayaran via transfer di bawah. Pesanan diproses setelah kami verifikasi.
+              Selesaikan pembayaran via transfer di bawah dalam {PENDING_EXPIRE_DAYS} hari. Pesanan diproses setelah kami verifikasi.
+            </p>
+          </>
+        ) : awaitingGateway ? (
+          <>
+            <PaymentPoll />
+            <Clock className="size-14 text-amber-500" />
+            <h1 className="mt-4 text-2xl font-semibold tracking-tight">Menunggu pembayaran</h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Selesaikan pembayaran sesuai instruksi (Virtual Account / QRIS / e-wallet). Halaman ini diperbarui otomatis
+              setelah pembayaran kami terima.
+            </p>
+          </>
+        ) : cancelled ? (
+          <>
+            <XCircle className="size-14 text-rose-500" />
+            <h1 className="mt-4 text-2xl font-semibold tracking-tight">Pesanan dibatalkan</h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Pesanan ini sudah dibatalkan. Sudah terlanjur membayar? Hubungi kami dengan menyertakan No. Pesanan.
             </p>
           </>
         ) : (
@@ -111,7 +147,7 @@ export default async function CheckoutSuccessPage({
           </div>
           <div className="flex justify-between">
             <dt className="text-muted-foreground">Status</dt>
-            <dd className="font-medium">{awaitingPayment ? "Menunggu Pembayaran" : order.status}</dd>
+            <dd className="font-medium">{STATUS_LABEL[order.status] ?? order.status}</dd>
           </div>
           {order.trackingNo && (
             <div className="flex justify-between">

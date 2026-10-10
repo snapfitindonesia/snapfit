@@ -99,6 +99,15 @@ export async function runGineeStockSync(limit = 5000): Promise<StockSyncResult> 
     }
   }
 
+  // Pesanan lunas yang BELUM masuk Ginee (push gagal, menunggu dicoba ulang): stok Ginee belum berkurang
+  // untuk pesanan ini → kurangi sendiri, agar sinkron tak menaikkan lagi stok web (oversell).
+  const unpushed = await db.orderItem.findMany({
+    where: { order: { gineePushedAt: null, status: { in: ["PAID", "PROCESSING"] }, createdAt: { gte: new Date(Date.now() - 14 * 86_400_000) } } },
+    select: { variantId: true, qty: true },
+  });
+  const reserved = new Map<string, number>();
+  for (const it of unpushed) reserved.set(it.variantId, (reserved.get(it.variantId) ?? 0) + it.qty);
+
   // 3) Update varian yang berubah
   let stockUpdated = 0;
   let priceUpdated = 0;
@@ -109,7 +118,8 @@ export async function runGineeStockSync(limit = 5000): Promise<StockSyncResult> 
     if (!row) continue; // SKU tak ada di gudang Ginee (mis. produk impor CSV) → biarkan
     products.add(v.productId);
     const data: { stock?: number; price?: number } = {};
-    if (row.stock !== v.stock) data.stock = row.stock;
+    const stock = Math.max(0, row.stock - (reserved.get(v.id) ?? 0));
+    if (stock !== v.stock) data.stock = stock;
     const nextPrice = row.variationId ? priceByVarId.get(row.variationId) : undefined;
     const priceAllowed = priceMode === "all" || isPlaceholderPrice(v.price);
     if (nextPrice !== undefined && nextPrice !== v.price && priceAllowed) data.price = nextPrice;

@@ -1,8 +1,7 @@
 "use server";
 
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath } from "next/cache";
 import { after } from "next/server";
-import { CATALOG_TAG } from "@/lib/catalog";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { applyDiscount, activeDiscountPercent } from "@/lib/format";
@@ -12,17 +11,15 @@ import {
   type CartLine,
 } from "@/lib/validations/checkout";
 import { getShippingRates } from "@/lib/biteship";
-import { createShipment } from "@/lib/biteship";
-import { createSnapToken, isMidtransMock } from "@/lib/midtrans";
+import { createSnapToken } from "@/lib/midtrans";
 import { isManualPayment, isFlatShipping } from "@/lib/payment";
 import { getBankAccounts } from "@/lib/bank-settings";
 import { zoneQuote } from "@/lib/shipping-zone";
 import { canCombine, computeVoucherBenefit, MAX_VOUCHERS, type VoucherLike } from "@/lib/voucher";
-import { sendEmail, orderConfirmationEmail, orderPlacedEmail, adminNewOrderEmail } from "@/lib/email";
+import { sendEmail, orderPlacedEmail, adminNewOrderEmail } from "@/lib/email";
 import { waLink } from "@/lib/wa";
 import { isPlaceholderPrice } from "@/lib/price-guard";
-import { pushOrderToGinee } from "@/lib/ginee/orders";
-import { isGineeConfigured } from "@/lib/ginee/config";
+import { handlePaidOrder, pushPaidOrderToGinee } from "@/lib/orders/paid";
 import { markDraftsConverted } from "@/lib/cart-draft";
 import { withItemImages } from "@/lib/email-items";
 import { getCurrentUser } from "@/lib/supabase/server";
@@ -277,146 +274,11 @@ async function placeOrder(input: CreateOrderInput) {
   };
 }
 
-/** Proses order jadi PAID: idempotent, kurangi stok, buat pengiriman + resi. */
-export async function handlePaidOrder(
-  midtransOrderId: string,
-  paymentStatus = "settlement",
-) {
-  const order = await db.order.findUnique({ where: { midtransOrderId } });
-  if (!order) throw new Error("Order tidak ditemukan.");
-
-  // KLAIM ATOMIK PENDING → PAID: hanya SATU pemanggil yang menang (retry webhook Midtrans, webhook
-  // bersamaan dengan admin "Konfirmasi Bayar", klik ganda). Yang kalah tak mengurangi stok / kirim
-  // email / push Ginee lagi. Pesanan yang sudah DIBATALKAN (koinnya sudah dikembalikan) tak bisa jadi lunas.
-  const claim = await db.order.updateMany({
-    where: { id: order.id, status: "PENDING" },
-    data: { status: "PAID", paymentStatus },
-  });
-  if (claim.count === 0) {
-    const now = await db.order.findUnique({ where: { id: order.id }, select: { status: true } });
-    if (now?.status === "CANCELLED") {
-      console.error(`[bayar] Pembayaran masuk untuk pesanan BATAL ${midtransOrderId} — cek & refund manual.`);
-      return { alreadyProcessed: false, cancelled: true, orderId: order.id, status: "CANCELLED" };
-    }
-    return { alreadyProcessed: true, orderId: order.id, status: now?.status ?? order.status };
-  }
-
-  const items = await db.orderItem.findMany({ where: { orderId: order.id } });
-
-  // Kurangi stok (tak pernah di bawah 0). Stok tak cukup → dicatat (oversell perlu dicek admin).
-  const deducted = await db.$transaction(
-    items.map((it) =>
-      db.variant.updateMany({
-        where: { id: it.variantId, stock: { gte: it.qty } },
-        data: { stock: { decrement: it.qty } },
-      }),
-    ),
-  );
-  revalidateTag(CATALOG_TAG); // stok berubah → daftar produk (stok habis tersembunyi) segar
-  deducted.forEach((r, i) => {
-    if (r.count === 0) console.error(`[stok] Stok tak cukup saat ${midtransOrderId} lunas: varian ${items[i]!.variantId} × ${items[i]!.qty}`);
-  });
-
-  // Buat pengiriman via Biteship HANYA di mode Biteship. Mode flat: resi diisi
-  // admin manual di langkah "Kirim Pesanan". Best-effort: jangan gagalkan LUNAS.
-  let trackingNo: string | null = null;
-  if (!isFlatShipping()) {
-    try {
-      const [courier, service] = (order.courier ?? "sicepat:reg").split(":");
-      const address = order.address as { postalCode?: string } | null;
-      const shipment = await createShipment({
-        orderId: order.id,
-        courier,
-        service: service ?? "reg",
-        destinationPostalCode: address?.postalCode ?? "",
-      });
-      trackingNo = shipment.trackingNo;
-    } catch (e) {
-      console.error("Buat pengiriman Biteship gagal (lanjut tanpa resi):", e);
-    }
-  }
-
-  const updated = trackingNo
-    ? await db.order.update({ where: { id: order.id }, data: { trackingNo } })
-    : await db.order.findUniqueOrThrow({ where: { id: order.id } });
-
-  // Email konfirmasi & push Ginee dijalankan SETELAH respons dikirim (after): webhook Midtrans / tombol
-  // admin langsung dapat balasan (tak timeout → tak dikirim ulang). Klaim atomik di atas menjamin
-  // blok ini hanya jalan sekali per pesanan.
-  after(async () => {
-    // Email konfirmasi (docs/08) — jangan gagalkan order kalau email error
-    const addressData = updated.address as { email?: string; name?: string; phone?: string; address?: string; city?: string; province?: string; district?: string; postalCode?: string } | null;
-    const email = addressData?.email;
-    if (email) {
-      try {
-        const tpl = orderConfirmationEmail(updated, await withItemImages(items));
-        await sendEmail({ to: email, ...tpl });
-      } catch (e) {
-        console.error("Email konfirmasi gagal:", e);
-      }
-    }
-
-    // Push ke Ginee (best-effort) — hanya item produk hasil impor Ginee. Ginee
-    // otomatis mengurangi stok gudang. Jangan gagalkan order kalau push gagal.
-    if (isGineeConfigured() && !updated.gineePushedAt) {
-      try {
-        const variants = await db.variant.findMany({
-          where: { id: { in: items.map((i) => i.variantId) } },
-          select: { id: true, sku: true, weight: true, product: { select: { gineeProductId: true } } },
-        });
-        const gineeItems = items
-          .map((it) => {
-            const v = variants.find((x) => x.id === it.variantId);
-            if (!v || !v.product.gineeProductId || !v.sku) return null;
-            return { sku: v.sku, quantity: it.qty, actualPrice: it.price, weight: v.weight };
-          })
-          .filter((x): x is NonNullable<typeof x> => x !== null);
-
-        if (gineeItems.length) {
-          const res = await pushOrderToGinee({
-            externalOrderSn: updated.midtransOrderId ?? updated.id,
-            customer: { name: addressData?.name ?? "Pelanggan", email, phone: addressData?.phone ?? "" },
-            address: {
-              province: addressData?.province,
-              city: addressData?.city,
-              district: addressData?.district,
-              postalCode: addressData?.postalCode,
-              fullAddress: addressData?.address ?? "-",
-            },
-            items: gineeItems,
-            payAmount: updated.total,
-          });
-          if (res.ok) {
-            await db.order.update({
-              where: { id: updated.id },
-              data: { gineePushedAt: new Date(), gineeOrderSn: res.orderSn ?? null },
-            });
-          } else {
-            console.error("Push Ginee gagal:", res.error);
-          }
-        }
-      } catch (e) {
-        console.error("Push Ginee error:", e);
-      }
-    }
-  });
-
-  return { alreadyProcessed: false, orderId: updated.id, status: updated.status };
-}
-
-export async function getOrderSummary(midtransOrderId: string) {
-  const order = await db.order.findUnique({
-    where: { midtransOrderId },
-    include: { items: true },
-  });
-  return order;
-}
-
 /**
  * ADMIN: konfirmasi pembayaran transfer manual sudah masuk → tandai LUNAS.
  * Menjalankan handlePaidOrder (kurangi stok, push Ginee, email konfirmasi).
  */
-export async function markOrderPaid(orderId: string): Promise<{ ok: boolean; error?: string }> {
+export async function markOrderPaid(orderId: string): Promise<{ ok: boolean; error?: string; warning?: string }> {
   try {
     await requireAdmin();
   } catch {
@@ -429,8 +291,25 @@ export async function markOrderPaid(orderId: string): Promise<{ ok: boolean; err
     if ("cancelled" in r && r.cancelled) return { ok: false, error: "Pesanan ini sudah dibatalkan — tidak bisa ditandai lunas." };
     revalidatePath("/admin/pesanan");
     revalidatePath("/akun/pesanan");
-    return { ok: true };
+    // Transfer dikonfirmasi saat stok sudah habis → admin langsung diberi tahu (tak hanya di log).
+    const warning = r.shortfall.length
+      ? `Lunas, TAPI stok web tidak cukup untuk: ${r.shortfall.join(", ")}. Cek stok fisik & hubungi pembeli.`
+      : undefined;
+    return { ok: true, warning };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Gagal konfirmasi." };
   }
+}
+
+/** ADMIN: kirim ulang pesanan lunas yang belum masuk Ginee (dicek dulu agar tak dobel di Ginee). */
+export async function retryGineePush(orderId: string): Promise<{ ok: boolean; error?: string; message?: string }> {
+  try {
+    await requireAdmin();
+  } catch {
+    return { ok: false, error: "Tidak diizinkan." };
+  }
+  const r = await pushPaidOrderToGinee(orderId, { retry: true });
+  revalidatePath("/admin/pesanan");
+  if (!r.ok) return { ok: false, error: `Gagal kirim ke Ginee: ${r.error}` };
+  return { ok: true, message: r.recovered ? "Ternyata sudah ada di Ginee — dicatat." : r.skipped ? `Dilewati (${r.skipped}).` : "Terkirim ke Ginee." };
 }

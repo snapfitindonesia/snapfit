@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Loader2, PackageCheck, Truck, MessageCircle, Star, CheckCircle2, Wallet } from "lucide-react";
+import { ChevronDown, Loader2, PackageCheck, Truck, MessageCircle, Star, CheckCircle2, Wallet, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatRupiah } from "@/lib/format";
 import { updateOrder } from "@/lib/actions/admin";
-import { markOrderPaid } from "@/lib/actions/order";
+import { markOrderPaid, retryGineePush } from "@/lib/actions/order";
 import { ORDER_STATUSES, ORDER_TRANSITIONS, RESTOCK_ON_CANCEL, type OrderStatus } from "@/lib/validations/admin";
 import { waLink, waProcessingMessage, waShippedMessage, waReviewMessage } from "@/lib/wa";
 
@@ -27,6 +27,7 @@ export type AdminOrder = {
   address: { name?: string; phone?: string; address?: string; city?: string; postalCode?: string } | null;
   items: { id: string; name: string; price: number; qty: number; sku?: string | null; image?: string | null }[];
   reviewUrl?: string | null; // form ulasan pembeli (pesanan dikirim/selesai)
+  gineeMissing?: boolean; // lunas tapi belum masuk Ginee
 };
 
 const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
@@ -89,8 +90,19 @@ function OrderRow({ order }: { order: AdminOrder }) {
     setBusy("pay");
     setErr(null);
     const res = await markOrderPaid(order.id);
-    if (res.ok) router.refresh();
-    else setErr(res.error ?? "Gagal konfirmasi pembayaran.");
+    if (res.ok) {
+      if (res.warning) setErr(res.warning); // mis. stok sudah habis saat transfer dikonfirmasi
+      router.refresh();
+    } else setErr(res.error ?? "Gagal konfirmasi pembayaran.");
+    setBusy(null);
+  }
+
+  async function resendGinee() {
+    setBusy("ginee");
+    setErr(null);
+    const res = await retryGineePush(order.id);
+    setErr(res.ok ? (res.message ?? null) : (res.error ?? "Gagal kirim ke Ginee."));
+    router.refresh();
     setBusy(null);
   }
 
@@ -106,6 +118,9 @@ function OrderRow({ order }: { order: AdminOrder }) {
         {order.member && <span className="rounded-[5px] bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800">Member</span>}
         <span className="text-sm font-semibold">{formatRupiah(order.total)}</span>
         <span className={`rounded-[5px] px-2.5 py-1 text-xs font-medium ${badge.cls}`}>{badge.label}</span>
+        {order.gineeMissing && (
+          <span className="rounded-[5px] bg-rose-100 px-2.5 py-1 text-xs font-medium text-rose-700">Belum masuk Ginee</span>
+        )}
       </div>
 
       {/* Alur aksi kontekstual */}
@@ -118,6 +133,13 @@ function OrderRow({ order }: { order: AdminOrder }) {
             </Button>
             <span className="text-xs text-muted-foreground">Transfer masuk? Tandai LUNAS → stok & Ginee otomatis.</span>
           </>
+        )}
+
+        {order.gineeMissing && (
+          <Button size="sm" variant="outline" onClick={resendGinee} disabled={busy !== null}>
+            {busy === "ginee" ? <Loader2 className="size-3.5 animate-spin" /> : <RefreshCw className="size-3.5" />}
+            Kirim ulang ke Ginee
+          </Button>
         )}
 
         {order.status === "PAID" && (
