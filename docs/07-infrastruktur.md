@@ -122,3 +122,12 @@ Hapus file itu setelahnya, lalu deploy ulang.
   (terjadi 28 Sep, di-rollback). Ukuran nyata di Vercel: 9,53 MB → 2,5 MB per fungsi (±0,3 GB per deploy).
 - `prisma db push` tetap memakai `DIRECT_URL` (tak berubah).
 - Deploy cukup `git push` (auto-deploy GitHub) — jangan ditambah `vercel deploy` (jadi 2 deploy).
+
+## Tes otomatis (Okt 2026)
+- `npm test` menjalankan tes unit logika uang & stok di `tests/` (Vitest, tanpa database/jaringan): voucher
+  (potongan, batas, gabung), koin (cashback, maks. 30%, promo berjadwal WIB), ongkir per provinsi & gratis ongkir,
+  diskon varian & harga placeholder, gabung baris keranjang, aturan status pesanan, validasi checkout,
+  rekening transfer, URL produk, dan format CSV Edit Massal.
+- `npm run build` = `vitest run && next build` → **deploy Vercel gagal bila ada tes yang gagal** (versi rusak tak live).
+- Logika murni dipisah agar bisa dites: `lib/shipping-calc.ts`, `lib/cart-lines.ts`, `lib/csv.ts`.
+- Mengubah aturan bisnis (mis. batas koin)? Perbarui tes terkait sekaligus, atau deploy akan berhenti.

@@ -2,31 +2,16 @@
 // (otoritatif) — keduanya lewat fungsi yang sama agar angka tak pernah beda.
 import { unstable_cache } from "next/cache";
 import { db } from "@/lib/db";
-import { FLAT_SHIPPING_COST, freeShippingSubsidy } from "@/lib/payment";
+import { FLAT_SHIPPING_COST } from "@/lib/payment";
+import { computeZoneQuote, type ZoneQuote } from "@/lib/shipping-calc";
 
-/** Berat tertagih: dibulatkan ke atas per kg, minimal 1 kg (kebijakan umum kurir). */
-export const billableKg = (weightGram: number) => Math.max(1, Math.ceil(weightGram / 1000));
-
-export type ZoneQuote = {
-  cost: number; // ongkir yang ditagih = fullCost − subsidy
-  fullCost: number; // ongkir sebelum gratis ongkir
-  subsidy: number; // potongan gratis ongkir (maks. FREE_SHIPPING_MAX)
-  etd: string;
-  free: boolean; // cost 0 (ongkir tertutup penuh oleh gratis ongkir)
-  zone: boolean; // false = provinsi belum diatur → tarif flat
-  available: boolean; // false = tidak ada kurir ke provinsi ini
-  kg: number;
-};
+export { billableKg } from "@/lib/shipping-calc";
+export type { ZoneQuote } from "@/lib/shipping-calc";
 
 /** Hitung ongkir ke provinsi tujuan. Provinsi tanpa tarif → SHIPPING_FLAT_COST. */
 export async function zoneQuote(provinceCode: string | null | undefined, weightGram: number, subtotal: number): Promise<ZoneQuote> {
-  const kg = billableKg(weightGram);
   const z = provinceCode ? await db.shippingZone.findUnique({ where: { provinceCode } }) : null;
-  if (z && !z.available) return { cost: 0, fullCost: 0, subsidy: 0, etd: "", free: false, zone: true, available: false, kg };
-  const fullCost = z ? z.baseCost + (kg - 1) * z.perKg : FLAT_SHIPPING_COST;
-  const subsidy = freeShippingSubsidy(subtotal, fullCost);
-  const cost = fullCost - subsidy;
-  return { cost, fullCost, subsidy, etd: z?.etd ?? "", free: cost === 0, zone: !!z, available: true, kg };
+  return computeZoneQuote(z, weightGram, subtotal, FLAT_SHIPPING_COST);
 }
 
 export const ZONES_TAG = "shipping-zones";

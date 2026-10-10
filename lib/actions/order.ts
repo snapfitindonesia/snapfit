@@ -30,6 +30,7 @@ import { getCoinBalance, spendCoins } from "@/lib/coins";
 import { activeCashback, maxCoinsUsable } from "@/lib/coins-rules";
 import { getCoinRules } from "@/lib/coins-settings";
 import { limitAction, requestIp } from "@/lib/security/ratelimit";
+import { mergeLines } from "@/lib/cart-lines";
 import { ZodError } from "zod";
 
 /**
@@ -165,13 +166,6 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
     console.error("[checkout] gagal membuat pesanan:", e);
     return { error: e instanceof Error && e.message.length < 200 ? e.message : "Gagal membuat pesanan. Coba lagi." };
   }
-}
-
-/** Gabungkan baris keranjang dengan varian sama (stok dicek terhadap JUMLAH, bukan per baris). */
-function mergeLines(lines: CartLine[]): CartLine[] {
-  const m = new Map<string, number>();
-  for (const l of lines) m.set(l.variantId, (m.get(l.variantId) ?? 0) + l.qty);
-  return [...m].map(([variantId, qty]) => ({ variantId, qty }));
 }
 
 async function placeOrder(input: CreateOrderInput) {
