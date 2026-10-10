@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Loader2, Search, X, SlidersHorizontal } from "lucide-react";
+import { Loader2, Search, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ProductCard } from "@/components/shop/product-card";

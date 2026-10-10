@@ -1,5 +1,5 @@
 import { getCategories, getProducts, getBrandFacets } from "@/lib/actions/product";
-import { productQuerySchema } from "@/lib/validations/product";
+import { NO_BRAND, productQuerySchema } from "@/lib/validations/product";
 import { ProductListing } from "@/components/shop/product-listing";
 
 export type ListParams = {
@@ -42,11 +42,18 @@ export async function ProductListPage({ params = {} }: { params?: ListParams }) 
   // Parameter rusak (mis. sort tak dikenal) → tampilkan semua produk, jangan halaman error.
   const query = parsed.success ? parsed.data : productQuerySchema.parse({});
 
-  const [categories, brandFacets, initial] = await Promise.all([
-    getCategories(),
-    getBrandFacets(),
-    getProducts(query),
-  ]);
+  const [categories, brandFacets] = await Promise.all([getCategories(), getBrandFacets()]);
+  // Hanya filter yang punya kotak centang di sidebar yang dipakai: perangkat/brand tak dikenal dari link
+  // (salah ketik, brand sudah tak ada) diabaikan — kalau tidak, produk tersaring tanpa bisa dilepas pembeli.
+  const deviceSlugs = new Set(categories.map((c) => c.slug));
+  const brandKeys = new Set([...brandFacets.brands, ...(brandFacets.hasNoBrand ? [NO_BRAND] : [])]);
+  const keep = <T,>(arr: T[] | undefined, ok: (v: T) => boolean) => {
+    const v = arr?.filter(ok);
+    return v?.length ? v : undefined;
+  };
+  query.perangkat = keep(query.perangkat, (s) => deviceSlugs.has(s));
+  query.brands = keep(query.brands, (b) => brandKeys.has(b));
+  const initial = await getProducts(query); // katalog di memori → cepat walau berurutan
 
   return (
     <div className="mx-auto max-w-[90rem] px-4 py-8 sm:px-6 lg:px-10 sm:py-12">

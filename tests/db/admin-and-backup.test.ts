@@ -54,6 +54,18 @@ describe("Edit Massal", () => {
   });
 });
 
+describe("Edit Massal — file berisi kolom deskripsi saja", () => {
+  it("hanya deskripsi yang berubah; harga, stok, nama, brand, SKU tetap", async () => {
+    await db.variant.update({ where: { id: "v-hitam" }, data: { sku: "SKU-1" } });
+    await db.product.updateMany({ data: { brand: "SNAPFIT" } });
+    const before = await db.variant.findUniqueOrThrow({ where: { id: "v-hitam" } });
+    const r = await bulkUpdateProducts([{ variantId: "v-hitam", productId: await pid(), produk_acuan: "Case Uji", deskripsi: "Compatibility :\n• Uji" } as never]);
+    expect(r).toMatchObject({ productsUpdated: 1, variantsUpdated: 0 });
+    expect(await db.product.findFirstOrThrow()).toMatchObject({ name: "Case Uji", brand: "SNAPFIT", description: "Compatibility :\n• Uji" });
+    expect(await db.variant.findUniqueOrThrow({ where: { id: "v-hitam" } })).toMatchObject({ price: before.price, stock: before.stock, sku: "SKU-1", weight: before.weight });
+  });
+});
+
 describe("backup harian", () => {
   // Tabel yang SENGAJA tak di-backup (data sementara/statistik). Tabel lain WAJIB ada di backup.
   const SENGAJA_TIDAK = ["CheckoutDraft", "SearchTerm"];

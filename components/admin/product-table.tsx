@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronDown, ChevronUp, Search, Trash2, Loader2, Archive, Eye } from "lucide-react";
 import { formatRupiah } from "@/lib/format";
+import { AdminThumb } from "@/components/admin/admin-thumb";
 import { deleteProduct, deleteProducts, setProductsArchived } from "@/lib/actions/admin";
 
 export type AdminVariant = {
@@ -85,7 +86,7 @@ export function ProductTable({ products }: { products: AdminProduct[] }) {
     habis: live.filter((p) => totalStock(p) === 0).length,
     grosir: live.filter((p) => p.isGrosir).length,
     arsip: products.length - live.length,
-  }), [products]);
+  }), [products, live]);
 
   const filtered = useMemo(() => {
     let list = products;
@@ -138,7 +139,7 @@ export function ProductTable({ products }: { products: AdminProduct[] }) {
   // ---- Pilih massal ----
   const allSelected = filtered.length > 0 && filtered.every((p) => selected.has(p.id));
   function toggle(id: string) {
-    setSelected((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+    setSelected((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   }
   function toggleAll() {
     setSelected((s) => {
@@ -281,11 +282,7 @@ export function ProductTable({ products }: { products: AdminProduct[] }) {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex gap-3">
-                        <img
-                          src={p.coverImage ?? undefined}
-                          alt=""
-                          className="size-12 shrink-0 rounded-md border border-border object-contain"
-                        />
+                        <AdminThumb src={p.coverImage} className="size-12 shrink-0 rounded-md border border-border object-contain" />
                         <div className="min-w-0">
                           <p className="line-clamp-2 font-medium leading-snug">{p.name}</p>
                           <p className="mt-0.5 text-xs text-muted-foreground">ID Produk: {p.id.slice(0, 10)}</p>
@@ -338,11 +335,7 @@ export function ProductTable({ products }: { products: AdminProduct[] }) {
                       <td className="px-3 py-2" />
                       <td className="py-2 pl-8 pr-4">
                         <div className="flex items-center gap-2.5">
-                          <img
-                            src={(v.image || p.coverImage) ?? undefined}
-                            alt=""
-                            className="size-9 shrink-0 rounded border border-border object-contain"
-                          />
+                          <AdminThumb src={v.image || p.coverImage} size={36} className="size-9 shrink-0 rounded border border-border object-contain" />
                           <div className="min-w-0">
                             <p className="truncate font-medium text-foreground">{variantLabel(v)}</p>
                             {v.sku && <p className="text-muted-foreground">Kode: {v.sku}</p>}

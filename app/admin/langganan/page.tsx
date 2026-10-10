@@ -18,7 +18,6 @@ export default async function AdminSubscribersPage() {
             {total.toLocaleString("id-ID")} pelanggan dari bagian “Langganan email” di beranda. Unduh CSV untuk diimpor ke layanan email (mis. Resend Audiences / Mailchimp).
           </p>
         </div>
-        {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- unduhan file (bukan halaman) */}
         <a href="/api/admin/langganan" download className="inline-flex h-[42px] items-center rounded-xl border border-border px-4 text-sm font-medium hover:bg-muted">
           Unduh CSV
         </a>
