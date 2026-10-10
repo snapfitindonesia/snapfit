@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { limitAction, requestIp } from "@/lib/security/ratelimit";
+import { ipFromHeaders, limitAction } from "@/lib/security/ratelimit";
 import { compressToWebp, uploadToR2 } from "@/lib/upload/cdn";
 import { findReviewableOrder, REVIEWABLE_STATUSES } from "@/lib/review-token";
 import { cleanupOrphanImages } from "@/lib/upload/cleanup";
@@ -24,7 +24,7 @@ const schema = z.object({
 const fail = (error: string, status = 400) => NextResponse.json({ ok: false, error }, { status });
 
 export async function POST(request: Request) {
-  const ip = await requestIp();
+  const ip = ipFromHeaders(request.headers);
   const rl = await limitAction("review", ip, 10, "600 s");
   if (!rl.success) return fail("Terlalu banyak percobaan. Coba lagi beberapa menit lagi.", 429);
 

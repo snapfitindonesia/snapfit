@@ -62,9 +62,13 @@ export async function limitLogin(
   return { success, skipped: false };
 }
 
-/** IP pengunjung dari header proxy Vercel (untuk kunci rate-limit). Server Action / route handler. */
+/** IP pengunjung dari header proxy Vercel (untuk kunci rate-limit). */
+export function ipFromHeaders(h: Headers): string {
+  return (h.get("x-forwarded-for") ?? "").split(",")[0]!.trim() || h.get("x-real-ip") || "anon";
+}
+
+/** IP pengunjung untuk Server Action. Route handler: pakai ipFromHeaders(request.headers). */
 export async function requestIp(): Promise<string> {
   const { headers } = await import("next/headers");
-  const h = await headers();
-  return (h.get("x-forwarded-for") ?? "").split(",")[0]!.trim() || h.get("x-real-ip") || "anon";
+  return ipFromHeaders(await headers());
 }
