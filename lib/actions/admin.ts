@@ -13,6 +13,7 @@ import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { cleanupOrphanImages } from "@/lib/upload/cleanup";
 import { sendEmail, orderShippedEmail, orderProcessingEmail } from "@/lib/email";
+import { cancelGineeOrder } from "@/lib/ginee/orders";
 import {
   productSchema,
   bannerSchema,
@@ -37,7 +38,7 @@ import {
   type OrderUpdateInput,
 } from "@/lib/validations/admin";
 
-type Result = { ok: boolean; error?: string; id?: string };
+type Result = { ok: boolean; error?: string; id?: string; warning?: string };
 
 function fail(e: unknown): Result {
   return { ok: false, error: e instanceof Error ? e.message : "Gagal menyimpan." };
@@ -736,6 +737,18 @@ export async function updateOrder(input: OrderUpdateInput): Promise<Result> {
     if (res.count === 0) return { ok: false, error: "Status pesanan baru saja berubah. Muat ulang halaman lalu coba lagi." };
     const updated = await db.order.findUniqueOrThrow({ where: { id: data.id } });
 
+    // Sudah masuk Ginee → batalkan juga di Ginee (stok gudang kembali, tak terlanjur dikemas).
+    let warning: string | undefined;
+    if (changed && data.status === "CANCELLED" && existing.gineePushedAt) {
+      const g = await cancelGineeOrder({
+        gineeOrderSn: existing.gineeOrderSn,
+        externalOrderSn: existing.midtransOrderId ?? existing.id,
+        pushedAt: existing.gineePushedAt,
+      });
+      if (!g.ok) warning = `Pesanan dibatalkan di website, TAPI gagal dibatalkan di Ginee: ${g.error}. Batalkan manual di Ginee.`;
+      else if (g.orderId && g.orderId !== existing.gineeOrderSn) await db.order.update({ where: { id: existing.id }, data: { gineeOrderSn: g.orderId } });
+    }
+
     // Batal sebelum barang dikirim → stok yang sudah dikurangi saat lunas dikembalikan.
     if (changed && data.status === "CANCELLED" && RESTOCK_ON_CANCEL.includes(from)) {
       await db.$transaction(
@@ -775,7 +788,7 @@ export async function updateOrder(input: OrderUpdateInput): Promise<Result> {
         console.error("Email resi gagal:", e);
       }
     }
-    return { ok: true };
+    return { ok: true, warning };
   } catch (e) {
     return fail(e);
   }

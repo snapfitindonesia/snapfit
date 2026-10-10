@@ -70,8 +70,10 @@ function OrderRow({ order }: { order: AdminOrder }) {
     setBusy(tag);
     setErr(null);
     const res = await updateOrder({ id: order.id, status, trackingNo: resi ?? trackingNo });
-    if (res.ok) router.refresh();
-    else setErr(res.error ?? "Gagal menyimpan.");
+    if (res.ok) {
+      if (res.warning) setErr(res.warning); // mis. batal di web OK, di Ginee gagal → admin perlu tindak manual
+      router.refresh();
+    } else setErr(res.error ?? "Gagal menyimpan.");
     setBusy(null);
   }
 
