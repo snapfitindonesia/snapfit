@@ -3,7 +3,9 @@ import { updateSession } from "@/lib/supabase/middleware";
 import { limitLogin } from "@/lib/security/ratelimit";
 import { isSupabaseConfigured, ADMIN_ROLE } from "@/lib/supabase/config";
 
-const LOGIN_PATHS = ["/masuk", "/daftar", "/api/auth"];
+// Login/daftar lewat form (Server Action) dibatasi di lib/actions/auth.ts — form juga ada di popup semua
+// halaman toko, jadi tak bisa ditangkap per path di sini (dan agar tak terhitung dua kali).
+const LOGIN_PATHS = ["/api/auth"];
 
 function copyCookies(from: NextResponse, to: NextResponse) {
   from.cookies.getAll().forEach((c) => to.cookies.set(c));
