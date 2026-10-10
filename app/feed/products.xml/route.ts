@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { productPath } from "@/lib/product-url";
 import { applyDiscount, activeDiscountPercent } from "@/lib/format";
 import { isPlaceholderPrice } from "@/lib/price-guard";
+import { buildFallback } from "@/lib/build-fallback";
 
 // Feed produk (Google RSS 2.0 + namespace g:) — dipakai Meta Catalog (Data feed)
 // & Google Merchant Center sekaligus. Per-VARIAN, dikelompokkan item_group_id.
@@ -23,8 +24,10 @@ export async function GET() {
   let products: Awaited<ReturnType<typeof fetchProducts>> = [];
   try {
     products = await fetchProducts();
-  } catch {
-    products = [];
+  } catch (e) {
+    // Saat regenerasi: LEMPAR → feed terakhir yang lengkap tetap disajikan. Feed kosong yang ter-cache 1 jam
+    // bisa dibaca Google Merchant / Meta Catalog sebagai "semua produk dihapus" (iklan berhenti).
+    products = buildFallback(e, []);
   }
 
   const items: string[] = [];

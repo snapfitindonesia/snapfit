@@ -4,6 +4,7 @@ import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { bulkUpdateProducts } from "@/lib/actions/admin";
 import { exportDatabase } from "@/lib/backup";
+import { getDashboardStats } from "@/lib/admin/stats";
 import { resetDb, seedStore } from "../support/fixtures";
 
 beforeEach(async () => {
@@ -77,5 +78,34 @@ describe("backup harian", () => {
     expect(data.tables.vouchers).toHaveLength(1);
     expect(data.tables.siteSettings).toEqual([expect.objectContaining({ key: "payment.banks" })]);
     expect(data.tables.coinEntries).toEqual([expect.objectContaining({ amount: 5000 })]);
+  });
+});
+
+describe("dashboard admin (agregat database)", () => {
+  async function paidOrder(status: string, items: { variantId: string; qty: number; price: number }[], phone: string) {
+    const total = items.reduce((n, i) => n + i.qty * i.price, 0);
+    return db.order.create({
+      data: {
+        status, subtotal: total, shippingCost: 0, total, midtransOrderId: `T-${Math.random()}`,
+        address: { name: "Uji", phone, city: "Kota Yogyakarta" },
+        items: { create: items.map((i) => ({ ...i, name: `Case Uji — ${i.variantId}` })) },
+      },
+    });
+  }
+
+  it("menghitung penjualan termasuk status Dikemas; pesanan batal/belum bayar diabaikan", async () => {
+    await paidOrder("PAID", [{ variantId: "v-hitam", qty: 2, price: 89_000 }], "0811");
+    await paidOrder("PROCESSING", [{ variantId: "v-hitam", qty: 1, price: 89_000 }, { variantId: "v-biru", qty: 1, price: 50_000 }], "0811");
+    await paidOrder("CANCELLED", [{ variantId: "v-biru", qty: 5, price: 50_000 }], "0822");
+    await paidOrder("PENDING", [{ variantId: "v-biru", qty: 5, price: 50_000 }], "0833");
+
+    const st = await getDashboardStats();
+    expect(st.omzetTotal).toBe(178_000 + 139_000);
+    expect(st.unitsTotal).toBe(4);
+    expect(st.customersTotal).toBe(1); // 1 nomor HP
+    expect(st.orderCount).toBe(4);
+    expect(st.cities).toEqual([["Kota Yogyakarta", 317_000]]);
+    expect(st.sold.get("v-hitam")).toMatchObject({ qty: 3, amount: 267_000 });
+    expect(st.sold.get("v-biru")).toMatchObject({ qty: 1, amount: 50_000 });
   });
 });

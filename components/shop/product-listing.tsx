@@ -28,6 +28,10 @@ export function ProductListing({
   initialModel = "",
   initialSort = "terbaru",
   initialQ = "",
+  initialDevices = [],
+  initialBrands = [],
+  initialMinPrice = null,
+  initialMaxPrice = null,
 }: {
   devices: Device[];
   brands: string[];
@@ -37,15 +41,20 @@ export function ProductListing({
   initialModel?: string;
   initialSort?: SortOption;
   initialQ?: string;
+  initialDevices?: string[];
+  initialBrands?: string[];
+  initialMinPrice?: number | null;
+  initialMaxPrice?: number | null;
 }) {
   const [q, setQ] = useState(initialQ);
   const [sort, setSort] = useState<SortOption>(initialSort);
-  const [selDevices, setSelDevices] = useState<Set<string>>(() => new Set(initialTipe ? [initialTipe] : []));
-  const [selBrands, setSelBrands] = useState<Set<string>>(new Set());
-  const [minInput, setMinInput] = useState("");
-  const [maxInput, setMaxInput] = useState("");
-  const [priceMin, setPriceMin] = useState<number | null>(null);
-  const [priceMax, setPriceMax] = useState<number | null>(null);
+  // Filter awal dari URL (link dibagikan / refresh / tombol Back) — lihat ProductListPage.
+  const [selDevices, setSelDevices] = useState<Set<string>>(() => new Set([...(initialTipe ? [initialTipe] : []), ...initialDevices]));
+  const [selBrands, setSelBrands] = useState<Set<string>>(() => new Set(initialBrands));
+  const [minInput, setMinInput] = useState(initialMinPrice != null ? String(initialMinPrice) : "");
+  const [maxInput, setMaxInput] = useState(initialMaxPrice != null ? String(initialMaxPrice) : "");
+  const [priceMin, setPriceMin] = useState<number | null>(initialMinPrice);
+  const [priceMax, setPriceMax] = useState<number | null>(initialMaxPrice);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   const [items, setItems] = useState<ProductListItem[]>(initial.items);

@@ -8,17 +8,10 @@ import { getBankAccounts } from "@/lib/bank-settings";
 import { PurchaseTracker } from "@/components/tracking/purchase-tracker";
 import { GoogleCustomerReviews } from "@/components/tracking/google-customer-reviews";
 import { PaymentPoll } from "@/components/shop/payment-poll";
+import { CUSTOMER_STATUS } from "@/lib/order-status";
 import { PENDING_EXPIRE_DAYS } from "@/lib/validations/admin";
 
 const PAID_STATUSES = ["PAID", "PROCESSING", "SHIPPED", "DONE"];
-const STATUS_LABEL: Record<string, string> = {
-  PENDING: "Menunggu Pembayaran",
-  PAID: "Dibayar",
-  PROCESSING: "Dikemas",
-  SHIPPED: "Dikirim",
-  DONE: "Selesai",
-  CANCELLED: "Dibatalkan",
-};
 
 export const metadata = {
   title: "Status Pesanan",
@@ -147,7 +140,7 @@ export default async function CheckoutSuccessPage({
           </div>
           <div className="flex justify-between">
             <dt className="text-muted-foreground">Status</dt>
-            <dd className="font-medium">{STATUS_LABEL[order.status] ?? order.status}</dd>
+            <dd className="font-medium">{CUSTOMER_STATUS[order.status]?.label ?? order.status}</dd>
           </div>
           {order.trackingNo && (
             <div className="flex justify-between">

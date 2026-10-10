@@ -4,6 +4,7 @@ import { productSlug, skuify } from "@/lib/slug";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { withItemImages } from "@/lib/email-items";
 import { STOREFRONT_TAG } from "@/lib/storefront-cache";
+import { CATALOG_TAG } from "@/lib/catalog";
 import { productPath } from "@/lib/product-url";
 import { nextShortId, slugForName } from "@/lib/product-url-server";
 import { grantOrderCashback, grantReviewBonus, reverseOrderCoins } from "@/lib/coins";
@@ -239,6 +240,7 @@ export async function setProductFeatured(id: string, featured: boolean): Promise
     await requireAdmin();
     await db.product.update({ where: { id }, data: { featured } });
     revalidatePath("/admin/unggulan");
+    revalidateTag(CATALOG_TAG); // "Produk Unggulan" dibaca dari katalog ter-cache → segarkan, bukan hanya halamannya
     revalidatePath("/"); // homepage "Produk Unggulan"
     return { ok: true };
   } catch (e) {
@@ -929,6 +931,7 @@ export async function reorderNavLinks(ids: string[]): Promise<Result> {
 async function revalidateReview(productId: string) {
   const p = await db.product.findUnique({ where: { id: productId }, select: { slug: true, shortId: true } });
   if (p) revalidatePath(productPath(p));
+  revalidateTag(CATALOG_TAG); // rating ★ di kartu produk (daftar/beranda) dihitung dari katalog ter-cache
   revalidatePath("/admin/ulasan");
 }
 

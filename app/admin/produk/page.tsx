@@ -1,15 +1,14 @@
 import Link from "next/link";
 import { Plus, Upload, DownloadCloud, FileSpreadsheet } from "lucide-react";
 import { db } from "@/lib/db";
+import { soldByVariant } from "@/lib/admin/stats";
 import { Button } from "@/components/ui/button";
 import { ProductTable, type AdminProduct } from "@/components/admin/product-table";
 
 export const dynamic = "force-dynamic";
 
-const PAID_STATUSES = ["PAID", "SHIPPED", "DONE"];
-
 export default async function AdminProductsPage() {
-  const [products, paidOrders] = await Promise.all([
+  const [products, sold] = await Promise.all([
     db.product.findMany({
       orderBy: { createdAt: "desc" },
       include: {
@@ -20,16 +19,8 @@ export default async function AdminProductsPage() {
         },
       },
     }),
-    db.order.findMany({
-      where: { status: { in: PAID_STATUSES } },
-      select: { items: { select: { name: true, qty: true } } },
-    }),
+    soldByVariant(), // agregat di database (bukan menarik semua pesanan)
   ]);
-
-  // Penjualan (unit terjual) per nama produk
-  const soldByName = new Map<string, number>();
-  for (const o of paidOrders)
-    for (const it of o.items) soldByName.set(it.name, (soldByName.get(it.name) ?? 0) + it.qty);
 
   const data: AdminProduct[] = products.map((p) => ({
     id: p.id,
@@ -40,7 +31,9 @@ export default async function AdminProductsPage() {
     isGrosir: p.isGrosir,
     archived: p.archived,
     archivedBy: p.archivedBy,
-    sold: soldByName.get(p.name) ?? 0,
+    // Unit terjual = jumlah semua varian produk (dulu dicocokkan lewat nama → selalu 0 karena item
+    // pesanan bernama "Produk — Varian").
+    sold: p.variants.reduce((n, v) => n + (sold.get(v.id)?.qty ?? 0), 0),
     variants: p.variants,
   }));
 

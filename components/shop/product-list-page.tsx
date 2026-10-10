@@ -2,7 +2,19 @@ import { getCategories, getProducts, getBrandFacets } from "@/lib/actions/produc
 import { productQuerySchema } from "@/lib/validations/product";
 import { ProductListing } from "@/components/shop/product-listing";
 
-export type ListParams = { tipe?: string; model?: string; sort?: string; q?: string };
+export type ListParams = {
+  tipe?: string;
+  model?: string;
+  sort?: string;
+  q?: string;
+  perangkat?: string | string[];
+  brand?: string | string[];
+  minPrice?: string;
+  maxPrice?: string;
+};
+
+const list = (v?: string | string[]) => (v == null ? undefined : (Array.isArray(v) ? v : [v]).filter(Boolean).slice(0, 50));
+const price = (v?: string) => (v && /^\d{1,9}$/.test(v) ? v : undefined); // nilai aneh di URL diabaikan, bukan error
 
 export const LIST_METADATA = {
   title: "Semua Produk - Case HP, Tablet & AirPods Original",
@@ -11,11 +23,24 @@ export const LIST_METADATA = {
 
 /**
  * Isi halaman daftar produk. Dipakai 2 rute: /produk (tanpa parameter → statis/ISR, dari cache
- * CDN) dan /produk/filter (dinamis; next.config me-rewrite /produk?tipe|model|sort|q= ke sana,
+ * CDN) dan /produk/filter (dinamis; next.config me-rewrite /produk?tipe|model|sort|q|perangkat|brand|minPrice|maxPrice= ke sana,
  * URL di browser tetap /produk?...). Interaksi berikutnya via AJAX di client.
  */
 export async function ProductListPage({ params = {} }: { params?: ListParams }) {
-  const query = productQuerySchema.parse({ tipe: params.tipe, model: params.model, sort: params.sort, q: params.q });
+  const perangkat = list(params.perangkat);
+  const brands = list(params.brand);
+  const parsed = productQuerySchema.safeParse({
+    tipe: params.tipe,
+    model: params.model,
+    sort: params.sort,
+    q: params.q,
+    perangkat: perangkat?.length ? perangkat : undefined,
+    brands: brands?.length ? brands : undefined,
+    minPrice: price(params.minPrice),
+    maxPrice: price(params.maxPrice),
+  });
+  // Parameter rusak (mis. sort tak dikenal) → tampilkan semua produk, jangan halaman error.
+  const query = parsed.success ? parsed.data : productQuerySchema.parse({});
 
   const [categories, brandFacets, initial] = await Promise.all([
     getCategories(),
@@ -43,6 +68,10 @@ export async function ProductListPage({ params = {} }: { params?: ListParams }) 
         initialModel={query.model ?? ""}
         initialSort={query.sort}
         initialQ={query.q ?? ""}
+        initialDevices={query.perangkat ?? []}
+        initialBrands={query.brands ?? []}
+        initialMinPrice={query.minPrice ?? null}
+        initialMaxPrice={query.maxPrice ?? null}
       />
     </div>
   );

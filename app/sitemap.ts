@@ -3,6 +3,7 @@ import { CAMPAIGN_SLUGS } from "@/lib/campaigns";
 import { db } from "@/lib/db";
 import { productPath } from "@/lib/product-url";
 import { listLandingPages } from "@/lib/seo-pages";
+import { buildFallback } from "@/lib/build-fallback";
 
 const SITE = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.snapfit.id").replace(/\/$/, "");
 
@@ -35,8 +36,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly",
       priority: 0.8,
     }));
-  } catch {
-    // DB tak terjangkau saat build → sitemap tetap terbit dgn halaman statis.
+  } catch (e) {
+    // Saat build (DB tak terjangkau) → terbit dgn halaman statis. Saat regenerasi: LEMPAR agar Google tetap
+    // menerima sitemap terakhir yang lengkap (bukan versi tanpa produk yang ter-cache 1 jam).
+    productPages = buildFallback(e, []);
   }
 
   // Halaman landing SEO kategori & merek (hanya yang punya produk tersedia).
@@ -47,8 +50,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ...categories.map((slug) => ({ url: `${SITE}/kategori/${slug}`, lastModified: now, changeFrequency: "daily" as const, priority: 0.85 })),
       ...mereks.map((slug) => ({ url: `${SITE}/merek/${slug}`, lastModified: now, changeFrequency: "daily" as const, priority: 0.85 })),
     ];
-  } catch {
-    // abaikan — sitemap tetap terbit
+  } catch (e) {
+    landingPages = buildFallback(e, []);
   }
 
   // Artikel terbit.
@@ -57,8 +60,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const rows = await db.article.findMany({ where: { published: true, publishedAt: { lte: now } }, select: { slug: true, updatedAt: true } });
     articlePages = rows.map((a) => ({ url: `${SITE}/artikel/${a.slug}`, lastModified: a.updatedAt, changeFrequency: "monthly" as const, priority: 0.6 }));
     if (rows.length) articlePages.unshift({ url: `${SITE}/artikel`, lastModified: now, changeFrequency: "weekly", priority: 0.6 });
-  } catch {
-    // abaikan
+  } catch (e) {
+    articlePages = buildFallback(e, []);
   }
 
   return [...staticPages, ...landingPages, ...articlePages, ...productPages];

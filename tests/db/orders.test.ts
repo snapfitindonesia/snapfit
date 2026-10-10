@@ -6,6 +6,8 @@ import { createOrder, markOrderPaid } from "@/lib/actions/order";
 import { handlePaidOrder } from "@/lib/orders/paid";
 import { expireUnpaidOrders } from "@/lib/orders/expire";
 import { getCartPrices } from "@/lib/actions/cart";
+import { ensureReviewToken } from "@/lib/review-token";
+import { POST as postReview } from "@/app/api/ulasan/route";
 import { PENDING_EXPIRE_DAYS } from "@/lib/validations/admin";
 import { updateOrder } from "@/lib/actions/admin";
 import { grantCoins } from "@/lib/coins";
@@ -188,5 +190,22 @@ describe("harga keranjang terkini", () => {
     expect(prices.find((p) => p.variantId === "v-biru")).toMatchObject({ price: 40_000, available: true });
     expect(prices.find((p) => p.variantId === "v-dummy")).toMatchObject({ available: false });
     expect(prices).toHaveLength(2);
+  });
+});
+
+describe("ulasan pembeli", () => {
+  it("form terkirim 3× bersamaan → hanya 1 ulasan tersimpan", async () => {
+    const r = await order([{ variantId: "v-hitam", qty: 1 }]);
+    const o = await db.order.update({ where: { id: r.orderId }, data: { status: "SHIPPED" } });
+    const token = await ensureReviewToken(o);
+    const productId = (await db.product.findFirstOrThrow()).id;
+    const send = () => {
+      const f = new FormData();
+      Object.entries({ token, productId, rating: "5", author: "Rina", comment: "Bagus sekali, pas." }).forEach(([k, v]) => f.set(k, v));
+      return postReview(new Request("http://localhost/api/ulasan", { method: "POST", body: f }));
+    };
+    const res = await Promise.all([send(), send(), send()]);
+    expect(res.map((x) => x.status).sort()).toEqual([200, 409, 409]);
+    expect(await db.review.count({ where: { orderId: o.id } })).toBe(1);
   });
 });

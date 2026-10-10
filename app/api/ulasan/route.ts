@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { limitAction, requestIp } from "@/lib/security/ratelimit";
 import { compressToWebp, uploadToR2 } from "@/lib/upload/cdn";
 import { findReviewableOrder, REVIEWABLE_STATUSES } from "@/lib/review-token";
+import { cleanupOrphanImages } from "@/lib/upload/cleanup";
 
 export const runtime = "nodejs";
 
@@ -59,18 +60,31 @@ export async function POST(request: Request) {
     }
   }
 
-  await db.review.create({
-    data: {
-      productId: d.productId,
-      author: d.author,
-      rating: d.rating,
-      comment: d.comment,
-      approved: false,
-      verified: true,
-      orderId: order.id,
-      photo,
-    },
+  // 1 ulasan per produk per pesanan, juga saat form terkirim 2× bersamaan (jaringan lambat → klik ulang):
+  // kunci per (pesanan, produk) selama transaksi → cek + simpan tak bisa saling mendahului. Tanpa ini dua
+  // ulasan bisa lolos & bila keduanya disetujui, bonus koin ulasan cair dua kali.
+  const created = await db.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`review:${order.id}:${d.productId}`}))`;
+    const dup = await tx.review.findFirst({ where: { orderId: order.id, productId: d.productId }, select: { id: true } });
+    if (dup) return false;
+    await tx.review.create({
+      data: {
+        productId: d.productId,
+        author: d.author,
+        rating: d.rating,
+        comment: d.comment,
+        approved: false,
+        verified: true,
+        orderId: order.id,
+        photo,
+      },
+    });
+    return true;
   });
+  if (!created) {
+    await cleanupOrphanImages([photo]).catch(() => {});
+    return fail("Produk ini sudah kamu ulas. Terima kasih!", 409);
+  }
   revalidatePath("/admin/ulasan");
   return NextResponse.json({ ok: true });
 }

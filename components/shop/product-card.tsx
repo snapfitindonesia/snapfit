@@ -1,5 +1,5 @@
 import Image from "@/components/ui/image";
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/shop/hover-prefetch-link";
 import { Star } from "lucide-react";
 import { formatRupiah } from "@/lib/format";
 import type { ProductListItem } from "@/lib/actions/product";
@@ -14,7 +14,7 @@ export function ProductCard({ product, priority = false }: { product: ProductLis
     // h-full + tombol mt-auto: tombol "Pilih Opsi/Keranjang" sejajar di dasar kartu walau isi
     // kartu beda tinggi (ada/tidaknya kategori, rating, harga coret, judul 1–2 baris).
     <div className={`group flex h-full flex-col ${priority ? "" : "animate-in fade-in slide-in-from-bottom-3 duration-500"}`}>
-      <Link href={productPath(product)} className="block">
+      <HoverPrefetchLink href={productPath(product)} className="block">
       <div className="relative aspect-square w-full overflow-hidden rounded-lg border border-border bg-muted">
         <Image
           src={product.coverImage}
@@ -72,7 +72,7 @@ export function ProductCard({ product, priority = false }: { product: ProductLis
           )}
         </div>
       </div>
-      </Link>
+      </HoverPrefetchLink>
       <div className="mt-auto">
         <AddToCartButton product={product} />
       </div>

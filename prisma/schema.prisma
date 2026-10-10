@@ -57,14 +57,14 @@ model Review {
   rating    Int      @default(5) // 1-5 bintang
   comment   String
   createdAt DateTime @default(now())
-  // Ulasan dari pembeli via /ulasan/[token] (lib/actions/review.ts). Ulasan buatan admin: default di bawah.
+  // Ulasan dari pembeli via /ulasan/[token] (app/api/ulasan/route.ts). Ulasan buatan admin: default di bawah.
   approved  Boolean  @default(true) // false = menunggu moderasi admin (tak tampil di toko)
   verified  Boolean  @default(false) // true = dari pesanan nyata → badge "Pembeli terverifikasi"
   orderId   String? // pesanan asal ulasan pembeli
   photo     String? // foto produk dari pembeli (R2), tampil di bawah ulasan
 
   @@index([productId])
-  @@index([orderId]) // 1 ulasan per produk per pesanan — dijaga di lib/actions/review.ts
+  @@index([orderId]) // 1 ulasan per produk per pesanan — dijaga di app/api/ulasan/route.ts (kunci advisory)
 }
 
 model Variant {

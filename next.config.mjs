@@ -22,11 +22,29 @@ const nextConfig = {
     "/": ["./node_modules/.prisma/client/query_compiler_bg.wasm"],
     "/**/*": ["./node_modules/.prisma/client/query_compiler_bg.wasm"],
   },
+  // Header keamanan dasar untuk semua halaman. Bingkai hanya dari situs sendiri (pratinjau email di admin
+  // memakai iframe same-origin) → panel admin tak bisa disisipkan di situs lain (clickjacking).
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "Content-Security-Policy", value: "frame-ancestors 'self'" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), browsing-topics=()" },
+        ],
+      },
+    ];
+  },
   // /produk polos = halaman statis (cache CDN); versi berparameter dirender dinamis di
   // /produk/filter tanpa mengubah URL di browser. beforeFiles: dicek sebelum rute halaman.
+  // SEMUA kunci filter yang ditulis ProductListing ke URL ikut di-rewrite — tanpa ini link filter yang
+  // dibagikan / di-refresh jatuh ke /produk statis & filternya hilang.
   async rewrites() {
     return {
-      beforeFiles: ["tipe", "model", "sort", "q"].map((key) => ({
+      beforeFiles: ["tipe", "model", "sort", "q", "perangkat", "brand", "minPrice", "maxPrice"].map((key) => ({
         source: "/produk",
         has: [{ type: "query", key }],
         destination: "/produk/filter",
