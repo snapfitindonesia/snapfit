@@ -7,7 +7,9 @@ import { db } from "@/lib/db";
  * foto publik — backup berisi data pelanggan). Format: JSON (semua tabel) di-gzip.
  * Restore: scripts/restore-backup.mjs.
  */
-export const BACKUP_VERSION = 1;
+// v2 (Okt 2026): + siteSettings (konten beranda, warna, rekening transfer, bundle, overview),
+// coinEntries (saldo koin member) & shippingZones (ongkir per provinsi) — dulu tak ikut di-backup.
+export const BACKUP_VERSION = 2;
 const PREFIX = "db/";
 const KEEP_DAYS = 30;
 
@@ -25,7 +27,7 @@ function cfg() {
 
 /** Ekspor semua tabel (+ id relasi m-n) ke satu objek. */
 export async function exportDatabase() {
-  const [products, reviews, variants, categories, mereks, banners, discounts, vouchers, orders, orderItems, bioProfiles, bioLinks, navLinks, emailOptOuts, articles, subscribers] =
+  const [products, reviews, variants, categories, mereks, banners, discounts, vouchers, orders, orderItems, bioProfiles, bioLinks, navLinks, emailOptOuts, articles, subscribers, siteSettings, coinEntries, shippingZones] =
     await Promise.all([
       db.product.findMany({ include: { extraCategories: { select: { id: true } } } }),
       db.review.findMany(),
@@ -43,11 +45,15 @@ export async function exportDatabase() {
       db.emailOptOut.findMany(), // permintaan berhenti pengingat (CheckoutDraft sengaja tidak — data sementara)
       db.article.findMany(),
       db.subscriber.findMany(),
+      db.siteSetting.findMany(),
+      db.coinEntry.findMany(),
+      db.shippingZone.findMany(),
+      // SearchTerm (statistik pencarian) & CheckoutDraft (keranjang sementara) sengaja tidak.
     ]);
   return {
     version: BACKUP_VERSION,
     createdAt: new Date().toISOString(),
-    tables: { products, reviews, variants, categories, mereks, banners, discounts, vouchers, orders, orderItems, bioProfiles, bioLinks, navLinks, emailOptOuts, articles, subscribers },
+    tables: { products, reviews, variants, categories, mereks, banners, discounts, vouchers, orders, orderItems, bioProfiles, bioLinks, navLinks, emailOptOuts, articles, subscribers, siteSettings, coinEntries, shippingZones },
   };
 }
 

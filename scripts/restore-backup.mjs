@@ -78,6 +78,12 @@ async function restore() {
     ["BioProfile", "bioProfile", T.bioProfiles],
     ["BioLink", "bioLink", T.bioLinks],
     ["EmailOptOut", "emailOptOut", T.emailOptOuts ?? [], "email"], // kunci = email
+    ["Article", "article", T.articles ?? []],
+    ["Subscriber", "subscriber", T.subscribers ?? [], "email"],
+    // v2+: pengaturan toko, buku besar koin member, ongkir per provinsi
+    ["SiteSetting", "siteSetting", T.siteSettings ?? [], "key"],
+    ["CoinEntry", "coinEntry", T.coinEntries ?? []],
+    ["ShippingZone", "shippingZone", T.shippingZones ?? [], "provinceCode"],
   ];
 
   let totalMissing = 0;
