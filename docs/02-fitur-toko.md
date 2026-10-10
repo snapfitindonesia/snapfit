@@ -71,6 +71,14 @@ bar bawah (HP), dan tombol WhatsApp melayang.
 
 ### Keranjang & checkout
 - Keranjang disimpan di `localStorage` — bertahan walau browser ditutup.
+- **Harga keranjang disegarkan** saat keranjang/checkout dibuka (`getCartPrices`, `lib/actions/cart.ts`,
+  rumus sama dengan `createOrder`): bila flash sale berakhir atau harga diubah sejak barang ditambah,
+  harga ikut diperbarui + pemberitahuan "Harga … diperbarui" (`price-notice.tsx`). Angka yang dilihat
+  pembeli = yang ditagih.
+- **Halaman sukses** (`/checkout/sukses`) mengikuti status asli pesanan: Menunggu Bayar (transfer:
+  instruksi rekening; Midtrans: "Menunggu pembayaran", diperbarui otomatis ±2 menit), Dibatalkan, atau
+  Lunas. Event *purchase* (Pixel/GA4) hanya dikirim untuk pesanan yang sudah lunas.
+- Pesanan belum dibayar **3 hari** → dibatalkan otomatis (lihat [03](03-panel-admin.md#memproses-pesanan-transfer-manual)).
 - Voucher & diskon dihitung ulang di server saat checkout (harga dari klien tidak dipercaya).
 - **Voucher tersedia** tampil di ringkasan checkout (`voucher-picker.tsx`): bisa dipakai → "Hemat RpX" +
   tombol Pakai (terbaik diberi label "Paling hemat"); belum memenuhi syarat → "Belanja RpX lagi" +

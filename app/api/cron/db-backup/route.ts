@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { runBackup } from "@/lib/backup";
+import { backupLooksWrong, runBackup } from "@/lib/backup";
+import { alertAdmin } from "@/lib/admin-alert";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,9 +20,21 @@ export async function GET(req: NextRequest) {
   try {
     const result = await runBackup();
     console.log("[db-backup] ok", result.key, result.bytes, "bytes");
-    return NextResponse.json({ ok: true, ...result });
+    const wrong = backupLooksWrong(result.counts);
+    if (wrong) {
+      await alertAdmin("Backup database mencurigakan", "Isi backup harian tidak wajar", [
+        `Backup ${result.key} tersimpan, tetapi ${wrong}.`,
+        "Cek database & data toko segera. Backup lama (30 hari) masih tersimpan di R2.",
+      ]);
+    }
+    return NextResponse.json({ ok: true, ...result, warning: wrong });
   } catch (e) {
     console.error("[db-backup] gagal:", e);
+    // Vercel Hobby tak mengirim email saat cron gagal → beri tahu admin sendiri.
+    await alertAdmin("Backup database GAGAL", "Backup harian database gagal", [
+      `Error: ${e instanceof Error ? e.message : String(e)}`,
+      "Backup berikutnya dicoba otomatis besok. Bila berulang, cek kunci R2 (R2_*) & bucket backup di Vercel.",
+    ]);
     return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : "gagal" }, { status: 500 });
   }
 }

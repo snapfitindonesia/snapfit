@@ -8,7 +8,8 @@ import { CATALOG_TAG } from "@/lib/catalog";
 import { db } from "@/lib/db";
 import { createShipment } from "@/lib/biteship";
 import { isFlatShipping } from "@/lib/payment";
-import { sendEmail, orderConfirmationEmail, adminAlertEmail } from "@/lib/email";
+import { sendEmail, orderConfirmationEmail } from "@/lib/email";
+import { alertAdmin } from "@/lib/admin-alert";
 import { withItemImages } from "@/lib/email-items";
 import { findGineeManualOrder, pushOrderToGinee } from "@/lib/ginee/orders";
 import { isGineeConfigured } from "@/lib/ginee/config";
@@ -23,13 +24,6 @@ type AddressData = {
   district?: string;
   postalCode?: string;
 };
-
-/** Kirim peringatan ke admin (ADMIN_NOTIFY_EMAIL). Best-effort. */
-export async function alertAdmin(subject: string, title: string, lines: string[]) {
-  const admins = (process.env.ADMIN_NOTIFY_EMAIL || "admin@snapfit.id").split(",").map((s) => s.trim()).filter(Boolean);
-  const results = await Promise.allSettled(admins.map((to) => sendEmail({ to, ...adminAlertEmail({ subject, title, lines }) })));
-  for (const r of results) if (r.status === "rejected") console.error("Email peringatan admin gagal:", r.reason);
-}
 
 /** Proses order jadi PAID: idempotent, kurangi stok, buat pengiriman + resi. */
 export async function handlePaidOrder(midtransOrderId: string, paymentStatus = "settlement") {

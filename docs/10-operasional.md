@@ -6,8 +6,12 @@
 |---|---|---|
 | 03:00 | Backup database → R2 `snapfit-backup` | Cloudflare → R2 → `snapfit-backup/db/` |
 | 10:00 | Email ajakan ulasan (7 hari setelah dikirim) | `/admin/ulasan` |
-| 11:00 | Sinkron stok Ginee + arsip produk yang dihapus | badge "Diarsipkan" di `/admin/produk` |
-| 19:00 | Pengingat bayar pesanan PENDING | kolom pesanan |
+| 11:00 | Kirim ulang pesanan yang belum masuk Ginee, sinkron stok Ginee + arsip produk yang dihapus | badge "Diarsipkan" di `/admin/produk`, badge "Belum masuk Ginee" di `/admin/pesanan` |
+| 19:00 | Cek umur backup; batalkan otomatis pesanan belum bayar > 3 hari; pengingat bayar | tab status di `/admin/pesanan` |
+
+Masalah yang butuh tindakan dikirim sebagai email **⚠️** ke `ADMIN_NOTIFY_EMAIL`: backup gagal/terlambat/
+mencurigakan, sinkron Ginee gagal, pesanan belum masuk Ginee, stok kurang saat lunas, pembayaran
+untuk pesanan batal. Tak ada email = semua berjalan normal.
 | 20:00 | Pengingat keranjang ditinggal | `/admin/keranjang` (badge "Email terkirim") |
 
 Log setiap cron: Vercel → Project → **Logs** (filter path `/api/cron/...`).
@@ -58,6 +62,10 @@ Backup tidak mencakup akun login (Supabase Auth) dan file foto (R2).
 | Gejala | Kemungkinan penyebab | Tindakan |
 |---|---|---|
 | Produk tidak tampil di toko | stok 0 di gudang Ginee, harga dummy, atau diarsipkan | cek stok gudang di Ginee; isi harga; cek badge di admin |
+| Email "Backup database GAGAL/terlambat" | kunci R2 berubah, bucket penuh/terhapus, cron mati | Vercel → Logs `/api/cron/db-backup`; cek env `R2_*` & bucket `snapfit-backup` |
+| Badge "Belum masuk Ginee" | Ginee timeout/error saat pesanan lunas | klik **Kirim ulang ke Ginee**; masih gagal → buat manual di Ginee |
+| Pembeli melihat "Halaman gagal dimuat" | gangguan sementara DB/Supabase | biasanya pulih sendiri; kode di bawah pesan = `digest` untuk dicari di Vercel → Logs |
+| Pembeli: "harga di keranjang berubah" | harga diubah / flash sale berakhir sejak barang ditambah | wajar — keranjang & checkout menyamakan ke harga terkini (dengan pemberitahuan) |
 | Stok web beda dengan Shopee | data Ginee belum sinkron / produk `syncLocked` | tunggu sinkron 11:00 atau jalankan cron manual; cek kunci sinkron |
 | Harga Rp99.999 dst. | varian dummy dari marketplace | isi harga di form produk (varian dummy otomatis tak bisa dibeli) |
 | Foto tidak muncul (host baru) | host belum ada di `remotePatterns` | tambahkan di `next.config.mjs` atau env `NEXT_PUBLIC_IMAGE_HOSTS` |

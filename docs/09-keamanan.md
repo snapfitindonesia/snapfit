@@ -42,8 +42,18 @@ authenticator di `/admin/mfa`.
   alamat privat/lokal ditolak) dan batas ukuran.
 - Harga, diskon, dan voucher selalu dihitung ulang di server saat checkout.
 - Form ulasan `/api/ulasan`: wajib token pesanan valid (status Dikirim/Selesai), produk harus
-  ada di pesanan, 1 ulasan per produk, rate-limit 10/10 menit per IP, foto ≤ 4 MB & harus
-  gambar; ulasan menunggu moderasi sebelum tampil.
+  ada di pesanan, 1 ulasan per produk (dijaga kunci advisory Postgres — kiriman ganda bersamaan
+  tak lolos), rate-limit 10/10 menit per IP, foto ≤ 4 MB & harus gambar; ulasan menunggu
+  moderasi sebelum tampil.
+- **Login/daftar** dibatasi 5 percobaan/menit/IP di Server Action (`lib/actions/auth.ts`) — form
+  login juga ada di popup semua halaman toko, jadi tak bisa dibatasi per path di middleware.
+- Fungsi "tandai lunas" (`handlePaidOrder`) & ringkasan pesanan ada di `lib/orders/paid.ts`
+  (`server-only`, **bukan** file `"use server"`) → tak bisa dipanggil dari browser. Hanya
+  webhook Midtrans (signature) & tombol admin (`markOrderPaid` + `requireAdmin`) yang memakainya.
+- **Header keamanan** (`next.config.mjs` → `headers()`): `X-Frame-Options: SAMEORIGIN` +
+  CSP `frame-ancestors 'self'` (anti clickjacking panel admin; pratinjau email admin memakai iframe
+  same-origin), `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`,
+  `Permissions-Policy` (kamera/mikrofon/lokasi dimatikan). HSTS dari Vercel.
 
 ## Rahasia
 

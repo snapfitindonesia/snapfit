@@ -74,18 +74,53 @@ export async function runBackup() {
   if (!put.ok) throw new Error(`Upload backup gagal ${put.status}: ${(await put.text()).slice(0, 200)}`);
 
   // Rotasi: hapus file lebih tua dari KEEP_DAYS.
-  const list = await client.fetch(`${base}?list-type=2&prefix=${encodeURIComponent(PREFIX)}&max-keys=1000`);
-  const xml = await list.text();
   const cutoff = Date.now() - KEEP_DAYS * 86_400_000;
   const deleted: string[] = [];
-  for (const m of xml.matchAll(/<Key>([^<]+)<\/Key>/g)) {
-    const d = m[1].match(/(\d{4}-\d{2}-\d{2})/)?.[1];
-    if (d && new Date(d).getTime() < cutoff) {
-      const del = await client.fetch(`${base}/${m[1]}`, { method: "DELETE" });
-      if (del.ok) deleted.push(m[1]);
+  for (const b of await listBackups()) {
+    if (b.date.getTime() < cutoff) {
+      const del = await client.fetch(`${base}/${b.key}`, { method: "DELETE" });
+      if (del.ok) deleted.push(b.key);
     }
   }
 
   const counts = Object.fromEntries(Object.entries(data.tables).map(([k, v]) => [k, v.length]));
   return { key, bytes: body.byteLength, counts, deleted };
+}
+
+/** Daftar file backup di R2 (tanggal dari nama file snapfit-YYYY-MM-DD.json.gz), terbaru dulu. */
+export async function listBackups(): Promise<{ key: string; date: Date }[]> {
+  const { base, client } = cfg();
+  const res = await client.fetch(`${base}?list-type=2&prefix=${encodeURIComponent(PREFIX)}&max-keys=1000`);
+  if (!res.ok) throw new Error(`Daftar backup gagal ${res.status}`);
+  const xml = await res.text();
+  return [...xml.matchAll(/<Key>([^<]+)<\/Key>/g)]
+    .flatMap((m) => {
+      const d = m[1]!.match(/(\d{4}-\d{2}-\d{2})/)?.[1];
+      return d ? [{ key: m[1]!, date: new Date(`${d}T00:00:00Z`) }] : [];
+    })
+    .sort((a, b) => b.date.getTime() - a.date.getTime());
+}
+
+/** Isi backup yang mencurigakan (mis. database terbaca kosong) → alasan; null = wajar. */
+export function backupLooksWrong(counts: Record<string, number>): string | null {
+  if (!counts.products) return "tabel produk kosong (0 baris)";
+  if (!counts.variants) return "tabel varian kosong (0 baris)";
+  return null;
+}
+
+/** Backup terbaru lebih tua dari `maxAgeHours` (atau tak ada sama sekali) → pesan; null = aman. */
+// Backup jalan tiap hari 20:00 UTC; dicek 12:00 UTC (cron payment-reminder). Normal: ±12 jam sejak akhir hari
+// backup terakhir. Satu hari terlewat → ±36 jam → di atas ambang 30 jam → admin diberi tahu.
+export async function staleBackupWarning(maxAgeHours = 30, now = Date.now()): Promise<string | null> {
+  const [latest] = await listBackups();
+  return backupAgeWarning(latest, now, maxAgeHours);
+}
+
+export function backupAgeWarning(latest: { key: string; date: Date } | undefined, now: number, maxAgeHours = 30): string | null {
+  if (!latest) return "Belum ada satu pun file backup di R2.";
+  // Nama file hanya memuat tanggal (UTC) → anggap dibuat di akhir hari itu (paling longgar).
+  const ageH = (now - (latest.date.getTime() + 86_400_000)) / 3_600_000;
+  return ageH > maxAgeHours
+    ? `Backup terbaru adalah ${latest.key} (tanggal ${latest.date.toISOString().slice(0, 10)}) — backup harian sepertinya berhenti.`
+    : null;
 }

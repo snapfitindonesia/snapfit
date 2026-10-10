@@ -5,6 +5,8 @@ import { withItemImages } from "@/lib/email-items";
 import { isManualPayment } from "@/lib/payment";
 import { getBankAccounts } from "@/lib/bank-settings";
 import { expireUnpaidOrders } from "@/lib/orders/expire";
+import { staleBackupWarning } from "@/lib/backup";
+import { alertAdmin } from "@/lib/admin-alert";
 import { PENDING_EXPIRE_DAYS } from "@/lib/validations/admin";
 
 export const runtime = "nodejs";
@@ -26,8 +28,17 @@ export async function GET(req: NextRequest) {
   if (!authorized(req)) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   }
+  // Penjaga backup: dicek dari cron LAIN, karena cron backup yang berhenti jalan tak bisa melapor sendiri.
+  const backupWarning = await staleBackupWarning().catch((e) => `Tidak bisa memeriksa backup: ${e instanceof Error ? e.message : e}`);
+  if (backupWarning) {
+    await alertAdmin("Backup database terlambat", "Backup harian tidak berjalan", [
+      backupWarning,
+      "Cek Vercel → Cron Jobs (db-backup) & log-nya. Data toko belum terlindungi backup terbaru.",
+    ]);
+  }
+
   const expired = await expireUnpaidOrders();
-  if (!isManualPayment()) return NextResponse.json({ ok: true, expired, reminder: "bukan mode transfer manual" });
+  if (!isManualPayment()) return NextResponse.json({ ok: true, backupWarning, expired, reminder: "bukan mode transfer manual" });
 
   const now = Date.now();
   const orders = await db.order.findMany({
@@ -52,5 +63,5 @@ export async function GET(req: NextRequest) {
       console.error("Pengingat bayar gagal:", order.midtransOrderId, e);
     }
   }
-  return NextResponse.json({ ok: true, expired, candidates: orders.length, sent });
+  return NextResponse.json({ ok: true, backupWarning, expired, candidates: orders.length, sent });
 }

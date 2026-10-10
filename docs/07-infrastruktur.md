@@ -47,13 +47,23 @@ npx vercel deploy --prod --yes
 |---|---|---|---|
 | `0 2 * * *` | 09:00 | `/api/cron/coins` | Koin member: cashback otomatis 7 hari setelah dikirim, hanguskan lot kedaluwarsa, email H-7 |
 | `0 3 * * *` | 10:00 | `/api/cron/review-request` | Email ajakan ulasan (7 hari setelah dikirim) |
-| `0 4 * * *` | 11:00 | `/api/cron/ginee-stock` | Sinkron stok/harga dummy + arsip produk Ginee |
-| `0 12 * * *` | 19:00 | `/api/cron/payment-reminder` | Pengingat bayar pesanan PENDING |
+| `0 4 * * *` | 11:00 | `/api/cron/ginee-stock` | Kirim ulang pesanan lunas yang belum masuk Ginee, lalu sinkron stok/harga dummy + arsip produk Ginee |
+| `0 12 * * *` | 19:00 | `/api/cron/payment-reminder` | Cek umur backup terbaru; batalkan otomatis PENDING > 3 hari; pengingat bayar pesanan PENDING |
 | `0 13 * * *` | 20:00 | `/api/cron/abandoned-cart` | Email pengingat keranjang ditinggal + pembersihan data (draf > 60 hari, kata kunci sekali-cari > 90 hari) |
 | `0 20 * * *` | 03:00 | `/api/cron/db-backup` | Backup DB → R2 privat |
 
 Semua route cron mewajibkan header `Authorization: Bearer <CRON_SECRET>`
 (Vercel menambahkannya otomatis).
+
+**Peringatan gagal** (Vercel Hobby tak mengirim email saat cron gagal → aplikasi mengirim sendiri
+lewat `lib/admin-alert.ts` ke `ADMIN_NOTIFY_EMAIL`):
+- `db-backup` gagal, atau isi backup mencurigakan (tabel produk/varian kosong).
+- Backup terbaru di R2 lebih tua dari ±30 jam — dicek oleh cron `payment-reminder` (cron lain),
+  karena cron backup yang berhenti jalan tak bisa melapor sendiri.
+- Sinkron stok Ginee gagal total; pesanan lunas yang masih gagal dikirim ke Ginee.
+
+Batasan: bila **semua** cron berhenti (mis. proyek Vercel dinonaktifkan), tak ada yang mengirim
+peringatan — cek sesekali Vercel → Cron Jobs.
 
 ## Gambar & kuota Vercel
 
@@ -131,8 +141,12 @@ Hapus file itu setelahnya, lalu deploy ulang.
 - **db** (`tests/db/`): alur nyata ke Postgres SEMENTARA di memori (PGlite, baru per file, skema dari
   `prisma/schema.prisma`) — buat pesanan (ongkir, voucher, koin, gabung baris, provinsi tanpa kurir), konfirmasi bayar
   (stok berkurang sekali walau dipanggil berulang; pesanan batal tak bisa lunas), ubah status (stok & koin kembali),
-  Edit Massal, dan kelengkapan backup (tabel baru wajib masuk backup atau daftar pengecualian). Email/Ginee/Upstash/
+  Edit Massal, kelengkapan backup (tabel baru wajib masuk backup atau daftar pengecualian), pembatalan otomatis
+  pesanan belum bayar, harga keranjang terkini, ulasan ganda, dan agregat dashboard admin. Email/Ginee/Upstash/
   Midtrans dimatikan; produksi tak pernah tersentuh (`tests/support/db-setup.ts`). `DATABASE_POOL_MAX=1` khusus tes.
 - `npm run build` = `vitest run && next build` → **deploy Vercel gagal bila ada tes yang gagal** (versi rusak tak live).
 - Logika murni dipisah agar bisa dites: `lib/shipping-calc.ts`, `lib/cart-lines.ts`, `lib/csv.ts`.
 - Mengubah aturan bisnis (mis. batas koin)? Perbarui tes terkait sekaligus, atau deploy akan berhenti.
+- **Route handler membaca IP dari `request.headers`** (`ipFromHeaders`), bukan `next/headers`: mock `next/headers`
+  di tes tidak selalu berlaku di build Linux Vercel (pernah lolos di Windows, gagal di Vercel). `requestIp()` hanya
+  untuk Server Action.

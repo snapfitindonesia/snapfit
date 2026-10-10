@@ -29,9 +29,18 @@ Lihat [03 — Impor dari Ginee](03-panel-admin.md#impor-dari-ginee). Harga per v
 diambil dari `/openapi/product/variation/v1/list-price` (kanal toko Shopee Snapfit);
 bila tak ada harga wajar → 0 dan harus diisi manual.
 
-### Push pesanan (`lib/ginee/orders.ts`)
+### Push pesanan (`lib/ginee/orders.ts`, `lib/orders/paid.ts`)
 Pesanan yang lunas dikirim ke Ginee sebagai pesanan manual (toko
 `GINEE_MANUAL_SHOP_ID`) agar stok marketplace ikut berkurang.
+
+- **Gagal kirim** (timeout/error Ginee) → email ke admin + badge "Belum masuk Ginee" di Admin →
+  Pesanan. Cron `ginee-stock` mencoba ulang pesanan lunas/diproses ≤ 14 hari yang belum terkirim
+  **sebelum** sinkron stok; masih gagal → email lagi. Sebelum mengirim ulang, dicek lewat ListOrder
+  apakah Ginee sudah punya pesanan itu (dulu timeout padahal sukses) → tak terjadi pesanan dobel.
+- **Sinkron stok memperhitungkan** pesanan lunas yang belum masuk Ginee (stok Ginee belum berkurang
+  untuk pesanan itu) → stok web tak dinaikkan lagi (anti oversell).
+- **Pesanan dibatalkan di web** → ikut dibatalkan di Ginee (CancelOrderV2, `MANUAL_ID`).
+- **Sinkron stok gagal total** → email "Sinkron stok Ginee GAGAL" ke admin.
 
 > Akun Ginee terhubung ke beberapa toko (Primary…, Toko Cares…). Acuan harga selalu
 > toko Shopee "Snapfit Indonesia".

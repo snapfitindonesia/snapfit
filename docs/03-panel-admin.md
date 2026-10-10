@@ -13,10 +13,10 @@ Grup bisa dibuka/tutup; grup halaman aktif selalu terbuka; pilihan diingat di br
 
 | Menu | URL | Untuk apa |
 |---|---|---|
-| Dashboard | `/admin` | Omzet, pesanan, produk terjual, pelanggan (bandingkan periode sebelumnya) |
+| Dashboard | `/admin` | Omzet, pesanan, produk terjual, pelanggan (bandingkan periode sebelumnya). Penjualan = status Dibayar/Diproses/Dikirim/Selesai; dihitung di database (`lib/admin/stats.ts`) |
 | Keranjang Ditinggal | `/admin/keranjang` | Checkout yang belum jadi pesanan + tombol WA siap kirim; statistik 30 hari |
 | Pencarian | `/admin/pencarian` | Kata kunci terpopuler & pencarian tanpa hasil (90 hari) |
-| Pesanan | `/admin/pesanan` | Konfirmasi transfer, isi resi, ubah status, kirim WA ke pembeli |
+| Pesanan | `/admin/pesanan` | Konfirmasi transfer, isi resi, ubah status, kirim WA ke pembeli; 50/halaman + tab status; kirim ulang ke Ginee |
 | Produk | `/admin/produk` | Daftar, cari, ubah, hapus (satuan/massal); badge "Diarsipkan" |
 | Produk baru / ubah | `/admin/produk/baru`, `/admin/produk/[id]` | Form lengkap: foto, varian, harga, stok, merek, kategori |
 | Edit massal | `/admin/produk/edit-massal` | Ubah harga/stok banyak varian via CSV |
@@ -49,7 +49,21 @@ Grup bisa dibuka/tutup; grup halaman aktif selalu terbuka; pilihan diingat di br
 4. Isi **nomor resi** → status **Dikirim** (email berisi resi + tautan lacak).
 5. Tombol WhatsApp di tiap pesanan membuka chat ke pembeli dengan pesan siap kirim.
 
-Pembeli yang belum bayar setelah 2 jam otomatis dikirimi pengingat (sekali).
+Pembeli yang belum bayar setelah 2 jam otomatis dikirimi pengingat (sekali). Pesanan yang
+**belum dibayar 3 hari** dibatalkan otomatis (`PENDING_EXPIRE_DAYS`): koin member yang terpakai
+kembali dan pembeli menerima email "dibatalkan otomatis". Transfer yang masuk setelahnya tak bisa
+dikonfirmasi — buat pesanan baru atau refund.
+
+**Halaman Pesanan** memuat 50 pesanan per halaman, dengan tab status di atas (*Perlu diproses* =
+Menunggu Bayar + Dibayar + Diproses). Angka di tiap tab = jumlah pesanan.
+
+**Peringatan yang perlu ditindak** (muncul di layar dan/atau email ke `ADMIN_NOTIFY_EMAIL`):
+- **"Belum masuk Ginee"** (badge merah) — pesanan lunas gagal dikirim ke Ginee. Sistem mencoba
+  ulang tiap pagi 11:00 WIB; bisa juga klik **Kirim ulang ke Ginee**. Sebelum mengirim ulang,
+  sistem mengecek dulu apakah Ginee ternyata sudah menerimanya (tak akan dobel).
+- **"Stok web tidak cukup"** saat Konfirmasi Bayar — pesanan tetap lunas, tetapi stok sudah habis.
+  Cek stok fisik lalu hubungi pembeli (tunggu restock / ganti varian / refund).
+- **"Pembayaran masuk untuk pesanan BATAL"** — hubungi pembeli; kirim lewat pesanan baru atau refund.
 
 ### Follow-up keranjang ditinggal
 **Keranjang Ditinggal** menampilkan pembeli yang mengisi kontak di checkout tapi belum
@@ -79,7 +93,8 @@ Diskon tanpa kampanye tetap berlaku di seluruh toko seperti biasa (kini juga bis
 Ulasan dari pembeli muncul paling atas di **Ulasan** dengan label "Menunggu persetujuan".
 **Setujui** → tampil di halaman produk. **Tolak** → dihapus beserta fotonya. Ulasan negatif
 yang jujur sebaiknya tetap disetujui (menambah kepercayaan) — tolak hanya spam/kasar/tak
-relevan. Balas keluhan lewat WhatsApp pembeli dari menu Pesanan.
+relevan. Balas keluhan lewat WhatsApp pembeli dari menu Pesanan. Satu pesanan hanya bisa
+mengulas tiap produk sekali (dicegah juga saat form terkirim dua kali bersamaan).
 
 ### Membaca data pencarian
 **Pencarian → Tidak ada hasil** = produk/tipe yang dicari pembeli tapi belum ada atau

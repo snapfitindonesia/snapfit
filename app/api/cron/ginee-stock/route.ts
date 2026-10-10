@@ -3,6 +3,7 @@ import { revalidateTag } from "next/cache";
 import { runGineeStockSync } from "@/lib/ginee/sync";
 import { CATALOG_TAG } from "@/lib/catalog";
 import { retryPendingGineePushes } from "@/lib/orders/paid";
+import { alertAdmin } from "@/lib/admin-alert";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,7 +24,20 @@ export async function GET(req: NextRequest) {
   // Pesanan lunas yang gagal masuk Ginee dikirim ulang DULU: kalau tidak, stok Ginee belum berkurang dan
   // sinkron di bawah akan MENAIKKAN lagi stok web (oversell). Gagal lagi → email ke admin.
   const pushRetry = await retryPendingGineePushes().catch((e) => ({ error: String(e) }));
-  const res = await runGineeStockSync();
+  let res: Awaited<ReturnType<typeof runGineeStockSync>>;
+  try {
+    res = await runGineeStockSync();
+  } catch (e) {
+    res = { ok: false, productsChecked: 0, stockUpdated: 0, priceUpdated: 0, errors: [e instanceof Error ? e.message : String(e)] };
+  }
+  // Sinkron gagal total → stok web tak lagi mengikuti gudang (risiko oversell) → beri tahu admin.
+  // (Catatan biasa seperti "SKU tak ditemukan" tidak dikirim.)
+  if (!res.ok) {
+    await alertAdmin("Sinkron stok Ginee GAGAL", "Sinkron stok harian dari Ginee gagal", [
+      ...res.errors.slice(0, 5),
+      "Stok web belum diperbarui dari gudang hari ini. Cek koneksi/kunci API Ginee, atau klik sinkron manual di Admin → Impor Ginee.",
+    ]);
+  }
   // Stok/harga/arsip berubah → indeks katalog (daftar produk) disegarkan.
   if (res.ok && (res.stockUpdated || res.priceUpdated || ("archived" in res && res.archived) || ("restored" in res && res.restored))) revalidateTag(CATALOG_TAG);
   return NextResponse.json({ ...res, pushRetry });
