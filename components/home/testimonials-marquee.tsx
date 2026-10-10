@@ -53,7 +53,7 @@ function Card({ t }: { t: Item }) {
         </span>
         <span className="min-w-0">
           <span className="block truncate text-[12.5px] leading-[1.15] font-bold">{t.name}</span>
-          {t.meta && <span className="mt-px block truncate text-[11px] leading-[1.2] text-muted-foreground">{t.meta}</span>}
+          {t.meta && <span className="mt-px block truncate text-xs leading-[1.25] text-muted-foreground">{t.meta}</span>}
         </span>
       </figcaption>
     </figure>

@@ -127,7 +127,7 @@ export function CartDrawer({
             type="button"
             onClick={closeCart}
             aria-label="Tutup keranjang"
-            className="grid size-8 place-items-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+            className="tap-target grid size-8 place-items-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
           >
             <X className="size-5" />
           </button>
@@ -162,7 +162,7 @@ export function CartDrawer({
                         <button
                           type="button"
                           aria-label="Kurangi"
-                          className="grid size-7 place-items-center disabled:opacity-40"
+                          className="tap-target grid size-7 place-items-center disabled:opacity-40"
                           onClick={() => setQty(it.variantId, it.qty - 1)}
                         >
                           <Minus className="size-3.5" />
@@ -171,7 +171,7 @@ export function CartDrawer({
                         <button
                           type="button"
                           aria-label="Tambah"
-                          className="grid size-7 place-items-center"
+                          className="tap-target grid size-7 place-items-center"
                           onClick={() => setQty(it.variantId, it.qty + 1)}
                         >
                           <Plus className="size-3.5" />
@@ -181,7 +181,7 @@ export function CartDrawer({
                         type="button"
                         onClick={() => removeItem(it.variantId)}
                         aria-label="Hapus item"
-                        className="text-muted-foreground hover:text-destructive"
+                        className="tap-target text-muted-foreground hover:text-destructive"
                       >
                         <Trash2 className="size-4" />
                       </button>

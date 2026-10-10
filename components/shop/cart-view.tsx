@@ -70,7 +70,7 @@ export function CartView() {
                   type="button"
                   aria-label="Hapus item"
                   onClick={() => removeItem(item.variantId)}
-                  className="shrink-0 text-muted-foreground transition-colors hover:text-destructive"
+                  className="tap-target shrink-0 text-muted-foreground transition-colors hover:text-destructive"
                 >
                   <Trash2 className="size-4" />
                 </button>
@@ -86,7 +86,7 @@ export function CartView() {
                   <button
                     type="button"
                     aria-label="Kurangi"
-                    className="grid size-8 place-items-center disabled:opacity-40"
+                    className="tap-target grid size-8 place-items-center disabled:opacity-40"
                     disabled={item.qty <= 1}
                     onClick={() => setQty(item.variantId, item.qty - 1)}
                   >
@@ -98,7 +98,7 @@ export function CartView() {
                   <button
                     type="button"
                     aria-label="Tambah"
-                    className="grid size-8 place-items-center disabled:opacity-40"
+                    className="tap-target grid size-8 place-items-center disabled:opacity-40"
                     disabled={item.qty >= MAX_QTY}
                     onClick={() => setQty(item.variantId, item.qty + 1)}
                   >

@@ -47,7 +47,7 @@ export function LoginModal() {
           type="button"
           onClick={closeLogin}
           aria-label="Tutup"
-          className="absolute right-3 top-3 grid size-8 place-items-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+          className="tap-target absolute right-3 top-3 grid size-8 place-items-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
         >
           <X className="size-5" />
         </button>

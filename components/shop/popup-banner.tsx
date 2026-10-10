@@ -85,7 +85,7 @@ export function PopupBanner({ banner }: { banner: MainBanner | null }) {
           type="button"
           onClick={() => setOpen(false)}
           aria-label="Tutup"
-          className="absolute -right-2 -top-2 z-10 grid size-9 place-items-center rounded-full bg-background text-foreground shadow-lg ring-1 ring-border transition-transform hover:scale-105"
+          className="tap-target absolute -right-2 -top-2 z-10 grid size-9 place-items-center rounded-full bg-background text-foreground shadow-lg ring-1 ring-border transition-transform hover:scale-105"
         >
           <X className="size-5" />
         </button>

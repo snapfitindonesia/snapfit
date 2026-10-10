@@ -165,6 +165,16 @@ export function CheckoutView({
   const [quote, setQuote] = useState<ZoneQuote | null>(null);
   const [quoting, setQuoting] = useState(false);
   const lineKey = items.map((i) => `${i.variantId}:${i.qty}`).join(",");
+
+  // Bilah total (HP) menutup bagian bawah → layout menambah ruang bawah agar isi terakhir tak tertutup.
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty("--mobile-extra-bar", "4.75rem");
+    return () => {
+      root.style.removeProperty("--mobile-extra-bar");
+    };
+  }, []);
+
   useEffect(() => {
     if (!flatShipping || !f.provinceCode || !lineKey) {
       setQuote(null);
@@ -324,6 +334,12 @@ export function CheckoutView({
         if (v?.[0]) fieldErrors[k] = v[0];
       }
       setErrors(fieldErrors);
+      // Tombol bisa ditekan dari bilah bawah (HP) — kolom yang salah ada jauh di atas → bawa ke sana.
+      requestAnimationFrame(() => {
+        const el = document.querySelector<HTMLElement>("[data-checkout] .border-destructive");
+        el?.scrollIntoView({ behavior: "smooth", block: "center" });
+        el?.focus({ preventScroll: true });
+      });
       return;
     }
     if (!flatShipping && !rateId) {
@@ -362,7 +378,24 @@ export function CheckoutView({
   }
 
   return (
-    <div className="mt-8 grid gap-8 lg:grid-cols-3 lg:gap-10">
+    <div data-checkout className="mt-8 grid gap-8 lg:grid-cols-3 lg:gap-10">
+      {/* HP: total + tombol pesan selalu terlihat (ringkasan aslinya ±3 layar di bawah form alamat).
+          Menu bawah & strip promo disembunyikan di checkout (mobile-bottom-bar.tsx, globals.css). */}
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur md:hidden">
+        {payError && <p role="alert" className="mx-auto mb-2 max-w-xl text-xs text-destructive">{payError}</p>}
+        <div className="mx-auto flex max-w-xl items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs text-muted-foreground">
+              Total{!shippingKnown && !unavailable ? " (belum termasuk ongkir)" : ""}
+            </p>
+            <p className="text-lg font-semibold tabular-nums">{formatRupiah(total)}</p>
+          </div>
+          <Button size="lg" className="shrink-0 px-6" onClick={pay} disabled={placing || unavailable}>
+            {placing && <Loader2 className="size-4 animate-spin" />}
+            {manualPayment ? "Buat pesanan" : "Bayar sekarang"}
+          </Button>
+        </div>
+      </div>
       <div className="lg:col-span-2 space-y-8">
         <section>
           <h2 className="text-base font-medium">Alamat pengiriman</h2>
@@ -375,16 +408,16 @@ export function CheckoutView({
             </p>
           )}
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <Field label="Nama" value={f.name} onChange={(v) => set("name", v)} error={errors.name} />
-            <Field label="No. Telepon" value={f.phone} onChange={(v) => set("phone", v)} error={errors.phone} inputMode="tel" />
-            <Field label="Email (opsional)" value={f.email} onChange={(v) => set("email", v)} error={errors.email} className="sm:col-span-2" />
-            <Field label="Alamat lengkap" value={f.address} onChange={(v) => set("address", v)} error={errors.address} className="sm:col-span-2" textarea />
+            <Field label="Nama" value={f.name} onChange={(v) => set("name", v)} error={errors.name} autoComplete="name" />
+            <Field label="No. Telepon" value={f.phone} onChange={(v) => set("phone", v)} error={errors.phone} type="tel" inputMode="tel" autoComplete="tel" />
+            <Field label="Email (opsional)" value={f.email} onChange={(v) => set("email", v)} error={errors.email} className="sm:col-span-2" type="email" inputMode="email" autoComplete="email" />
+            <Field label="Alamat lengkap" value={f.address} onChange={(v) => set("address", v)} error={errors.address} className="sm:col-span-2" textarea autoComplete="street-address" />
             <RegionSelect
               value={f}
               onChange={(v) => setF((s) => ({ ...s, ...v }))}
               errors={errors}
             />
-            <Field label="Kode pos" value={f.postalCode} onChange={(v) => set("postalCode", v)} error={errors.postalCode} inputMode="numeric" />
+            <Field label="Kode pos" value={f.postalCode} onChange={(v) => set("postalCode", v)} error={errors.postalCode} inputMode="numeric" autoComplete="postal-code" />
           </div>
           <p className="mt-3 text-xs text-muted-foreground">
             Kontakmu dipakai untuk info pesanan &amp; pengingat bila checkout belum selesai.
@@ -523,6 +556,9 @@ export function CheckoutView({
                     onChange={(e) => setVoucherInput(e.target.value.toUpperCase())}
                     onKeyDown={(e) => e.key === "Enter" && onApplyVoucher()}
                     placeholder="Kode voucher"
+                    aria-label="Kode voucher"
+                    autoComplete="off"
+                    autoCapitalize="characters"
                     className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm uppercase outline-none focus:border-foreground"
                   />
                   <Button size="sm" variant="outline" onClick={() => onApplyVoucher()} disabled={voucherApplying || !voucherInput.trim()}>
@@ -585,20 +621,23 @@ export function CheckoutView({
   );
 }
 
+// autoComplete + type yang benar → iPhone/Chrome bisa mengisi nama, HP, email & alamat sekali ketuk
+// (dulu semua kolom "text" polos → pembeli mengetik 7 kolom manual di HP).
 function Field({
-  label, value, onChange, error, className, textarea, inputMode,
+  label, value, onChange, error, className, textarea, inputMode, type = "text", autoComplete,
 }: {
   label: string; value: string; onChange: (v: string) => void; error?: string;
-  className?: string; textarea?: boolean; inputMode?: "tel" | "numeric";
+  className?: string; textarea?: boolean; inputMode?: "tel" | "numeric" | "email";
+  type?: "text" | "tel" | "email"; autoComplete?: string;
 }) {
   const base = "mt-1.5 w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:border-foreground";
   return (
     <label className={cn("block", className)}>
       <span className="text-sm font-medium">{label}</span>
       {textarea ? (
-        <textarea value={value} onChange={(e) => onChange(e.target.value)} rows={3} className={cn(base, error ? "border-destructive" : "border-border")} />
+        <textarea value={value} onChange={(e) => onChange(e.target.value)} rows={3} autoComplete={autoComplete} className={cn(base, error ? "border-destructive" : "border-border")} />
       ) : (
-        <input value={value} inputMode={inputMode} onChange={(e) => onChange(e.target.value)} className={cn(base, error ? "border-destructive" : "border-border")} />
+        <input value={value} type={type} inputMode={inputMode} autoComplete={autoComplete} onChange={(e) => onChange(e.target.value)} className={cn(base, error ? "border-destructive" : "border-border")} />
       )}
       {error && <span className="mt-1 block text-xs text-destructive">{error}</span>}
     </label>

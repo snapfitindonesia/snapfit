@@ -15,7 +15,7 @@ export function PriceNotice({ className = "" }: { className?: string }) {
     <div role="status" className={`flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900 ${className}`}>
       <Info className="mt-0.5 size-3.5 shrink-0" />
       <span className="flex-1">{priceNotice}</span>
-      <button type="button" onClick={dismissPriceNotice} aria-label="Tutup" className="shrink-0 opacity-70 hover:opacity-100">
+      <button type="button" onClick={dismissPriceNotice} aria-label="Tutup" className="tap-target shrink-0 opacity-70 hover:opacity-100">
         <X className="size-3.5" />
       </button>
     </div>

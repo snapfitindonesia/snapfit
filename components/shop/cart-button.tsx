@@ -29,7 +29,7 @@ export function CartButton() {
       variant="ghost"
       size="icon"
       aria-label={`Keranjang${count ? `, ${count} item` : ""}`}
-      className="relative"
+      className="tap-target relative"
       onClick={openCart}
     >
       <ShoppingBag className="size-5" />

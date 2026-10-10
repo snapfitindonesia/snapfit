@@ -507,7 +507,7 @@ export function PdpView({
                   type="button"
                   onClick={() => copyVoucher(v.code)}
                   title={`Salin kode ${v.code}${v.minPurchase > 0 ? ` · min. ${formatRupiah(v.minPurchase)}` : ""}`}
-                  className="group flex items-center gap-1.5 rounded-[5px] border border-brand/40 bg-brand/5 px-3 py-1 text-xs font-medium text-brand-ink transition-colors hover:bg-brand/10"
+                  className="tap-target group flex items-center gap-1.5 rounded-[5px] border border-brand/40 bg-brand/5 px-3 py-2 text-xs font-medium text-brand-ink transition-colors hover:bg-brand/10 sm:py-1"
                 >
                   {copiedCode === v.code ? <Check className="size-3.5" /> : <Ticket className="size-3.5" />}
                   {copiedCode === v.code ? "Kode disalin" : v.label}
@@ -589,7 +589,7 @@ export function PdpView({
             <button
               type="button"
               aria-label="Kurangi"
-              className="grid size-9 place-items-center disabled:opacity-40"
+              className="tap-target grid size-9 place-items-center disabled:opacity-40"
               disabled={qty <= 1}
               onClick={() => setQty((q) => Math.max(1, q - 1))}
             >
@@ -599,7 +599,7 @@ export function PdpView({
             <button
               type="button"
               aria-label="Tambah"
-              className="grid size-9 place-items-center disabled:opacity-40"
+              className="tap-target grid size-9 place-items-center disabled:opacity-40"
               disabled={qty >= maxQty || outOfStock}
               onClick={() => setQty((q) => Math.min(maxQty, q + 1))}
             >
@@ -702,8 +702,8 @@ export function PdpView({
         </div>
       </div>
 
-      {/* Sticky add-to-cart bar (mobile) — di atas bottom nav */}
-      <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-30 border-y border-border bg-background/95 p-3 backdrop-blur md:hidden">
+      {/* Sticky add-to-cart bar (mobile) — menu bawah disembunyikan di halaman produk (mobile-bottom-bar.tsx) */}
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur md:hidden">
         <div className="mx-auto flex max-w-[90rem] items-center gap-2">
           <Button
             variant="outline"

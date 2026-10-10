@@ -72,7 +72,7 @@ export function VoucherPicker({
                     {r.minPurchase > 0 && ` · min. belanja ${formatRupiah(r.minPurchase)}`}
                   </p>
                   {r.stackable && (
-                    <p className="mt-1 text-[11px] text-foreground/70">
+                    <p className="mt-1 text-xs text-foreground/70">
                       Bisa digabung dengan voucher {r.type === "GRATIS_ONGKIR" ? "potongan" : "gratis ongkir"}
                     </p>
                   )}
@@ -92,7 +92,7 @@ export function VoucherPicker({
                     </p>
                   )}
                   {r.state === "ok" && conflicts.length > 0 && (
-                    <p className="mt-0.5 text-[11px] text-foreground/70">
+                    <p className="mt-0.5 text-xs text-foreground/70">
                       Tidak bisa digabung dengan {conflicts.map((c) => c.code).join(", ")} — pakai ini akan menggantinya.
                     </p>
                   )}

@@ -144,7 +144,7 @@ export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaM
               }}
               aria-label={mobileOpen ? "Tutup menu" : "Buka menu"}
               aria-expanded={mobileOpen}
-              className="grid size-9 place-items-center rounded-md text-foreground md:hidden"
+              className="tap-target grid size-9 place-items-center rounded-md text-foreground md:hidden"
             >
               {mobileOpen ? <X className="size-5" /> : <Menu className="size-5" />}
             </button>
@@ -231,6 +231,7 @@ export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaM
                 aria-label="Cari"
                 aria-expanded={searchOpen}
                 onClick={openSearch}
+                className="tap-target"
               >
                 <Search className="size-5" />
               </Button>

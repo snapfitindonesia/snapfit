@@ -62,7 +62,7 @@ export function CompanionRow({
                 <Image src={v.image} alt="" fill sizes="56px" className="object-contain p-1" />
               </Link>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{KIND_LABEL[c.kind]}</p>
+                <p className="truncate text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{KIND_LABEL[c.kind]}</p>
                 <Link href={`/produk/${c.slug}?varian=${v.id}`} className="line-clamp-2 text-[13px] leading-snug hover:underline">
                   {c.name}
                 </Link>

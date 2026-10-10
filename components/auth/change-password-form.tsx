@@ -41,7 +41,7 @@ export function ChangePasswordForm() {
             autoComplete="new-password"
             className="w-full rounded-md border border-border bg-background px-3 py-2 pr-10 text-sm outline-none focus:border-foreground"
           />
-          <button type="button" onClick={() => setShow((v) => !v)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" aria-label={show ? "Sembunyikan" : "Lihat"}>
+          <button type="button" onClick={() => setShow((v) => !v)} className="tap-target absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" aria-label={show ? "Sembunyikan" : "Lihat"}>
             {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
           </button>
         </div>

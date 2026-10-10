@@ -70,7 +70,7 @@ export function EvergreenCountdown({
             <span className={`min-w-[2.6ch] rounded-lg px-2.5 py-1.5 text-center text-2xl font-bold tabular-nums ${box}`}>
               {left == null ? "--" : pad(val)}
             </span>
-            <span className={`mt-1 text-[10px] uppercase tracking-wide ${lab}`}>{name}</span>
+            <span className={`mt-1 text-[11px] uppercase tracking-wide ${lab}`}>{name}</span>
           </div>
           {i < cells.length - 1 && <span className="pb-4 text-2xl font-bold opacity-40">:</span>}
         </div>

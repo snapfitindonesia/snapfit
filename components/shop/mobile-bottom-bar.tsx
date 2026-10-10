@@ -15,10 +15,17 @@ function isActive(pathname: string, href: string) {
 const baseCls =
   "flex h-16 w-full flex-col items-center justify-center gap-1 text-xs transition-colors";
 
+// Halaman dengan bilah aksi sendiri di bawah (produk: Keranjang/Beli; checkout: total + Buat pesanan):
+// menu bawah disembunyikan — dua bilah bertumpuk menutup ±28% layar iPhone.
+const HIDE = [/^\/produk\/[^/]+$/, /^\/checkout$/];
+
 export function MobileBottomBar() {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "/";
   const { count } = useCart();
   const { openCart, openLogin, authed } = useStoreUI();
+
+  // Ruang bawah halaman & posisi bilah lain mengikuti --bottom-nav-h → 0 saat menu disembunyikan.
+  if (HIDE.some((re) => re.test(pathname))) return <style>{":root{--bottom-nav-h:0px}"}</style>;
 
   return (
     <nav

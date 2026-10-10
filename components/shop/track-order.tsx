@@ -128,7 +128,7 @@ export function TrackOrder({ initialOrder = "" }: { initialOrder?: string }) {
                     >
                       {done ? <Check className="size-3.5" /> : i + 1}
                     </span>
-                    <span className={cn("mt-1.5 text-[11px] leading-tight", done ? "font-medium" : "text-muted-foreground")}>
+                    <span className={cn("mt-1.5 text-xs leading-tight", done ? "font-medium" : "text-muted-foreground")}>
                       {s.label}
                     </span>
                   </li>

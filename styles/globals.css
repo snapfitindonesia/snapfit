@@ -59,6 +59,8 @@
      untuk masuk ke belakangnya (components/home/home-sections.tsx). SAMAKAN dengan komponennya. */
   --announce-h: 2.5rem;
   --nav-h: 3.5rem; /* bilah header 56px (components/shop/header-nav.tsx) */
+  /* Menu bawah HP (components/shop/mobile-bottom-bar.tsx). 0 di halaman tanpa menu bawah (produk, checkout). */
+  --bottom-nav-h: 4rem;
   --background: #fffefa; /* latar situs (krem sangat muda, permintaan client Okt 2026) */
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -236,4 +238,24 @@ main:has(> [data-newsletter]:last-child) + footer {
   :is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"]), select, textarea):not(.text-lg, .text-xl, .text-2xl, .text-3xl, .text-4xl) {
     font-size: 16px;
   }
+}
+
+/* Area sentuh minimal 44×44 px (pedoman aksesibilitas/sentuh) tanpa mengubah tampilan ikon kecil:
+   lapisan tak terlihat di atas tombol. :where() → tak menimpa `absolute` milik tombol itu sendiri. */
+:where(.tap-target) {
+  position: relative;
+}
+.tap-target::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+  transform: translate(-50%, -50%);
+}
+
+/* Checkout = fokus bayar: strip promo (berisi tautan keluar "Belanja sekarang") disembunyikan. */
+html:has([data-checkout]) [data-announce] {
+  display: none;
 }

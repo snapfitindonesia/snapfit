@@ -105,7 +105,7 @@ export function CartBundles({ open, onNavigate }: { open: boolean; onNavigate?: 
                 <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">{b.variantName}</p>
                 <div className="mt-2 flex items-center justify-between gap-2">
                   <p className="shrink-0 whitespace-nowrap leading-tight">
-                    {b.finalPrice < b.price && <span className="block text-[11px] text-muted-foreground line-through">{formatRupiah(b.price)}</span>}
+                    {b.finalPrice < b.price && <span className="block text-xs text-muted-foreground line-through">{formatRupiah(b.price)}</span>}
                     <span className="text-sm font-bold">{formatRupiah(b.finalPrice)}</span>
                   </p>
                   <button

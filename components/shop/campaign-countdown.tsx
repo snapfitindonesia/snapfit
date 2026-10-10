@@ -45,7 +45,7 @@ export function CampaignCountdown({ target, label }: { target: string; label: st
         {cells.map(([v, name]) => (
           <div key={name} className="flex min-w-14 flex-col items-center rounded-lg bg-white/10 px-2.5 py-2">
             <span className="text-2xl font-bold tabular-nums">{left == null ? "--" : v}</span>
-            <span className="text-[10px] uppercase tracking-wide text-background/70">{name}</span>
+            <span className="text-[11px] uppercase tracking-wide text-background/70">{name}</span>
           </div>
         ))}
       </div>
