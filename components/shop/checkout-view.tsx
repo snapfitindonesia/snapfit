@@ -532,11 +532,52 @@ export function CheckoutView({
       </div>
 
       <aside className="lg:col-span-1">
-        <div className="rounded-lg border border-border p-5 lg:sticky lg:top-24">
+        {/* Desktop: kotak menempel & bisa digulir sendiri bila lebih tinggi dari layar (total & tombol di atas,
+            voucher di bawahnya) — dulu bagian bawah kotak menempel tak terjangkau. */}
+        <div className="rounded-lg border border-border p-5 lg:sticky lg:top-24 lg:max-h-[calc(100dvh-7rem)] lg:overflow-y-auto lg:overscroll-contain">
           <h2 className="text-base font-medium">Ringkasan</h2>
 
-          {/* Voucher */}
-          <div className="mt-4">
+          <PriceNotice className="mt-3" />
+          <dl className="mt-3 space-y-2 text-sm">
+            <Row label={`Subtotal (${items.length} produk)`} value={formatRupiah(subtotal)} />
+            <Row
+              label="Ongkir"
+              value={shippingKnown ? formatRupiah(fullShipping) : unavailable ? "Tidak tersedia" : "Pilih provinsi"}
+              muted={!shippingKnown}
+            />
+            {subsidy > 0 && <Row label="Gratis ongkir" value={`−${formatRupiah(subsidy)}`} />}
+            {voucherLines.map((l) =>
+              l.pending ? (
+                <Row key={l.code} label={`Voucher ${l.code}`} value={l.cap > 0 ? `s/d −${formatRupiah(l.cap)}` : "Dihitung setelah pilih provinsi"} muted />
+              ) : l.discount > 0 ? (
+                <Row key={l.code} label={`Voucher ${l.code}`} value={`−${formatRupiah(l.discount)}`} />
+              ) : null,
+            )}
+            {coinsUsed > 0 && <Row label="Koin SNAPFIT" value={`−${formatRupiah(coinsUsed)}`} />}
+            <div className="my-2 border-t border-border" />
+            <Row label="Total" value={formatRupiah(total)} strong />
+          </dl>
+          <CoinBox coins={coins} usable={coinsUsable} use={useCoins} onUse={setUseCoins} cashback={cashback} />
+          {!shippingKnown && !unavailable && (
+            <p className="mt-1 text-right text-xs text-muted-foreground">Belum termasuk ongkir — pilih provinsi tujuan.</p>
+          )}
+          {unavailable && (
+            <p className="mt-1 text-right text-xs text-destructive">Belum ada pengiriman ke {f.province}.</p>
+          )}
+
+          <Button size="lg" className="mt-5 w-full" onClick={pay} disabled={placing || unavailable}>
+            {placing && <Loader2 className="size-4 animate-spin" />}
+            {manualPayment ? "Buat pesanan" : "Bayar sekarang"}
+          </Button>
+          {payError && <p className="mt-3 text-sm text-destructive">{payError}</p>}
+          <p className="mt-3 text-center text-xs text-muted-foreground">
+            Total dihitung ulang & diamankan di server.
+          </p>
+
+          {/* Voucher — di BAWAH tombol: daftar voucher (±600px) dulu mendorong total & tombol pesan ke bawah layar
+              di semua ukuran desktop (1280×720: 422px, 1920×1080: 46px). */}
+          <div className="mt-5 border-t border-border pt-4">
+            <h3 className="mb-3 text-sm font-medium">Voucher</h3>
             {applied.map((v) => (
               <div key={v.code} className="mb-2 flex items-center justify-between rounded-md border border-border bg-muted/30 px-3 py-2">
                 <span className="flex items-center gap-2 text-sm">
@@ -578,43 +619,6 @@ export function CheckoutView({
               onApply={(code) => onApplyVoucher(code)}
             />
           </div>
-
-          <PriceNotice className="mt-4" />
-          <dl className="mt-4 space-y-2 text-sm">
-            <Row label={`Subtotal (${items.length} produk)`} value={formatRupiah(subtotal)} />
-            <Row
-              label="Ongkir"
-              value={shippingKnown ? formatRupiah(fullShipping) : unavailable ? "Tidak tersedia" : "Pilih provinsi"}
-              muted={!shippingKnown}
-            />
-            {subsidy > 0 && <Row label="Gratis ongkir" value={`−${formatRupiah(subsidy)}`} />}
-            {voucherLines.map((l) =>
-              l.pending ? (
-                <Row key={l.code} label={`Voucher ${l.code}`} value={l.cap > 0 ? `s/d −${formatRupiah(l.cap)}` : "Dihitung setelah pilih provinsi"} muted />
-              ) : l.discount > 0 ? (
-                <Row key={l.code} label={`Voucher ${l.code}`} value={`−${formatRupiah(l.discount)}`} />
-              ) : null,
-            )}
-            {coinsUsed > 0 && <Row label="Koin SNAPFIT" value={`−${formatRupiah(coinsUsed)}`} />}
-            <div className="my-2 border-t border-border" />
-            <Row label="Total" value={formatRupiah(total)} strong />
-          </dl>
-          <CoinBox coins={coins} usable={coinsUsable} use={useCoins} onUse={setUseCoins} cashback={cashback} />
-          {!shippingKnown && !unavailable && (
-            <p className="mt-1 text-right text-xs text-muted-foreground">Belum termasuk ongkir — pilih provinsi tujuan.</p>
-          )}
-          {unavailable && (
-            <p className="mt-1 text-right text-xs text-destructive">Belum ada pengiriman ke {f.province}.</p>
-          )}
-
-          <Button size="lg" className="mt-5 w-full" onClick={pay} disabled={placing || unavailable}>
-            {placing && <Loader2 className="size-4 animate-spin" />}
-            {manualPayment ? "Buat pesanan" : "Bayar sekarang"}
-          </Button>
-          {payError && <p className="mt-3 text-sm text-destructive">{payError}</p>}
-          <p className="mt-3 text-center text-xs text-muted-foreground">
-            Total dihitung ulang & diamankan di server.
-          </p>
         </div>
       </aside>
     </div>

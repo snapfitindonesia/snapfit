@@ -259,3 +259,24 @@ main:has(> [data-newsletter]:last-child) + footer {
 html:has([data-checkout]) [data-announce] {
   display: none;
 }
+
+/* Tailwind v4 mengubah kursor tombol jadi panah biasa → kembalikan "tangan" untuk semua yang bisa diklik
+   (desktop: tombol terasa bisa ditekan). */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  summary,
+  select:not(:disabled),
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled),
+  label:has(> input[type="checkbox"], > input[type="radio"]) {
+    cursor: pointer;
+  }
+}
+
+/* Penanda fokus keyboard yang jelas di kolom isian (dulu hanya garis tepi 1px menggelap). Di luar @layer
+   agar menang dari `outline-none`; kolom yang sudah punya cincin fokus sendiri (shadcn) dilewati. */
+:where(input:not([type="checkbox"], [type="radio"], [type="range"]), textarea, select):focus-visible:not([class*="focus-visible:ring"]) {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}

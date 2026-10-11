@@ -26,6 +26,24 @@ const WRAP = "mx-auto max-w-[90rem] px-4 sm:px-6 lg:px-10";
 const BLEED = "-mx-4 px-4 scroll-px-4 sm:-mx-6 sm:px-6 sm:scroll-px-6 lg:mx-0 lg:px-0 lg:scroll-px-0";
 
 /** Tombol pil (gaya Nomad). `dark` = di atas latar gelap/foto. */
+/**
+ * Label pembaca layar untuk foto bertautan tanpa judul/tombol (dulu semuanya "Lihat" → tak jelas ke mana).
+ * Dibentuk dari tujuan tautan: /kategori/galaxy-s-series → "Lihat Galaxy S Series", /produk?q=fold → "Lihat produk: fold".
+ */
+function linkLabel(href: string): string {
+  try {
+    const u = new URL(href, "https://www.snapfit.id");
+    const q = u.searchParams.get("q");
+    if (q) return `Lihat produk: ${q}`;
+    const last = u.pathname.split("/").filter(Boolean).pop();
+    if (!last) return "Ke beranda";
+    const words = decodeURIComponent(last).replace(/-\d+$/, "").split("-").filter(Boolean);
+    return `Lihat ${words.map((w) => w[0]!.toUpperCase() + w.slice(1)).join(" ")}`;
+  } catch {
+    return "Lihat selengkapnya";
+  }
+}
+
 function Cta({ label, href, dark = false, className }: { label: string; href: string; dark?: boolean; className?: string }) {
   if (!label || !href) return null;
   return (
@@ -476,7 +494,7 @@ function Custom({ s, tightPrev = false, tightNext = false }: { s: SectionOf<"cus
     const img = rawPhoto(b);
     if (!img) return null;
     return (
-      <Link href={b.href} aria-label={b.title || b.ctaLabel || "Lihat"} className={cn("block transition-opacity hover:opacity-90", extra)}>
+      <Link href={b.href} aria-label={b.title || b.ctaLabel || linkLabel(b.href)} className={cn("block transition-opacity hover:opacity-90", extra)}>
         {img}
       </Link>
     );

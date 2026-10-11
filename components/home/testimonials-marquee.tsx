@@ -40,7 +40,7 @@ function Card({ t }: { t: Item }) {
       <div className="mb-3 flex items-center justify-between">
         <Stars n={t.rating} className="text-sm" />
         {t.verified && (
-          <span className="inline-flex items-center gap-1 text-[10.5px] font-bold tracking-[0.03em] text-[#15803d] uppercase">
+          <span className="inline-flex items-center gap-1 text-[11px] font-bold tracking-[0.03em] text-[#15803d] uppercase">
             <Check className="size-3" strokeWidth={3} aria-hidden />
             Terverifikasi
           </span>

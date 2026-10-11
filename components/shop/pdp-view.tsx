@@ -277,6 +277,18 @@ export function PdpView({
 
   // Navigasi antar foto (slide) — dipakai panah + swipe + lightbox.
   const photoIndex = Math.max(0, photos.findIndex((p) => baseUrl(p) === baseUrl(displayImage)));
+
+  // Keyboard: deretan thumbnail = SATU pemberhentian Tab (dulu 10× Tab sebelum sampai ke tombol beli);
+  // panah kiri/kanan/atas/bawah memilih foto lain.
+  const thumbTabIndex = photoIndex;
+  function thumbKey(e: React.KeyboardEvent<HTMLButtonElement>, i: number) {
+    const step = e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : e.key === "ArrowLeft" || e.key === "ArrowUp" ? -1 : 0;
+    const next = e.key === "Home" ? 0 : e.key === "End" ? photos.length - 1 : step ? (i + step + photos.length) % photos.length : -1;
+    if (next < 0) return;
+    e.preventDefault();
+    setHeroImage(photos[next]!);
+    (e.currentTarget.parentElement?.children[next] as HTMLElement | undefined)?.focus();
+  }
   const goTo = (i: number) => setHeroImage(photos[(i + photos.length) % photos.length]);
   const goPrev = () => goTo(photoIndex - 1);
   const goNext = () => goTo(photoIndex + 1);
@@ -321,14 +333,16 @@ export function PdpView({
         {/* Thumbnail vertikal (desktop) */}
         {photos.length > 1 && (
           <div className="hidden max-h-[540px] w-16 shrink-0 flex-col gap-3 overflow-y-auto [scrollbar-width:none] sm:flex [&::-webkit-scrollbar]:hidden">
-            {photos.map((src) => {
+            {photos.map((src, i) => {
               const active = baseUrl(src) === baseUrl(displayImage);
               return (
                 <button
                   key={src}
                   type="button"
                   onClick={() => setHeroImage(src)}
-                  aria-label="Lihat foto"
+                  onKeyDown={(e) => thumbKey(e, i)}
+                  tabIndex={i === thumbTabIndex ? 0 : -1}
+                  aria-label={`Lihat foto ${i + 1} dari ${photos.length}`}
                   aria-pressed={active}
                   className={cn(
                     "relative aspect-square w-full shrink-0 overflow-hidden rounded-lg border-2 bg-muted transition-colors",
@@ -420,14 +434,17 @@ export function PdpView({
       {/* Thumbnail baris (mobile) */}
       {photos.length > 1 && (
         <div className="-mt-2 flex gap-2 overflow-x-auto [scrollbar-width:none] sm:hidden [&::-webkit-scrollbar]:hidden">
-          {photos.map((src) => {
+          {photos.map((src, i) => {
             const active = baseUrl(src) === baseUrl(displayImage);
             return (
               <button
                 key={src}
                 type="button"
                 onClick={() => setHeroImage(src)}
-                aria-label="Lihat foto"
+                onKeyDown={(e) => thumbKey(e, i)}
+                tabIndex={i === thumbTabIndex ? 0 : -1}
+                aria-label={`Lihat foto ${i + 1} dari ${photos.length}`}
+                aria-pressed={active}
                 className={cn(
                   "relative size-14 shrink-0 overflow-hidden rounded-md border-2 bg-muted",
                   active ? "border-foreground" : "border-transparent",

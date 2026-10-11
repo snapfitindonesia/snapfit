@@ -13,7 +13,7 @@ export function Testimonials({ s }: { s: SectionOf<"testimonials"> }) {
       <div className="mx-auto max-w-[90rem] px-4 sm:px-6 lg:px-10">
         <div className="relative z-[2] mx-auto mb-14 max-w-[720px] text-center">
           {s.eyebrow && (
-            <div className="mb-[22px] inline-flex items-center gap-[9px] rounded-[5px] border border-foreground/[0.08] bg-card py-[7px] pr-3.5 pl-[11px] text-[11.5px] font-bold tracking-[0.06em] uppercase shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+            <div className="mb-[22px] inline-flex items-center gap-[9px] rounded-[5px] border border-foreground/[0.08] bg-card py-[7px] pr-3.5 pl-[11px] text-xs font-bold tracking-[0.06em] uppercase shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
               <span className="testi-pulse size-[7px] rounded-full bg-brand" aria-hidden />
               {s.eyebrow}
             </div>

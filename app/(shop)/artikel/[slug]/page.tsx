@@ -69,7 +69,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
         {a.tags.length > 0 && (
           <div className="mt-6 flex flex-wrap gap-[7px]">
             {a.tags.map((t) => (
-              <span key={t} className="rounded-[5px] border border-border px-[13px] py-1 text-[11.5px] font-medium text-foreground/80">
+              <span key={t} className="rounded-[5px] border border-border px-[13px] py-1 text-xs font-medium text-foreground/80">
                 {t}
               </span>
             ))}
