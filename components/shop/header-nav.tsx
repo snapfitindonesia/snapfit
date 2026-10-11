@@ -42,6 +42,51 @@ export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaM
     cancelClose();
     timer.current = setTimeout(() => { setOpen(false); setMerekOpen(false); }, 150);
   };
+
+  // Mega-menu: mouse → buka saat hover; layar sentuh (iPad/tablet, tanpa hover) → buka/tutup dengan ketuk.
+  // Dulu hanya onMouseEnter — tablet bergantung pada "hover palsu" peramban saat diketuk.
+  const menuRootRef = useRef<HTMLDivElement>(null);
+  const lastPointer = useRef<string>("mouse");
+  const menuTrigger = (which: "device" | "merek") => {
+    const setThis = which === "device" ? setOpen : setMerekOpen;
+    const setOther = which === "device" ? setMerekOpen : setOpen;
+    return {
+      onPointerDown: (e: React.PointerEvent) => { lastPointer.current = e.pointerType; },
+      onPointerEnter: (e: React.PointerEvent) => {
+        if (e.pointerType !== "mouse") return;
+        cancelClose();
+        setSearchOpen(false);
+        setOther(false);
+        setThis(true);
+      },
+      onPointerLeave: (e: React.PointerEvent) => { if (e.pointerType === "mouse") scheduleClose(); },
+      onClick: () => {
+        cancelClose();
+        setSearchOpen(false);
+        setOther(false);
+        // Mouse: sudah terbuka karena hover → klik tak menutupnya. Sentuh/keyboard: buka-tutup.
+        setThis((v) => (lastPointer.current === "mouse" ? true : !v));
+        lastPointer.current = "keyboard";
+      },
+    };
+  };
+  useEffect(() => {
+    if (!open && !merekOpen) return;
+    const onDown = (e: PointerEvent) => {
+      if (menuRootRef.current?.contains(e.target as Node)) return;
+      setOpen(false);
+      setMerekOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { setOpen(false); setMerekOpen(false); }
+    };
+    document.addEventListener("pointerdown", onDown);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onDown);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [open, merekOpen]);
   const closeMobile = () => setMobileOpen(false);
 
   // --- Search panel ---
@@ -133,7 +178,7 @@ export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaM
         )}
       />
       <div className="relative mx-auto max-w-[90rem] px-4 sm:px-6 lg:px-10">
-        <div className="relative">
+        <div ref={menuRootRef} className="relative">
           <div className="relative flex h-14 items-center gap-3 lg:h-[70px]">
             {/* Hamburger (mobile) */}
             <button
@@ -171,17 +216,10 @@ export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaM
                   <button
                     key={l.id}
                     type="button"
-                    onMouseEnter={() => {
-                      cancelClose();
-                      setSearchOpen(false);
-                      setMerekOpen(false);
-                      setOpen(true);
-                    }}
-                    onMouseLeave={scheduleClose}
-                    onFocus={() => setOpen(true)}
+                    {...menuTrigger("device")}
                     aria-expanded={open}
                     className={cn(
-                      "flex items-center gap-1 text-sm font-semibold transition-colors lg:text-[15px]",
+                      "tap-target flex items-center gap-1 text-sm font-semibold transition-colors lg:text-[15px]",
                       open ? "text-foreground/70" : "text-foreground hover:text-foreground/70",
                     )}
                   >
@@ -192,17 +230,10 @@ export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaM
                   <button
                     key={l.id}
                     type="button"
-                    onMouseEnter={() => {
-                      cancelClose();
-                      setSearchOpen(false);
-                      setOpen(false);
-                      setMerekOpen(true);
-                    }}
-                    onMouseLeave={scheduleClose}
-                    onFocus={() => setMerekOpen(true)}
+                    {...menuTrigger("merek")}
                     aria-expanded={merekOpen}
                     className={cn(
-                      "flex items-center gap-1 text-sm font-semibold transition-colors lg:text-[15px]",
+                      "tap-target flex items-center gap-1 text-sm font-semibold transition-colors lg:text-[15px]",
                       merekOpen ? "text-foreground/70" : "text-foreground hover:text-foreground/70",
                     )}
                   >
@@ -215,7 +246,7 @@ export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaM
                     href={l.url}
                     target={l.newTab ? "_blank" : undefined}
                     rel={l.newTab ? "noopener noreferrer" : undefined}
-                    className="text-sm font-semibold text-foreground transition-colors hover:text-foreground/70 lg:text-[15px]"
+                    className="tap-target text-sm font-semibold text-foreground transition-colors hover:text-foreground/70 lg:text-[15px]"
                   >
                     {l.label}
                   </Link>
@@ -277,6 +308,7 @@ export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaM
                       type="button"
                       onMouseEnter={() => setActiveBrand(i)}
                       onFocus={() => setActiveBrand(i)}
+                      onClick={() => setActiveBrand(i)}
                       className={cn(
                         "flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors",
                         activeBrand === i ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:bg-background/60",
@@ -310,16 +342,17 @@ export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaM
                               onClick={() => setOpen(false)}
                               className="flex items-center gap-2 font-semibold text-sm hover:underline"
                             >
-                              <span className="grid size-7 shrink-0 place-items-center overflow-hidden rounded-md border border-border bg-muted">
-                                {line.cover && (
-                                  // eslint-disable-next-line @next/next/no-img-element
+                              {/* Kategori tanpa foto → tanpa kotak (dulu kotak kosong abu-abu) */}
+                              {line.cover && (
+                                <span className="grid size-7 shrink-0 place-items-center overflow-hidden rounded-md border border-border bg-muted">
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
                                   <img src={line.cover} alt="" className="size-full object-cover" />
-                                )}
-                              </span>
+                                </span>
+                              )}
                               {line.name}
                             </Link>
                             {line.models.length > 0 && (
-                              <ul className="mt-1.5 space-y-0.5 pl-9">
+                              <ul className={cn("mt-1.5 space-y-0.5", line.cover && "pl-9")}>
                                 {line.models.map((m) => (
                                   <li key={m.slug ?? m.label}>
                                     <Link
@@ -358,6 +391,7 @@ export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaM
                       key={m.name}
                       type="button"
                       onMouseEnter={() => setActiveMerek(i)}
+                      onClick={() => setActiveMerek(i)}
                       onFocus={() => setActiveMerek(i)}
                       className={cn(
                         "flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors",

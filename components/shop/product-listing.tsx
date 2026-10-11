@@ -167,7 +167,7 @@ export function ProductListing({
     </div>
   );
   const Check = ({ checked, onChange, label }: { checked: boolean; onChange: () => void; label: string }) => (
-    <label className="flex cursor-pointer items-center gap-2 py-1 text-sm">
+    <label className="flex cursor-pointer items-center gap-2 py-1 text-sm pointer-coarse:py-2.5">
       <input type="checkbox" checked={checked} onChange={onChange} className="size-4 shrink-0 accent-foreground" />
       <span className="min-w-0 leading-snug">{label}</span>
     </label>
@@ -178,10 +178,10 @@ export function ProductListing({
       {/* Harga */}
       <Facet title="Harga (IDR)">
         <div className="flex items-center gap-2">
-          <input inputMode="numeric" value={minInput} onChange={(e) => setMinInput(e.target.value.replace(/\D/g, ""))} placeholder="Min"
+          <input inputMode="numeric" value={minInput} onChange={(e) => setMinInput(e.target.value.replace(/\D/g, ""))} placeholder="Min" aria-label="Harga minimum"
             className="w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-sm outline-none focus:border-foreground" />
           <span className="text-muted-foreground">–</span>
-          <input inputMode="numeric" value={maxInput} onChange={(e) => setMaxInput(e.target.value.replace(/\D/g, ""))} placeholder="Max"
+          <input inputMode="numeric" value={maxInput} onChange={(e) => setMaxInput(e.target.value.replace(/\D/g, ""))} placeholder="Max" aria-label="Harga maksimum"
             className="w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-sm outline-none focus:border-foreground" />
         </div>
         <Button size="sm" className="mt-2 w-full" onClick={applyPrice}>Terapkan harga</Button>
@@ -190,7 +190,7 @@ export function ProductListing({
       {/* Merek — hanya bila ada >1 merek (toko kini satu merek: SNAPFIT) */}
       {brands.length > 1 && (
         <Facet title="Merek">
-          <div className="max-h-56 overflow-y-auto pr-1">
+          <div className="max-h-56 overflow-y-auto overscroll-contain pr-1">
             {brandOptions.map((b) => (
               <Check key={b.key} checked={selBrands.has(b.key)} onChange={() => toggleBrand(b.key)} label={b.label} />
             ))}
@@ -201,7 +201,7 @@ export function ProductListing({
       {/* Perangkat */}
       {devices.length > 0 && (
         <Facet title="Perangkat">
-          <div className="max-h-72 overflow-y-auto pr-1">
+          <div className="max-h-72 overflow-y-auto overscroll-contain pr-1">
             {devices.map((d) => (
               <Check key={d.slug} checked={selDevices.has(d.slug)} onChange={() => toggleDevice(d.slug)} label={d.name} />
             ))}

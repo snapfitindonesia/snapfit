@@ -702,8 +702,8 @@ export function PdpView({
         </div>
       </div>
 
-      {/* Sticky add-to-cart bar (mobile) — menu bawah disembunyikan di halaman produk (mobile-bottom-bar.tsx) */}
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur md:hidden">
+      {/* Sticky add-to-cart bar (HP & tablet < 1024px; iPad tegak: tombol beli di bawah lipatan) — menu bawah disembunyikan di halaman produk */}
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur lg:hidden">
         <div className="mx-auto flex max-w-[90rem] items-center gap-2">
           <Button
             variant="outline"

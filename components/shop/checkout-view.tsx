@@ -379,9 +379,9 @@ export function CheckoutView({
 
   return (
     <div data-checkout className="mt-8 grid gap-8 lg:grid-cols-3 lg:gap-10">
-      {/* HP: total + tombol pesan selalu terlihat (ringkasan aslinya ±3 layar di bawah form alamat).
+      {/* HP & tablet (< 1024px): total + tombol pesan selalu terlihat (ringkasan aslinya ±3 layar di bawah form alamat).
           Menu bawah & strip promo disembunyikan di checkout (mobile-bottom-bar.tsx, globals.css). */}
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur md:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur lg:hidden">
         {payError && <p role="alert" className="mx-auto mb-2 max-w-xl text-xs text-destructive">{payError}</p>}
         <div className="mx-auto flex max-w-xl items-center gap-3">
           <div className="min-w-0 flex-1">
