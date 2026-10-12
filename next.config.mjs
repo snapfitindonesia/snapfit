@@ -36,6 +36,14 @@ const nextConfig = {
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), browsing-topics=()" },
         ],
       },
+      {
+        // Foto CDN (nama file unik, tak pernah berubah) → boleh di-cache edge Vercel & browser selamanya.
+        source: "/img/:path*",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+          { key: "CDN-Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
     ];
   },
   // /produk polos = halaman statis (cache CDN); versi berparameter dirender dinamis di
@@ -49,6 +57,9 @@ const nextConfig = {
         has: [{ type: "query", key }],
         destination: "/produk/filter",
       })),
+      // UJI (Okt 2026): foto CDN lewat Vercel (edge Singapura). cdn.snapfit.id = Cloudflare paket gratis →
+      // dari banyak ISP Indonesia dirutekan ke Hong Kong (median 3 dtk / foto 10 KB). Belum dipakai halaman.
+      afterFiles: [{ source: "/img/:path*", destination: "https://cdn.snapfit.id/:path*" }],
     };
   },
   images: {
