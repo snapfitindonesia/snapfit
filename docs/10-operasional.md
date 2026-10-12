@@ -77,6 +77,8 @@ Backup tidak mencakup akun login (Supabase Auth) dan file foto (R2).
 | Sitemap kosong | query paralel menghabiskan koneksi DB | pertahankan satu query di `listLandingPages` |
 | Skor PageSpeed turun | skrip/library baru di layout | lihat [08](08-performa-seo.md) |
 | `cdn.snapfit.id` tak bisa dibuka dari rumah | DNS ISP / propagasi | cek via DoH ([07](07-infrastruktur.md#dns-di-cloudflare)) |
+| Foto lambat lagi | foto tampil langsung dari `cdn.snapfit.id` (rute Cloudflare gratis → Hong Kong), bukan `/img/…` | cek `src` foto di browser; harus `/img/…` ([07](07-infrastruktur.md#gambar--kuota-vercel)) |
+| Situs "503 DEPLOYMENT_PAUSED" | kuota Vercel Hobby (CDN Requests 1 juta/bulan) terlampaui | Vercel → Usage; upgrade Pro lalu aktifkan ulang proyek |
 | Thumbnail produk rusak, foto besar tampil | varian `.w128/.w384/.w750` tak ada | `node --env-file=.env scripts/cdn-variants.mjs --apply` |
 | Foto baru impor masih dari Shopee/TikTok | belum di-mirror | `mirror-marketplace-images.mjs --upload` lalu `--rewrite` (berkala) |
 

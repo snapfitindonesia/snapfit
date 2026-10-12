@@ -70,13 +70,20 @@ peringatan — cek sesekali Vercel → Cron Jobs.
 - Foto disimpan sebagai WebP di R2 dalam **4 ukuran**: `https://cdn.snapfit.id/<nama>.webp`
   (≤1200px) + `<nama>.w128/.w384/.w750.webp` (q75, sama dengan titik srcset next/image). Varian dibuat otomatis oleh
   `uploadToR2` (upload admin, impor Ginee, foto ulasan) dan ikut terhapus oleh `deleteFromR2`.
-- Ditampilkan lewat `@/components/ui/image` (wrapper `next/image`) — semua **langsung**
-  dari CDN, tanpa kuota *Image Optimization* Vercel (5.000 transformasi/bulan):
-  - `cdn.snapfit.id` → varian terkecil yang ≥ lebar diminta (≤128 → `.w128`, ≤384 → `.w384`, ≤750 → `.w750`,
-    selebihnya asli). Kartu produk di HP ±15 KB, banner HP ±30 KB — setara hasil Vercel dulu.
-  - **Pengecualian:** foto `priority` dari `cdn.snapfit.id` (banner pertama, 4 kartu teratas,
-    foto utama PDP, popup) lewat `/_next/image` — satu domain dengan halaman, jadi elemen LCP
-    tak menunggu koneksi baru di HP. Jumlahnya kecil (±beberapa ratus transformasi/bulan).
+- Ditampilkan lewat `@/components/ui/image` (wrapper `next/image`) — tanpa kuota *Image Optimization*
+  Vercel (5.000 transformasi/bulan):
+  - `cdn.snapfit.id` → **disajikan lewat domain sendiri `/img/<file>`** (`siteImageUrl` di `lib/image-loader.ts`;
+    rewrite `afterFiles` di `next.config.mjs`, di-cache edge Vercel Singapura + browser 1 tahun), varian terkecil
+    yang ≥ lebar diminta (≤128 → `.w128`, ≤384 → `.w384`, ≤750 → `.w750`, selebihnya asli). Kartu produk di HP
+    ±15 KB, banner HP ±30 KB.
+  - **Kenapa lewat `/img` (Okt 2026):** `cdn.snapfit.id` memakai Cloudflare paket gratis → dari banyak ISP
+    Indonesia dirutekan ke **Hong Kong** (colo HKG, bukan CGK Jakarta): median 1,5–3 dtk per foto 10 KB, kadang
+    macet 20 dtk; foto halaman produk belum selesai dalam 30 dtk. Lewat Vercel: ±0,1–0,35 dtk per foto, foto
+    layar pertama selesai ±0,5 dtk (beranda/daftar) & ±2 dtk (PDP). Satu koneksi dengan halaman (tanpa DNS/TLS baru).
+  - **Kuota:** tiap foto = 1 *CDN Request* Vercel. Hobby: 1 juta/bulan (±9–15 foto per halaman → ±50–80 ribu
+    tayangan/bulan). Pantau Vercel → Usage → CDN Requests. Lewat batas di Hobby bisa membuat situs dijeda; di Pro
+    (Flat Rate CDN) otomatis naik ke tingkat $20 (10 juta). Alternatif bila kuota mepet: Bunny CDN (PoP Jakarta).
+  - Email, feed Google/Meta, JSON-LD & OG **tetap** memakai URL `cdn.snapfit.id` (diambil server mereka).
   - Foto marketplace (Shopee, Tokopedia, TikTok/ibyteimg, Ginee, Shopify) → ukuran bawaan CDN asalnya.
   - Host lain → lewat `/_next/image` (WebP, cache 31 hari).
 - **Syarat penting:** setiap URL `cdn.snapfit.id` di DB wajib punya varian, kalau tidak
