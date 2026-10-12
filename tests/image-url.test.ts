@@ -1,0 +1,25 @@
+// Foto CDN dilayani lewat domain sendiri (/img/…) — lihat lib/image-loader.ts.
+import { describe, expect, it } from "vitest";
+import { siteImageUrl } from "@/lib/image-loader";
+
+describe("siteImageUrl", () => {
+  it("foto cdn.snapfit.id → /img/… dengan varian ukuran terkecil yang cukup", () => {
+    expect(siteImageUrl("https://cdn.snapfit.id/m-abc.webp", 100)).toBe("/img/m-abc.w128.webp");
+    expect(siteImageUrl("https://cdn.snapfit.id/m-abc.webp", 300)).toBe("/img/m-abc.w384.webp");
+    expect(siteImageUrl("https://cdn.snapfit.id/m-abc.webp", 700)).toBe("/img/m-abc.w750.webp");
+    expect(siteImageUrl("https://cdn.snapfit.id/m-abc.webp", 1600)).toBe("/img/m-abc.webp"); // asli ≤1200px
+    expect(siteImageUrl("https://cdn.snapfit.id/m-abc.webp")).toBe("/img/m-abc.webp");
+  });
+  it("foto lebar beranda → varian 750/1200/1800", () => {
+    expect(siteImageUrl("https://cdn.snapfit.id/h-1-wide.webp", 1100)).toBe("/img/h-1-wide.w1200.webp");
+    expect(siteImageUrl("https://cdn.snapfit.id/h-1-wide.webp", 3000)).toBe("/img/h-1-wide.webp");
+  });
+  it("varian yang sudah ada / file non-WebP tidak diubah ukurannya", () => {
+    expect(siteImageUrl("https://cdn.snapfit.id/m-abc.w384.webp", 128)).toBe("/img/m-abc.w384.webp");
+    expect(siteImageUrl("https://cdn.snapfit.id/lama.jpg", 128)).toBe("/img/lama.jpg");
+  });
+  it("host lain & URL relatif dibiarkan apa adanya", () => {
+    expect(siteImageUrl("https://down-id.img.susercontent.com/file/x", 128)).toBe("https://down-id.img.susercontent.com/file/x");
+    expect(siteImageUrl("/logo.png", 128)).toBe("/logo.png");
+  });
+});

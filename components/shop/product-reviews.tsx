@@ -1,4 +1,5 @@
 import { Star, MessageSquare, BadgeCheck } from "lucide-react";
+import { siteImageUrl } from "@/lib/image-loader";
 import Image from "@/components/ui/image";
 
 export type ReviewItem = {
@@ -65,7 +66,7 @@ export function ProductReviews({ reviews = [] }: { reviews?: ReviewItem[] }) {
               <span className="grid size-11 shrink-0 place-items-center overflow-hidden rounded-full bg-muted text-sm font-medium text-muted-foreground">
                 {r.image ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={r.image} alt={r.author} className="size-full object-cover" />
+                  <img src={siteImageUrl(r.image, 128)} alt={r.author} loading="lazy" className="size-full object-cover" />
                 ) : (
                   r.author.charAt(0).toUpperCase()
                 )}

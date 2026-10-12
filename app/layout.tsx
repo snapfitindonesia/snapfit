@@ -5,7 +5,6 @@ import "@/styles/globals.css";
 import { FacebookPixel } from "@/components/tracking/facebook-pixel";
 import { GoogleAnalytics } from "@/components/tracking/google-analytics";
 import { Suspense } from "react";
-import { preconnect } from "react-dom";
 import { getThemeColors } from "@/lib/theme-settings";
 import { themeCss } from "@/lib/theme-colors";
 
@@ -49,10 +48,9 @@ export const metadata: Metadata = {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  // Koneksi awal ke CDN foto (banner/kartu = elemen LCP, beda domain dari halaman).
+  // Foto CDN kini lewat domain sendiri (/img/…, lib/image-loader.ts) → tak perlu preconnect ke cdn.snapfit.id.
   // Pixel & GA4 SENGAJA tidak di-preconnect — skripnya baru dimuat saat interaksi
   // (useDeferredLoad), preconnect di awal hanya berebut jaringan dengan LCP.
-  preconnect("https://cdn.snapfit.id");
   // Warna situs dari Admin → Warna Situs (kosong = bawaan di styles/globals.css).
   const colors = await getThemeColors();
   const css = themeCss(colors);

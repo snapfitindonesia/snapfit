@@ -35,18 +35,42 @@ const directLoader: ImageLoader = ({ src, width }) => tag(src, width);
 // cdn.snapfit.id: varian terkecil yang lebarnya ≥ diminta (tak pernah diperbesar).
 // Hanya file WebP di root bucket — semuanya punya varian (dijamin scripts/cdn-variants.mjs).
 const CDN_HOST = "cdn.snapfit.id";
-const cdnLoader: ImageLoader = ({ src, width }) => {
-  const { pathname } = new URL(src);
-  const isBase = /^\/[^/]+\.webp$/.test(pathname) && !/\.w\d+\.webp$/.test(pathname);
-  // Foto lebar beranda (-wide.webp, asli ≤2400px): varian 750/1200/1800 (lib/upload/cdn.ts).
-  if (isBase && /-wide\.webp$/.test(pathname)) {
-    const ww = width <= 750 ? 750 : width <= 1200 ? 1200 : width <= 1800 ? 1800 : 0;
-    return tag(ww ? src.replace(/\.webp$/, `.w${ww}.webp`) : src, width);
+
+/**
+ * Foto CDN kita disajikan LEWAT situs sendiri: /img/<file> (rewrite next.config.mjs → cdn.snapfit.id, di-cache
+ * edge Vercel Singapura). cdn.snapfit.id = Cloudflare paket gratis → dari banyak ISP Indonesia dirutekan ke
+ * Hong Kong: median 1,5–3 dtk per foto 10 KB, kadang macet 20 dtk (diukur Okt 2026). Lewat Vercel: ±0,15 dtk,
+ * dan satu koneksi dengan halaman (tanpa DNS/TLS tambahan). Kuota: tiap foto = 1 CDN Request Vercel.
+ * Email, feed Google/Meta, JSON-LD & OG tetap memakai URL cdn.snapfit.id (diambil server mereka, bukan HP).
+ * `width` (opsional) → varian ukuran (.w128/.w384/.w750) bila ada.
+ */
+export function siteImageUrl(src: string, width?: number): string {
+  let u: URL;
+  try {
+    u = new URL(src);
+  } catch {
+    return src;
   }
-  // SAMAKAN dengan CDN_VARIANT_WIDTHS (lib/upload/cdn.ts); 0 = file asli (≤1200px).
-  const w = width <= 128 ? 128 : width <= 384 ? 384 : width <= 750 ? 750 : 0;
-  return tag(isBase && w ? src.replace(/\.webp$/, `.w${w}.webp`) : src, width);
-};
+  if (u.hostname !== CDN_HOST) return src;
+  let path = u.pathname;
+  const isBase = /^\/[^/]+\.webp$/.test(path) && !/\.w\d+\.webp$/.test(path);
+  if (isBase && width) {
+    if (/-wide\.webp$/.test(path)) {
+      // Foto lebar beranda (-wide.webp, asli ≤2400px): varian 750/1200/1800 (lib/upload/cdn.ts).
+      const ww = width <= 750 ? 750 : width <= 1200 ? 1200 : width <= 1800 ? 1800 : 0;
+      if (ww) path = path.replace(/\.webp$/, `.w${ww}.webp`);
+    } else {
+      // SAMAKAN dengan CDN_VARIANT_WIDTHS (lib/upload/cdn.ts); 0 = file asli (≤1200px).
+      const w = width <= 128 ? 128 : width <= 384 ? 384 : width <= 750 ? 750 : 0;
+      if (w) path = path.replace(/\.webp$/, `.w${w}.webp`);
+    }
+  }
+  return `/img${path}`;
+}
+
+// cdn.snapfit.id: varian terkecil yang lebarnya ≥ diminta (tak pernah diperbesar).
+// Hanya file WebP di root bucket — semuanya punya varian (dijamin scripts/cdn-variants.mjs).
+const cdnLoader: ImageLoader = ({ src, width }) => tag(siteImageUrl(src, width), width);
 
 /** True bila src adalah foto di CDN kita (cdn.snapfit.id). */
 export function isOwnCdn(src: string): boolean {

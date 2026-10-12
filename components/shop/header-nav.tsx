@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { Search, ChevronDown, Menu, X, User, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { siteImageUrl } from "@/lib/image-loader";
 import { formatRupiah } from "@/lib/format";
 import { CartButton } from "@/components/shop/cart-button";
 import { useStoreUI } from "@/components/shop/store-ui-provider";
@@ -346,7 +347,7 @@ export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaM
                               {line.cover && (
                                 <span className="grid size-7 shrink-0 place-items-center overflow-hidden rounded-md border border-border bg-muted">
                                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                                  <img src={line.cover} alt="" className="size-full object-cover" />
+                                  <img src={siteImageUrl(line.cover, 128)} alt="" loading="lazy" className="size-full object-cover" />
                                 </span>
                               )}
                               {line.name}
@@ -428,7 +429,7 @@ export function HeaderNav({ menu, merekMenu = [], navLinks = [] }: { menu: MegaM
                           >
                             <span className="block aspect-square overflow-hidden rounded-lg border border-border bg-muted">
                               {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img src={p.coverImage} alt="" className="size-full object-contain p-1 transition-transform group-hover/mp:scale-105" />
+                              <img src={siteImageUrl(p.coverImage, 384)} alt="" loading="lazy" className="size-full object-contain p-1 transition-transform group-hover/mp:scale-105" />
                             </span>
                             <span className="mt-1.5 line-clamp-2 block text-xs text-muted-foreground group-hover/mp:text-foreground">{p.name}</span>
                           </Link>

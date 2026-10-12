@@ -2,6 +2,7 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { jsonLdHtml } from "@/lib/json-ld";
 import { productPath } from "@/lib/product-url";
 import { preconnect } from "react-dom";
+import { isOwnCdn } from "@/lib/image-loader";
 import { slugify } from "@/lib/seo-pages";
 import type { Metadata } from "next";
 import {
@@ -89,7 +90,8 @@ export default async function ProductDetailPage({
 
   // Buka koneksi ke server foto lebih awal (foto utama = LCP halaman ini).
   try {
-    if (product.coverImage) preconnect(new URL(product.coverImage).origin);
+    // Foto cdn.snapfit.id dilayani lewat domain sendiri (/img/…) → preconnect hanya untuk host lain (marketplace).
+    if (product.coverImage && !isOwnCdn(product.coverImage)) preconnect(new URL(product.coverImage).origin);
   } catch {
     // URL relatif / tak valid — abaikan
   }

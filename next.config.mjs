@@ -57,8 +57,9 @@ const nextConfig = {
         has: [{ type: "query", key }],
         destination: "/produk/filter",
       })),
-      // UJI (Okt 2026): foto CDN lewat Vercel (edge Singapura). cdn.snapfit.id = Cloudflare paket gratis →
-      // dari banyak ISP Indonesia dirutekan ke Hong Kong (median 3 dtk / foto 10 KB). Belum dipakai halaman.
+      // Foto CDN lewat Vercel (edge Singapura, di-cache): cdn.snapfit.id = Cloudflare paket gratis → dari banyak
+      // ISP Indonesia dirutekan ke Hong Kong (median 1,5–3 dtk / foto 10 KB, kadang 20 dtk). Lewat sini ±0,15 dtk.
+      // Dipakai lib/image-loader.ts (siteImageUrl). Tiap foto = 1 CDN Request Vercel (Hobby: 1 jt/bulan).
       afterFiles: [{ source: "/img/:path*", destination: "https://cdn.snapfit.id/:path*" }],
     };
   },
