@@ -115,9 +115,12 @@ export function PdpView({
   // Foto yang sedang dilihat (override galeri). Default = cover produk (tampil
   // pertama); jadi null saat ganti varian → ikut foto varian terpilih.
   const [heroImage, setHeroImage] = useState<string | null>(product.coverImage || null);
-  // Foto galeri selain yang pertama baru dimuat setelah halaman selesai load —
-  // tak berebut jaringan dengan foto utama (LCP), tetap siap sebelum digeser.
-  const [galleryWarm, setGalleryWarm] = useState(false);
+  // Foto galeri dimuat SEPERLUNYA: foto yang sedang tampil + tetangga kiri/kanannya, dan tetangga baru diunduh
+  // setelah pembeli mulai berinteraksi dengan galeri (sentuh/hover/thumbnail). Dulu SEMUA foto (±10 × 110–160 KB)
+  // diunduh 1 dtk setelah halaman selesai → ±1,5 MB data HP & ±10 CDN Request Vercel per kunjungan, padahal
+  // kebanyakan pembeli tak menggeser semua foto. Foto yang pernah dimuat tetap dirender (geser balik tak berkedip).
+  const [galleryActive, setGalleryActive] = useState(false);
+  const loadedPhotos = useRef<Set<string>>(new Set());
   // Sticky bar "Beli Langsung" (mobile) menambah tinggi penutup bawah → beri tahu
   // layout agar ruang bawah halaman ikut bertambah (footer tak tertutup).
   useEffect(() => {
@@ -126,13 +129,6 @@ export function PdpView({
     return () => {
       root.style.removeProperty("--mobile-extra-bar");
     };
-  }, []);
-  useEffect(() => {
-    let t: ReturnType<typeof setTimeout>;
-    const warm = () => { t = setTimeout(() => setGalleryWarm(true), 1000); };
-    if (document.readyState === "complete") warm();
-    else window.addEventListener("load", warm, { once: true });
-    return () => { clearTimeout(t); window.removeEventListener("load", warm); };
   }, []);
   const [lightbox, setLightbox] = useState(false); // mode zoom layar penuh
   const [zoomed, setZoomed] = useState(false);
@@ -278,6 +274,16 @@ export function PdpView({
   // Navigasi antar foto (slide) — dipakai panah + swipe + lightbox.
   const photoIndex = Math.max(0, photos.findIndex((p) => baseUrl(p) === baseUrl(displayImage)));
 
+  // Foto yang boleh diunduh sekarang: foto pertama (LCP) + yang tampil; tetangganya setelah galeri disentuh
+  // atau layar zoom dibuka. Sisanya tak dirender sama sekali (loading="lazy" tak cukup — track geser
+  // horizontal masih dianggap "dekat layar" oleh browser, jadi semua foto tetap terunduh).
+  const near = galleryActive || lightbox;
+  const wantPhoto = (i: number) => i === 0 || i === photoIndex || (near && Math.abs(i - photoIndex) <= 1);
+  // Catat foto yang sudah dirender (sekali tampil → tetap dirender; idempoten, aman dipanggil saat render).
+  photos.forEach((src, i) => { if (wantPhoto(i)) loadedPhotos.current.add(src); });
+  const showPhoto = (src: string, i: number) => wantPhoto(i) || loadedPhotos.current.has(src);
+  const activateGallery = () => setGalleryActive(true);
+
   // Keyboard: deretan thumbnail = SATU pemberhentian Tab (dulu 10× Tab sebelum sampai ke tombol beli);
   // panah kiri/kanan/atas/bawah memilih foto lain.
   const thumbTabIndex = photoIndex;
@@ -339,8 +345,9 @@ export function PdpView({
                 <button
                   key={src}
                   type="button"
-                  onClick={() => setHeroImage(src)}
-                  onKeyDown={(e) => thumbKey(e, i)}
+                  onClick={() => { activateGallery(); setHeroImage(src); }}
+                  onPointerEnter={activateGallery}
+                  onKeyDown={(e) => { activateGallery(); thumbKey(e, i); }}
                   tabIndex={i === thumbTabIndex ? 0 : -1}
                   aria-label={`Lihat foto ${i + 1} dari ${photos.length}`}
                   aria-pressed={active}
@@ -363,7 +370,9 @@ export function PdpView({
           onClick={() => {
             if (!dragRef.current.moved) setLightbox(true);
           }}
-          onPointerDown={onDragStart}
+          onPointerDown={(e) => { activateGallery(); onDragStart(e); }}
+          onPointerEnter={activateGallery}
+          onFocus={activateGallery}
           onPointerMove={onDragMove}
           onPointerUp={onDragEnd}
           onPointerLeave={onDragEnd}
@@ -378,17 +387,19 @@ export function PdpView({
           >
             {photos.map((src, i) => (
               <div key={src} className="relative h-full w-full shrink-0">
-                <Image
-                  src={src}
-                  alt={`${product.name} — ${variant.name}`}
-                  fill
-                  draggable={false}
-                  sizes="(max-width: 1024px) 100vw, 55vw"
-                  className="object-contain"
-                  {...(i === 0
-                    ? { priority: true }
-                    : { loading: galleryWarm || i === photoIndex ? ("eager" as const) : ("lazy" as const) })}
-                />
+                {showPhoto(src, i) && (
+                  <Image
+                    src={src}
+                    alt={`${product.name} — ${variant.name}`}
+                    fill
+                    draggable={false}
+                    // HP: varian 750px (±60 KB) cukup tajam untuk lebar ±345px (≈2,2× kepadatan) — dulu file asli
+                    // 1200px (±160 KB) karena 100vw × 3 (iPhone). Desktop/tablet tetap ukuran penuh. Zoom = asli.
+                    sizes="(max-width: 640px) 66vw, (max-width: 1024px) 100vw, 55vw"
+                    className="object-contain"
+                    {...(i === 0 ? { priority: true } : { loading: "eager" as const })}
+                  />
+                )}
               </div>
             ))}
           </div>
@@ -440,8 +451,8 @@ export function PdpView({
               <button
                 key={src}
                 type="button"
-                onClick={() => setHeroImage(src)}
-                onKeyDown={(e) => thumbKey(e, i)}
+                onClick={() => { activateGallery(); setHeroImage(src); }}
+                onKeyDown={(e) => { activateGallery(); thumbKey(e, i); }}
                 tabIndex={i === thumbTabIndex ? 0 : -1}
                 aria-label={`Lihat foto ${i + 1} dari ${photos.length}`}
                 aria-pressed={active}
@@ -810,9 +821,9 @@ export function PdpView({
               className="flex h-full w-full transition-transform duration-300 ease-out"
               style={{ transform: `translateX(-${photoIndex * 100}%)` }}
             >
-              {photos.map((src) => (
+              {photos.map((src, i) => (
                 <div key={src} className="relative h-full w-full shrink-0">
-                  <Image
+                  {showPhoto(src, i) && <Image
                     src={src}
                     alt={`${product.name} — ${variant.name}`}
                     fill
@@ -823,7 +834,7 @@ export function PdpView({
                       zoomed ? "scale-150 cursor-zoom-out" : "cursor-zoom-in",
                     )}
                     onClick={() => setZoomed((z) => !z)}
-                  />
+                  />}
                 </div>
               ))}
             </div>
