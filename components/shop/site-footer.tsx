@@ -11,6 +11,7 @@ const COLUMNS: { title: string; links: FooterLink[] }[] = [
     links: [
       { label: "Semua Produk", href: "/produk" },
       { label: "Grosir Deadstock", href: "/grosir" },
+      { label: "Kerja Sama Bisnis", href: "/bisnis" },
       { label: "iPhone", href: "/kategori/iphone" },
       { label: "Samsung", href: "/kategori/samsung" },
       { label: "iPad", href: "/kategori/ipad" },

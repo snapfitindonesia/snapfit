@@ -50,6 +50,13 @@ const nextConfig = {
   // /produk/filter tanpa mengubah URL di browser. beforeFiles: dicek sebelum rute halaman.
   // SEMUA kunci filter yang ditulis ProductListing ke URL ikut di-rewrite — tanpa ini link filter yang
   // dibagikan / di-refresh jatuh ke /produk statis & filternya hilang.
+  // Halaman Kerja Sama Bisnis = /bisnis; alamat berbahasa Inggris ikut diarahkan ke sana.
+  async redirects() {
+    return [
+      { source: "/business", destination: "/bisnis", permanent: true },
+      { source: "/b2b", destination: "/bisnis", permanent: true },
+    ];
+  },
   async rewrites() {
     return {
       beforeFiles: ["tipe", "model", "sort", "q", "perangkat", "brand", "minPrice", "maxPrice"].map((key) => ({

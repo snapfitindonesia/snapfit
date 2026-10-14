@@ -16,6 +16,8 @@ export async function sendEmail(input: {
   to: string;
   subject: string;
   html: string;
+  /** Balasan ke alamat ini (mis. pengirim formulir kerja sama); bawaan: inbox admin. */
+  replyTo?: string;
 }): Promise<{ mock: boolean }> {
   if (!isEmailConfigured()) {
     console.log(`[email:mock] to=${input.to} subject="${input.subject}"`);
@@ -27,7 +29,7 @@ export async function sendEmail(input: {
       Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ from: FROM, to: input.to, reply_to: REPLY_TO, subject: input.subject, html: input.html }),
+    body: JSON.stringify({ from: FROM, to: input.to, reply_to: input.replyTo || REPLY_TO, subject: input.subject, html: input.html }),
   });
   if (!res.ok) throw new Error(`Resend gagal: ${res.status} ${(await res.text().catch(() => "")).slice(0, 200)}`);
   return { mock: false };
@@ -356,6 +358,33 @@ export function adminAlertEmail(opts: { subject: string; title: string; lines: s
       greeting: opts.title,
       intro: opts.lines.map(esc).join("<br>"),
       body: button("Buka Pesanan di Dashboard", `${SITE}/admin/pesanan`),
+    }),
+  };
+}
+
+/** Ke admin: permintaan kerja sama dari halaman /bisnis. Semua isian di-escape (datang dari publik). */
+export function businessInquiryEmail(lead: {
+  name: string;
+  company: string;
+  email: string;
+  phone: string;
+  type: string;
+  volume: string;
+  city: string;
+  message: string;
+  waUrl?: string;
+}) {
+  const r = (label: string, value: string) => (value ? row(label, esc(value)) : "");
+  return {
+    subject: `🤝 Permintaan kerja sama: ${lead.type} — ${lead.company || lead.name}`,
+    html: shell({
+      preheader: `${lead.name}${lead.company ? ` (${lead.company})` : ""} · ${lead.type} · ${lead.volume}`,
+      greeting: "Ada permintaan kerja sama baru",
+      intro: "Dikirim dari halaman <strong>Kerja Sama Bisnis</strong> (snapfit.id/bisnis). Balas email ini untuk langsung menjawab pengirimnya.",
+      body:
+        block(`<table role="presentation" width="100%" cellspacing="0" cellpadding="0">${r("Nama", lead.name)}${r("Perusahaan / toko", lead.company)}${r("Email", lead.email)}${r("WhatsApp", lead.phone)}${r("Kota", lead.city)}${r("Jenis kerja sama", lead.type)}${r("Perkiraan jumlah", lead.volume)}</table>`) +
+        (lead.message ? block(`<div style="font-size:14px;line-height:1.6;color:${C.ink};white-space:pre-wrap;background:${C.soft};border-radius:12px;padding:14px 16px">${esc(lead.message)}</div>`, 16) : "") +
+        (lead.waUrl ? block(`<a href="${esc(lead.waUrl)}" style="display:inline-block;background:#1a7f4b;color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;padding:12px 22px;border-radius:999px">Chat via WhatsApp</a>`, 18) : ""),
     }),
   };
 }
