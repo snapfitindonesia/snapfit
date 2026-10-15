@@ -4,11 +4,9 @@ import {
   ArrowRight,
   BadgeCheck,
   Building2,
-  ClipboardList,
   Gift,
   Handshake,
   MessageCircle,
-  PackageCheck,
   Store,
   Truck,
 } from "lucide-react";
@@ -51,9 +49,9 @@ const PROGRAMS = [
 ] as const;
 
 const STEPS = [
-  { icon: ClipboardList, title: "Kirim permintaan", desc: "Isi formulir di bawah atau chat WhatsApp — ceritakan kebutuhanmu." },
-  { icon: MessageCircle, title: "Kami hubungi & kirim penawaran", desc: "Tim kami menghubungimu untuk detail produk, jumlah, dan harga." },
-  { icon: PackageCheck, title: "Sepakati & pesanan diproses", desc: "Setelah sepakat, pesanan disiapkan dan dikirim ke alamatmu." },
+  { title: "Kirim permintaan", desc: "Isi formulir di bawah atau chat WhatsApp — ceritakan kebutuhanmu." },
+  { title: "Kami hubungi & kirim penawaran", desc: "Tim kami menghubungimu untuk detail produk, jumlah, dan harga." },
+  { title: "Sepakati & pesanan diproses", desc: "Setelah sepakat, pesanan disiapkan dan dikirim ke alamatmu." },
 ] as const;
 
 const WHY = [
@@ -153,12 +151,9 @@ export default function BisnisPage() {
           Cara kerjanya
         </h2>
         <ol className="mt-8 grid gap-4 md:grid-cols-3">
-          {STEPS.map(({ icon: Icon, title, desc }, i) => (
+          {STEPS.map(({ title, desc }, i) => (
             <li key={title} className="rounded-2xl border border-border p-6">
-              <span className="flex items-center gap-3">
-                <span className="grid size-8 place-items-center rounded-full bg-foreground text-sm font-semibold text-background">{i + 1}</span>
-                <Icon className="size-5 text-muted-foreground" aria-hidden />
-              </span>
+              <span className="grid size-8 place-items-center rounded-full bg-foreground text-sm font-semibold text-background">{i + 1}</span>
               <h3 className="mt-4 text-base font-semibold">{title}</h3>
               <p className={cn(TYPE.body, "mt-1 text-muted-foreground")}>{desc}</p>
             </li>
