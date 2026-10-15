@@ -440,7 +440,7 @@ export function ProductForm({ categories, mereks = [], initial }: { categories: 
                       <input className={`${input} bg-background`} placeholder="Tulis penjelasan (opsional)" value={o.desc} onChange={(e) => setOpt(gi, oi, { desc: e.target.value })} />
                       {gi === 0 && (
                         <div className="w-40 shrink-0">
-                          <ImageInput value={o.image} onChange={(url) => setOpt(gi, oi, { image: url })} placeholder="Foto opsi" />
+                          <ImageInput value={o.image} onChange={(url) => setOpt(gi, oi, { image: url })} placeholder="Foto opsi" square />
                         </div>
                       )}
                       <button type="button" onClick={() => removeOpt(gi, oi)} disabled={g.options.length <= 1} className="shrink-0 text-muted-foreground hover:text-destructive disabled:opacity-30" aria-label="Hapus opsi">

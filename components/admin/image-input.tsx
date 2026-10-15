@@ -1,8 +1,10 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Loader2, Upload } from "lucide-react";
+import { Loader2, Pencil, Upload } from "lucide-react";
 import { uploadImageFile, importImageUrl, readPastedImages, hasPastedImages } from "@/lib/upload/client";
+import { useSquareEditor, isSquareFile, editedFile } from "@/components/admin/square-image-editor";
+import { siteImageUrl } from "@/lib/image-loader";
 
 const input =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-foreground";
@@ -16,15 +18,29 @@ export function ImageInput({
   onChange,
   placeholder = "Tempel gambar (Ctrl+V) atau upload",
   wide = false,
+  square = false,
 }: {
   value: string;
   onChange: (url: string) => void;
   placeholder?: string;
   wide?: boolean; // foto full-width beranda: disimpan s/d 2400px (bukan 1200px)
+  /** Foto produk/varian: foto non-persegi dibuka di editor 1:1 + tombol edit untuk foto terpasang. */
+  square?: boolean;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { edit, editor } = useSquareEditor();
+
+  // square: file non-persegi → editor 1:1 dulu (Batal = tak diunggah).
+  async function uploadFile(file: File): Promise<string> {
+    if (square && !(await isSquareFile(file))) {
+      const r = await edit(file, { allowSkip: true });
+      if (r === null) throw new Error("");
+      if (r !== "asli") return uploadImageFile(editedFile(r, file.name), { wide });
+    }
+    return uploadImageFile(file, { wide });
+  }
 
   async function run(task: () => Promise<string>) {
     setUploading(true);
@@ -32,7 +48,8 @@ export function ImageInput({
     try {
       onChange(await task());
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload gagal");
+      const msg = err instanceof Error ? err.message : "Upload gagal";
+      setError(msg || null); // pesan kosong = dibatalkan di editor
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -41,7 +58,7 @@ export function ImageInput({
 
   function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (file) void run(() => uploadImageFile(file, { wide }));
+    if (file) void run(() => uploadFile(file));
   }
 
   // Ctrl+V di kolom: gambar dari clipboard / alamat gambar → unggah ke CDN.
@@ -49,7 +66,7 @@ export function ImageInput({
     const p = readPastedImages(e.clipboardData);
     if (!hasPastedImages(p)) return;
     e.preventDefault();
-    void run(() => (p.files[0] ? uploadImageFile(p.files[0], { wide }) : importImageUrl(p.urls[0], { wide })));
+    void run(() => (p.files[0] ? uploadFile(p.files[0]) : importImageUrl(p.urls[0], { wide })));
   }
 
   return (
@@ -72,9 +89,28 @@ export function ImageInput({
           {uploading ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
           Upload
         </button>
+        {square && value && (
+          <button
+            type="button"
+            disabled={uploading}
+            onClick={() =>
+              void run(async () => {
+                const r = await edit(siteImageUrl(value));
+                if (!r || r === "asli") return value;
+                return uploadImageFile(editedFile(r), { wide });
+              })
+            }
+            className="inline-flex shrink-0 items-center rounded-md border border-border px-2.5 text-muted-foreground hover:text-foreground disabled:opacity-50"
+            aria-label="Edit foto (1:1)"
+            title="Edit foto: perbesar/perkecil, geser, putar"
+          >
+            <Pencil className="size-4" />
+          </button>
+        )}
         <input ref={fileRef} type="file" accept="image/*" hidden onChange={onFile} />
       </div>
       {error && <p className="mt-1 text-xs text-destructive">{error}</p>}
+      {editor}
     </div>
   );
 }

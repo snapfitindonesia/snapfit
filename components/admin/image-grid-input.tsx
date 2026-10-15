@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Loader2, Upload, X, ChevronLeft, ChevronRight, ClipboardPaste } from "lucide-react";
+import { Loader2, Upload, X, ChevronLeft, ChevronRight, ClipboardPaste, Pencil } from "lucide-react";
 import { uploadImageFile, importImageUrl, readPastedImages, hasPastedImages } from "@/lib/upload/client";
+import { useSquareEditor, isSquareFile, editedFile } from "@/components/admin/square-image-editor";
+import { siteImageUrl } from "@/lib/image-loader";
 
 const MAX = 9;
 
@@ -12,6 +14,8 @@ const MAX = 9;
  * Bisa upload banyak sekaligus, hapus, dan set "Jadikan utama".
  * Tempel (Ctrl+V) di mana saja di halaman: gambar dari clipboard ("Salin gambar"
  * di Shopee dll) atau alamat gambar → langsung diunggah ke CDN.
+ * Foto BUKAN persegi (mis. potret) dibuka dulu di editor 1:1 (perbesar/perkecil, geser, putar; sisi kosong
+ * putih). Foto yang sudah ada bisa diedit lewat ikon pensil.
  */
 export function ImageGridInput({
   value,
@@ -30,7 +34,37 @@ export function ImageGridInput({
   const photos = value.filter(Boolean);
   const canAdd = photos.length < MAX;
 
-  const uploadOne = uploadImageFile;
+  const { edit, editor } = useSquareEditor();
+
+  // File baru: yang sudah persegi langsung diunggah; selain itu lewat editor 1:1 (Batal = file dilewati).
+  async function prepare(files: File[]): Promise<File[]> {
+    const out: File[] = [];
+    for (const [i, f] of files.entries()) {
+      if (await isSquareFile(f)) { out.push(f); continue; }
+      const r = await edit(f, { label: files.length > 1 ? `Foto ${i + 1} dari ${files.length}` : undefined, allowSkip: true });
+      if (r === "asli") out.push(f);
+      else if (r) out.push(editedFile(r, f.name));
+    }
+    return out;
+  }
+
+  // Edit foto yang sudah ada (foto CDN dibuka lewat /img/… → satu domain, hasil bisa disimpan).
+  async function editAt(i: number) {
+    const src = photos[i];
+    if (!src) return;
+    const r = await edit(siteImageUrl(src), { label: i === 0 ? "Foto cover" : `Foto ${i + 1}` });
+    if (!r || r === "asli") return;
+    setUploading(true);
+    setError(null);
+    try {
+      const url = await uploadImageFile(editedFile(r));
+      onChange(photosRef.current.map((p, idx) => (idx === i ? url : p)));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Upload gagal");
+    } finally {
+      setUploading(false);
+    }
+  }
 
   // Tambah foto dari file / alamat gambar (maks sisa slot), berurutan.
   const photosRef = useRef(photos);
@@ -38,6 +72,8 @@ export function ImageGridInput({
   async function addSources(files: File[], urls: string[]) {
     const slots = MAX - photosRef.current.length;
     if (slots <= 0) { setError(`Maksimal ${MAX} foto.`); return; }
+    files = await prepare(files.slice(0, slots));
+    if (!files.length && !urls.length) return;
     setUploading(true);
     setError(null);
     const added: string[] = [];
@@ -71,20 +107,8 @@ export function ImageGridInput({
 
   async function onFiles(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
-    if (!files.length) return;
-    setUploading(true);
-    setError(null);
-    try {
-      const slots = MAX - photos.length;
-      const urls: string[] = [];
-      for (const f of files.slice(0, slots)) urls.push(await uploadOne(f));
-      onChange([...photos, ...urls]);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload gagal");
-    } finally {
-      setUploading(false);
-      if (fileRef.current) fileRef.current.value = "";
-    }
+    if (fileRef.current) fileRef.current.value = "";
+    if (files.length) await addSources(files, []);
   }
 
   function remove(i: number) {
@@ -141,6 +165,16 @@ export function ImageGridInput({
               </span>
             )}
 
+            <button
+              type="button"
+              onClick={() => editAt(i)}
+              disabled={uploading}
+              className="absolute right-8 top-1 rounded-full bg-black/60 p-1 text-white hover:bg-black/80 disabled:opacity-40"
+              aria-label="Edit foto (1:1)"
+              title="Edit foto: perbesar/perkecil, geser, putar"
+            >
+              <Pencil className="size-3" />
+            </button>
             <button
               type="button"
               onClick={() => remove(i)}
@@ -211,6 +245,7 @@ export function ImageGridInput({
       </div>
 
       {error && <p className="mt-1.5 text-xs text-destructive">{error}</p>}
+      {editor}
     </div>
   );
 }

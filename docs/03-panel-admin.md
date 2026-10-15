@@ -113,6 +113,13 @@ pencarian itu di toko.
 ### Menambah foto produk
 - Klik area foto lalu pilih file, **atau tempel (Ctrl+V)** gambar yang disalin dari
   Shopee/web lain — langsung diunggah.
+- **Editor 1:1** (`components/admin/square-image-editor.tsx`): foto produk/varian yang **tidak persegi**
+  (mis. potret) otomatis dibuka di editor — *Muat semua (latar putih)* memperkecil foto sampai seluruh produk
+  masuk kotak & sisi kosong diisi putih; slider/tombol −/+ dan scroll untuk perbesar/perkecil; seret untuk
+  menggeser; putar 90°. Hasil WebP 1200×1200. *Pakai foto asli* = unggah tanpa diubah. Foto yang sudah persegi
+  langsung diunggah. Foto yang sudah ada bisa dirapikan lewat **ikon pensil** di tiap foto (galeri) atau di
+  sebelah kolom foto opsi varian. Foto yang ditempel sebagai *alamat* gambar diunggah apa adanya — rapikan
+  sesudahnya dengan ikon pensil.
 - Semua foto dikompres ke WebP (maks 1200px) dan disimpan di `cdn.snapfit.id` (R2).
 - Foto yang tidak dipakai lagi (di produk, varian, banner, kategori, ulasan, maupun
   linktree) dihapus otomatis dari storage saat data disimpan/dihapus
