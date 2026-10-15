@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { AdminEditLink } from "@/components/shop/admin-edit-link";
 import Image from "@/components/ui/image";
 import { useRouter } from "next/navigation";
 import {
@@ -44,6 +45,7 @@ export type PdpVariant = {
 };
 
 export type PdpProduct = {
+  id: string;
   slug: string;
   shortId: number | null;
   name: string;
@@ -480,6 +482,8 @@ export function PdpView({
           <a href="#ulasan" className="text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground">
             Ulasan
           </a>
+          {/* Hanya tampil untuk admin yang login */}
+          <AdminEditLink productId={product.id} className="ml-auto" />
         </div>
 
         {/* Judul */}

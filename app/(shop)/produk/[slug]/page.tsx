@@ -110,6 +110,7 @@ export default async function ProductDetailPage({
 
   // Bentuk data serializable untuk Client Component (tanpa Date dsb.)
   const pdpProduct: PdpProduct = {
+    id: product.id,
     slug: product.slug,
     shortId: product.shortId,
     name: product.name,
