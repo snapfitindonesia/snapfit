@@ -2,6 +2,8 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { db } from "@/lib/db";
 import { BulkEdit, type EditRow } from "@/components/admin/bulk-edit";
+import { BulkMedia } from "@/components/admin/bulk-media";
+import { buildMediaRows } from "@/lib/bulk-media";
 
 export const dynamic = "force-dynamic";
 // Server Action Edit Massal ikut batas waktu halaman ini (file besar: ribuan baris).
@@ -11,10 +13,10 @@ export default async function BulkEditPage() {
   const products = await db.product.findMany({
     orderBy: { createdAt: "desc" },
     select: {
-      id: true, name: true, brand: true, description: true,
+      id: true, name: true, brand: true, description: true, coverImage: true, images: true,
       variants: {
         orderBy: [{ color: "asc" }, { price: "asc" }],
-        select: { id: true, color: true, type: true, sku: true, price: true, stock: true, weight: true, name: true },
+        select: { id: true, color: true, type: true, sku: true, price: true, stock: true, weight: true, name: true, image: true },
       },
     },
   });
@@ -34,6 +36,17 @@ export default async function BulkEditPage() {
     })),
   );
 
+  // Media (foto): 1 baris produk (sampul + galeri) + 1 baris per variasi — lihat lib/bulk-media.ts.
+  const mediaRows = buildMediaRows(
+    products.map((p) => ({
+      id: p.id,
+      name: p.name,
+      coverImage: p.coverImage,
+      images: Array.isArray(p.images) ? (p.images as string[]) : [],
+      variants: p.variants.map((v) => ({ color: v.color, type: v.type, name: v.name, image: v.image })),
+    })),
+  );
+
   return (
     <div>
       <Link href="/admin/produk" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
@@ -41,10 +54,13 @@ export default async function BulkEditPage() {
       </Link>
       <h1 className="mt-2 text-xl font-semibold">Edit Produk Massal</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        Perbarui harga, stok, SKU, berat, nama, atau merek banyak produk sekaligus lewat file CSV/Excel.
+        Perbarui harga, stok, SKU, berat, nama, merek, atau foto banyak produk sekaligus lewat file CSV/Excel.
       </p>
       <div className="mt-6">
         <BulkEdit rows={rows} />
+      </div>
+      <div className="mt-8">
+        <BulkMedia rows={mediaRows} />
       </div>
     </div>
   );
