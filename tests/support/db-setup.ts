@@ -13,7 +13,15 @@ const server = new PGLiteSocketServer({ db: pg, port, host: "127.0.0.1" });
 await server.start();
 process.env.DATABASE_URL = `postgresql://postgres@127.0.0.1:${port}/postgres?sslmode=disable`;
 process.env.DATABASE_POOL_MAX = "1"; // PGlite: satu koneksi
-for (const k of ["RESEND_API_KEY", "GINEE_ACCESS_KEY", "GINEE_SECRET_KEY", "UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN", "MIDTRANS_SERVER_KEY", "PAYMENT_MODE", "SHIPPING_MODE"]) {
+// Semua layanan luar dimatikan. PENTING: kunci penyimpanan (R2 / Supabase service role) ikut dikosongkan —
+// tanpa ini tes yang menyalin/membersihkan foto bisa mengunggah ke atau MENGHAPUS file di CDN produksi
+// (juga saat build di Vercel, yang menjalankan tes dengan env produksi).
+for (const k of [
+  "RESEND_API_KEY", "GINEE_ACCESS_KEY", "GINEE_SECRET_KEY", "UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN",
+  "MIDTRANS_SERVER_KEY", "PAYMENT_MODE", "SHIPPING_MODE",
+  "R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "R2_BUCKET", "R2_PUBLIC_URL", "BACKUP_R2_BUCKET",
+  "SUPABASE_SERVICE_ROLE_KEY", "CPANEL_UPLOAD_URL", "CPANEL_UPLOAD_TOKEN",
+]) {
   process.env[k] = "";
 }
 process.env.FREE_SHIPPING_MIN = "0";
