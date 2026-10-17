@@ -241,9 +241,12 @@ main:has(> [data-newsletter]:last-child) + footer {
 }
 
 /* Area sentuh minimal 44×44 px (pedoman aksesibilitas/sentuh) tanpa mengubah tampilan ikon kecil:
-   lapisan tak terlihat di atas tombol. :where() → tak menimpa `absolute` milik tombol itu sendiri. */
-:where(.tap-target) {
-  position: relative;
+   lapisan tak terlihat di atas tombol. `relative` WAJIB di @layer base: CSS di luar layer selalu menang atas
+   utilitas Tailwind v4 (@layer utilities) → `absolute` milik tombol (ikon mata password, tombol tutup) tertimpa. */
+@layer base {
+  .tap-target {
+    position: relative;
+  }
 }
 .tap-target::after {
   content: "";
