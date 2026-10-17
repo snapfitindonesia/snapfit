@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Loader2, Upload, X, ChevronLeft, ChevronRight, ClipboardPaste, Pencil } from "lucide-react";
 import { uploadImageFile, importImageUrl, readPastedImages, hasPastedImages } from "@/lib/upload/client";
 import { useSquareEditor, isSquareFile, editedFile } from "@/components/admin/square-image-editor";
-import { siteImageUrl } from "@/lib/image-loader";
+import { IMG_PROXY, siteImageUrl } from "@/lib/image-loader";
 
 const MAX = 9;
 
@@ -52,7 +52,7 @@ export function ImageGridInput({
   async function editAt(i: number) {
     const src = photos[i];
     if (!src) return;
-    const r = await edit(siteImageUrl(src), { label: i === 0 ? "Foto cover" : `Foto ${i + 1}` });
+    const r = await edit(siteImageUrl(src, undefined, IMG_PROXY), { label: i === 0 ? "Foto cover" : `Foto ${i + 1}` });
     if (!r || r === "asli") return;
     setUploading(true);
     setError(null);

@@ -90,7 +90,7 @@ export default async function ProductDetailPage({
 
   // Buka koneksi ke server foto lebih awal (foto utama = LCP halaman ini).
   try {
-    // Foto cdn.snapfit.id dilayani lewat domain sendiri (/img/…) → preconnect hanya untuk host lain (marketplace).
+    // Foto cdn.snapfit.id dilayani lewat Bunny (preconnect di app/layout.tsx) → di sini hanya host lain (marketplace).
     if (product.coverImage && !isOwnCdn(product.coverImage)) preconnect(new URL(product.coverImage).origin);
   } catch {
     // URL relatif / tak valid — abaikan

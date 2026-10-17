@@ -59,7 +59,7 @@ describe("terapkan CSV media", () => {
     expect(plan.products).toEqual([]);
     expect(plan.variants).toEqual([]);
     expect(plan.skipped).toBe(5);
-    expect(plan.errors.join(" ")).toMatch(/wajib diisi.*error Excel.*tidak diizinkan.*Ungu.*tidak ditemukan/s);
+    expect(plan.errors.join(" ")).toMatch(/wajib diisi[^]*error Excel[^]*tidak diizinkan[^]*Ungu[^]*tidak ditemukan/);
   });
   it("file lama tanpa kolom foto_9 → foto ke-9 yang ada tetap dipertahankan", () => {
     const many = { ...p, images: Array.from({ length: 8 }, (_, i) => `${CDN}g${i}.webp`) };

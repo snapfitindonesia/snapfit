@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { Loader2, Pencil, Upload } from "lucide-react";
 import { uploadImageFile, importImageUrl, readPastedImages, hasPastedImages } from "@/lib/upload/client";
 import { useSquareEditor, isSquareFile, editedFile } from "@/components/admin/square-image-editor";
-import { siteImageUrl } from "@/lib/image-loader";
+import { IMG_PROXY, siteImageUrl } from "@/lib/image-loader";
 
 const input =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-foreground";
@@ -95,7 +95,7 @@ export function ImageInput({
             disabled={uploading}
             onClick={() =>
               void run(async () => {
-                const r = await edit(siteImageUrl(value));
+                const r = await edit(siteImageUrl(value, undefined, IMG_PROXY));
                 if (!r || r === "asli") return value;
                 return uploadImageFile(editedFile(r), { wide });
               })

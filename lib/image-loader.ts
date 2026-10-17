@@ -36,15 +36,25 @@ const directLoader: ImageLoader = ({ src, width }) => tag(src, width);
 // Hanya file WebP di root bucket — semuanya punya varian (dijamin scripts/cdn-variants.mjs).
 const CDN_HOST = "cdn.snapfit.id";
 
+/** Jalur foto lewat situs sendiri: rewrite next.config.mjs → cdn.snapfit.id, di-cache edge Vercel Singapura. */
+export const IMG_PROXY = "/img";
+
 /**
- * Foto CDN kita disajikan LEWAT situs sendiri: /img/<file> (rewrite next.config.mjs → cdn.snapfit.id, di-cache
- * edge Vercel Singapura). cdn.snapfit.id = Cloudflare paket gratis → dari banyak ISP Indonesia dirutekan ke
- * Hong Kong: median 1,5–3 dtk per foto 10 KB, kadang macet 20 dtk (diukur Okt 2026). Lewat Vercel: ±0,15 dtk,
- * dan satu koneksi dengan halaman (tanpa DNS/TLS tambahan). Kuota: tiap foto = 1 CDN Request Vercel.
+ * Alamat foto CDN kita untuk pembeli = Bunny CDN (pull zone "snapfit", asal: cdn.snapfit.id → R2).
+ * Riwayat: cdn.snapfit.id = Cloudflare paket gratis → dari banyak ISP Indonesia sempat dirutekan ke Hong Kong
+ * (median 1,5–3 dtk per foto, kadang 20 dtk; Okt 2026) → dialihkan lewat /img (Vercel ±0,15 dtk), tapi tiap
+ * foto memakan kuota CDN Request Vercel Hobby. Bunny punya server Jakarta: ±0,08–0,10 dtk, $0,03/GB.
+ * SAKLAR darurat: env NEXT_PUBLIC_IMG_BASE=/img → kembali lewat Vercel (perlu redeploy; nilainya ditanam saat build).
  * Email, feed Google/Meta, JSON-LD & OG tetap memakai URL cdn.snapfit.id (diambil server mereka, bukan HP).
- * `width` (opsional) → varian ukuran (.w128/.w384/.w750) bila ada.
  */
-export function siteImageUrl(src: string, width?: number): string {
+export const IMG_BASE = (process.env.NEXT_PUBLIC_IMG_BASE || "https://snapfit.b-cdn.net").replace(/\/$/, "");
+
+/**
+ * URL tampil untuk foto: foto cdn.snapfit.id → `base` (bawaan IMG_BASE) + path; host lain apa adanya.
+ * `width` (opsional) → varian ukuran (.w128/.w384/.w750) bila ada. Editor foto admin memakai base IMG_PROXY
+ * (satu domain dengan situs → canvas boleh diekspor).
+ */
+export function siteImageUrl(src: string, width?: number, base: string = IMG_BASE): string {
   let u: URL;
   try {
     u = new URL(src);
@@ -65,7 +75,7 @@ export function siteImageUrl(src: string, width?: number): string {
       if (w) path = path.replace(/\.webp$/, `.w${w}.webp`);
     }
   }
-  return `/img${path}`;
+  return `${base}${path}`;
 }
 
 // cdn.snapfit.id: varian terkecil yang lebarnya ≥ diminta (tak pernah diperbesar).
