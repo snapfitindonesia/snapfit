@@ -50,3 +50,6 @@ next-env.d.ts
 # backup DB lokal (berisi data pelanggan)
 snapfit-*.json.gz
 scripts/.tmp/
+
+# hasil cek tampilan (npm run ui:check)
+.ui-check/
