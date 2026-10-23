@@ -8,8 +8,8 @@ export const metadata = {
   title: "Checkout",
 };
 
-// Voucher aktif dimuat di server; cache 5 menit.
-export const revalidate = 300;
+// Voucher aktif dimuat di server; cache 1 jam.
+export const revalidate = 3600; // 1 jam (hemat ISR Writes & CPU Vercel). Perubahan admin/stok/pesanan tetap langsung lewat revalidateTag/Path.
 
 export default async function CheckoutPage() {
   const vouchers = await getActiveVouchers();

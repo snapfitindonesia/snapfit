@@ -1,7 +1,7 @@
 // Penanganan error data halaman toko (ISR).
 // SAAT BUILD (DB bisa tak terjangkau): pakai isi cadangan agar deploy tetap jalan.
 // SAAT REGENERASI ISR / runtime: LEMPAR errornya — Next lalu tetap menyajikan versi halaman TERAKHIR
-// yang benar. Kalau error ditelan, halaman kosong (menu/produk hilang) justru ikut di-cache ±5 menit.
+// yang benar. Kalau error ditelan, halaman kosong (menu/produk hilang) justru ikut di-cache s/d `revalidate` halaman (±1 jam).
 
 export function isBuildPhase(): boolean {
   return process.env.NEXT_PHASE === "phase-production-build";

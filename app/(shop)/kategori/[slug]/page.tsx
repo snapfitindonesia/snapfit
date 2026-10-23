@@ -3,8 +3,8 @@ import { notFound } from "next/navigation";
 import { getCategoryLanding, categoryTitle } from "@/lib/seo-pages";
 import { LandingView } from "@/components/shop/landing-view";
 
-export const revalidate = 300;
-// ISR on-demand: halaman dibuat saat pertama dikunjungi lalu di-cache 5 menit.
+export const revalidate = 3600; // 1 jam (hemat ISR Writes & CPU Vercel). Perubahan admin/stok/pesanan tetap langsung lewat revalidateTag/Path.
+// ISR on-demand: halaman dibuat saat pertama dikunjungi lalu di-cache 1 jam.
 export const dynamicParams = true;
 export function generateStaticParams() {
   return [];

@@ -10,7 +10,7 @@ import { ArticleContent, plainText } from "@/lib/article-content";
 import { formatArticleDate, getArticleBySlug, getPublishedArticles, readingMinutes } from "@/lib/articles";
 
 // ISR seperti PDP: dirender saat pertama dikunjungi lalu di-cache; simpan di admin memperbarui langsung.
-export const revalidate = 300;
+export const revalidate = 3600; // 1 jam (hemat ISR Writes & CPU Vercel). Perubahan admin/stok/pesanan tetap langsung lewat revalidateTag/Path.
 export async function generateStaticParams() {
   return [];
 }

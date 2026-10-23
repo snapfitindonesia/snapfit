@@ -6,9 +6,9 @@ import { HomeSections } from "@/components/home/home-sections";
 import { buildFallback } from "@/lib/build-fallback";
 import { jsonLdHtml } from "@/lib/json-ld";
 
-// ISR: beranda di-cache (cepat), regenerasi tiap 5 menit; simpan di Admin → Konten Beranda
+// ISR: beranda di-cache (cepat), regenerasi tiap 1 jam; simpan di Admin → Konten Beranda
 // memperbarui langsung (revalidatePath("/")).
-export const revalidate = 300;
+export const revalidate = 3600; // 1 jam (hemat ISR Writes & CPU Vercel). Perubahan admin/stok/pesanan tetap langsung lewat revalidateTag/Path.
 
 export const metadata: Metadata = {
   alternates: { canonical: "/" },

@@ -4,7 +4,7 @@ import { ArticleGrid } from "@/components/articles/article-card";
 import { TYPE } from "@/lib/typography";
 import { countPublishedArticles, getPublishedArticles } from "@/lib/articles";
 
-export const revalidate = 300;
+export const revalidate = 3600; // 1 jam (hemat ISR Writes & CPU Vercel). Perubahan admin/stok/pesanan tetap langsung lewat revalidateTag/Path.
 
 const PER_PAGE = 12;
 

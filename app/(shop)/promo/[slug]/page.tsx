@@ -11,7 +11,7 @@ import { CAMPAIGNS, CAMPAIGN_SLUGS, campaignWindow, fmtWibDate, isCampaignSlug }
 
 // Halaman kampanye berulang (Payday, Tanggal Kembar). Produk = diskon berlabel
 // kampanye ini (Admin → Diskon). ISR 5 mnt; simpan diskon → revalidate.
-export const revalidate = 300;
+export const revalidate = 3600; // 1 jam (hemat ISR Writes & CPU Vercel). Perubahan admin/stok/pesanan tetap langsung lewat revalidateTag/Path.
 export const dynamicParams = false;
 export const generateStaticParams = () => CAMPAIGN_SLUGS.map((slug) => ({ slug }));
 

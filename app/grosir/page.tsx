@@ -21,7 +21,7 @@ import { ProductCard } from "@/components/shop/product-card";
 import { STORE_WA } from "@/lib/contact";
 import { EvergreenCountdown } from "@/components/shop/evergreen-countdown";
 
-export const revalidate = 300;
+export const revalidate = 3600; // 1 jam (hemat ISR Writes & CPU Vercel). Perubahan admin/stok/pesanan tetap langsung lewat revalidateTag/Path.
 
 export const metadata: Metadata = {
   title: "Case Original Harga Grosir — Spigen, UAG, Ringke & 16+ Merek | SNAPFIT",

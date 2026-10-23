@@ -21,9 +21,9 @@ import { getCompanions } from "@/lib/cross-sell";
 import { getCoinRules } from "@/lib/coins-settings";
 import { activeCashback } from "@/lib/coins-rules";
 
-// ISR: PDP di-generate on-demand saat request pertama lalu DI-CACHE 5 menit
+// ISR: PDP di-generate on-demand saat request pertama lalu DI-CACHE 1 jam
 // (tak query DB saat build → deploy Vercel aman). Fresh via revalidatePath saat admin edit.
-export const revalidate = 300;
+export const revalidate = 3600; // 1 jam (hemat ISR Writes & CPU Vercel). Perubahan admin/stok/pesanan tetap langsung lewat revalidateTag/Path.
 // Wajib agar ISR aktif untuk slug dinamis: [] = tak ada yang dibuat saat build, tiap slug dirender
 // sekali saat dikunjungi lalu disajikan dari cache (tanpa ini halaman dirender ulang tiap kunjungan).
 export async function generateStaticParams() {

@@ -36,7 +36,7 @@ const activeVouchersCached = unstable_cache(
     }));
   },
   ["active-vouchers"],
-  { revalidate: 300, tags: ["vouchers"] },
+  { revalidate: 3600, tags: ["vouchers"] },
 );
 
 /** Voucher aktif untuk ditampilkan (chip PDP / daftar voucher checkout). */

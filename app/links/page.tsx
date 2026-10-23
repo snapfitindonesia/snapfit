@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ShoppingBag, Store } from "lucide-react";
 import { db } from "@/lib/db";
 
-export const revalidate = 300;
+export const revalidate = 3600; // 1 jam (hemat ISR Writes & CPU Vercel). Perubahan admin/stok/pesanan tetap langsung lewat revalidateTag/Path.
 
 async function getData() {
   try {

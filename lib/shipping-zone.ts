@@ -32,5 +32,5 @@ export const zoneStartingCost = unstable_cache(
     return rows < 38 ? Math.min(min, FLAT_SHIPPING_COST) : min;
   },
   ["zone-starting-cost"],
-  { revalidate: 300, tags: [ZONES_TAG] },
+  { revalidate: 3600, tags: [ZONES_TAG] },
 );

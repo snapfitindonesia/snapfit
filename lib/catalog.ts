@@ -2,7 +2,7 @@
 // Dulu getProducts() menarik seluruh katalog + varian + diskon + ulasan dari DB di SETIAP panggilan
 // (tiap filter/kata kunci/halaman berbeda) → penyumbang egress Supabase terbesar & celah DoS.
 // Sekarang filter/cari/urut/halaman dihitung di memori dari indeks ini (lib/actions/product.ts).
-// Segar: tiap 5 menit, atau langsung via revalidateTag(CATALOG_TAG / STOREFRONT_TAG) saat produk,
+// Segar: tiap 1 jam, atau langsung via revalidateTag(CATALOG_TAG / STOREFRONT_TAG) saat produk,
 // stok (pembayaran, batal, sinkron Ginee) atau diskon berubah.
 import "server-only";
 import { unstable_cache } from "next/cache";
@@ -88,7 +88,7 @@ async function loadCatalog(): Promise<CatalogEntry[]> {
   }));
 }
 
-const cachedCatalog = unstable_cache(loadCatalog, ["catalog-index-v1"], { revalidate: 300, tags: [CATALOG_TAG, STOREFRONT_TAG] });
+const cachedCatalog = unstable_cache(loadCatalog, ["catalog-index-v1"], { revalidate: 3600, tags: [CATALOG_TAG, STOREFRONT_TAG] });
 
 /** Semua produk aktif (tak diarsip), terbaru dulu. Error DB dilempar (bukan disembunyikan). */
 export function getCatalog(): Promise<CatalogEntry[]> {
