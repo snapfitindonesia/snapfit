@@ -309,18 +309,26 @@ export function orderPlacedEmail(order: OrderLike, items: ItemLike[], banks: Ban
   };
 }
 
-/** Ke pembeli, pesanan belum dibayar beberapa jam setelah checkout. */
-export function paymentReminderEmail(order: OrderLike, items: ItemLike[], banks: Bank[]) {
+/**
+ * Ke pembeli, pesanan belum dibayar beberapa jam setelah checkout.
+ * `banks` = transfer manual (instruksi rekening); null = Midtrans (tombol ke halaman status → "Bayar sekarang").
+ */
+export function paymentReminderEmail(order: OrderLike, items: ItemLike[], banks: Bank[] | null) {
+  const manual = banks !== null && banks.length > 0;
   return {
     subject: `Pesananmu menunggu pembayaran ⏳ — ${order.midtransOrderId}`,
     html: shell({
       step: 0,
-      preheader: `Pesananmu masih kami simpan. Transfer ${formatRupiah(order.total)} untuk memprosesnya.`,
+      preheader: `Pesananmu masih kami simpan. ${manual ? "Transfer" : "Bayar"} ${formatRupiah(order.total)} untuk memprosesnya.`,
       greeting: `Pesananmu masih menunggu, ${firstName(order)}`,
-      intro: `Produknya masih kami simpan untukmu. Selesaikan transfer agar pesanan bisa segera dikirim. Abaikan email ini jika kamu sudah membayar.`,
+      intro: manual
+        ? `Produknya masih kami simpan untukmu. Selesaikan transfer agar pesanan bisa segera dikirim. Abaikan email ini jika kamu sudah membayar.`
+        : `Produknya masih kami simpan untukmu. Selesaikan pembayaran (Virtual Account / QRIS / e-wallet) agar pesanan bisa segera dikirim. Abaikan email ini jika kamu sudah membayar.`,
       body:
-        bankBox(banks, order.total) +
-        button("Lihat Pesanan", orderUrl(order)) +
+        (manual
+          ? bankBox(banks, order.total) + button("Lihat Pesanan", orderUrl(order))
+          : highlight("Total pembayaran", formatRupiah(order.total), `No. Pesanan ${order.midtransOrderId ?? ""}`) +
+            button("Bayar Sekarang", orderUrl(order))) +
         details(order, items) +
         note(`Pesanan yang belum dibayar dalam ${PENDING_EXPIRE_DAYS} hari dibatalkan otomatis. Ada kendala atau ingin mengubah pesanan? Cukup balas email ini.`),
     }),

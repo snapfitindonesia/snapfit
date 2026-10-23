@@ -23,12 +23,15 @@ import { handlePaidOrder, pushPaidOrderToGinee } from "@/lib/orders/paid";
 import { markDraftsConverted } from "@/lib/cart-draft";
 import { withItemImages } from "@/lib/email-items";
 import { getCurrentUser } from "@/lib/supabase/server";
-import { getCoinBalance, spendCoins } from "@/lib/coins";
+import { getCoinBalance, reverseOrderCoins, spendCoins } from "@/lib/coins";
 import { activeCashback, maxCoinsUsable } from "@/lib/coins-rules";
 import { getCoinRules } from "@/lib/coins-settings";
 import { limitAction, requestIp } from "@/lib/security/ratelimit";
 import { cartTotals, mergeLines } from "@/lib/cart-lines";
 import { ZodError } from "zod";
+import { PENDING_EXPIRE_DAYS } from "@/lib/validations/admin";
+
+const SITE = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.snapfit.id").replace(/\/$/, "");
 
 /**
  * Hitung ULANG order dari DB (harga varian + diskon + ongkir) — JANGAN percaya
@@ -220,6 +223,45 @@ async function placeOrder(input: CreateOrderInput) {
     return created;
   });
 
+  // Midtrans: token Snap dibuat SEBELUM email dijadwalkan. Gagal (Midtrans down/ditolak) → pesanan langsung
+  // dibatalkan & koin kembali — tak ada pesanan yatim "Menunggu Bayar" atau email "pesanan baru" palsu ke admin.
+  let snap: Awaited<ReturnType<typeof createSnapToken>> | null = null;
+  if (!isManualPayment()) {
+    try {
+      snap = await createSnapToken({
+        orderId: midtransOrderId,
+        grossAmount: grandTotal,
+        customer: {
+          name: data.address.name,
+          phone: data.address.phone,
+          email: data.address.email || undefined,
+        },
+        items: [
+          ...items.map((i) => ({
+            id: i.variantId,
+            name: i.name,
+            price: i.price,
+            quantity: i.qty,
+          })),
+          { id: "shipping", name: `Ongkir ${rate.courierName}`, price: shippingCost, quantity: 1 },
+          ...(discount > 0 ? [{ id: "voucher", name: "Voucher", price: -discount, quantity: 1 }] : []),
+          ...(coinsUsed > 0 ? [{ id: "coins", name: "Koin SNAPFIT", price: -coinsUsed, quantity: 1 }] : []),
+        ],
+        // Kembali ke status pesanan setelah bayar di luar situs (e-wallet, internet banking).
+        finishUrl: `${SITE}/checkout/sukses?order=${encodeURIComponent(midtransOrderId)}`,
+        // Batas bayar Midtrans = batas batal otomatis toko → link bayar berlaku selama pesanan masih menunggu.
+        expiryHours: PENDING_EXPIRE_DAYS * 24,
+      });
+    } catch (e) {
+      console.error("[checkout] Snap Midtrans gagal:", midtransOrderId, e);
+      await db.order.update({ where: { id: order.id }, data: { status: "CANCELLED", paymentStatus: "snap-gagal" } });
+      if (coinsUsed > 0) await reverseOrderCoins(order.id).catch((err) => console.error("Kembalikan koin gagal:", err));
+      throw new Error("Pembayaran online sedang bermasalah. Coba lagi beberapa saat, atau hubungi kami via WhatsApp.");
+    }
+    // Disimpan → pembeli bisa melanjutkan bayar (popup ditutup, dari email/Pesanan Saya) tanpa pesanan baru.
+    if (!snap.mock) await db.order.update({ where: { id: order.id }, data: { snapToken: snap.token, snapUrl: snap.redirectUrl } });
+  }
+
   // Email (admin + instruksi bayar) & tandai draf dijalankan SETELAH respons → pembeli langsung diarahkan
   // ke halaman sukses tanpa menunggu email terkirim.
   after(async () => {
@@ -230,46 +272,13 @@ async function placeOrder(input: CreateOrderInput) {
     );
   });
 
-  // Mode TRANSFER MANUAL (Midtrans belum aktif): tak buat Snap token.
-  // Order PENDING → pembeli transfer → admin konfirmasi (markOrderPaid).
-  if (isManualPayment()) {
-    return {
-      orderId: order.id,
-      midtransOrderId,
-      snapToken: null,
-      mock: false,
-      manual: true,
-      total: grandTotal,
-    };
-  }
-
-  const snap = await createSnapToken({
-    orderId: midtransOrderId,
-    grossAmount: grandTotal,
-    customer: {
-      name: data.address.name,
-      phone: data.address.phone,
-      email: data.address.email || undefined,
-    },
-    items: [
-      ...items.map((i) => ({
-        id: i.variantId,
-        name: i.name,
-        price: i.price,
-        quantity: i.qty,
-      })),
-      { id: "shipping", name: `Ongkir ${rate.courierName}`, price: shippingCost, quantity: 1 },
-      ...(discount > 0 ? [{ id: "voucher", name: "Voucher", price: -discount, quantity: 1 }] : []),
-      ...(coinsUsed > 0 ? [{ id: "coins", name: "Koin SNAPFIT", price: -coinsUsed, quantity: 1 }] : []),
-    ],
-  });
-
   return {
     orderId: order.id,
     midtransOrderId,
-    snapToken: snap.token,
-    mock: snap.mock,
-    manual: false,
+    // Mode TRANSFER MANUAL: tanpa Snap — pembeli transfer → admin konfirmasi (markOrderPaid).
+    snapToken: snap?.token ?? null,
+    mock: snap?.mock ?? false,
+    manual: snap === null,
     total: grandTotal,
   };
 }

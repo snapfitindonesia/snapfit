@@ -156,6 +156,10 @@ model Order {
   // pembayaran
   midtransOrderId String? @unique
   paymentStatus   String?
+  // Snap Midtrans: disimpan agar pembeli bisa MELANJUTKAN bayar (popup ditutup, pindah HP, dari email)
+  // tanpa membuat pesanan baru. Berlaku selama PENDING_EXPIRE_DAYS (expiry dikirim ke Midtrans).
+  snapToken String?
+  snapUrl   String?
 
   // pengiriman
   courier    String?

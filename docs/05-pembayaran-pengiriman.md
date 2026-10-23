@@ -39,13 +39,25 @@ maupun saat pesanan dibuat (otoritatif).
 
 ## Go-live Midtrans (saat akun terverifikasi)
 
-1. Pastikan env produksi terisi: `MIDTRANS_SERVER_KEY`, `NEXT_PUBLIC_MIDTRANS_CLIENT_KEY`,
-   `MIDTRANS_IS_PRODUCTION=true`.
-2. Di dashboard Midtrans, set **Payment Notification URL**:
-   `https://www.snapfit.id/api/midtrans/webhook`.
-3. Set `PAYMENT_MODE=midtrans`, deploy.
+1. Env produksi di Vercel: `MIDTRANS_SERVER_KEY` 🔒 (`Mid-server-…`) & `MIDTRANS_CLIENT_KEY` (`Mid-client-…`;
+   nama lama `NEXT_PUBLIC_MIDTRANS_CLIENT_KEY` tetap didukung). Production vs sandbox dideteksi dari
+   **awalan key** (`SB-` = sandbox) — `MIDTRANS_IS_PRODUCTION` tak lagi menentukan (hanya diperingatkan bila beda).
+2. Di dashboard Midtrans (Production), set **Payment Notification URL**:
+   `https://www.snapfit.id/api/midtrans/webhook`. Finish Redirect URL boleh diisi
+   `https://www.snapfit.id/akun/pesanan` (cadangan — tiap transaksi sudah mengirim URL kembali sendiri).
+3. Set `PAYMENT_MODE=midtrans`, redeploy.
 4. Uji satu transaksi kecil; cek status berubah `PAID` otomatis (webhook memverifikasi
    signature SHA-512 lalu menjalankan alur yang sama dengan konfirmasi manual).
+
+### Alur pembayaran Midtrans
+- Checkout → pesanan `PENDING` + token Snap (batas bayar = `PENDING_EXPIRE_DAYS` hari, sama dengan batal otomatis).
+  Token & link bayar disimpan di pesanan (`snapToken`, `snapUrl`).
+- Popup ditutup / gagal / sukses → pembeli SELALU ke `/checkout/sukses?order=…`; status menunggu bayar punya tombol
+  **Bayar sekarang** (link Snap yang sama → tak ada pesanan ganda; VA yang sudah dibuat tetap berlaku).
+  Juga dari **Pesanan Saya** & email pengingat (cron 19:00, ≥2 jam belum bayar).
+- Midtrans gagal membuat token → pesanan langsung `CANCELLED` (koin kembali), pembeli diberi pesan.
+- Webhook: `settlement`/`capture`+`accept` → `PAID`; `expire`/`cancel`/`deny`/`failure` → `CANCELLED`;
+  `pending` → tetap. Stok hanya berkurang saat `PAID` (idempoten, aman dikirim ulang).
 
 ## Go-live Biteship (ongkir real-time)
 

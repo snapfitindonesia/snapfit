@@ -11,7 +11,8 @@ import { getCoinRules } from "@/lib/coins-settings";
 
 export const EMAIL_SAMPLES = [
   { key: "dipesan", label: "Selesaikan pembayaran", when: "Pesanan dibuat (transfer manual)", to: "Pembeli" },
-  { key: "pengingat-bayar", label: "Pengingat pembayaran", when: "Belum bayar 2 jam–3 hari (cron 19:00)", to: "Pembeli" },
+  { key: "pengingat-bayar", label: "Pengingat pembayaran", when: "Belum bayar 2 jam–3 hari (cron 19:00), transfer manual", to: "Pembeli" },
+  { key: "pengingat-bayar-midtrans", label: "Pengingat pembayaran (Midtrans)", when: "Belum bayar 2 jam–3 hari (cron 19:00), mode Midtrans", to: "Pembeli" },
   { key: "dibayar", label: "Pembayaran berhasil", when: "Status → Dibayar", to: "Pembeli" },
   { key: "dikemas", label: "Sedang dikemas", when: "Status → Diproses", to: "Pembeli" },
   { key: "dikirim", label: "Sudah dikirim", when: "Status → Dikirim + resi", to: "Pembeli" },
@@ -63,6 +64,8 @@ export async function buildEmailSample(key: EmailSampleKey): Promise<{ subject: 
       return E.orderPlacedEmail(order, items, await getBankAccounts());
     case "pengingat-bayar":
       return E.paymentReminderEmail(order, items, await getBankAccounts());
+    case "pengingat-bayar-midtrans":
+      return E.paymentReminderEmail(order, items, null);
     case "dibayar":
       return E.orderConfirmationEmail(order, items);
     case "dikemas":

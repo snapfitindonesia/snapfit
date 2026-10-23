@@ -13,7 +13,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // 1) Pesanan PENDING > PENDING_EXPIRE_DAYS hari → dibatalkan otomatis (semua mode bayar), koin kembali.
-// 2) Pengingat bayar (transfer manual): pesanan PENDING ≥ 2 jam yang belum pernah diingatkan → email sekali. Dipicu Vercel Cron harian
+// 2) Pengingat bayar (transfer manual & Midtrans): pesanan PENDING ≥ 2 jam yang belum pernah diingatkan → email sekali. Dipicu Vercel Cron harian
 // 19:00 WIB (Hobby hanya boleh cron harian). Diamankan CRON_SECRET.
 const MIN_AGE_H = 2;
 const MAX_AGE_D = PENDING_EXPIRE_DAYS;
@@ -38,25 +38,28 @@ export async function GET(req: NextRequest) {
   }
 
   const expired = await expireUnpaidOrders();
-  if (!isManualPayment()) return NextResponse.json({ ok: true, backupWarning, expired, reminder: "bukan mode transfer manual" });
+  const manual = isManualPayment();
 
   const now = Date.now();
   const orders = await db.order.findMany({
     where: {
       status: "PENDING",
       paymentReminderAt: null,
+      // Midtrans: hanya pesanan yang punya link bayar (Snap) — tanpa itu pembeli tak bisa melanjutkan bayar.
+      ...(manual ? {} : { snapUrl: { not: null } }),
       createdAt: { lte: new Date(now - MIN_AGE_H * 3_600_000), gte: new Date(now - MAX_AGE_D * 86_400_000) },
     },
     include: { items: true },
     take: 50,
   });
 
+  const banks = manual ? await getBankAccounts() : null;
   let sent = 0;
   for (const order of orders) {
     const email = (order.address as { email?: string } | null)?.email;
     if (!email) continue;
     try {
-      await sendEmail({ to: email, ...paymentReminderEmail(order, await withItemImages(order.items), await getBankAccounts()) });
+      await sendEmail({ to: email, ...paymentReminderEmail(order, await withItemImages(order.items), banks) });
       await db.order.update({ where: { id: order.id }, data: { paymentReminderAt: new Date() } });
       sent++;
     } catch (e) {

@@ -7,8 +7,23 @@ export function isMidtransMock(): boolean {
   return !process.env.MIDTRANS_SERVER_KEY;
 }
 
-function isProduction(): boolean {
-  return process.env.MIDTRANS_IS_PRODUCTION === "true";
+/**
+ * Production vs sandbox dari AWALAN server key (sandbox = "SB-Mid-server-…"), sama seperti Snap.js
+ * (components/shop/snap-script.tsx) → tak mungkin salah pasang (key production ke URL sandbox → 401).
+ * MIDTRANS_IS_PRODUCTION tak lagi menentukan; bila bertentangan dengan key → peringatan di log.
+ */
+export function isProduction(): boolean {
+  const prod = !(process.env.MIDTRANS_SERVER_KEY ?? "").startsWith("SB-");
+  const flag = process.env.MIDTRANS_IS_PRODUCTION;
+  if (flag && (flag === "true") !== prod) {
+    console.warn(`[midtrans] MIDTRANS_IS_PRODUCTION=${flag} tidak cocok dengan server key (${prod ? "production" : "sandbox"}) — mengikuti key.`);
+  }
+  return prod;
+}
+
+/** "yyyy-MM-dd HH:mm:ss +0700" (WIB) — format start_time expiry Snap. */
+export function wibTimestamp(d: Date): string {
+  return new Date(d.getTime() + 7 * 3_600_000).toISOString().slice(0, 19).replace("T", " ") + " +0700";
 }
 
 function snapBaseUrl(): string {
@@ -24,6 +39,10 @@ export async function createSnapToken(input: {
   grossAmount: number; // integer rupiah = total order
   customer: { name: string; phone: string; email?: string };
   items: { id: string; name: string; price: number; quantity: number }[];
+  /** Halaman tujuan setelah bayar (VA/e-wallet/internet banking yang keluar dari situs). */
+  finishUrl?: string;
+  /** Batas bayar (jam) — halaman Snap & metode bayar kedaluwarsa bersamaan. Maks. 7 hari (aturan Midtrans). */
+  expiryHours?: number;
 }): Promise<SnapResult> {
   if (isMidtransMock()) {
     return { token: `mock-${input.orderId}`, redirectUrl: null, mock: true };
@@ -56,6 +75,13 @@ export async function createSnapToken(input: {
         price: i.price,
         quantity: i.quantity,
       })),
+      // start_time WAJIB diisi: tanpa itu hitung mundur VA baru mulai saat pembeli memilih metode bayar.
+      ...(input.expiryHours
+        ? { expiry: { start_time: wibTimestamp(new Date()), unit: "hours", duration: Math.min(Math.round(input.expiryHours), 168) } }
+        : {}),
+      ...(input.finishUrl
+        ? { callbacks: { finish: input.finishUrl }, gopay: { enable_callback: true, callback_url: input.finishUrl } }
+        : {}),
     }),
   });
 
@@ -80,11 +106,15 @@ export type MidtransNotification = {
 export function verifyWebhookSignature(n: MidtransNotification): boolean {
   const serverKey = process.env.MIDTRANS_SERVER_KEY;
   if (!serverKey) return false;
+  if (typeof n.signature_key !== "string") return false;
   const expected = crypto
     .createHash("sha512")
     .update(n.order_id + n.status_code + n.gross_amount + serverKey)
     .digest("hex");
-  return expected === n.signature_key;
+  // Bandingkan waktu-konstan (tak membocorkan berapa karakter yang cocok).
+  const a = Buffer.from(expected);
+  const b = Buffer.from(n.signature_key);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
 /** Map status Midtrans → status internal Order. */

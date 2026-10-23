@@ -355,20 +355,21 @@ export function CheckoutView({
         return;
       }
       saveContact({ ...EMPTY, ...parsed.data, email: parsed.data.email ?? "" });
-      if (result.manual) {
-        // Transfer manual: order PENDING → arahkan ke halaman instruksi transfer.
-        clear();
-        router.push(`/checkout/sukses?order=${encodeURIComponent(result.midtransOrderId)}`);
-      } else if (typeof window !== "undefined" && window.snap && result.snapToken) {
-        const successUrl = `/checkout/sukses?order=${encodeURIComponent(result.midtransOrderId)}`;
+      // Pesanan SUDAH dibuat → keranjang dikosongkan & apa pun yang terjadi pembeli berakhir di halaman status
+      // pesanan (instruksi transfer / tombol "Bayar sekarang"). Dulu popup Midtrans ditutup = tetap di checkout,
+      // lalu klik Bayar lagi membuat pesanan GANDA.
+      const statusUrl = `/checkout/sukses?order=${encodeURIComponent(result.midtransOrderId)}`;
+      const toStatus = () => { clear(); router.push(statusUrl); };
+      if (!result.manual && !result.mock && result.snapToken && typeof window !== "undefined" && window.snap) {
         window.snap.pay(result.snapToken, {
-          onSuccess: () => { clear(); router.push(successUrl); },
-          onPending: () => { clear(); router.push(successUrl); },
-          onError: () => setPayError("Pembayaran gagal. Coba lagi."),
-          onClose: () => setPayError("Pembayaran dibatalkan."),
+          onSuccess: toStatus,
+          onPending: toStatus,
+          onError: toStatus,
+          onClose: toStatus,
         });
       } else {
-        setPayError("Snap.js belum termuat. Muat ulang halaman lalu coba lagi.");
+        // Transfer manual, mode uji (mock), atau Snap.js belum termuat → halaman status (ada tombol bayar).
+        toStatus();
       }
     } catch (err) {
       setPayError(err instanceof Error ? err.message : "Gagal membuat order.");

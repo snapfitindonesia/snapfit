@@ -83,9 +83,15 @@ export default async function CheckoutSuccessPage({
             <Clock className="size-14 text-amber-500" />
             <h1 className="mt-4 text-2xl font-semibold tracking-tight">Menunggu pembayaran</h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              Selesaikan pembayaran sesuai instruksi (Virtual Account / QRIS / e-wallet). Halaman ini diperbarui otomatis
-              setelah pembayaran kami terima.
+              Selesaikan pembayaran {formatRupiah(order.total)} dalam {PENDING_EXPIRE_DAYS} hari (Virtual Account / QRIS /
+              e-wallet). Halaman ini diperbarui otomatis setelah pembayaran kami terima.
             </p>
+            {/* Link Snap tersimpan (lib/actions/order.ts) → lanjut bayar / buka lagi nomor VA tanpa pesanan baru. */}
+            {order.snapUrl && (
+              <Button className="mt-5 w-full sm:w-auto" size="lg" asChild>
+                <a href={order.snapUrl}>Bayar sekarang</a>
+              </Button>
+            )}
           </>
         ) : cancelled ? (
           <>
