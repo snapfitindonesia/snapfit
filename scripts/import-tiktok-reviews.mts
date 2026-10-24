@@ -43,7 +43,8 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const shopSet = new Set<string>();
 {
   let cursor: unknown;
-  for (let page = 0; page < 20 && !shopSet.size; page++) {
+  // Semua halaman 7 hari terakhir: bisa ada >1 toko TikTok (dulu berhenti di toko pertama → pesanan toko lain terlewat).
+  for (let page = 0; page < 50; page++) {
     const res = await gineeRequest<{ content?: { channel: string; shopId: string }[]; more?: boolean; nextCursor?: unknown }>(
       "POST",
       "/openapi/order/v2/list-order",
@@ -55,6 +56,7 @@ const shopSet = new Set<string>();
   }
 }
 const shopIds = [...shopSet];
+console.log(`Toko TikTok di Ginee: ${shopIds.length}`);
 if (!shopIds.length) throw new Error("Toko TikTok tidak ditemukan di Ginee (7 hari terakhir).");
 
 const ids = new Set<string>();
