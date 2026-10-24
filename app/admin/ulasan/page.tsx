@@ -25,6 +25,7 @@ export default async function AdminUlasanPage() {
     approved: r.approved,
     verified: r.verified,
     photo: r.photo,
+    source: r.source,
   }));
 
   return (

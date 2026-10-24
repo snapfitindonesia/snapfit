@@ -111,6 +111,9 @@ export default async function ProductDetailPage({
   // Bentuk data serializable untuk Client Component (tanpa Date dsb.)
   const pdpProduct: PdpProduct = {
     id: product.id,
+    // Bintang di atas judul = rata-rata ASLI semua ulasan tampil (web + marketplace); 0 ulasan → bintang abu-abu.
+    ratingAvg: reviews.length ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length : 0,
+    ratingCount: reviews.length,
     slug: product.slug,
     shortId: product.shortId,
     name: product.name,
@@ -141,8 +144,11 @@ export default async function ProductDetailPage({
   // ---- Structured data (JSON-LD Product) untuk Google rich results ----
   const finals = product.variants.map((v) => applyDiscount(v.price, v.discountPercent));
   const inStock = product.variants.some((v) => v.stock > 0);
-  const ratingCount = reviews.length;
-  const ratingAvg = ratingCount ? reviews.reduce((s, r) => s + r.rating, 0) / ratingCount : 0;
+  // Google: rating di data terstruktur hanya dari ulasan yang dikumpulkan SITUS INI — ulasan impor marketplace
+  // (source) dilarang dihitung (pedoman review snippet). Tampilan di halaman tetap memuat semuanya.
+  const webReviews = reviews.filter((r) => !r.source);
+  const ratingCount = webReviews.length;
+  const ratingAvg = ratingCount ? webReviews.reduce((s, r) => s + r.rating, 0) / ratingCount : 0;
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",

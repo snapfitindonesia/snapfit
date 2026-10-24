@@ -400,7 +400,7 @@ export async function getProductReviews(productId: string) {
   const reviews = await db.review.findMany({
     where: { productId, approved: true }, // ulasan pembeli tampil setelah dimoderasi
     orderBy: { createdAt: "desc" },
-    select: { id: true, author: true, image: true, rating: true, comment: true, createdAt: true, verified: true, photo: true },
+    select: { id: true, author: true, image: true, rating: true, comment: true, createdAt: true, verified: true, photo: true, source: true },
   });
   return reviews.map((r) => ({
     id: r.id,
@@ -411,6 +411,7 @@ export async function getProductReviews(productId: string) {
     createdAt: r.createdAt.toISOString(),
     verified: r.verified,
     photo: r.photo,
+    source: r.source,
   }));
 }
 

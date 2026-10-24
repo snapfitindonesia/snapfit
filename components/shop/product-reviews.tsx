@@ -11,7 +11,11 @@ export type ReviewItem = {
   createdAt: string; // ISO
   verified?: boolean; // dari pesanan nyata
   photo?: string | null; // foto produk dari pembeli
+  source?: string | null; // asal ulasan marketplace (mis. "tiktok"); null = ulasan web
 };
+
+/** Label sumber ulasan marketplace (ulasan asli pembeli di toko SNAPFIT di platform itu). */
+const SOURCE_LABEL: Record<string, string> = { tiktok: "TikTok Shop", shopee: "Shopee", tokopedia: "Tokopedia" };
 
 function Stars({ value, className = "size-4" }: { value: number; className?: string }) {
   return (
@@ -81,8 +85,13 @@ export function ProductReviews({ reviews = [] }: { reviews?: ReviewItem[] }) {
                       <BadgeCheck className="size-3.5" /> Pembeli terverifikasi
                     </span>
                   )}
+                  {r.source && (
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                      via {SOURCE_LABEL[r.source] ?? r.source}
+                    </span>
+                  )}
                 </div>
-                <p className="mt-1.5 whitespace-pre-line text-sm text-foreground/90">{r.comment}</p>
+                {r.comment && <p className="mt-1.5 whitespace-pre-line text-sm text-foreground/90">{r.comment}</p>}
                 {r.photo && (
                   <a href={r.photo} target="_blank" rel="noopener noreferrer" className="mt-3 inline-block">
                     <Image src={r.photo} alt={`Foto dari ${r.author}`} width={96} height={96} sizes="96px" className="size-24 rounded-lg border border-border object-cover" />

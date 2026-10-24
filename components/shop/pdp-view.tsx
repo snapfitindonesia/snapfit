@@ -46,6 +46,8 @@ export type PdpVariant = {
 
 export type PdpProduct = {
   id: string;
+  ratingAvg: number; // rata-rata bintang ulasan (0 = belum ada)
+  ratingCount: number;
   slug: string;
   shortId: number | null;
   name: string;
@@ -474,13 +476,17 @@ export function PdpView({
       <div className="rounded-2xl bg-background p-6 shadow-sm ring-1 ring-border/60 sm:p-8">
         {/* Rating */}
         <div className="flex items-center gap-2">
-          <div className="flex text-foreground">
+          {/* Rata-rata ASLI (dulu selalu 5 bintang penuh walau belum ada ulasan); belum ada ulasan → abu-abu. */}
+          <div className="flex" role="img" aria-label={product.ratingCount ? `Rating ${product.ratingAvg.toFixed(1)} dari 5` : "Belum ada rating"}>
             {Array.from({ length: 5 }).map((_, i) => (
-              <Star key={i} className="size-4 fill-current" />
+              <Star
+                key={i}
+                className={`size-4 ${product.ratingCount && i < Math.round(product.ratingAvg) ? "fill-current text-foreground" : "text-muted-foreground/40"}`}
+              />
             ))}
           </div>
           <a href="#ulasan" className="text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground">
-            Ulasan
+            {product.ratingCount ? `${product.ratingAvg.toFixed(1).replace(".", ",")} · ${product.ratingCount} ulasan` : "Ulasan"}
           </a>
           {/* Hanya tampil untuk admin yang login */}
           <AdminEditLink productId={product.id} className="ml-auto" />

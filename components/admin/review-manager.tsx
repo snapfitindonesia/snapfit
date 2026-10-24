@@ -19,6 +19,7 @@ export type ReviewRow = {
   createdAt: string; // ISO
   approved: boolean; // false = ulasan pembeli menunggu moderasi
   verified: boolean; // dari pesanan nyata
+  source?: string | null; // impor marketplace (mis. "tiktok")
   photo: string | null; // foto produk dari pembeli
 };
 
@@ -203,6 +204,7 @@ export function ReviewManager({ products, rows }: { products: ProductOption[]; r
                 <Stars value={r.rating} />
                 {!r.approved && <span className="rounded-[5px] bg-amber-200 px-2 py-0.5 text-[11px] font-medium text-amber-900">Menunggu persetujuan</span>}
                 {r.verified && <span className="inline-flex items-center gap-0.5 text-[11px] font-medium text-emerald-700"><BadgeCheck className="size-3.5" /> Pembeli</span>}
+                {r.source && <span className="rounded-full bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">via {r.source === "tiktok" ? "TikTok Shop" : r.source}</span>}
               </div>
               <p className="text-xs text-muted-foreground">{r.productName}</p>
               <p className="mt-1 line-clamp-3 text-sm">{r.comment}</p>

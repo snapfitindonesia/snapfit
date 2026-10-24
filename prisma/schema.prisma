@@ -62,8 +62,13 @@ model Review {
   verified  Boolean  @default(false) // true = dari pesanan nyata → badge "Pembeli terverifikasi"
   orderId   String? // pesanan asal ulasan pembeli
   photo     String? // foto produk dari pembeli (R2), tampil di bawah ulasan
+  // Ulasan ASLI dari marketplace (mis. "tiktok" — scripts/import-tiktok-reviews.mts); null = ulasan web.
+  // Tampil berlabel sumbernya; TIDAK dihitung di data terstruktur Google (larangan rating dari situs lain).
+  source     String?
+  externalId String? // kunci impor (mis. "tiktok:<order>:<sku>") → skrip impor melewati yang sudah ada (tak menggandakan)
 
   @@index([productId])
+  @@index([externalId])
   @@index([orderId]) // 1 ulasan per produk per pesanan — dijaga di app/api/ulasan/route.ts (kunci advisory)
 }
 
