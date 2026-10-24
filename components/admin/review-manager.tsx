@@ -118,7 +118,20 @@ function ProductSearchSelect({
   );
 }
 
-export function ReviewManager({ products, rows }: { products: ProductOption[]; rows: ReviewRow[] }) {
+export function ReviewManager({
+  products,
+  rows,
+  toolbar,
+  footer,
+  emptyText = "Belum ada ulasan.",
+}: {
+  products: ProductOption[];
+  rows: ReviewRow[];
+  /** Filter (di atas daftar) & navigasi halaman (di bawah) — dirender server (app/admin/ulasan/page.tsx). */
+  toolbar?: React.ReactNode;
+  footer?: React.ReactNode;
+  emptyText?: string;
+}) {
   const router = useRouter();
   const [editId, setEditId] = useState<string | null>(null);
   const [f, setF] = useState({ ...BLANK });
@@ -190,6 +203,7 @@ export function ReviewManager({ products, rows }: { products: ProductOption[]; r
       </form>
 
       <div className="space-y-2">
+        {toolbar}
         {rows.map((r) => (
           <div key={r.id} className={`flex gap-3 rounded-lg border p-3 ${r.approved ? "border-border" : "border-amber-300 bg-amber-50/60"}`}>
             <span className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-md border border-border bg-muted">
@@ -207,7 +221,7 @@ export function ReviewManager({ products, rows }: { products: ProductOption[]; r
                 {r.source && <span className="rounded-full bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">via {r.source === "tiktok" ? "TikTok Shop" : r.source}</span>}
               </div>
               <p className="text-xs text-muted-foreground">{r.productName}</p>
-              <p className="mt-1 line-clamp-3 text-sm">{r.comment}</p>
+              {r.comment && <p className="mt-1 line-clamp-3 whitespace-pre-line text-sm">{r.comment}</p>}
               {r.photo && (
                 <a href={r.photo} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -222,12 +236,13 @@ export function ReviewManager({ products, rows }: { products: ProductOption[]; r
               )}
             </div>
             <div className="flex shrink-0 flex-col gap-2">
-              <button onClick={() => edit(r)} className="text-muted-foreground hover:text-foreground"><Pencil className="size-4" /></button>
-              <button onClick={() => del(r.id)} className="text-muted-foreground hover:text-destructive"><Trash2 className="size-4" /></button>
+              <button onClick={() => edit(r)} aria-label="Edit ulasan" className="text-muted-foreground hover:text-foreground"><Pencil className="size-4" /></button>
+              <button onClick={() => del(r.id)} aria-label="Hapus ulasan" className="text-muted-foreground hover:text-destructive"><Trash2 className="size-4" /></button>
             </div>
           </div>
         ))}
-        {rows.length === 0 && <p className="text-sm text-muted-foreground">Belum ada ulasan.</p>}
+        {rows.length === 0 && <p className="text-sm text-muted-foreground">{emptyText}</p>}
+        {footer}
       </div>
     </div>
   );
