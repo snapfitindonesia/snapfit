@@ -1,6 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { STOREFRONT_TAG } from "@/lib/storefront-cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/require-admin";
@@ -15,6 +16,7 @@ function fail(e: unknown): Result {
 
 function revalidateLinks() {
   revalidatePath("/links");
+  revalidateTag(STOREFRONT_TAG); // akun resmi → sameAs data terstruktur (lib/brand.ts), footer & /tentang
   revalidatePath("/admin/linktree");
 }
 

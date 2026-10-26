@@ -31,6 +31,7 @@ const PAGES = [
   { name: "daftar", path: "/daftar" },
   { name: "lupa-password", path: "/lupa-password" },
   { name: "bisnis", path: "/bisnis" },
+  { name: "tentang", path: "/tentang" },
   { name: "lacak", path: "/lacak" },
 ];
 

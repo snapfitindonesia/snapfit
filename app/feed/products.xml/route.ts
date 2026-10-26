@@ -34,7 +34,9 @@ export async function GET() {
   for (const p of products) {
     const gallery = Array.isArray(p.images) ? (p.images as string[]) : [];
     const link = `${SITE}${productPath(p)}`;
-    const brand = p.brand || "SNAPFIT";
+    // Merek kosong → "SNAPFIT" HANYA bila judulnya produk SNAPFIT; produk merek lain (MUMBA, Healing Shield, …)
+    // jangan sampai tercatat sebagai SNAPFIT di Merchant Center/AI → tanpa g:brand (isi mereknya di admin).
+    const brand = p.brand || (/^SNAPFIT\b/i.test(p.name) ? "SNAPFIT" : null);
     const desc = (p.description || p.name).slice(0, 4000);
     for (const v of p.variants) {
       const img = v.image || p.coverImage;
@@ -64,7 +66,7 @@ export async function GET() {
           `<g:condition>new</g:condition>` +
           `<g:price>${v.price} IDR</g:price>` +
           (pct > 0 ? `<g:sale_price>${finalP} IDR</g:sale_price>` : "") +
-          `<g:brand>${esc(brand)}</g:brand>` +
+          (brand ? `<g:brand>${esc(brand)}</g:brand>` : "") +
           (v.sku ? `<g:mpn>${esc(v.sku)}</g:mpn>` : "") +
           `<g:identifier_exists>${v.sku ? "yes" : "no"}</g:identifier_exists>` +
           (p.category?.name ? `<g:product_type>${esc(p.category.name)}</g:product_type>` : "") +

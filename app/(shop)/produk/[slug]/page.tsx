@@ -19,6 +19,7 @@ import { overviewFor } from "@/lib/overview";
 import { applyDiscount } from "@/lib/format";
 import { getCompanions } from "@/lib/cross-sell";
 import { getCoinRules } from "@/lib/coins-settings";
+import { BRAND_ID, BRAND_NAME } from "@/lib/brand";
 import { activeCashback } from "@/lib/coins-rules";
 
 // ISR: PDP di-generate on-demand saat request pertama lalu DI-CACHE 1 jam
@@ -155,7 +156,10 @@ export default async function ProductDetailPage({
     name: product.name,
     image: [product.coverImage, ...(Array.isArray(product.images) ? (product.images as string[]) : [])].filter(Boolean),
     ...(product.description ? { description: product.description } : {}),
-    ...(product.brand ? { brand: { "@type": "Brand", name: product.brand } } : {}),
+    // Merek SNAPFIT → entitas Brand yang sama dengan beranda (@id, lib/brand.ts); merek lain cukup namanya.
+    ...(product.brand
+      ? { brand: product.brand === BRAND_NAME ? { "@type": "Brand", "@id": BRAND_ID, name: BRAND_NAME } : { "@type": "Brand", name: product.brand } }
+      : {}),
     offers: {
       "@type": "AggregateOffer",
       priceCurrency: "IDR",

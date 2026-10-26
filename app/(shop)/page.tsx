@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { STORE_WA_DISPLAY } from "@/lib/contact";
+import { siteIdentityJsonLd } from "@/lib/brand";
 import { getHomeSections, loadHomeData, type HomeData } from "@/lib/home/data";
 import { DEFAULT_SECTIONS, type HomeSection } from "@/lib/home/sections";
 import { HomeSections } from "@/components/home/home-sections";
@@ -13,31 +13,6 @@ export const revalidate = 3600; // 1 jam (hemat ISR Writes & CPU Vercel). Peruba
 export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
-
-const SITE = "https://www.snapfit.id";
-const SITE_JSON_LD = [
-  {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    name: "SNAPFIT Indonesia",
-    alternateName: ["SNAPFIT", "snapfit.id"],
-    url: `${SITE}/`,
-  },
-  {
-    "@context": "https://schema.org",
-    "@type": "OnlineStore",
-    name: "SNAPFIT Indonesia",
-    url: `${SITE}/`,
-    logo: `${SITE}/logo.png`,
-    description: "Toko resmi SNAPFIT: case HP, pelindung layar & aksesori untuk iPhone, Samsung Galaxy, dan AirPods.",
-    contactPoint: {
-      "@type": "ContactPoint",
-      telephone: STORE_WA_DISPLAY,
-      contactType: "customer service",
-      availableLanguage: ["Indonesian"],
-    },
-  },
-];
 
 export default async function HomePage() {
   // DB ngadat SAAT BUILD → isi bawaan. Saat regenerasi ISR → error dilempar sehingga beranda lama yang
@@ -61,7 +36,7 @@ export default async function HomePage() {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdHtml(SITE_JSON_LD)} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdHtml(await siteIdentityJsonLd())} />
       {!heroH1 && <h1 className="sr-only">SNAPFIT Indonesia — Case & Aksesori HP</h1>}
       <HomeSections sections={sections} data={data} />
     </>

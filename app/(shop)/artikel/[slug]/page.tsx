@@ -7,6 +7,7 @@ import { ArticleGrid } from "@/components/articles/article-card";
 import { jsonLdHtml } from "@/lib/json-ld";
 import { TYPE } from "@/lib/typography";
 import { ArticleContent, plainText } from "@/lib/article-content";
+import { ORG_ID } from "@/lib/brand";
 import { formatArticleDate, getArticleBySlug, getPublishedArticles, readingMinutes } from "@/lib/articles";
 
 // ISR seperti PDP: dirender saat pertama dikunjungi lalu di-cache; simpan di admin memperbarui langsung.
@@ -54,7 +55,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
     datePublished: a.publishedAt,
     dateModified: a.updatedAt,
     author: { "@type": "Person", name: a.author },
-    publisher: { "@type": "Organization", name: "SNAPFIT Indonesia", logo: { "@type": "ImageObject", url: `${SITE}/logo.png` } },
+    publisher: { "@type": "Organization", "@id": ORG_ID, name: "SNAPFIT Indonesia", logo: { "@type": "ImageObject", url: `${SITE}/logo.png` } },
     mainEntityOfPage: `${SITE}/artikel/${a.slug}`,
     ...(a.tags.length ? { keywords: a.tags.join(", ") } : {}),
   };

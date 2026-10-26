@@ -30,7 +30,7 @@ const COLUMNS: { title: string; links: FooterLink[] }[] = [
   {
     title: "SNAPFIT",
     links: [
-      { label: "Tentang", href: "#" },
+      { label: "Tentang", href: "/tentang" },
       { label: "Artikel", href: "/artikel" },
       { label: "Kebijakan Privasi", href: "/privacy" },
       { label: "Syarat & Ketentuan", href: "/terms" },
@@ -74,8 +74,8 @@ export async function SiteFooter() {
           <div className="col-span-2 sm:col-span-1">
             <Image src={logo} alt="SNAPFIT" unoptimized className="h-7 w-auto" />
             <p className="mt-3 max-w-xs text-sm text-muted-foreground">
-              Aksesori HP & tablet yang benar-benar pas. Pilih tipe, pesan,
-              beres.
+              {/* Definisi merek (proper noun) — sama dengan /tentang & data terstruktur (lib/brand.ts). */}
+              SNAPFIT adalah merek pelindung layar, pelindung kamera & casing smartphone presisi asal Indonesia.
             </p>
           </div>
           {columns.map((col) => (
