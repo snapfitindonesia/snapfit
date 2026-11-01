@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { productPath } from "@/lib/product-url";
 import { listLandingPages } from "@/lib/seo-pages";
 import { buildFallback } from "@/lib/build-fallback";
+import { getPromoHiddenIds } from "@/lib/promo-page/promo";
 
 const SITE = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.snapfit.id").replace(/\/$/, "");
 
@@ -28,7 +29,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let productPages: MetadataRoute.Sitemap = [];
   try {
     const products = await db.product.findMany({
-      where: { archived: false },
+      where: { archived: false, id: { notIn: [...(await getPromoHiddenIds())] } }, // "hanya di halaman promo" → tak diindeks
       select: { slug: true, shortId: true, createdAt: true },
       orderBy: { createdAt: "desc" },
       take: 5000,

@@ -1,7 +1,14 @@
 // Produk peserta Buy 1 Get 1 yang SEDANG berlaku (server) — dipakai computeOrder, quoteShipping & getCartPrices.
-import { getPromoPageConfig } from "@/lib/promo-page/data";
+import { getPromoPageConfig } from "@/lib/promo-page/settings";
 import { b1g1Discount } from "@/lib/b1g1";
 import { activeDiscountPercent, applyDiscount } from "@/lib/format";
+
+/** Produk "hanya di halaman promo" — disembunyikan dari seluruh website kecuali /buy1get1. */
+export async function getPromoHiddenIds(): Promise<Set<string>> {
+  const c = await getPromoPageConfig();
+  const listed = new Set(c.products.productIds);
+  return new Set(c.products.hiddenIds.filter((id) => listed.has(id)));
+}
 
 export async function getB1G1ProductIds(): Promise<Set<string>> {
   const c = await getPromoPageConfig();

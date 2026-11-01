@@ -2,6 +2,7 @@ import { cache } from "react";
 import { db } from "@/lib/db";
 import { getProducts, type ProductListItem } from "@/lib/actions/product";
 import { slugify, HIDDEN_MEREK } from "@/lib/slug";
+import { getPromoHiddenIds } from "@/lib/promo-page/promo";
 
 /**
  * Halaman landing SEO:
@@ -83,7 +84,7 @@ export async function listLandingPages(): Promise<{ categories: string[]; mereks
   const up = { select: { slug: true, parent: { select: { slug: true, parent: { select: { slug: true } } } } } };
   const [products, mereks] = await Promise.all([
     db.product.findMany({
-      where: { archived: false, variants: { some: { stock: { gt: 0 } } } },
+      where: { archived: false, id: { notIn: [...(await getPromoHiddenIds())] }, variants: { some: { stock: { gt: 0 } } } },
       select: { brand: true, category: up, extraCategories: up },
     }),
     db.merek.findMany({ select: { name: true } }),

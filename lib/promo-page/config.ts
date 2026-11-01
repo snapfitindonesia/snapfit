@@ -52,6 +52,9 @@ export const promoPageSchema = z.object({
     productIds: z.array(z.string().max(40)).max(48).default([]),
     /** Potongan Buy 1 Get 1 otomatis di keranjang & checkout untuk produk di atas (lib/b1g1.ts). */
     promoActive: z.boolean().default(true),
+    /** "Hanya di halaman promo": tak tampil di daftar/kategori/pencarian/beranda/sitemap/feed (lib/promo-page/promo.ts).
+     *  Halaman produknya tetap bisa dibuka dari /buy1get1 (pilih varian & beli), dengan noindex. */
+    hiddenIds: z.array(z.string().max(40)).max(48).default([]),
   }),
   categories: z.object({ eyebrow: text(60), title: text(120), caption: text(160), images: z.record(z.string().max(80), img).default({}) }),
   brands: z.object({ eyebrow: text(60), title: text(120), linkLabel: text(40), linkHref: href, items: z.array(banner).max(6).default([]) }),
@@ -92,7 +95,7 @@ export const DEFAULT_PROMO_PAGE: PromoPageConfig = {
   hero: { image: "", alt: "Promo Buy 1 Get 1 SNAPFIT", href: "#produk-promo" },
   arrivals: { image: "", alt: "Produk terbaru SNAPFIT", href: "/produk" },
   editorial: { image: "", alt: "Pilihan SNAPFIT", href: "/produk" },
-  products: { eyebrow: "BUY 1 GET 1", title: "Beli 1, gratis 1.", caption: "Masukkan 2 produk promo ke keranjang — yang lebih murah gratis.", productIds: [], promoActive: true },
+  products: { eyebrow: "BUY 1 GET 1", title: "Beli 1, gratis 1.", caption: "Masukkan 2 produk promo ke keranjang — yang lebih murah gratis.", productIds: [], promoActive: true, hiddenIds: [] },
   categories: { eyebrow: "PILIH PERANGKATMU", title: "Aksesori pas untuk HP-mu.", caption: "Pilih merek, lalu seri & tipenya.", images: {} },
   brands: {
     eyebrow: "PILIHAN SNAPFIT",

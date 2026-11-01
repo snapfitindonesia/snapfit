@@ -21,6 +21,7 @@ import { getCompanions } from "@/lib/cross-sell";
 import { getCoinRules } from "@/lib/coins-settings";
 import { BRAND_ID, BRAND_NAME } from "@/lib/brand";
 import { activeCashback } from "@/lib/coins-rules";
+import { getPromoHiddenIds } from "@/lib/promo-page/promo";
 
 // ISR: PDP di-generate on-demand saat request pertama lalu DI-CACHE 1 jam
 // (tak query DB saat build → deploy Vercel aman). Fresh via revalidatePath saat admin edit.
@@ -58,10 +59,14 @@ export async function generateMetadata({
     ? `${body}${suffix}`
     : `Beli ${product.name} original di SNAPFIT Indonesia. Garansi resmi, gratis ongkir s/d Rp20rb min. Rp150rb.`;
   const image = product.coverImage;
+  // Produk "hanya di halaman promo" (Admin → Halaman Buy 1 Get 1): tetap bisa dibuka & dibeli dari /buy1get1,
+  // tapi tak diindeks mesin pencari.
+  const promoOnly = (await getPromoHiddenIds()).has(product.id);
   return {
     title: product.name, // + template "| SNAPFIT Indonesia" dari layout
     description,
     alternates: { canonical: productPath(product) },
+    ...(promoOnly ? { robots: { index: false, follow: true } } : {}),
     openGraph: {
       title,
       description,

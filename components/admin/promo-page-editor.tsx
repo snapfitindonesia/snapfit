@@ -154,11 +154,38 @@ export function PromoPageEditor({ initial, products, brands }: { initial: PromoP
                       </span>
                       <IconBtn label="Naik" onClick={() => reorder(-1)} disabled={i === 0}><ArrowUp className="size-3.5" /></IconBtn>
                       <IconBtn label="Turun" onClick={() => reorder(1)} disabled={i === ids.length - 1}><ArrowDown className="size-3.5" /></IconBtn>
-                      <IconBtn label="Hapus dari promo" onClick={() => set("products", { ...c.products, productIds: ids.filter((x) => x !== id) })}><Trash2 className="size-3.5" /></IconBtn>
+                      <label className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground" title="Tidak tampil di daftar produk, kategori, pencarian, beranda, sitemap & feed — hanya di /buy1get1">
+                        <input
+                          type="checkbox"
+                          checked={c.products.hiddenIds.includes(id)}
+                          onChange={(e) =>
+                            set("products", {
+                              ...c.products,
+                              hiddenIds: e.target.checked ? [...c.products.hiddenIds, id] : c.products.hiddenIds.filter((x) => x !== id),
+                            })
+                          }
+                        />
+                        Hanya di halaman ini
+                      </label>
+                      <IconBtn label="Hapus dari promo" onClick={() => set("products", { ...c.products, productIds: ids.filter((x) => x !== id), hiddenIds: c.products.hiddenIds.filter((x) => x !== id) })}><Trash2 className="size-3.5" /></IconBtn>
                     </li>
                   );
                 })}
               </ol>
+              {c.products.productIds.length > 0 && (
+                <div className="mt-2 flex flex-wrap items-center gap-3 text-xs">
+                  <button type="button" className="underline underline-offset-2" onClick={() => set("products", { ...c.products, hiddenIds: [...c.products.productIds] })}>
+                    Semua hanya di halaman ini
+                  </button>
+                  <button type="button" className="underline underline-offset-2" onClick={() => set("products", { ...c.products, hiddenIds: [] })}>
+                    Tampilkan semua di website juga
+                  </button>
+                  <span className="text-muted-foreground">
+                    &ldquo;Hanya di halaman ini&rdquo; = tak tampil di daftar produk, kategori, pencarian, beranda, menu, sitemap & feed Google/Meta.
+                    Halaman produknya tetap bisa dibuka & dibeli dari /buy1get1 (tak diindeks Google).
+                  </span>
+                </div>
+              )}
               {!c.products.productIds.length && <p className="mt-2 text-xs text-muted-foreground">Belum ada produk — bagian ini menampilkan &ldquo;Produk promo segera hadir&rdquo;.</p>}
             </div>
           </div>

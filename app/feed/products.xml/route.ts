@@ -3,6 +3,7 @@ import { productPath } from "@/lib/product-url";
 import { applyDiscount, activeDiscountPercent } from "@/lib/format";
 import { isPlaceholderPrice } from "@/lib/price-guard";
 import { buildFallback } from "@/lib/build-fallback";
+import { getPromoHiddenIds } from "@/lib/promo-page/promo";
 
 // Feed produk (Google RSS 2.0 + namespace g:) — dipakai Meta Catalog (Data feed)
 // & Google Merchant Center sekaligus. Per-VARIAN, dikelompokkan item_group_id.
@@ -93,9 +94,11 @@ export async function GET() {
   });
 }
 
-function fetchProducts() {
+async function fetchProducts() {
+  // Produk "hanya di halaman promo" tak diiklankan di Google/Meta Shopping.
+  const hidden = [...(await getPromoHiddenIds())];
   return db.product.findMany({
-    where: { archived: false },
+    where: { archived: false, id: { notIn: hidden } },
     orderBy: { createdAt: "desc" },
     select: {
       id: true, slug: true, shortId: true, name: true, description: true, brand: true, coverImage: true, images: true,

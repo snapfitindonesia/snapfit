@@ -5,6 +5,7 @@ import { productSegment } from "@/lib/product-url";
 import { activeDiscountPercent, applyDiscount } from "@/lib/format";
 import { isPlaceholderPrice } from "@/lib/price-guard";
 import { COMPANION_KINDS, productKind, typeKey, type ProductKind } from "@/lib/product-kind";
+import { getPromoHiddenIds } from "@/lib/promo-page/promo";
 
 /** Ringkasan per tipe HP: varian pertama (untuk tambah/tautan), harga termurah, jumlah varian. */
 export type CompanionOption = { key: string; id: string; name: string; price: number; image: string; count: number };
@@ -35,10 +36,11 @@ export async function getCompanions(product: {
   const keys = new Set(product.variants.map((v) => typeKey(v.type)).filter((k): k is string => !!k));
   if (!targets.length || !keys.size) return [];
 
+  const hidden = [...(await getPromoHiddenIds())]; // "hanya di halaman promo" tak ditawarkan di PDP lain
   const candidates = await db.product.findMany({
     where: {
       archived: false,
-      id: { not: product.id },
+      id: { not: product.id, notIn: hidden },
       OR: targets.flatMap((k) => NAME_HINTS[k]).map((h) => ({ name: { contains: h, mode: "insensitive" as const } })),
     },
     select: {

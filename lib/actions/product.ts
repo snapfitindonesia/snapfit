@@ -6,6 +6,7 @@ import { isPlaceholderPrice, sellableStock } from "@/lib/price-guard";
 import type { ProductQuery } from "@/lib/validations/product";
 import { storefrontCached } from "@/lib/storefront-cache";
 import { getCatalog } from "@/lib/catalog";
+import { getPromoHiddenIds } from "@/lib/promo-page/promo";
 import { parseProductSegment, productSegment } from "@/lib/product-url";
 
 // Catatan: harga produk = harga varian termurah. Dataset dev kecil, jadi sort by harga
@@ -125,7 +126,7 @@ export const getMegaMenu = storefrontCached("mega-menu", [] as MegaMenuBrand[], 
               select: { name: true, slug: true },
             },
             // Cukup 1 foto sampul (fallback gambar seri) — dulu menarik SEMUA produk + varian tiap render.
-            products: { where: { archived: false, coverImage: { not: "" } }, select: { coverImage: true }, take: 1 },
+            products: { where: { archived: false, coverImage: { not: "" }, id: { notIn: [...(await getPromoHiddenIds())] } }, select: { coverImage: true }, take: 1 },
           },
         },
       },
@@ -159,8 +160,9 @@ export const getMerekMenu = storefrontCached("merek-menu", [] as MerekMenuItem[]
     const merek = await db.merek.findMany({ orderBy: [{ order: "asc" }, { name: "asc" }], select: { name: true } });
     if (!merek.length) return [];
     const names = merek.map((m) => m.name);
+    const hidden = [...(await getPromoHiddenIds())];
     const products = await db.product.findMany({
-      where: { archived: false, brand: { in: names }, variants: { some: { stock: { gt: 0 } } } },
+      where: { archived: false, id: { notIn: hidden }, brand: { in: names }, variants: { some: { stock: { gt: 0 } } } },
       orderBy: { createdAt: "desc" },
       select: { id: true, slug: true, shortId: true, name: true, coverImage: true, brand: true },
       take: 600,
@@ -184,7 +186,7 @@ function searchTerms(q: string | undefined): string[] {
   return [...new Set((q ?? "").toLowerCase().split(/\s+/).map((t) => t.trim()).filter(Boolean))].slice(0, 6);
 }
 
-export async function getProducts(query: ProductQuery, opts: { ids?: string[] } = {}): Promise<ProductListResult> {
+export async function getProducts(query: ProductQuery, opts: { ids?: string[]; includeHidden?: boolean } = {}): Promise<ProductListResult> {
   const { tipe, model, perangkat, brands, minPrice: priceMin, maxPrice: priceMax, grosir, featured, q, sort, skip, take } = query;
 
   // Dari indeks katalog ter-cache (lib/catalog.ts) — BUKAN query DB per panggilan. Semantik filter sama
@@ -201,8 +203,11 @@ export async function getProducts(query: ProductQuery, opts: { ids?: string[] } 
   // Tiap kata harus ada di nama, merek, atau nama/tipe salah satu varian (huruf besar/kecil bebas).
   const terms = searchTerms(q);
   const idSet = opts.ids ? new Set(opts.ids) : null;
+  // Produk "hanya di halaman promo" (Admin → Halaman Buy 1 Get 1) tak tampil di daftar mana pun selain /buy1get1.
+  const hidden = opts.includeHidden ? new Set<string>() : await getPromoHiddenIds();
 
   const products = catalog
+    .filter((p) => !hidden.has(p.id))
     .filter((p) => !idSet || idSet.has(p.id))
     .filter((p) => !deviceSlugs.length || deviceSlugs.some((d) => p.deviceSlugs.includes(d)))
     .filter((p) => !brands?.length || (p.brand ? brandNames.includes(p.brand) : wantNoBrand))

@@ -61,3 +61,39 @@ describe("pengaturan halaman Buy 1 Get 1", () => {
     expect(decodeURIComponent(src)).toContain("Banner utama · 1280 × 720");
   });
 });
+
+describe("produk \"hanya di halaman promo\"", () => {
+  it("hilang dari daftar/pencarian/sitemap/feed, tetap tampil di /buy1get1 & tetap bisa dibeli", async () => {
+    const { getProducts } = await import("@/lib/actions/product");
+    const { default: sitemap } = await import("@/app/sitemap");
+    const { GET: feed } = await import("@/app/feed/products.xml/route");
+    const { createOrder } = await import("@/lib/actions/order");
+    const { ADDRESS } = await import("../support/fixtures");
+    const lain = await db.product.create({
+      data: { slug: "case-lain", shortId: 1002, name: "Case Lain", coverImage: "https://cdn.snapfit.id/lain.webp", variants: { create: [{ id: "v-lain", name: "Hitam", price: 70_000, stock: 5, image: "x", weight: 200 }] } },
+    });
+    const uji = await db.product.findUniqueOrThrow({ where: { slug: "case-uji" } });
+    const all = async () => (await getProducts({ sort: "terbaru", skip: 0, take: 48 })).items.map((p) => p.id);
+    expect(await all()).toEqual(expect.arrayContaining([uji.id, lain.id]));
+
+    // Case Uji jadi "hanya di halaman promo"; Case Lain ikut promo tapi tetap tampil di website.
+    const r = await savePromoPage({ ...DEFAULT_PROMO_PAGE, products: { ...DEFAULT_PROMO_PAGE.products, productIds: [uji.id, lain.id], hiddenIds: [uji.id, "bukan-peserta"] } });
+    expect(r.ok).toBe(true);
+    expect((await getPromoPageConfig()).products.hiddenIds).toEqual([uji.id]); // id di luar daftar promo dibuang
+
+    expect(await all()).toEqual([lain.id]);
+    expect((await getProducts({ sort: "terbaru", skip: 0, take: 48, q: "uji" })).items).toHaveLength(0);
+    expect((await getPromoProducts([uji.id, lain.id])).map((p) => p.id)).toEqual([uji.id, lain.id]);
+
+    const urls = (await sitemap()).map((u) => u.url);
+    expect(urls.some((u) => u.includes("case-uji"))).toBe(false);
+    expect(urls.some((u) => u.includes("case-lain"))).toBe(true);
+    const xml = await (await feed()).text();
+    expect(xml).not.toContain("Case Uji");
+    expect(xml).toContain("Case Lain");
+
+    // Tetap bisa dibeli (dari halaman promo → halaman produk → keranjang).
+    const o = await createOrder({ address: ADDRESS, items: [{ variantId: "v-hitam", qty: 1 }] } as Parameters<typeof createOrder>[0]);
+    expect("error" in o).toBe(false);
+  });
+});
