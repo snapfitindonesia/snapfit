@@ -53,6 +53,7 @@ const GROUPS: NavGroup[] = [
     icon: Palette,
     items: [
       { href: "/admin/beranda", label: "Konten Beranda" },
+      { href: "/admin/buy1get1", label: "Halaman Buy 1 Get 1" },
       { href: "/admin/artikel", label: "Artikel" },
       { href: "/admin/warna", label: "Warna Situs" },
       { href: "/admin/banner", label: "Banner" },

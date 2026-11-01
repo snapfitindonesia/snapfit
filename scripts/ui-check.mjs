@@ -32,6 +32,7 @@ const PAGES = [
   { name: "lupa-password", path: "/lupa-password" },
   { name: "bisnis", path: "/bisnis" },
   { name: "tentang", path: "/tentang" },
+  { name: "buy1get1", path: "/buy1get1" },
   { name: "lacak", path: "/lacak" },
 ];
 

@@ -53,9 +53,9 @@ async function deleteStoredImage(url: string): Promise<void> {
   }
 }
 
-/** True bila URL masih dipakai di produk/varian/banner/kategori/ulasan/linktree mana pun. */
+/** True bila URL masih dipakai di produk/varian/banner/kategori/ulasan/linktree/pengaturan halaman mana pun. */
 async function isImageReferenced(url: string): Promise<boolean> {
-  const [cover, gallery, variant, banner, category, review, bioLink, bioProfile] = await Promise.all([
+  const [cover, gallery, variant, banner, category, review, bioLink, bioProfile, setting] = await Promise.all([
     db.product.findFirst({ where: { coverImage: url }, select: { id: true } }),
     db.product.findFirst({ where: { images: { array_contains: url } }, select: { id: true } }),
     db.variant.findFirst({ where: { image: url }, select: { id: true } }),
@@ -64,8 +64,10 @@ async function isImageReferenced(url: string): Promise<boolean> {
     db.review.findFirst({ where: { OR: [{ image: url }, { photo: url }] }, select: { id: true } }),
     db.bioLink.findFirst({ where: { image: url }, select: { id: true } }),
     db.bioProfile.findFirst({ where: { OR: [{ avatar: url }, { bgImage: url }] }, select: { id: true } }),
+    // Konten Beranda, halaman promo (/buy1get1), dll. disimpan sebagai JSON di SiteSetting.
+    db.$queryRaw<{ ok: number }[]>`SELECT 1 AS ok FROM "SiteSetting" WHERE value::text LIKE '%' || ${url} || '%' LIMIT 1`,
   ]);
-  return !!(cover || gallery || variant || banner || category || review || bioLink || bioProfile);
+  return !!(cover || gallery || variant || banner || category || review || bioLink || bioProfile || setting.length);
 }
 
 /**
