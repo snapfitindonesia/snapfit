@@ -8,15 +8,14 @@ export const PROMO_PAGE_TAG = "promo-page-buy1get1";
 export const PROMO_PAGE_PATH = "/buy1get1";
 
 /** Bagian halaman yang bisa diurutkan & disembunyikan (seperti Konten Beranda). */
-export const SECTION_KEYS = ["hero", "arrivals", "products", "categories", "editorial", "brands", "signup", "benefits", "seo"] as const;
+// Bagian "categories" (kartu merek), "editorial" & "brands" (kotak pilihan) dihapus Nov 2026 — data lama yang
+// masih memuatnya tetap terbaca (diabaikan di parsePromoPage).
+export const SECTION_KEYS = ["hero", "arrivals", "products", "signup", "benefits", "seo"] as const;
 export type SectionKey = (typeof SECTION_KEYS)[number];
 export const SECTION_LABELS: Record<SectionKey, { label: string; hint: string }> = {
   hero: { label: "Banner utama", hint: "Foto besar paling atas — 1280 × 720 px" },
   arrivals: { label: "Banner strip", hint: "Banner tipis selebar layar — 1920 × 300 px" },
   products: { label: "Produk promo", hint: "Produk peserta Buy 1 Get 1 (dipilih di bagian Produk promo)" },
-  categories: { label: "Kartu kategori", hint: "6 kartu merek perangkat — foto 410 × 490 px per merek" },
-  editorial: { label: "Banner editorial", hint: "Banner lebar — 1280 × 480 px" },
-  brands: { label: "Kotak pilihan", hint: "6 kotak gambar — 380 × 380 px" },
   signup: { label: "Ajakan langganan", hint: "Kotak ajakan daftar newsletter" },
   benefits: { label: "Keunggulan", hint: "3 poin keunggulan belanja" },
   seo: { label: "Teks SEO", hint: "Paragraf deskripsi di bawah halaman" },
@@ -44,7 +43,6 @@ export const promoPageSchema = z.object({
   sections: z.array(z.object({ key: z.enum(SECTION_KEYS), active: z.boolean() })).max(SECTION_KEYS.length),
   hero: banner,
   arrivals: banner,
-  editorial: banner,
   products: z.object({
     eyebrow: text(60),
     title: text(120),
@@ -56,8 +54,8 @@ export const promoPageSchema = z.object({
      *  Halaman produknya tetap bisa dibuka dari /buy1get1 (pilih varian & beli), dengan noindex. */
     hiddenIds: z.array(z.string().max(40)).max(48).default([]),
   }),
-  categories: z.object({ eyebrow: text(60), title: text(120), caption: text(160), images: z.record(z.string().max(80), img).default({}) }),
-  brands: z.object({ eyebrow: text(60), title: text(120), linkLabel: text(40), linkHref: href, items: z.array(banner).max(6).default([]) }),
+  /** Foto per merek perangkat di mega menu (410 × 490 px); kosong = sampul seri pertama, lalu placeholder. */
+  categories: z.object({ images: z.record(z.string().max(80), img).default({}) }).default({ images: {} }),
   signup: z.object({ eyebrow: text(60), title: text(120), text: text(240), ctaLabel: text(40) }),
   benefits: z.array(z.object({ title: text(60), caption: text(100) })).max(3).default([]),
   seo: z.object({ title: text(120), text: text(1200), more: text(1200) }),
@@ -80,9 +78,7 @@ export function placeholder(w: number, h: number, label = ""): string {
 export const SLOT_SIZE = {
   hero: [1280, 720],
   arrivals: [1920, 300],
-  editorial: [1280, 480],
   category: [410, 490],
-  brand: [380, 380],
 } as const;
 
 export const DEFAULT_PROMO_PAGE: PromoPageConfig = {
@@ -94,23 +90,8 @@ export const DEFAULT_PROMO_PAGE: PromoPageConfig = {
   sections: SECTION_KEYS.map((key) => ({ key, active: true })),
   hero: { image: "", alt: "Promo Buy 1 Get 1 SNAPFIT", href: "#produk-promo" },
   arrivals: { image: "", alt: "Produk terbaru SNAPFIT", href: "/produk" },
-  editorial: { image: "", alt: "Pilihan SNAPFIT", href: "/produk" },
   products: { eyebrow: "BUY 1 GET 1", title: "Beli 1, gratis 1.", caption: "Masukkan 2 produk promo ke keranjang — yang lebih murah gratis.", productIds: [], promoActive: true, hiddenIds: [] },
-  categories: { eyebrow: "PILIH PERANGKATMU", title: "Aksesori pas untuk HP-mu.", caption: "Pilih merek, lalu seri & tipenya.", images: {} },
-  brands: {
-    eyebrow: "PILIHAN SNAPFIT",
-    title: "Lindungi dengan presisi.",
-    linkLabel: "Lihat semua produk",
-    linkHref: "/produk",
-    items: [
-      { image: "", alt: "Case", href: "/produk?q=case" },
-      { image: "", alt: "Tempered glass", href: "/produk?q=tempered%20glass" },
-      { image: "", alt: "Pelindung kamera", href: "/produk?q=lens" },
-      { image: "", alt: "Back glass", href: "/produk?q=back%20glass" },
-      { image: "", alt: "Hydrogel", href: "/produk?q=hydrogel" },
-      { image: "", alt: "Aksesori", href: "/produk" },
-    ],
-  },
+  categories: { images: {} },
   signup: { eyebrow: "A LITTLE SOMETHING FOR YOU", title: "Promo baru, langsung ke emailmu.", text: "Dapatkan info promo & produk terbaru SNAPFIT.", ctaLabel: "Daftar newsletter" },
   benefits: [
     { title: "100% original", caption: "Produk resmi SNAPFIT & bergaransi" },
@@ -127,16 +108,21 @@ export const DEFAULT_PROMO_PAGE: PromoPageConfig = {
 
 /** Gabungkan data tersimpan dengan bawaan (data lama/rusak → bawaan per bagian). */
 export function parsePromoPage(raw: unknown): PromoPageConfig {
-  const r = promoPageSchema.safeParse(raw);
+  // Bagian yang sudah dihapus dari kode (mis. "brands") dibuang dulu — kalau tidak, seluruh pengaturan ditolak skema.
+  const known = new Set<string>(SECTION_KEYS);
+  const input =
+    raw && typeof raw === "object" && Array.isArray((raw as { sections?: unknown }).sections)
+      ? { ...raw, sections: ((raw as { sections: { key?: unknown }[] }).sections).filter((s) => known.has(String(s?.key))) }
+      : raw;
+  const r = promoPageSchema.safeParse(input);
   if (!r.success) return DEFAULT_PROMO_PAGE;
   const c = r.data;
-  // Bagian baru (versi kode lebih baru) ditambahkan di akhir; yang tak dikenal sudah ditolak skema.
+  // Bagian baru (versi kode lebih baru) ditambahkan di akhir, tersembunyi.
   const seen = new Set(c.sections.map((s) => s.key));
   const sections = [...c.sections, ...SECTION_KEYS.filter((k) => !seen.has(k)).map((key) => ({ key, active: false }))];
   return {
     ...c,
     sections,
     benefits: c.benefits.length ? c.benefits : DEFAULT_PROMO_PAGE.benefits,
-    brands: { ...c.brands, items: c.brands.items.length ? c.brands.items : DEFAULT_PROMO_PAGE.brands.items },
   };
 }

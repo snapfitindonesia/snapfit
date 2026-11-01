@@ -91,8 +91,6 @@ export function PromoPageEditor({ initial, products, brands }: { initial: PromoP
         return <Banner value={c.hero} onChange={(v) => set("hero", v)} size="1280 × 720 px" />;
       case "arrivals":
         return <Banner value={c.arrivals} onChange={(v) => set("arrivals", v)} size="1920 × 300 px" />;
-      case "editorial":
-        return <Banner value={c.editorial} onChange={(v) => set("editorial", v)} size="1280 × 480 px" />;
       case "products":
         return (
           <div className="space-y-3">
@@ -190,57 +188,6 @@ export function PromoPageEditor({ initial, products, brands }: { initial: PromoP
             </div>
           </div>
         );
-      case "categories":
-        return (
-          <div className="space-y-3">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Text label="Label kecil" value={c.categories.eyebrow} onChange={(eyebrow) => set("categories", { ...c.categories, eyebrow })} />
-              <Text label="Judul" value={c.categories.title} onChange={(title) => set("categories", { ...c.categories, title })} />
-            </div>
-            <Text label="Keterangan" value={c.categories.caption} onChange={(caption) => set("categories", { ...c.categories, caption })} />
-            <p className="text-xs text-muted-foreground">
-              Kartu = 6 merek perangkat pertama (urutan Admin → Kategori). Foto 410 × 490 px; kosong = foto seri pertama, lalu placeholder.
-            </p>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {brands.map((b, i) => (
-                <div key={b.slug} className={cn("rounded-md border border-border p-3", i >= 6 && "opacity-60")}>
-                  <p className="mb-1 text-sm font-medium">{b.name}{i >= 6 && <span className="ml-1 text-xs font-normal text-muted-foreground">(tak tampil di kartu — hanya menu)</span>}</p>
-                  <ImageInput
-                    value={c.categories.images[b.slug] ?? ""}
-                    onChange={(url) => {
-                      const images = { ...c.categories.images };
-                      if (url) images[b.slug] = url;
-                      else delete images[b.slug];
-                      set("categories", { ...c.categories, images });
-                    }}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      case "brands":
-        return (
-          <div className="space-y-3">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Text label="Label kecil" value={c.brands.eyebrow} onChange={(eyebrow) => set("brands", { ...c.brands, eyebrow })} />
-              <Text label="Judul" value={c.brands.title} onChange={(title) => set("brands", { ...c.brands, title })} />
-              <Text label="Teks tautan kanan" value={c.brands.linkLabel} onChange={(linkLabel) => set("brands", { ...c.brands, linkLabel })} hint="Kosong = tautan disembunyikan." />
-              <Text label="Tujuan tautan kanan" value={c.brands.linkHref} onChange={(linkHref) => set("brands", { ...c.brands, linkHref })} />
-            </div>
-            <p className="text-xs text-muted-foreground">6 kotak gambar 380 × 380 px.</p>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {c.brands.items.map((item, i) => (
-                <div key={i} className="space-y-2 rounded-md border border-border p-3">
-                  <p className="text-sm font-medium">Kotak {i + 1}</p>
-                  <ImageInput value={item.image} onChange={(image) => set("brands", { ...c.brands, items: c.brands.items.map((x, j) => (j === i ? { ...x, image } : x)) })} square />
-                  <Text label="Nama" value={item.alt} onChange={(alt) => set("brands", { ...c.brands, items: c.brands.items.map((x, j) => (j === i ? { ...x, alt } : x)) })} />
-                  <Text label="Tautan" value={item.href} onChange={(href) => set("brands", { ...c.brands, items: c.brands.items.map((x, j) => (j === i ? { ...x, href } : x)) })} />
-                </div>
-              ))}
-            </div>
-          </div>
-        );
       case "signup":
         return (
           <div className="grid gap-3 sm:grid-cols-2">
@@ -317,6 +264,26 @@ export function PromoPageEditor({ initial, products, brands }: { initial: PromoP
               <Text label="Tautan kiri" value={c.utility.href} onChange={(href) => set("utility", { ...c.utility, href })} />
               <Text label="Teks kanan" value={c.utility.rightText} onChange={(rightText) => set("utility", { ...c.utility, rightText })} />
               <Text label="Tautan kanan" value={c.utility.rightHref} onChange={(rightHref) => set("utility", { ...c.utility, rightHref })} />
+            </fieldset>
+            <fieldset className="space-y-2 rounded-md border border-border p-3">
+              <legend className="px-1 text-sm font-medium">Foto merek di menu kategori</legend>
+              <p className="text-xs text-muted-foreground">Tampil di kanan menu kategori (desktop) — 410 × 490 px. Kosong = foto seri pertama, lalu placeholder.</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {brands.map((b) => (
+                  <div key={b.slug} className="rounded-md border border-border p-3">
+                    <p className="mb-1 text-sm font-medium">{b.name}</p>
+                    <ImageInput
+                      value={c.categories.images[b.slug] ?? ""}
+                      onChange={(url) => {
+                        const images = { ...c.categories.images };
+                        if (url) images[b.slug] = url;
+                        else delete images[b.slug];
+                        set("categories", { images });
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
             </fieldset>
             <fieldset className="grid gap-3 rounded-md border border-border p-3 sm:grid-cols-3">
               <legend className="px-1 text-sm font-medium">Footer</legend>

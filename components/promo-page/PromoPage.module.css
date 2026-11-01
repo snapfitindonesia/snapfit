@@ -58,3 +58,8 @@
 .products-section{scroll-margin-top:16px}
 .products-empty{color:#737373;padding:24px 0}
 @media (max-width:800px){.wordmark img{height:24px}}
+/* Lebar konten = lebar header (paket: konten maks. 996px, header 1280px) */
+.root .campaign-width{max-width:1280px;width:calc(100% - 112px)}
+@media(min-width:1600px){.root .campaign-width{width:calc(100% - 160px)}}
+@media(max-width:1150px){.root .campaign-width{width:calc(100% - 56px)}}
+@media(max-width:800px){.root .campaign-width{width:calc(100% - 32px)}}

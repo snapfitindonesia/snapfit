@@ -46,6 +46,11 @@ describe("pengaturan halaman Buy 1 Get 1", () => {
     const c = parsePromoPage(old);
     expect(c.sections.at(-1)).toEqual({ key: "seo", active: false });
     expect(parsePromoPage({ rusak: true })).toEqual(DEFAULT_PROMO_PAGE);
+    // Data tersimpan sebelum bagian kartu kategori/editorial/kotak pilihan dihapus → tetap terbaca (judul tak hilang).
+    const lama = { ...DEFAULT_PROMO_PAGE, title: "Judul saya", sections: [{ key: "brands", active: true }, ...DEFAULT_PROMO_PAGE.sections, { key: "editorial", active: false }], brands: { items: [] } };
+    const p = parsePromoPage(lama);
+    expect(p.title).toBe("Judul saya");
+    expect(p.sections.map((x) => x.key)).toEqual(DEFAULT_PROMO_PAGE.sections.map((x) => x.key));
   });
 
   it("produk promo tampil sesuai urutan dashboard", async () => {
