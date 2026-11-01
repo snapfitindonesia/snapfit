@@ -47,7 +47,9 @@ export const IMG_PROXY = "/img";
  * SAKLAR darurat: env NEXT_PUBLIC_IMG_BASE=/img → kembali lewat Vercel (perlu redeploy; nilainya ditanam saat build).
  * Email, feed Google/Meta, JSON-LD & OG tetap memakai URL cdn.snapfit.id (diambil server mereka, bukan HP).
  */
-export const IMG_BASE = (process.env.NEXT_PUBLIC_IMG_BASE || "https://snapfit.b-cdn.net").replace(/\/$/, "");
+// 1 Nov 2026: trial Bunny habis → snapfit.b-cdn.net membalas 403 (semua foto hilang). Sementara langsung ke
+// cdn.snapfit.id (Cloudflare, gratis, tanpa kuota Vercel). Kembali ke Bunny: "https://snapfit.b-cdn.net".
+export const IMG_BASE = (process.env.NEXT_PUBLIC_IMG_BASE || "https://cdn.snapfit.id").replace(/\/$/, "");
 
 /**
  * URL tampil untuk foto: foto cdn.snapfit.id → `base` (bawaan IMG_BASE) + path; host lain apa adanya.
