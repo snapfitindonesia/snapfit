@@ -6,7 +6,7 @@ import { FacebookPixel } from "@/components/tracking/facebook-pixel";
 import { GoogleAnalytics } from "@/components/tracking/google-analytics";
 import { Suspense } from "react";
 import { preconnect } from "react-dom";
-import { IMG_BASE } from "@/lib/image-loader";
+import { IMG_BASE, imageFailoverScript } from "@/lib/image-loader";
 import { getThemeColors } from "@/lib/theme-settings";
 import { themeCss } from "@/lib/theme-colors";
 
@@ -53,6 +53,7 @@ export default async function RootLayout({
   // Foto CDN dari Bunny (IMG_BASE, lib/image-loader.ts) — foto = LCP hampir semua halaman → buka koneksi lebih awal.
   // (Bila saklar NEXT_PUBLIC_IMG_BASE=/img: satu domain dengan situs, tak perlu preconnect.)
   if (IMG_BASE.startsWith("https://")) preconnect(IMG_BASE);
+  const failover = imageFailoverScript();
   // Pixel & GA4 SENGAJA tidak di-preconnect — skripnya baru dimuat saat interaksi
   // (useDeferredLoad), preconnect di awal hanya berebut jaringan dengan LCP.
   // Warna situs dari Admin → Warna Situs (kosong = bawaan di styles/globals.css).
@@ -66,6 +67,8 @@ export default async function RootLayout({
       {css && (
         <head>
           <style id="theme-colors" dangerouslySetInnerHTML={{ __html: css }} />
+          {/* Foto CDN gagal (Bunny 403/down) → ulang dari cdn.snapfit.id. Harus sebelum <body> (lib/image-loader.ts). */}
+          {failover && <script dangerouslySetInnerHTML={{ __html: failover }} />}
         </head>
       )}
       <body className="min-h-full flex flex-col">

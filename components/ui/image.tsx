@@ -40,6 +40,13 @@ export default function Image(props: ImageProps) {
       {...(loader ? { loader } : {})}
       {...(str === FALLBACK_IMAGE ? { unoptimized: true } : {})}
       onError={(e) => {
+        // Skrip failover di <head> (lib/image-loader.ts) baru saja mengulang foto CDN dari cdn.snapfit.id
+        // (data-cdn-retry) → tunggu hasilnya; gagal lagi → baru foto pengganti.
+        const el = e.currentTarget;
+        if (el.dataset.cdnRetry === "1" && el.dataset.cdnRetried !== "1") {
+          el.dataset.cdnRetried = "1";
+          return;
+        }
         if (!failed) setFailed(true);
         props.onError?.(e);
       }}

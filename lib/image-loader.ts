@@ -47,9 +47,23 @@ export const IMG_PROXY = "/img";
  * SAKLAR darurat: env NEXT_PUBLIC_IMG_BASE=/img → kembali lewat Vercel (perlu redeploy; nilainya ditanam saat build).
  * Email, feed Google/Meta, JSON-LD & OG tetap memakai URL cdn.snapfit.id (diambil server mereka, bukan HP).
  */
-// 1 Nov 2026: trial Bunny habis → snapfit.b-cdn.net membalas 403 (semua foto hilang). Sementara langsung ke
-// cdn.snapfit.id (Cloudflare, gratis, tanpa kuota Vercel). Kembali ke Bunny: "https://snapfit.b-cdn.net".
-export const IMG_BASE = (process.env.NEXT_PUBLIC_IMG_BASE || "https://cdn.snapfit.id").replace(/\/$/, "");
+export const IMG_BASE = (process.env.NEXT_PUBLIC_IMG_BASE || "https://snapfit.b-cdn.net").replace(/\/$/, "");
+
+/** Asal foto (Cloudflare → R2) — cadangan bila IMG_BASE gagal. */
+export const IMG_DIRECT = "https://cdn.snapfit.id";
+
+/**
+ * Skrip <head> (app/layout.tsx): foto dari IMG_BASE yang GAGAL dimuat (mis. 1 Nov 2026: saldo/trial Bunny habis →
+ * 403, semua foto hilang) diulang SEKALI dari IMG_DIRECT — berlaku untuk semua <img>/<picture> di halaman
+ * (termasuk hero server component). Listener capture di document jalan sebelum onError React
+ * (components/ui/image.tsx menunggu percobaan ini sebelum menampilkan foto pengganti). null = tak perlu.
+ */
+export function imageFailoverScript(): string | null {
+  if (!/^https:\/\//.test(IMG_BASE) || IMG_BASE === IMG_DIRECT) return null;
+  const a = JSON.stringify(IMG_BASE);
+  const b = JSON.stringify(IMG_DIRECT);
+  return `(function(){var A=${a},B=${b};function r(s){return s?s.split(A).join(B):s}document.addEventListener("error",function(e){var t=e.target;if(!t||t.tagName!=="IMG"||t.dataset.cdnRetry)return;if((t.currentSrc||t.src||"").indexOf(A)!==0)return;t.dataset.cdnRetry="1";var p=t.parentElement;if(p&&p.tagName==="PICTURE"){var s=p.getElementsByTagName("source");for(var i=0;i<s.length;i++)s[i].srcset=r(s[i].srcset)}if(t.srcset)t.srcset=r(t.srcset);t.src=r(t.src)},true)})();`;
+}
 
 /**
  * URL tampil untuk foto: foto cdn.snapfit.id → `base` (bawaan IMG_BASE) + path; host lain apa adanya.
