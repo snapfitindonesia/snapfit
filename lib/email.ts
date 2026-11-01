@@ -1,6 +1,7 @@
 import { formatRupiah } from "@/lib/format";
 import { STORE_WA_DISPLAY, waChatUrl } from "@/lib/contact";
 import { PENDING_EXPIRE_DAYS } from "@/lib/validations/admin";
+import { B1G1_LABEL } from "@/lib/b1g1";
 
 const FROM = process.env.EMAIL_FROM || "SNAPFIT Indonesia <no-reply@snapfit.id>";
 // Balasan pembeli diarahkan ke inbox yang dibaca (bukan no-reply).
@@ -58,6 +59,7 @@ type OrderLike = {
   address: unknown; // Prisma Json — di-cast lokal
   discount?: number;
   voucherCodes?: string | null;
+  promoDiscount?: number;
   coinsUsed?: number;
   courier?: string | null;
   createdAt?: Date | string;
@@ -173,6 +175,7 @@ function details(order: OrderLike, items: ItemLike[], opts: { withTotals?: boole
     ? `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-top:16px;border-top:1px solid ${C.line};padding-top:10px">
         ${row("Subtotal", formatRupiah(order.subtotal))}
         ${row("Ongkos kirim", order.shippingCost > 0 ? formatRupiah(order.shippingCost) : "Gratis")}
+        ${order.promoDiscount ? row(B1G1_LABEL, `− ${formatRupiah(order.promoDiscount)}`) : ""}
         ${order.discount ? row(order.voucherCodes ? `Voucher ${order.voucherCodes.split("+").join(" + ")}` : "Diskon voucher", `− ${formatRupiah(order.discount)}`) : ""}
         ${order.coinsUsed ? row("Koin SNAPFIT", `− ${formatRupiah(order.coinsUsed)}`) : ""}
         <tr><td colspan="2" style="padding-top:6px;border-bottom:1px solid ${C.line}"></td></tr>

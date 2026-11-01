@@ -10,6 +10,7 @@ import { GoogleCustomerReviews } from "@/components/tracking/google-customer-rev
 import { PaymentPoll } from "@/components/shop/payment-poll";
 import { CUSTOMER_STATUS } from "@/lib/order-status";
 import { PENDING_EXPIRE_DAYS } from "@/lib/validations/admin";
+import { B1G1_LABEL } from "@/lib/b1g1";
 
 const PAID_STATUSES = ["PAID", "PROCESSING", "SHIPPED", "DONE"];
 
@@ -178,6 +179,25 @@ export default async function CheckoutSuccessPage({
             <dt className="text-muted-foreground">Ongkir</dt>
             <dd>{formatRupiah(order.shippingCost)}</dd>
           </div>
+          {/* Potongan — dulu tak tampil, sehingga Subtotal + Ongkir ≠ Total. */}
+          {order.promoDiscount > 0 && (
+            <div className="flex justify-between text-emerald-700">
+              <dt>{B1G1_LABEL}</dt>
+              <dd>−{formatRupiah(order.promoDiscount)}</dd>
+            </div>
+          )}
+          {order.discount > 0 && (
+            <div className="flex justify-between text-emerald-700">
+              <dt>Voucher{order.voucherCodes ? ` ${order.voucherCodes.split("+").join(" + ")}` : ""}</dt>
+              <dd>−{formatRupiah(order.discount)}</dd>
+            </div>
+          )}
+          {order.coinsUsed > 0 && (
+            <div className="flex justify-between text-emerald-700">
+              <dt>Koin SNAPFIT</dt>
+              <dd>−{formatRupiah(order.coinsUsed)}</dd>
+            </div>
+          )}
           <div className="flex justify-between text-base font-semibold">
             <dt>Total</dt>
             <dd>{formatRupiah(order.total)}</dd>

@@ -71,6 +71,7 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
     subtotal: o.subtotal,
     shippingCost: o.shippingCost,
     discount: o.discount,
+    promoDiscount: o.promoDiscount,
     voucherCodes: o.voucherCodes,
     coinsUsed: o.coinsUsed,
     member: !!o.userId,

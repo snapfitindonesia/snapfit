@@ -5,6 +5,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { cartTotals } from "@/lib/cart-lines";
+import { b1g1ForLines } from "@/lib/promo-page/promo";
 import { zoneQuote, ZONES_TAG, type ZoneQuote } from "@/lib/shipping-zone";
 import { PROVINCES, provinceName } from "@/lib/wilayah";
 
@@ -22,10 +23,11 @@ export async function quoteShipping(input: z.input<typeof quoteSchema>): Promise
   if (!parsed.success || !provinceName(parsed.data.provinceCode)) return null;
   const variants = await db.variant.findMany({
     where: { id: { in: parsed.data.items.map((i) => i.variantId) } },
-    select: { id: true, weight: true, price: true, discounts: { select: { percent: true, active: true, startAt: true, endAt: true } } },
+    select: { id: true, productId: true, weight: true, price: true, discounts: { select: { percent: true, active: true, startAt: true, endAt: true } } },
   });
   const { weight, subtotal } = cartTotals(parsed.data.items, variants);
-  return zoneQuote(parsed.data.provinceCode, weight, subtotal);
+  // Ambang gratis ongkir dari subtotal SETELAH promo Buy 1 Get 1 (sama dengan createOrder).
+  return zoneQuote(parsed.data.provinceCode, weight, subtotal - (await b1g1ForLines(parsed.data.items, variants)));
 }
 
 /* ============================ ADMIN ============================ */

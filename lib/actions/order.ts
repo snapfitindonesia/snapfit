@@ -29,6 +29,8 @@ import { getCoinRules } from "@/lib/coins-settings";
 import { limitAction, requestIp } from "@/lib/security/ratelimit";
 import { cartTotals, mergeLines } from "@/lib/cart-lines";
 import { ZodError } from "zod";
+import { b1g1Discount, B1G1_LABEL } from "@/lib/b1g1";
+import { getB1G1ProductIds } from "@/lib/promo-page/promo";
 import { PENDING_EXPIRE_DAYS } from "@/lib/validations/admin";
 
 const SITE = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.snapfit.id").replace(/\/$/, "");
@@ -71,6 +73,15 @@ async function computeOrder(
   // Rumus bersama dengan perkiraan ongkir checkout & cek tarif (lib/cart-lines.ts) → angka selalu sama.
   const { subtotal, weight: totalWeight } = cartTotals(lines, variants);
 
+  // Promo Buy 1 Get 1 (lib/b1g1.ts): unit termurah dari tiap 2 unit produk peserta gratis. Voucher (min. belanja),
+  // gratis ongkir & koin dihitung dari subtotal SETELAH promo — sama dengan keranjang/checkout.
+  const promoProducts = await getB1G1ProductIds();
+  const productOf = new Map(variants.map((v) => [v.id, v.productId]));
+  const promoDiscount = b1g1Discount(
+    items.map((i) => ({ variantId: i.variantId, unitPrice: i.price, qty: i.qty, eligible: promoProducts.has(productOf.get(i.variantId) ?? "") })),
+  ).discount;
+  const netSubtotal = subtotal - promoDiscount;
+
   // Voucher (otoritatif): dihitung ulang dari DB terhadap subtotal & ongkir.
   // Beberapa voucher: maks. satu per jenis, dan hanya bila saling bisa digabung (lib/voucher.ts).
   // Voucher tak valid / tak memberi potongan diabaikan; kombinasi terlarang → tolak.
@@ -81,7 +92,7 @@ async function computeOrder(
     const found = await db.voucher.findMany({ where: { code: { in: codes }, active: true } });
     const used: { v: (typeof found)[number]; discount: number }[] = [];
     for (const v of found) {
-      const b = computeVoucherBenefit(v as VoucherLike, subtotal, shippingCost);
+      const b = computeVoucherBenefit(v as VoucherLike, netSubtotal, shippingCost);
       if (b.valid && b.discount > 0) used.push({ v, discount: b.discount });
     }
     for (let i = 0; i < used.length; i++)
@@ -98,7 +109,7 @@ async function computeOrder(
   // yang belum diatur = tarif flat. Gratis ongkir (maks. FREE_SHIPPING_MAX) bila lolos ambang.
   // Sama dengan quoteShipping.
   if (isFlatShipping()) {
-    const q = await zoneQuote(provinceCode, totalWeight, subtotal);
+    const q = await zoneQuote(provinceCode, totalWeight, netSubtotal);
     if (!q.available) throw new Error("Maaf, belum ada kurir yang melayani pengiriman ke provinsi ini.");
     const shippingCost = q.cost;
     const rate = {
@@ -111,8 +122,8 @@ async function computeOrder(
       etd: q.etd || "-",
     };
     const { discount, appliedCode } = await resolveVoucher(shippingCost);
-    const total = Math.max(0, subtotal + shippingCost - discount);
-    return { items, subtotal, shippingCost, discount, voucherCode: appliedCode, total, rate, totalWeight };
+    const total = Math.max(0, netSubtotal + shippingCost - discount);
+    return { items, subtotal, promoDiscount, shippingCost, discount, voucherCode: appliedCode, total, rate, totalWeight };
   }
 
   // Ongkir authoritative Biteship: ambil tarif dari server, cocokkan dgn pilihan client
@@ -126,8 +137,8 @@ async function computeOrder(
 
   const shippingCost = rate.cost;
   const { discount, appliedCode } = await resolveVoucher(shippingCost);
-  const total = Math.max(0, subtotal + shippingCost - discount);
-  return { items, subtotal, shippingCost, discount, voucherCode: appliedCode, total, rate, totalWeight };
+  const total = Math.max(0, netSubtotal + shippingCost - discount);
+  return { items, subtotal, promoDiscount, shippingCost, discount, voucherCode: appliedCode, total, rate, totalWeight };
 }
 
 // Email pesanan baru: notifikasi ke admin + (transfer manual) instruksi bayar ke
@@ -170,7 +181,7 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
 
 async function placeOrder(input: CreateOrderInput) {
   const data = createOrderSchema.parse(input);
-  const { items, subtotal, shippingCost, discount, voucherCode, total, rate } = await computeOrder(
+  const { items, subtotal, promoDiscount, shippingCost, discount, voucherCode, total, rate } = await computeOrder(
     mergeLines(data.items),
     data.address.postalCode,
     data.rateId,
@@ -188,7 +199,7 @@ async function placeOrder(input: CreateOrderInput) {
   let coinsUsed = 0;
   const coinRules = user ? await getCoinRules() : null;
   if (user && coinRules && data.useCoins) {
-    coinsUsed = maxCoinsUsable(await getCoinBalance(user.id), subtotal, total, shippingCost, coinRules);
+    coinsUsed = maxCoinsUsable(await getCoinBalance(user.id), subtotal - promoDiscount, total, shippingCost, coinRules);
   }
   const grandTotal = total - coinsUsed;
 
@@ -202,6 +213,7 @@ async function placeOrder(input: CreateOrderInput) {
       shippingCost,
       discount,
       voucherCodes: voucherCode,
+      promoDiscount,
       coinsUsed,
       // Persen cashback dikunci saat pesan (promo berjadwal tetap berlaku walau pesanan selesai belakangan).
       cashbackPercent: coinRules ? activeCashback(coinRules).percent : null,
@@ -244,6 +256,7 @@ async function placeOrder(input: CreateOrderInput) {
             quantity: i.qty,
           })),
           { id: "shipping", name: `Ongkir ${rate.courierName}`, price: shippingCost, quantity: 1 },
+          ...(promoDiscount > 0 ? [{ id: "b1g1", name: B1G1_LABEL, price: -promoDiscount, quantity: 1 }] : []),
           ...(discount > 0 ? [{ id: "voucher", name: "Voucher", price: -discount, quantity: 1 }] : []),
           ...(coinsUsed > 0 ? [{ id: "coins", name: "Koin SNAPFIT", price: -coinsUsed, quantity: 1 }] : []),
         ],

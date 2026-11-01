@@ -22,6 +22,7 @@ import type { ZoneQuote } from "@/lib/shipping-zone";
 import type { ShippingRate } from "@/lib/biteship";
 import { getMyCoins, type MyCoins } from "@/lib/actions/coins";
 import { cashbackFor, maxCoinsUsable, pct, DEFAULT_COIN_RULES } from "@/lib/coins-rules";
+import { B1G1_LABEL } from "@/lib/b1g1";
 
 // Kontak & alamat pesanan terakhir, disimpan HANYA di perangkat pembeli
 // (localStorage) setelah pesanan berhasil → checkout berikutnya terisi otomatis.
@@ -120,7 +121,8 @@ export function CheckoutView({
   vouchers?: PickerVoucher[];
 }) {
   const router = useRouter();
-  const { items, subtotal, hydrated, clear, vouchers: applied, addVoucher, removeVoucher, note } = useCart();
+  // netSubtotal = setelah promo Buy 1 Get 1 → dasar voucher, gratis ongkir & koin (sama dengan server).
+  const { items, subtotal, promo, netSubtotal, hydrated, clear, vouchers: applied, addVoucher, removeVoucher, note } = useCart();
 
   const [voucherInput, setVoucherInput] = useState("");
   const [voucherApplying, setVoucherApplying] = useState(false);
@@ -133,7 +135,7 @@ export function CheckoutView({
     setApplyingCode(code ?? null);
     setVoucherError(null);
     setVoucherNotice(null);
-    const res = await applyVoucher(code ?? voucherInput, subtotal, voucherShipping);
+    const res = await applyVoucher(code ?? voucherInput, netSubtotal, voucherShipping);
     if (res.ok) {
       const v = { code: res.code, label: res.label, discount: res.discount, freeShipping: res.freeShipping, type: res.type, stackable: res.stackable };
       const replaced = addVoucher(v);
@@ -212,7 +214,7 @@ export function CheckoutView({
 
   const cartLines = items.map((i) => ({ variantId: i.variantId, qty: i.qty }));
   const selectedRate = rates?.find((r) => r.id === rateId) ?? null;
-  const freeEligible = flatShipping && freeShippingMin > 0 && subtotal >= freeShippingMin;
+  const freeEligible = flatShipping && freeShippingMin > 0 && netSubtotal >= freeShippingMin;
   const freeLabel = freeShippingMax > 0 ? `gratis ongkir s/d ${formatRupiah(freeShippingMax)}` : "gratis ongkir";
   // Mode flat: ongkir provinsi dari quote server (belum pilih provinsi → belum diketahui, 0 di total).
   const unavailable = flatShipping && !!quote && !quote.available;
@@ -227,11 +229,11 @@ export function CheckoutView({
   const voucherLines = applied.map((a) => {
     const v = vouchers.find((x) => x.code === a.code);
     if (a.freeShipping && !shippingKnown) return { ...a, discount: 0, pending: true, cap: v?.maxBenefit ?? 0 };
-    const b = v ? computeVoucherBenefit({ ...v, active: true }, subtotal, shippingCost) : null;
+    const b = v ? computeVoucherBenefit({ ...v, active: true }, netSubtotal, shippingCost) : null;
     return { ...a, discount: b ? (b.valid ? b.discount : 0) : a.discount, pending: false, cap: 0 };
   });
   const discount = voucherLines.reduce((n, l) => n + l.discount, 0);
-  const totalBeforeCoins = Math.max(0, subtotal + shippingCost - discount);
+  const totalBeforeCoins = Math.max(0, netSubtotal + shippingCost - discount);
   // Koin member: jumlah dihitung ulang server (createOrder) dengan aturan yang sama.
   const [coins, setCoins] = useState<MyCoins | null>(null);
   const [useCoins, setUseCoins] = useState(false);
@@ -240,7 +242,7 @@ export function CheckoutView({
   }, []);
   const coinBalance = coins?.loggedIn ? coins.balance : 0;
   const coinRules = coins?.rules ?? DEFAULT_COIN_RULES;
-  const coinsUsable = maxCoinsUsable(coinBalance, subtotal, totalBeforeCoins, shippingCost, coinRules);
+  const coinsUsable = maxCoinsUsable(coinBalance, netSubtotal, totalBeforeCoins, shippingCost, coinRules);
   const coinsUsed = useCoins ? coinsUsable : 0;
   const total = totalBeforeCoins - coinsUsed;
   const cashback = coins?.loggedIn ? cashbackFor(total - shippingCost, coins.cashback.percent) : 0;
@@ -467,7 +469,7 @@ export function CheckoutView({
           ) : null}
           {flatShipping && freeShippingMin > 0 && !freeEligible && (
             <p className="mt-2 text-xs">
-              Belanja <b>{formatRupiah(freeShippingMin - subtotal)}</b> lagi untuk <b>{freeLabel}</b>.
+              Belanja <b>{formatRupiah(freeShippingMin - netSubtotal)}</b> lagi untuk <b>{freeLabel}</b>.
               <Link href="/produk" className="mt-1 block w-fit font-medium text-brand-ink underline underline-offset-2">Tambah produk →</Link>
             </p>
           )}
@@ -541,6 +543,7 @@ export function CheckoutView({
           <PriceNotice className="mt-3" />
           <dl className="mt-3 space-y-2 text-sm">
             <Row label={`Subtotal (${items.length} produk)`} value={formatRupiah(subtotal)} />
+            {promo.discount > 0 && <Row label={B1G1_LABEL} value={`−${formatRupiah(promo.discount)}`} />}
             <Row
               label="Ongkir"
               value={shippingKnown ? formatRupiah(fullShipping) : unavailable ? "Tidak tersedia" : "Pilih provinsi"}
@@ -612,7 +615,7 @@ export function CheckoutView({
             )}
             <VoucherPicker
               vouchers={vouchers}
-              subtotal={subtotal}
+              subtotal={netSubtotal}
               shippingCost={voucherShipping}
               applied={applied}
               shippingKnown={shippingKnown}

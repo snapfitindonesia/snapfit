@@ -101,6 +101,15 @@ export function PromoPageEditor({ initial, products, brands }: { initial: PromoP
               <Text label="Judul" value={c.products.title} onChange={(title) => set("products", { ...c.products, title })} />
             </div>
             <Text label="Keterangan" value={c.products.caption} onChange={(caption) => set("products", { ...c.products, caption })} />
+            <label className="flex items-start gap-2 rounded-md border border-emerald-300 bg-emerald-50 p-3 text-sm">
+              <input type="checkbox" className="mt-0.5" checked={c.products.promoActive} onChange={(e) => set("products", { ...c.products, promoActive: e.target.checked })} />
+              <span>
+                <b>Potongan Buy 1 Get 1 aktif</b> di keranjang & checkout untuk produk di bawah.
+                <span className="block text-xs text-muted-foreground">
+                  Tiap 2 unit produk promo (boleh beda produk) → unit termurah gratis. Matikan untuk mengakhiri promo tanpa menghapus daftar produk.
+                </span>
+              </span>
+            </label>
             <div>
               <span className="text-sm font-medium">Produk peserta promo</span>{" "}
               <span className="text-xs text-muted-foreground">({c.products.productIds.length}/48 · urutan = urutan tampil)</span>
