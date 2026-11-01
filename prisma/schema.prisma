@@ -154,7 +154,7 @@ model Order {
   shippingCost Int
   discount     Int     @default(0)
   voucherCodes String? // kode voucher terpakai, dipisah "+" (mis. "SNAP20K+GRATISONGKIR")
-  promoDiscount Int    @default(0) // potongan promo Buy 1 Get 1 (lib/b1g1.ts), di luar voucher
+  promoDiscount Int    @default(0) // TIDAK DIPAKAI (potongan B1G1 otomatis dibatalkan Nov 2026; selalu 0) — boleh dihapus dgn db push --accept-data-loss
   coinsUsed    Int     @default(0) // koin member terpakai (1 koin = Rp1), sudah dikurangkan dari total
   cashbackPercent Float? // % cashback koin yang berlaku SAAT pesanan dibuat (termasuk promo berjadwal); null = tamu
   total        Int

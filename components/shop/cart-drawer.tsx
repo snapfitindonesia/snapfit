@@ -13,7 +13,6 @@ import { applyVoucher, getActiveVouchers } from "@/lib/actions/voucher";
 import { VoucherPicker, type PickerVoucher } from "@/components/shop/voucher-picker";
 import { CartBundles } from "@/components/shop/cart-bundles";
 import { MAX_VOUCHERS } from "@/lib/voucher";
-import { B1G1_LABEL } from "@/lib/b1g1";
 
 type Panel = "note" | "shipping" | "coupon" | null;
 
@@ -30,8 +29,7 @@ export function CartDrawer({
   freeShippingMin?: number;
   freeShippingMax?: number;
 }) {
-  // netSubtotal = setelah promo Buy 1 Get 1 → dasar voucher & gratis ongkir (sama dengan checkout & server).
-  const { items, subtotal, promo, netSubtotal, count, setQty, removeItem, hydrated, vouchers, addVoucher, removeVoucher, note, setNote } = useCart();
+  const { items, subtotal, count, setQty, removeItem, hydrated, vouchers, addVoucher, removeVoucher, note, setNote } = useCart();
   const { cartOpen, closeCart } = useStoreUI();
 
   const [panel, setPanel] = useState<Panel>(null);
@@ -60,7 +58,7 @@ export function CartDrawer({
     };
   }, [cartOpen, closeCart]);
 
-  const freeShip = freeShippingMin > 0 && netSubtotal >= freeShippingMin;
+  const freeShip = freeShippingMin > 0 && subtotal >= freeShippingMin;
   // Tarif per provinsi → ongkir baru diketahui di checkout (tak dimasukkan ke perkiraan).
   const cap = freeShippingMax > 0 ? freeShippingMax : Infinity;
   const baseShipping = flatShipping && zoneFrom === null ? (freeShip ? Math.max(0, flatCost - cap) : flatCost) : 0;
@@ -69,16 +67,16 @@ export function CartDrawer({
   const shipKnown = !flatShipping || zoneFrom === null;
   const voucherRows = vouchers.map((v) => ({ ...v, pending: v.freeShipping && zoneFrom !== null }));
   const discount = voucherRows.reduce((n, v) => n + (v.pending || (!shipKnown && v.freeShipping) ? 0 : v.discount), 0);
-  const total = Math.max(0, netSubtotal + baseShipping - discount);
-  const remaining = Math.max(0, freeShippingMin - netSubtotal);
-  const progress = freeShippingMin > 0 ? Math.min(100, Math.round((netSubtotal / freeShippingMin) * 100)) : 0;
+  const total = Math.max(0, subtotal + baseShipping - discount);
+  const remaining = Math.max(0, freeShippingMin - subtotal);
+  const progress = freeShippingMin > 0 ? Math.min(100, Math.round((subtotal / freeShippingMin) * 100)) : 0;
 
   async function onApply(picked?: string) {
     setApplying(true);
     if (picked) setApplyingCode(picked);
     setVoucherError(null);
     setVoucherNotice(null);
-    const res = await applyVoucher(picked ?? code, netSubtotal);
+    const res = await applyVoucher(picked ?? code, subtotal);
     if (res.ok) {
       const v = { code: res.code, label: res.label, discount: res.discount, freeShipping: res.freeShipping, type: res.type, stackable: res.stackable };
       const replaced = addVoucher(v);
@@ -158,14 +156,7 @@ export function CartDrawer({
                   </Link>
                   <div className="min-w-0 flex-1">
                     <p className="line-clamp-2 text-sm font-medium">{it.name}</p>
-                    <p className="mt-0.5 text-sm text-muted-foreground">
-                      {formatRupiah(it.price)}
-                      {(promo.free[it.variantId] ?? 0) > 0 && (
-                        <span className="ml-2 rounded bg-emerald-100 px-1.5 py-0.5 text-xs font-semibold text-emerald-800">
-                          Gratis {promo.free[it.variantId]} · Buy 1 Get 1
-                        </span>
-                      )}
-                    </p>
+                    <p className="mt-0.5 text-sm text-muted-foreground">{formatRupiah(it.price)}</p>
                     <div className="mt-2 flex items-center gap-3">
                       <div className="flex items-center rounded-md border border-border">
                         <button
@@ -276,7 +267,7 @@ export function CartDrawer({
                     ) : (
                       <VoucherPicker
                         vouchers={available}
-                        subtotal={netSubtotal}
+                        subtotal={subtotal}
                         shippingCost={baseShipping}
                         shippingKnown={shipKnown}
                         applied={vouchers}
@@ -295,15 +286,6 @@ export function CartDrawer({
                 <span className="text-muted-foreground">Subtotal</span>
                 <span className="font-medium">{formatRupiah(subtotal)}</span>
               </div>
-              {promo.discount > 0 && (
-                <div className="flex items-center justify-between text-emerald-700">
-                  <span>{B1G1_LABEL}</span>
-                  <span className="font-medium">−{formatRupiah(promo.discount)}</span>
-                </div>
-              )}
-              {promo.eligibleUnits % 2 === 1 && (
-                <p className="text-xs text-emerald-700">Tambah 1 produk promo Buy 1 Get 1 lagi — yang lebih murah gratis.</p>
-              )}
               {flatShipping && (
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Ongkir</span>

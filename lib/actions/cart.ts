@@ -4,15 +4,12 @@ import { db } from "@/lib/db";
 import { applyDiscount, activeDiscountPercent } from "@/lib/format";
 import { isPlaceholderPrice } from "@/lib/price-guard";
 import { limitAction, requestIp } from "@/lib/security/ratelimit";
-import { getB1G1ProductIds } from "@/lib/promo-page/promo";
 
 export type CartPrice = {
   variantId: string;
   price: number;
   stock: number;
   available: boolean;
-  /** Peserta promo Buy 1 Get 1 yang sedang berlaku (lib/b1g1.ts) — keranjang menghitung potongan dari ini. */
-  b1g1: boolean;
 };
 
 /**
@@ -30,17 +27,14 @@ export async function getCartPrices(variantIds: string[]): Promise<CartPrice[]> 
       id: true,
       price: true,
       stock: true,
-      productId: true,
       product: { select: { archived: true } },
       discounts: { select: { percent: true, active: true, startAt: true, endAt: true } },
     },
   });
-  const promo = await getB1G1ProductIds();
   return variants.map((v) => ({
     variantId: v.id,
     price: applyDiscount(v.price, activeDiscountPercent(v.discounts)),
     stock: v.stock,
     available: !v.product.archived && !isPlaceholderPrice(v.price) && v.stock > 0,
-    b1g1: promo.has(v.productId),
   }));
 }

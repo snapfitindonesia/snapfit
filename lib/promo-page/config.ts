@@ -48,8 +48,6 @@ export const promoPageSchema = z.object({
     title: text(120),
     caption: text(160),
     productIds: z.array(z.string().max(40)).max(48).default([]),
-    /** Potongan Buy 1 Get 1 otomatis di keranjang & checkout untuk produk di atas (lib/b1g1.ts). */
-    promoActive: z.boolean().default(true),
     /** "Hanya di halaman promo": tak tampil di daftar/kategori/pencarian/beranda/sitemap/feed (lib/promo-page/promo.ts).
      *  Halaman produknya tetap bisa dibuka dari /buy1get1 (pilih varian & beli), dengan noindex. */
     hiddenIds: z.array(z.string().max(40)).max(48).default([]),
@@ -90,7 +88,7 @@ export const DEFAULT_PROMO_PAGE: PromoPageConfig = {
   sections: SECTION_KEYS.map((key) => ({ key, active: true })),
   hero: { image: "", alt: "Promo Buy 1 Get 1 SNAPFIT", href: "#produk-promo" },
   arrivals: { image: "", alt: "Produk terbaru SNAPFIT", href: "/produk" },
-  products: { eyebrow: "BUY 1 GET 1", title: "Beli 1, gratis 1.", caption: "Masukkan 2 produk promo ke keranjang — yang lebih murah gratis.", productIds: [], promoActive: true, hiddenIds: [] },
+  products: { eyebrow: "BUY 1 GET 1", title: "Beli 1, gratis 1.", caption: "Produk pilihan dengan bonus Buy 1 Get 1.", productIds: [], hiddenIds: [] },
   categories: { images: {} },
   signup: { eyebrow: "A LITTLE SOMETHING FOR YOU", title: "Promo baru, langsung ke emailmu.", text: "Dapatkan info promo & produk terbaru SNAPFIT.", ctaLabel: "Daftar newsletter" },
   benefits: [
@@ -101,7 +99,7 @@ export const DEFAULT_PROMO_PAGE: PromoPageConfig = {
   seo: {
     title: "Promo Buy 1 Get 1 SNAPFIT",
     text: "SNAPFIT adalah merek pelindung layar, pelindung kamera, dan casing smartphone presisi asal Indonesia. Selama promo, beli 1 produk pilihan dan dapatkan 1 gratis.",
-    more: "Promo berlaku untuk produk berlabel Buy 1 Get 1 di halaman ini. Produk gratis adalah yang harganya lebih rendah, dihitung otomatis di keranjang.",
+    more: "Promo berlaku untuk produk berlabel Buy 1 Get 1 di halaman ini. Isi paket tertera di halaman masing-masing produk.",
   },
   footer: { tagline: "Aksesori presisi untuk HP & tablet.", bottomLeft: "SNAPFIT Indonesia", bottomRight: "Pas sejak pertama dipasang." },
 };

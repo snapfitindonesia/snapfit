@@ -9,7 +9,6 @@ import { updateOrder } from "@/lib/actions/admin";
 import { markOrderPaid, retryGineePush } from "@/lib/actions/order";
 import { ORDER_STATUSES, ORDER_TRANSITIONS, RESTOCK_ON_CANCEL, type OrderStatus } from "@/lib/validations/admin";
 import { waLink, waProcessingMessage, waShippedMessage, waReviewMessage } from "@/lib/wa";
-import { B1G1_LABEL } from "@/lib/b1g1";
 
 export type AdminOrder = {
   id: string;
@@ -18,7 +17,6 @@ export type AdminOrder = {
   subtotal: number;
   shippingCost: number;
   discount: number;
-  promoDiscount: number;
   voucherCodes: string | null;
   coinsUsed: number;
   member: boolean;
@@ -242,11 +240,6 @@ function OrderRow({ order }: { order: AdminOrder }) {
               <div className="mt-2 flex justify-between border-t border-border pt-1 text-xs">
                 <span>Ongkir</span><span>{formatRupiah(order.shippingCost)}</span>
               </div>
-              {order.promoDiscount > 0 && (
-                <div className="flex justify-between text-xs">
-                  <span>{B1G1_LABEL}</span><span>− {formatRupiah(order.promoDiscount)}</span>
-                </div>
-              )}
               {order.discount > 0 && (
                 <div className="flex justify-between text-xs">
                   <span>Voucher{order.voucherCodes ? ` ${order.voucherCodes.split("+").join(" + ")}` : ""}</span><span>− {formatRupiah(order.discount)}</span>
