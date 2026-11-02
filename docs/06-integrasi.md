@@ -28,6 +28,8 @@ Jalankan manual: buka `/api/cron/ginee-stock` dengan header
 Lihat [03 — Impor dari Ginee](03-panel-admin.md#impor-dari-ginee). Harga per varian
 diambil dari `/openapi/product/variation/v1/list-price` (kanal toko Shopee Snapfit);
 bila tak ada harga wajar → 0 dan harus diisi manual.
+Dengan pilihan toko (`shopId`, daftar dari `/openapi/shop/v1/list`, hanya CONNECTED): varian disaring
+lewat `channelPriceVOList[].shopId` di list-price — filter toko di API Ginee sendiri diabaikan.
 
 ### Push pesanan (`lib/ginee/orders.ts`, `lib/orders/paid.ts`)
 Pesanan yang lunas dikirim ke Ginee sebagai pesanan manual (toko

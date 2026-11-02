@@ -5,13 +5,21 @@ import { useRouter } from "next/navigation";
 import { Search, Loader2, PackagePlus, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { searchGineeForImport, importGineeProducts } from "@/lib/actions/ginee";
+import type { GineeShop } from "@/lib/ginee/products";
 
 type Variation = { id: string; sku: string; optionValues?: string[]; stock?: number };
-type Item = { productId: string; name: string; image: string; variantCount: number; stock: number; stockKnown: boolean; imported: boolean; variations: Variation[]; productIds: string[] };
+type Item = { productId: string; name: string; image: string; variantCount: number; stock: number; stockKnown: boolean; imported: boolean; variations: Variation[]; productIds: string[]; priceMin?: number; priceMax?: number };
 
 const QUICK = ["Fold 8", "iPhone 18 Pro Max", "S26 Ultra"];
 
-export function GineeImport() {
+const CHANNEL: Record<string, string> = {
+  SHOPEE_ID: "Shopee", TIKTOK_ID: "TikTok", BLIBLI_ID: "Blibli", LAZADA_ID: "Lazada",
+  TOKOPEDIA_ID: "Tokopedia", BUKALAPAK_ID: "Bukalapak", MANUAL_ID: "Manual", WOO_COMMERCE_ID: "WooCommerce",
+};
+const shopLabel = (s: GineeShop) => `${s.name} — ${CHANNEL[s.channel] ?? s.channel.replace(/_ID$/, "")}`;
+const rp = (n: number) => `Rp${n.toLocaleString("id-ID")}`;
+
+export function GineeImport({ shops }: { shops: GineeShop[] }) {
   const router = useRouter();
   const [keyword, setKeyword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -25,13 +33,20 @@ export function GineeImport() {
   const [errList, setErrList] = useState<string[]>([]);
   // Filter tampilan: stok gudang 0 disembunyikan (default) — tak perlu diimpor.
   const [hideEmpty, setHideEmpty] = useState(true);
+  // Toko asal ("" = master Ginee, harga acuan Shopee Snapfit Indonesia). Muat-lagi & impor memakai toko
+  // tempat pencarian terakhir dijalankan (searchShop).
+  const [shopId, setShopId] = useState("");
+  const [searchShop, setSearchShop] = useState("");
+  const [scanned, setScanned] = useState(0);
+  const shopName = (id: string) => shops.find((s) => s.shopId === id)?.name;
+  const priceSource = searchShop ? `harga toko ${shopName(searchShop) ?? "terpilih"}` : "harga Shopee Snapfit";
 
-  async function search(kw: string) {
+  async function search(kw: string, shop = shopId) {
     setKeyword(kw);
     setLoading(true);
     setMsg(null);
     setErrList([]);
-    const res = await searchGineeForImport(kw);
+    const res = await searchGineeForImport(kw, 0, shop || undefined);
     setLoading(false);
     if (!res.ok) {
       setItems([]);
@@ -41,6 +56,8 @@ export function GineeImport() {
     }
     setItems(res.items);
     setTotal(res.total);
+    setScanned(res.scanned);
+    setSearchShop(shop);
     setPage(0);
     setChecked({});
   }
@@ -48,16 +65,17 @@ export function GineeImport() {
   async function loadMore() {
     setLoadingMore(true);
     const next = page + 1;
-    const res = await searchGineeForImport(keyword, next);
+    const res = await searchGineeForImport(keyword, next, searchShop || undefined);
     setLoadingMore(false);
     if (!res.ok) { setMsg(res.error); return; }
+    setScanned((n) => n + res.scanned);
     // Gabung ke hasil sebelumnya; nama sama (lintas halaman) disatukan seperti di server.
     setItems((prev) => mergeByName(prev, res.items));
     setPage(next);
   }
 
-  // Jumlah master Ginee yang sudah dimuat (1 baris bisa = beberapa master bernama sama).
-  const loaded = items.reduce((n, it) => n + it.productIds.length, 0);
+  // Jumlah master Ginee yang sudah dibaca (sebagian bisa tersaring karena tak dijual di toko terpilih).
+  const loaded = scanned;
 
   // Stok tak diketahui (gagal ambil) → tetap tampil, jangan dianggap 0.
   const isEmpty = (i: Item) => i.stockKnown && i.stock <= 0;
@@ -91,9 +109,9 @@ export function GineeImport() {
     // Per 3 produk: tiap produk menyalin foto ke CDN → dipecah agar tak kena batas waktu server.
     const res = { created: 0, skipped: 0, errors: [] as string[] };
     for (let i = 0; i < inputs.length; i += 3) {
-      setMsg(`Mengimpor ${Math.min(i + 3, inputs.length)}/${inputs.length} produk… (stok gudang, harga Shopee, merek & foto CDN)`);
+      setMsg(`Mengimpor ${Math.min(i + 3, inputs.length)}/${inputs.length} produk… (stok gudang, ${priceSource}, merek & foto CDN)`);
       try {
-        const r = await importGineeProducts(inputs.slice(i, i + 3));
+        const r = await importGineeProducts(inputs.slice(i, i + 3), searchShop || undefined);
         res.created += r.created;
         res.skipped += r.skipped;
         res.errors.push(...r.errors);
@@ -103,7 +121,7 @@ export function GineeImport() {
       }
     }
     setImporting(false);
-    setMsg(`Impor selesai: ${res.created} dibuat, ${res.skipped} dilewati. Stok dari gudang Ginee, harga Shopee Snapfit, merek & foto CDN sudah otomatis.`);
+    setMsg(`Impor selesai: ${res.created} dibuat, ${res.skipped} dilewati. Stok dari gudang Ginee, ${priceSource}, merek & foto CDN sudah otomatis.`);
     setErrList(res.errors.slice(0, 10));
     if (res.created > 0) {
       setChecked({});
@@ -113,6 +131,32 @@ export function GineeImport() {
 
   return (
     <div>
+      {/* Toko asal */}
+      {shops.length > 0 && (
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <label htmlFor="ginee-shop" className="text-sm font-medium">Ambil dari</label>
+          <select
+            id="ginee-shop"
+            value={shopId}
+            onChange={(e) => {
+              setShopId(e.target.value);
+              if (keyword.trim() && total !== null) search(keyword, e.target.value); // cari ulang di toko baru
+            }}
+            className="min-w-[240px] rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-foreground"
+          >
+            <option value="">Master Ginee (harga Shopee Snapfit Indonesia)</option>
+            {shops.map((s) => (
+              <option key={s.shopId} value={s.shopId}>{shopLabel(s)}</option>
+            ))}
+          </select>
+          {shopId && (
+            <span className="text-xs text-muted-foreground">
+              Hanya produk &amp; varian yang dijual di toko ini, dengan harga toko ini. Nama, foto &amp; deskripsi tetap dari master Ginee.
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Pencarian */}
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative flex-1 min-w-[220px]">
@@ -146,7 +190,7 @@ export function GineeImport() {
       {total !== null && (
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
           <p className="text-xs text-muted-foreground">
-            {total} hasil untuk “{keyword}”. Menampilkan {visible.length}
+            {total} hasil untuk “{keyword}”{searchShop && <> · dijual di <b>{shopName(searchShop)}</b>: {items.length}</>}. Menampilkan {visible.length}
             {hiddenCount > 0 && <> · <b>{hiddenCount} stok 0 disembunyikan</b></>}. Semua detail
             (harga per-varian, stok, foto, deskripsi) otomatis dari Ginee.
           </p>
@@ -214,6 +258,7 @@ export function GineeImport() {
               <div className="min-w-[180px] flex-1">
                 <p className="line-clamp-2 text-sm font-medium">{it.name}</p>
                 <p className="text-xs text-muted-foreground">{it.variantCount} varian · stok gudang {it.stockKnown ? it.stock : "?"}{it.productIds.length > 1 && ` · gabungan ${it.productIds.length} produk Ginee bernama sama`}
+                  {it.priceMin !== undefined && <> · harga toko {rp(it.priceMin)}{it.priceMax !== it.priceMin && <>–{rp(it.priceMax ?? it.priceMin)}</>}</>}
                   {isEmpty(it) && <span className="ml-1.5 rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700">HABIS</span>}</p>
               </div>
             </label>

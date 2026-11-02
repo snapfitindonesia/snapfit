@@ -3,14 +3,24 @@ import { ArrowLeft } from "lucide-react";
 import { GineeImport } from "@/components/admin/ginee-import";
 import { GineeSyncButton } from "@/components/admin/ginee-sync-button";
 import { isGineeConfigured } from "@/lib/ginee/config";
+import { listGineeShops, type GineeShop } from "@/lib/ginee/products";
 
 export const dynamic = "force-dynamic";
 // Impor menyalin foto ke CDN per produk → beri waktu cukup (server action ikut batas halaman ini).
 export const maxDuration = 300;
 export const metadata = { title: "Impor dari Ginee — Admin SNAPFIT" };
 
-export default function GineeImportPage() {
+export default async function GineeImportPage() {
   const configured = isGineeConfigured();
+  // Pilihan "Ambil dari" — gagal dimuat = hanya mode bawaan (master + harga Shopee Snapfit Indonesia).
+  let shops: GineeShop[] = [];
+  if (configured) {
+    try {
+      shops = await listGineeShops();
+    } catch (e) {
+      console.error("Daftar toko Ginee gagal:", e instanceof Error ? e.message : e);
+    }
+  }
 
   return (
     <div>
@@ -47,7 +57,7 @@ export default function GineeImportPage() {
             </p>
             <GineeSyncButton />
           </div>
-          <GineeImport />
+          <GineeImport shops={shops} />
         </div>
       )}
     </div>

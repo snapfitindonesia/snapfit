@@ -71,41 +71,73 @@ const PRICE_SHOP = (process.env.GINEE_PRICE_SHOP_NAME || "Snapfit Indonesia").to
 const PRICE_CHANNEL = process.env.GINEE_PRICE_CHANNEL || "SHOPEE_ID";
 
 type ChannelPrice = {
+  shopId?: string;
   shopName?: string;
   channel?: string;
   channelPrice?: { amount?: number };
   channelSellingPrice?: { amount?: number };
 };
 
+export type GineeShop = { shopId: string; name: string; channel: string };
+
+/** Toko kanal yang masih TERHUBUNG di akun Ginee (Shopee, TikTok, Blibli, manual…). */
+export async function listGineeShops(): Promise<GineeShop[]> {
+  type Row = { shopId?: string; name?: string; channel?: string; authorizationStatus?: string };
+  const out: GineeShop[] = [];
+  for (let page = 0; page < 10; page++) {
+    const res = await gineeRequest<Row[] | { content?: Row[] }>("POST", "/openapi/shop/v1/list", { page, size: 100 });
+    const rows = Array.isArray(res.data) ? res.data : (res.data?.content ?? []);
+    for (const r of rows) {
+      if (r.shopId && r.authorizationStatus === "CONNECTED") out.push({ shopId: r.shopId, name: r.name ?? r.shopId, channel: r.channel ?? "" });
+    }
+    if (rows.length < 100) break;
+  }
+  return out;
+}
+
+export type VariationPrice = {
+  price: number;
+  image?: string;
+  source: "shop" | "master" | "none";
+  /** Varian ini dijual (terhubung) di toko yang diminta / toko acuan. */
+  listed: boolean;
+};
+
 /**
  * Harga (+ foto) per varian — TERFILTER benar via masterVariationIds.
- * `price` = harga jual toko acuan (Shopee "Snapfit Indonesia"); bila tak ada,
- * harga master Ginee asalkan wajar (< Rp900rb); selain itu 0 (= jangan dipakai).
+ * `price` = harga jual toko `shopId` bila diberikan, selain itu toko acuan (Shopee
+ * "Snapfit Indonesia"); bila tak ada, harga master Ginee asalkan wajar (< Rp900rb);
+ * selain itu 0 (= jangan dipakai).
  */
 export async function getGineeVariationPrices(
   variationIds: string[],
-): Promise<Map<string, { price: number; image?: string; source: "shop" | "master" | "none" }>> {
-  const map = new Map<string, { price: number; image?: string; source: "shop" | "master" | "none" }>();
-  if (!variationIds.length) return map;
+  shopId?: string,
+): Promise<Map<string, VariationPrice>> {
+  const map = new Map<string, VariationPrice>();
   type Row = { variationId: string; masterPrice?: { amount?: number }; image?: string; channelPriceVOList?: ChannelPrice[] };
-  const res = await gineeRequest<{ content?: Row[] }>(
-    "POST",
-    "/openapi/product/variation/v1/list-price",
-    { page: 0, size: Math.min(200, variationIds.length), masterVariationIds: variationIds },
-  );
-  for (const r of res.data?.content ?? []) {
-    const shop = (r.channelPriceVOList ?? []).find(
-      (c) => c.channel === PRICE_CHANNEL && (c.shopName ?? "").toLowerCase() === PRICE_SHOP,
+  const amount = (c?: ChannelPrice) => Math.round(c?.channelSellingPrice?.amount ?? c?.channelPrice?.amount ?? 0);
+  for (let i = 0; i < variationIds.length; i += 200) {
+    const ids = variationIds.slice(i, i + 200);
+    const res = await gineeRequest<{ content?: Row[] }>(
+      "POST",
+      "/openapi/product/variation/v1/list-price",
+      { page: 0, size: ids.length, masterVariationIds: ids },
     );
-    const shopPrice = Math.round(shop?.channelSellingPrice?.amount ?? shop?.channelPrice?.amount ?? 0);
-    const master = Math.round(r.masterPrice?.amount ?? 0);
-    const entry =
-      !isPlaceholderPrice(shopPrice)
-        ? { price: shopPrice, source: "shop" as const }
-        : !isPlaceholderPrice(master)
-          ? { price: master, source: "master" as const }
-          : { price: 0, source: "none" as const };
-    map.set(r.variationId, { ...entry, image: r.image });
+    for (const r of res.data?.content ?? []) {
+      // 1 varian bisa punya >1 listing di toko yang sama → utamakan yang harganya wajar.
+      const hits = (r.channelPriceVOList ?? []).filter((c) =>
+        shopId ? c.shopId === shopId : c.channel === PRICE_CHANNEL && (c.shopName ?? "").toLowerCase() === PRICE_SHOP,
+      );
+      const shopPrice = amount(hits.find((c) => !isPlaceholderPrice(amount(c))) ?? hits[0]);
+      const master = Math.round(r.masterPrice?.amount ?? 0);
+      const entry =
+        !isPlaceholderPrice(shopPrice)
+          ? { price: shopPrice, source: "shop" as const }
+          : !isPlaceholderPrice(master)
+            ? { price: master, source: "master" as const }
+            : { price: 0, source: "none" as const };
+      map.set(r.variationId, { ...entry, image: r.image, listed: hits.length > 0 });
+    }
   }
   return map;
 }

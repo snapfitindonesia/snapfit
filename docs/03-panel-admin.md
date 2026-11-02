@@ -137,6 +137,10 @@ pencarian itu di toko.
    masing 1 varian). Halaman impor menyatukannya jadi 1 baris ("gabungan N produk Ginee") → diimpor
    sebagai 1 produk dengan semua varian. `gineeProductId` = master pertama; stok tetap per SKU.
 4. Periksa hasilnya: harga dummy (99.999 dst.) harus diganti manual di form produk.
+5. **Ambil dari toko lain**: pilih toko di "Ambil dari" (Shopee/TikTok/Blibli/manual yang masih terhubung
+   di Ginee) sebelum mencari. Hasil hanya produk & varian yang dijual di toko itu, dengan **harga toko itu**
+   (ditampilkan per baris). Nama, foto & deskripsi tetap dari master Ginee (API Ginee tak menyediakan data
+   listing per toko); stok tetap dari gudang. Bawaan = master + harga Shopee "Snapfit Indonesia".
 
 ### Mengunci produk dari sinkron Ginee
 Di form produk, aktifkan **"Kunci dari sinkron"** bila stok/harga produk itu ingin

@@ -26,8 +26,15 @@ type SearchItem = ReturnType<typeof summarizeGinee> & {
   imported: boolean;
   variations: GineeVariationBrief[];
   productIds: string[]; // semua master Ginee yang digabung (nama sama); productIds[0] = productId
+  /** Kisaran harga jual di toko terpilih (hanya bila menyaring per toko). */
+  priceMin?: number;
+  priceMax?: number;
 };
-type SearchResult = { ok: true; total: number; items: SearchItem[] } | { ok: false; error: string };
+// scanned = jumlah master Ginee yang sudah dibaca (utk "Muat lebih banyak"; bisa > jumlah item bila disaring per toko).
+type SearchResult = { ok: true; total: number; scanned: number; items: SearchItem[] } | { ok: false; error: string };
+
+// ID toko Ginee ("SH…"). Kosong = tanpa saringan toko (harga acuan Shopee Snapfit Indonesia).
+const validShopId = (id?: string) => !id || /^SH[0-9A-Z]{10,40}$/i.test(id);
 
 /**
  * Pencarian Ginee cocok FRASA utuh ("snapfit fold 7" = 0 hasil walau ada "SNAPFIT … Fold 7").
@@ -91,7 +98,7 @@ async function searchGineeByWords(keyword: string, page: number): Promise<{ tota
   return { total: hits.length, content: hits };
 }
 
-export async function searchGineeForImport(keyword: string, page = 0): Promise<SearchResult> {
+export async function searchGineeForImport(keyword: string, page = 0, shopId?: string): Promise<SearchResult> {
   try {
     await requireAdmin();
   } catch {
@@ -99,6 +106,7 @@ export async function searchGineeForImport(keyword: string, page = 0): Promise<S
   }
   if (!isGineeConfigured()) return { ok: false, error: "Ginee belum dikonfigurasi (isi GINEE_ACCESS_KEY/SECRET_KEY)." };
   if (!keyword.trim()) return { ok: false, error: "Masukkan kata kunci pencarian." };
+  if (!validShopId(shopId)) return { ok: false, error: "Toko tidak valid." };
 
   try {
     const { total, content } = await searchGineeByWords(keyword, page);
@@ -122,7 +130,7 @@ export async function searchGineeForImport(keyword: string, page = 0): Promise<S
       console.error("Stok gudang Ginee (pencarian impor) gagal:", e instanceof Error ? e.message : e);
     }
 
-    const items: SearchItem[] = content.map((c) => {
+    let items: SearchItem[] = content.map((c) => {
       // variationBriefs dari search = sumber varian yang benar (terfilter per produk)
       const variations = (c.variationBriefs ?? []).map((v) => ({
         id: v.id,
@@ -139,7 +147,24 @@ export async function searchGineeForImport(keyword: string, page = 0): Promise<S
         productIds: [c.productId],
       };
     });
-    return { ok: true, total, items: mergeSameName(items) };
+    // Saring per toko: hanya varian yang dijual di toko itu (API Ginee tak punya daftar produk per toko —
+    // keterkaitan toko dibaca dari channelPriceVOList per varian). Master tanpa listing di toko → dibuang.
+    if (shopId) {
+      const prices = await getGineeVariationPrices([...new Set(items.flatMap((it) => it.variations.map((v) => v.id)))], shopId);
+      items = items.flatMap((it) => {
+        const variations = it.variations.filter((v) => prices.get(v.id)?.listed);
+        if (!variations.length) return [];
+        const shopPrices = variations.map((v) => prices.get(v.id)!).filter((p) => p.source === "shop").map((p) => p.price);
+        return [{
+          ...it,
+          variations,
+          variantCount: variations.length,
+          stock: variations.reduce((n, v) => n + (v.stock ?? 0), 0),
+          ...(shopPrices.length ? { priceMin: Math.min(...shopPrices), priceMax: Math.max(...shopPrices) } : {}),
+        }];
+      });
+    }
+    return { ok: true, total, scanned: content.length, items: mergeSameName(items) };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Gagal mengambil data Ginee." };
   }
@@ -162,6 +187,10 @@ function mergeSameName(items: SearchItem[]): SearchItem[] {
     g.variantCount = g.variations.length;
     g.stock += it.stock;
     g.imported = g.imported || it.imported;
+    if (it.priceMin !== undefined) {
+      g.priceMin = Math.min(g.priceMin ?? Infinity, it.priceMin);
+      g.priceMax = Math.max(g.priceMax ?? 0, it.priceMax ?? it.priceMin);
+    }
   }
   return [...map.values()];
 }
@@ -172,13 +201,13 @@ type ImportResult = { ok: boolean; created: number; skipped: number; errors: str
 /**
  * Impor PENUH & "LANGSUNG SIAP JUAL" dari Ginee:
  *  - varian (variationBriefs search), foto & deskripsi (product detail)
- *  - harga = harga jual toko Shopee Snapfit Indonesia (placeholder → tersembunyi)
+ *  - harga = harga jual toko terpilih (`shopId`), bawaan toko Shopee Snapfit Indonesia (placeholder → tersembunyi)
  *  - stok  = inventori GUDANG Ginee (bukan stok master yang selalu 0)
  *  - merek = ditebak dari judul (hanya merek terdaftar)
  *  - foto  = disalin ke cdn.snapfit.id (WebP), bukan hotlink marketplace
  * UI memanggil per 3 produk agar tak kena batas waktu.
  */
-export async function importGineeProducts(inputs: ImportInput[]): Promise<ImportResult> {
+export async function importGineeProducts(inputs: ImportInput[], shopId?: string): Promise<ImportResult> {
   try {
     await requireAdmin();
   } catch {
@@ -186,6 +215,7 @@ export async function importGineeProducts(inputs: ImportInput[]): Promise<Import
   }
   if (!isGineeConfigured()) return { ok: false, created: 0, skipped: 0, errors: ["Ginee belum dikonfigurasi."] };
   if (!inputs.length) return { ok: false, created: 0, skipped: 0, errors: ["Tidak ada produk terpilih."] };
+  if (!validShopId(shopId)) return { ok: false, created: 0, skipped: 0, errors: ["Toko tidak valid."] };
 
   const errors: string[] = [];
   let created = 0;
@@ -202,7 +232,7 @@ export async function importGineeProducts(inputs: ImportInput[]): Promise<Import
         continue;
       }
 
-      const priceMap = await getGineeVariationPrices(input.variations.map((v) => v.id));
+      const priceMap = await getGineeVariationPrices(input.variations.map((v) => v.id), shopId);
       // Deskripsi & galeri opsional — jangan gagalkan produk kalau `get` kena limit.
       let detail = null;
       try {
