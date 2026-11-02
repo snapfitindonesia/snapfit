@@ -3,11 +3,12 @@ import logo from "@/logosnapfit.png";
 import mark from "@/app/icon.png";
 import { PromoPageClient } from "@/components/promo-page/PromoPageClient";
 import { ProductCard } from "@/components/shop/product-card";
-import { getPromoPageConfig, getPromoProducts } from "@/lib/promo-page/data";
+import { getPromoItemMeta, getPromoPageConfig, getPromoProducts } from "@/lib/promo-page/data";
 import { getPromoMenu } from "@/lib/promo-page/menu";
 import { PROMO_PAGE_PATH } from "@/lib/promo-page/config";
 
 // ISR 1 jam; simpan di Admin → Halaman Buy 1 Get 1 → langsung segar (revalidateTag/Path).
+// Saringan menu (?kat=…&q=…) dibaca di browser → halaman tetap statis.
 export const revalidate = 3600;
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -22,11 +23,12 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function BuyOneGetOnePage() {
   const config = await getPromoPageConfig();
-  const showProducts = config.sections.some((s) => s.key === "products" && s.active);
-  const [menu, products] = await Promise.all([
-    getPromoMenu(config),
-    showProducts ? getPromoProducts(config.products.productIds) : Promise.resolve([]),
-  ]);
+  const [products, meta] = await Promise.all([getPromoProducts(config.products.productIds), getPromoItemMeta(config.products.productIds)]);
+  // Menu hanya dari produk yang benar-benar tampil (bukan yang stok habis/diarsip).
+  const shown = new Set(products.map((p) => p.id));
+  const items = meta.filter((m) => shown.has(m.id));
+  const menu = await getPromoMenu(config, items);
+  const byId = new Map(items.map((m) => [m.id, m]));
   return (
     <PromoPageClient
       config={config}
@@ -34,15 +36,12 @@ export default async function BuyOneGetOnePage() {
       logoSrc={logo.src}
       markSrc={mark.src}
       homeHref={PROMO_PAGE_PATH}
-      products={
-        products.length ? (
-          <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
-            {products.map((p, i) => (
-              <ProductCard key={p.id} product={p} priority={i < 4} />
-            ))}
-          </div>
-        ) : undefined
-      }
+      products={products.map((p, i) => ({
+        id: p.id,
+        slugs: byId.get(p.id)?.slugs ?? [],
+        text: byId.get(p.id)?.text ?? p.name.toLowerCase(),
+        card: <ProductCard product={p} priority={i < 4} />,
+      }))}
     />
   );
 }

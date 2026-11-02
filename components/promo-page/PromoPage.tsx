@@ -2,7 +2,8 @@
 
 /* Desain dari paket "FashionPage" (markup & CSS Modules dipertahankan) — dipasang sebagai halaman /buy1get1.
    Yang diubah dari paket: logo → SNAPFIT, banner → dari dashboard (placeholder bila kosong), menu → kategori
-   asli SNAPFIT (lib/promo-page/menu.ts), tombol → fitur website (keranjang, akun, pencarian, newsletter),
+   SNAPFIT yang punya produk promo saja (lib/promo-page/menu.ts), menu & pencarian → menyaring produk di halaman
+   ini (?kat=…&q=…, lib/promo-page/filter.ts), tombol → fitur website (keranjang, akun, newsletter),
    urutan/tampil bagian & semua teks → Admin → Halaman Buy 1 Get 1 (lib/promo-page/config.ts). */
 /* eslint-disable @next/next/no-img-element -- markup paket: <img> biasa (banner data URI/CDN tanpa next/image). */
 import { useEffect, useId, useRef, useState } from 'react';
@@ -13,6 +14,10 @@ import type { IconName } from './Icon';
 import styles from './PromoPage.module.css';
 import { placeholder, SLOT_SIZE, type PromoPageConfig, type SectionKey } from '@/lib/promo-page/config';
 import type { PromoMenu, MenuSegment } from '@/lib/promo-page/menu';
+import { filterHref, matchesFilter, parseFilter, type PromoFilter, type PromoItemMeta } from '@/lib/promo-page/filter';
+
+/** Produk promo: kartu (dirender server) + data saringnya. */
+export type PromoProduct = PromoItemMeta & { card: ReactNode };
 
 const cx = (...names: (string | false | undefined)[]) => names.filter(Boolean).map(name => styles[name as string]).filter(Boolean).join(' ');
 type BottomItem = 'home' | 'category' | 'cart' | 'wishlist' | 'account';
@@ -25,9 +30,9 @@ export interface PromoPageProps {
   markSrc: string;
   /** The dedicated page route, not the main website homepage. */
   homeHref: string;
-  /** Kartu produk promo (dirender server) — tampil di bagian "products". */
-  products?: ReactNode;
-  /** Pindah halaman (router Next) — `#id` digulir di halaman ini. */
+  /** Produk promo — tampil di bagian "products", disaring menu/pencarian halaman ini. */
+  products: PromoProduct[];
+  /** Pindah halaman (router Next) — `#id` digulir, `?kat=…` menyaring produk di halaman ini. */
   navigate: (href: string) => void;
   /** Tombol keranjang/akun/dll. → fitur website. false = tampilkan info lokal. */
   onAction?: (action: PromoAction) => boolean;
@@ -67,6 +72,7 @@ export default function PromoPage({ config, menu, logoSrc, markSrc, homeHref, pr
   const [category, setCategory] = useState('Rekomendasi'), [query, setQuery] = useState(''), [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const [appBannerVisible, setAppBannerVisible] = useState(true), [seoExpanded, setSeoExpanded] = useState(false);
   const [modal, setModal] = useState<ModalState | null>(null), [newsletterStatus, setNewsletterStatus] = useState<'idle' | 'pending' | 'success' | 'error'>('idle');
+  const [filter, setFilter] = useState<PromoFilter>({});
   const headerRef = useRef<HTMLElement>(null), searchRef = useRef<HTMLFormElement>(null), searchInputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null), menuCloseRef = useRef<HTMLButtonElement>(null), bottomCategoryRef = useRef<HTMLButtonElement>(null);
   const segmentRefs = useRef<Partial<Record<string, HTMLButtonElement | null>>>({});
@@ -97,7 +103,11 @@ export default function PromoPage({ config, menu, logoSrc, markSrc, homeHref, pr
     setMobile(media.matches);
     const change = () => { setMobile(media.matches); setMenuOpen(false); };
     media.addEventListener('change', change);
-    return () => { media.removeEventListener('change', change); if (closeTimer.current) clearTimeout(closeTimer.current); };
+    // Saringan dari URL (tautan dibagikan / tombol kembali).
+    const readFilter = () => setFilter(parseFilter(window.location.search));
+    readFilter();
+    window.addEventListener('popstate', readFilter);
+    return () => { media.removeEventListener('change', change); window.removeEventListener('popstate', readFilter); if (closeTimer.current) clearTimeout(closeTimer.current); };
   }, []);
   useEffect(() => {
     if (!menuOpen && !modal) return;
@@ -129,14 +139,20 @@ export default function PromoPage({ config, menu, logoSrc, markSrc, homeHref, pr
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [menuOpen, mobile, segmentId]);
 
-  /** Tujuan tombol: `#id` → gulir di halaman ini; selain itu → halaman website. */
+  const scrollToId = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+  /** Tujuan tombol: `?kat=…&q=…` → saring produk promo; `#id` → gulir di halaman ini; selain itu → halaman website. */
   const go = (href: string) => {
     closeMenu(); setSuggestionsOpen(false); setModal(null);
     if (!href) return;
-    if (href.startsWith('#')) {
-      document.getElementById(href.slice(1))?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+    if (href.startsWith('?')) {
+      const next = parseFilter(href);
+      setFilter(next);
+      const qs = filterHref(next);
+      window.history.pushState(null, '', `${window.location.pathname}${qs === '?' ? '' : qs}`);
+      requestAnimationFrame(() => scrollToId('produk-promo'));
       return;
     }
+    if (href.startsWith('#')) { scrollToId(href.slice(1)); return; }
     navigate(href);
   };
   const showInfo = (key: PromoAction) => {
@@ -149,7 +165,7 @@ export default function PromoPage({ config, menu, logoSrc, markSrc, homeHref, pr
     event?.preventDefault(); const value = term.trim();
     if (!value) { searchInputRef.current?.focus(); setSuggestionsOpen(true); return; }
     const hit = menu.suggestions.find(s => s.label.toLowerCase() === value.toLowerCase());
-    go(hit?.href ?? `/produk?q=${encodeURIComponent(value)}`);
+    go(hit?.href ?? filterHref({ q: value }));
   };
   const homeClick = (event: MouseEvent<HTMLAnchorElement>) => {
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
@@ -159,7 +175,10 @@ export default function PromoPage({ config, menu, logoSrc, markSrc, homeHref, pr
   };
   const q = query.trim().toLowerCase();
   const suggestions = menu.suggestions.filter(item => item.label.toLowerCase().includes(q)).slice(0, 5);
-  const displayedSuggestions = suggestions.length ? suggestions : [{ label: query.trim(), href: `/produk?q=${encodeURIComponent(query.trim())}` }];
+  const displayedSuggestions = suggestions.length ? suggestions : q ? [{ label: query.trim(), href: filterHref({ q: query.trim() }) }] : [];
+  const filtering = !!(filter.kat || filter.q);
+  const shownProducts = filtering ? products.filter(p => matchesFilter(p, filter)) : products;
+  const filterLabel = [filter.kat && (menu.labels[filter.kat] ?? filter.kat), filter.q && `“${filter.q}”`].filter(Boolean).join(' · ');
   const tabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
     if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
     event.preventDefault();
@@ -173,7 +192,7 @@ export default function PromoPage({ config, menu, logoSrc, markSrc, homeHref, pr
       const iconName: IconName = { home: 'z', category: 'grid', cart: 'bag', wishlist: 'heart', account: 'user' }[key] as IconName;
       const inner = <>{key === 'home' ? homeIcon : <Icon name={iconName} className={cx('icon')}/>}<span>{label}</span></>;
       return key === 'home' ? <a key={key} className={cx('bottom-nav-item')} href={homeHref} onClick={homeClick} aria-current={activeBottom === key ? 'page' : undefined}>{inner}</a>
-        : <button key={key} ref={key === 'category' ? bottomCategoryRef : undefined} className={cx('bottom-nav-item')} aria-current={activeBottom === key ? 'page' : undefined} aria-controls={key === 'category' ? menuId : undefined} aria-expanded={key === 'category' ? menuOpen : undefined} onClick={() => key === 'category' ? menuOpen ? menuCloseRef.current?.focus() : openMenu(segmentId) : showInfo(key)}>{inner}</button>;
+        : <button key={key} ref={key === 'category' ? bottomCategoryRef : undefined} className={cx('bottom-nav-item')} aria-current={activeBottom === key ? 'page' : undefined} aria-controls={key === 'category' ? menuId : undefined} aria-expanded={key === 'category' ? menuOpen : undefined} onClick={() => key === 'category' ? !segments.length ? go('#produk-promo') : menuOpen ? menuCloseRef.current?.focus() : openMenu(segmentId) : showInfo(key)}>{inner}</button>;
     })}
   </nav>;
   const menuPanel = <div ref={menuRef} id={menuId} className={cx('mega-menu', 'header-width')} hidden={!menuOpen} role={mobile ? 'dialog' : 'region'} aria-modal={mobile && menuOpen ? true : undefined} aria-label="Pilihan kategori" onPointerEnter={clearCloseTimer} onPointerLeave={scheduleClose} onKeyDown={event => {
@@ -212,7 +231,11 @@ export default function PromoPage({ config, menu, logoSrc, markSrc, homeHref, pr
     switch (key) {
       case 'hero': return <section key={key} className={cx('hero')} aria-label={config.hero.alt || 'Promo'}><button className={cx('image-link')} onClick={() => go(config.hero.href)}><img src={banner(config.hero, 'hero', 'Banner utama')} alt={config.hero.alt} width={1280} height={720} fetchPriority="high"/></button></section>;
       case 'arrivals': return <section key={key} className={cx('arrivals')} aria-label={config.arrivals.alt || 'Banner'}><button className={cx('image-link', 'rounded')} onClick={() => go(config.arrivals.href)}><img src={banner(config.arrivals, 'arrivals', 'Banner strip')} alt={config.arrivals.alt} width={1920} height={300} loading="lazy"/></button></section>;
-      case 'products': return <section key={key} id="produk-promo" className={cx('category-section', 'products-section')} aria-labelledby={`${uid}-products`}><div className={cx('section-heading')}><div><span className={cx('eyebrow')}>{config.products.eyebrow}</span><Heading k={key} id={`${uid}-products`}>{config.products.title}</Heading></div><span className={cx('section-caption')}>{config.products.caption}</span></div>{products ?? <p className={cx('products-empty')}>Produk promo segera hadir.</p>}</section>;
+      case 'products': return <section key={key} id="produk-promo" className={cx('category-section', 'products-section')} aria-labelledby={`${uid}-products`}><div className={cx('section-heading')}><div><span className={cx('eyebrow')}>{config.products.eyebrow}</span><Heading k={key} id={`${uid}-products`}>{config.products.title}</Heading></div><span className={cx('section-caption')}>{config.products.caption}</span></div>
+        {filtering && <div className={cx('promo-filter')}><span>{shownProducts.length} produk · <strong>{filterLabel}</strong></span><button className={cx('underlined-link')} onClick={() => go('?')}>Semua produk promo <span>×</span></button></div>}
+        {shownProducts.length ? <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">{shownProducts.map(p => <div key={p.id}>{p.card}</div>)}</div>
+          : <p className={cx('products-empty')}>{filtering ? `Belum ada produk promo untuk ${filterLabel}.` : 'Produk promo segera hadir.'}</p>}
+      </section>;
       case 'signup': return <section key={key} className={cx('signup-banner')}><div><span className={cx('eyebrow')}>{config.signup.eyebrow}</span><h2>{config.signup.title}</h2><p>{config.signup.text}</p></div><button className={cx('pill-button')} onClick={() => { setNewsletterStatus('idle'); setModal({ kind: 'newsletter', title: 'Newsletter' }); }}>{config.signup.ctaLabel} <span>↗</span></button></section>;
       case 'benefits': return <section key={key} className={cx('benefits')} aria-label="Keunggulan berbelanja">{config.benefits.map((benefit, index) => <div key={index}><Icon name={(['check', 'truck', 'return'] as IconName[])[index] ?? 'check'} className={cx('icon')}/><span><strong>{benefit.title}</strong><small>{benefit.caption}</small></span></div>)}</section>;
       case 'seo': return <section key={key} className={cx('seo-block')}><h2>{config.seo.title}</h2><p>{config.seo.text}</p>{seoExpanded && config.seo.more && <p>{config.seo.more}</p>}{config.seo.more && <button className={cx('underlined-link')} aria-expanded={seoExpanded} onClick={() => setSeoExpanded(value => !value)}>{seoExpanded ? 'Tampilkan lebih sedikit' : 'Baca selengkapnya'} <span>{seoExpanded ? '−' : '+'}</span></button>}</section>;
@@ -227,7 +250,7 @@ export default function PromoPage({ config, menu, logoSrc, markSrc, homeHref, pr
       <div className={cx('header-main', 'header-width')} onPointerEnter={event => { if (event.pointerType === 'mouse' && !mobile && menuOpen) closeMenu(); }}>
         <a className={cx('wordmark')} href={homeHref} aria-label="SNAPFIT — Buy 1 Get 1" onClick={homeClick}><img src={logoSrc} alt="SNAPFIT"/></a>
         <form ref={searchRef} className={cx('search')} role="search" onSubmit={event => submitSearch(event)}><label className={cx('sr-only')} htmlFor={searchId}>Cari produk</label><input ref={searchInputRef} id={searchId} value={query} onChange={event => { setQuery(event.target.value); setSuggestionsOpen(true); }} onFocus={() => { closeMenu(); setSuggestionsOpen(true); }} placeholder={config.searchPlaceholder} autoComplete="off" role="combobox" aria-autocomplete="list" aria-expanded={suggestionsOpen} aria-controls={suggestionsId} onKeyDown={event => { if (event.key === 'ArrowDown') { event.preventDefault(); suggestionRefs.current[0]?.focus(); } }}/><button className={cx('search-submit')} aria-label="Cari"><Icon name="search" className={cx('icon')}/></button>
-          {suggestionsOpen && <div id={suggestionsId} className={cx('search-suggestions')}><div className={cx('suggestion-heading')}>{query.trim() ? 'HASIL PENCARIAN' : 'PENCARIAN POPULER'}</div>{displayedSuggestions.map((term, index) => <button type="button" key={term.label} ref={element => { suggestionRefs.current[index] = element; }} onClick={() => { setQuery(term.label); go(term.href); }} onKeyDown={event => { if (!['ArrowDown', 'ArrowUp'].includes(event.key)) return; event.preventDefault(); if (event.key === 'ArrowUp' && index === 0) searchInputRef.current?.focus(); else suggestionRefs.current[(index + (event.key === 'ArrowDown' ? 1 : -1) + displayedSuggestions.length) % displayedSuggestions.length]?.focus(); }}><Icon name="search" className={cx('icon')}/>{term.label}<span className={cx('suggestion-arrow')}>↗</span></button>)}</div>}
+          {suggestionsOpen && displayedSuggestions.length > 0 && <div id={suggestionsId} className={cx('search-suggestions')}><div className={cx('suggestion-heading')}>{query.trim() ? 'HASIL PENCARIAN' : 'PENCARIAN POPULER'}</div>{displayedSuggestions.map((term, index) => <button type="button" key={term.label} ref={element => { suggestionRefs.current[index] = element; }} onClick={() => { setQuery(term.label); go(term.href); }} onKeyDown={event => { if (!['ArrowDown', 'ArrowUp'].includes(event.key)) return; event.preventDefault(); if (event.key === 'ArrowUp' && index === 0) searchInputRef.current?.focus(); else suggestionRefs.current[(index + (event.key === 'ArrowDown' ? 1 : -1) + displayedSuggestions.length) % displayedSuggestions.length]?.focus(); }}><Icon name="search" className={cx('icon')}/>{term.label}<span className={cx('suggestion-arrow')}>↗</span></button>)}</div>}
         </form>
         <div className={cx('header-actions')}><button className={cx('account-button')} onClick={() => showInfo('account')}><Icon name="user" className={cx('icon')}/><span>Masuk / Daftar</span></button><button className={cx('icon-button')} aria-label="Wishlist" onClick={() => showInfo('wishlist')}><Icon name="heart" className={cx('icon')}/></button><button className={cx('icon-button')} aria-label="Keranjang belanja" onClick={() => showInfo('cart')}><Icon name="bag" className={cx('icon')}/></button></div>
       </div>
@@ -238,7 +261,7 @@ export default function PromoPage({ config, menu, logoSrc, markSrc, homeHref, pr
     <main ref={mainRef} id={mainId}><div className={cx('campaign-width')}>
       {config.sections.filter(s => s.active).map(s => section(s.key))}
     </div></main>
-    <footer ref={footerRef} className={cx('site-footer')}><div className={cx('header-width','footer-inner')}><div><a className={cx('wordmark')} href={homeHref} onClick={homeClick}><img src={logoSrc} alt="SNAPFIT"/></a><p>{config.footer.tagline}</p></div><div><h3>Jelajahi</h3>{segments.slice(0,3).map(segment => <button key={segment.id} onClick={() => { window.scrollTo({top:0,behavior:'instant'}); openMenu(segment.id,true); }}>{segment.label}</button>)}</div><div><h3>Lebih banyak</h3>{[{ label: 'Semua produk', href: '/produk' }, { label: 'Tentang SNAPFIT', href: '/tentang' }, { label: 'Bantuan', href: '/bantuan' }].map(link => <button key={link.label} onClick={() => go(link.href)}>{link.label}</button>)}</div></div><div className={cx('header-width','footer-bottom')}><span>{config.footer.bottomLeft}</span><span>{config.footer.bottomRight}</span></div></footer>
+    <footer ref={footerRef} className={cx('site-footer')}><div className={cx('header-width','footer-inner')}><div><a className={cx('wordmark')} href={homeHref} onClick={homeClick}><img src={logoSrc} alt="SNAPFIT"/></a><p>{config.footer.tagline}</p></div><div><h3>Jelajahi</h3>{segments.slice(0,3).map(segment => <button key={segment.id} onClick={() => { window.scrollTo({top:0,behavior:'instant'}); openMenu(segment.id,true); }}>{segment.label}</button>)}</div><div><h3>Lebih banyak</h3>{[{ label: 'Semua produk promo', href: '?' }, { label: 'Tentang SNAPFIT', href: '/tentang' }, { label: 'Bantuan', href: '/bantuan' }].map(link => <button key={link.label} onClick={() => go(link.href)}>{link.label}</button>)}</div></div><div className={cx('header-width','footer-bottom')}><span>{config.footer.bottomLeft}</span><span>{config.footer.bottomRight}</span></div></footer>
     {!(mobile && menuOpen) && !overlayOpen && bottomNavigation}
     {!overlayOpen && <button className={cx('floating-help')} onClick={() => showInfo('help')} aria-label="Bantuan"><img src={markSrc} alt="" className={cx('mark')}/></button>}
     {mounted && mobile && menuOpen && createPortal(<div className={cx('root','overlay-root')}>{menuPanel}</div>,document.body)}

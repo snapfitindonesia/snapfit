@@ -2,9 +2,8 @@
 
 // Adapter paket → fitur website (sesuai examples/FashionPageAdapter paket): router Next, keranjang (drawer),
 // login/akun, newsletter, bantuan WhatsApp. Callback dibuat DI SINI (client), bukan dikirim dari server.
-import type { ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import PromoPage, { type PromoAction } from "@/components/promo-page/PromoPage";
+import PromoPage, { type PromoAction, type PromoProduct } from "@/components/promo-page/PromoPage";
 import { useStoreUI } from "@/components/shop/store-ui-provider";
 import { subscribeNewsletter } from "@/lib/actions/newsletter";
 import { waChatUrl } from "@/lib/contact";
@@ -17,7 +16,7 @@ export function PromoPageClient(props: {
   logoSrc: string;
   markSrc: string;
   homeHref: string;
-  products?: ReactNode;
+  products: PromoProduct[];
 }) {
   const router = useRouter();
   const { authed, openCart, openLogin, cartOpen, loginOpen } = useStoreUI();
