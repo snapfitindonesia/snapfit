@@ -103,11 +103,15 @@ export default function PromoPage({ config, menu, logoSrc, markSrc, homeHref, pr
     setMobile(media.matches);
     const change = () => { setMobile(media.matches); setMenuOpen(false); };
     media.addEventListener('change', change);
+    // Menu/dialog mengunci scroll (overflow hidden) → scrollbar hilang & halaman bergeser saat hover menu.
+    // Ruang scrollbar dipertahankan selama di halaman ini.
+    const html = document.documentElement, gutter = html.style.scrollbarGutter;
+    html.style.scrollbarGutter = 'stable';
     // Saringan dari URL (tautan dibagikan / tombol kembali).
     const readFilter = () => setFilter(parseFilter(window.location.search));
     readFilter();
     window.addEventListener('popstate', readFilter);
-    return () => { media.removeEventListener('change', change); window.removeEventListener('popstate', readFilter); if (closeTimer.current) clearTimeout(closeTimer.current); };
+    return () => { html.style.scrollbarGutter = gutter; media.removeEventListener('change', change); window.removeEventListener('popstate', readFilter); if (closeTimer.current) clearTimeout(closeTimer.current); };
   }, []);
   useEffect(() => {
     if (!menuOpen && !modal) return;
