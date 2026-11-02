@@ -42,12 +42,12 @@ describe("pengaturan halaman Buy 1 Get 1", () => {
   });
 
   it("data lama tanpa bagian baru → bagian baru ditambahkan (tersembunyi), data rusak → bawaan", () => {
-    const old = { ...DEFAULT_PROMO_PAGE, sections: DEFAULT_PROMO_PAGE.sections.filter((s) => s.key !== "seo") };
+    const old = { ...DEFAULT_PROMO_PAGE, sections: DEFAULT_PROMO_PAGE.sections.filter((s) => s.key !== "benefits") };
     const c = parsePromoPage(old);
-    expect(c.sections.at(-1)).toEqual({ key: "seo", active: false });
+    expect(c.sections.at(-1)).toEqual({ key: "benefits", active: false });
     expect(parsePromoPage({ rusak: true })).toEqual(DEFAULT_PROMO_PAGE);
     // Data tersimpan sebelum bagian kartu kategori/editorial/kotak pilihan dihapus → tetap terbaca (judul tak hilang).
-    const lama = { ...DEFAULT_PROMO_PAGE, title: "Judul saya", sections: [{ key: "brands", active: true }, ...DEFAULT_PROMO_PAGE.sections, { key: "editorial", active: false }], brands: { items: [] } };
+    const lama = { ...DEFAULT_PROMO_PAGE, title: "Judul saya", sections: [{ key: "brands", active: true }, ...DEFAULT_PROMO_PAGE.sections, { key: "editorial", active: false }, { key: "seo", active: true }], brands: { items: [] }, seo: { title: "x", text: "y", more: "" } };
     const p = parsePromoPage(lama);
     expect(p.title).toBe("Judul saya");
     expect(p.sections.map((x) => x.key)).toEqual(DEFAULT_PROMO_PAGE.sections.map((x) => x.key));

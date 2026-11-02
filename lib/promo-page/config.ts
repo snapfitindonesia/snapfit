@@ -8,9 +8,9 @@ export const PROMO_PAGE_TAG = "promo-page-buy1get1";
 export const PROMO_PAGE_PATH = "/buy1get1";
 
 /** Bagian halaman yang bisa diurutkan & disembunyikan (seperti Konten Beranda). */
-// Bagian "categories" (kartu merek), "editorial" & "brands" (kotak pilihan) dihapus Nov 2026 — data lama yang
-// masih memuatnya tetap terbaca (diabaikan di parsePromoPage).
-export const SECTION_KEYS = ["hero", "arrivals", "products", "signup", "benefits", "seo"] as const;
+// Bagian "categories" (kartu merek), "editorial", "brands" (kotak pilihan) & "seo" (teks bawah) dihapus Nov 2026 —
+// data lama yang masih memuatnya tetap terbaca (diabaikan di parsePromoPage).
+export const SECTION_KEYS = ["hero", "arrivals", "products", "signup", "benefits"] as const;
 export type SectionKey = (typeof SECTION_KEYS)[number];
 export const SECTION_LABELS: Record<SectionKey, { label: string; hint: string }> = {
   hero: { label: "Banner utama", hint: "Foto besar paling atas — 1280 × 720 px" },
@@ -18,7 +18,6 @@ export const SECTION_LABELS: Record<SectionKey, { label: string; hint: string }>
   products: { label: "Produk promo", hint: "Produk peserta Buy 1 Get 1 (dipilih di bagian Produk promo)" },
   signup: { label: "Ajakan langganan", hint: "Kotak ajakan daftar newsletter" },
   benefits: { label: "Keunggulan", hint: "3 poin keunggulan belanja" },
-  seo: { label: "Teks SEO", hint: "Paragraf deskripsi di bawah halaman" },
 };
 
 const text = (max: number) => z.string().trim().max(max).default("");
@@ -56,7 +55,6 @@ export const promoPageSchema = z.object({
   categories: z.object({ images: z.record(z.string().max(80), img).default({}) }).default({ images: {} }),
   signup: z.object({ eyebrow: text(60), title: text(120), text: text(240), ctaLabel: text(40) }),
   benefits: z.array(z.object({ title: text(60), caption: text(100) })).max(3).default([]),
-  seo: z.object({ title: text(120), text: text(1200), more: text(1200) }),
   footer: z.object({ tagline: text(160), bottomLeft: text(60), bottomRight: text(80) }),
 });
 export type PromoPageConfig = z.infer<typeof promoPageSchema>;
@@ -96,11 +94,6 @@ export const DEFAULT_PROMO_PAGE: PromoPageConfig = {
     { title: "Belanja makin mudah", caption: "Dikirim ke seluruh Indonesia" },
     { title: "7 hari pengembalian", caption: "Untuk produk cacat atau salah kirim" },
   ],
-  seo: {
-    title: "Promo Buy 1 Get 1 SNAPFIT",
-    text: "SNAPFIT adalah merek pelindung layar, pelindung kamera, dan casing smartphone presisi asal Indonesia. Selama promo, beli 1 produk pilihan dan dapatkan 1 gratis.",
-    more: "Promo berlaku untuk produk berlabel Buy 1 Get 1 di halaman ini. Isi paket tertera di halaman masing-masing produk.",
-  },
   footer: { tagline: "Aksesori presisi untuk HP & tablet.", bottomLeft: "SNAPFIT Indonesia", bottomRight: "Pas sejak pertama dipasang." },
 };
 

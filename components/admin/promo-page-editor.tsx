@@ -199,14 +199,6 @@ export function PromoPageEditor({ initial, products, brands }: { initial: PromoP
             ))}
           </div>
         );
-      case "seo":
-        return (
-          <div className="space-y-3">
-            <Text label="Judul" value={c.seo.title} onChange={(title) => set("seo", { ...c.seo, title })} />
-            <Text label="Paragraf" area value={c.seo.text} onChange={(text) => set("seo", { ...c.seo, text })} />
-            <Text label="Lanjutan (setelah “Baca selengkapnya”)" area value={c.seo.more} onChange={(more) => set("seo", { ...c.seo, more })} hint="Kosong = tombol Baca selengkapnya disembunyikan." />
-          </div>
-        );
     }
   };
 

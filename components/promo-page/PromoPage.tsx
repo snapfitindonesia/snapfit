@@ -70,7 +70,7 @@ export default function PromoPage({ config, menu, logoSrc, markSrc, homeHref, pr
   const [mounted, setMounted] = useState(false), [mobile, setMobile] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false), [segmentId, setSegmentId] = useState<string>(segments[0]?.id ?? '');
   const [category, setCategory] = useState('Rekomendasi'), [query, setQuery] = useState(''), [suggestionsOpen, setSuggestionsOpen] = useState(false);
-  const [appBannerVisible, setAppBannerVisible] = useState(true), [seoExpanded, setSeoExpanded] = useState(false);
+  const [appBannerVisible, setAppBannerVisible] = useState(true);
   const [modal, setModal] = useState<ModalState | null>(null), [newsletterStatus, setNewsletterStatus] = useState<'idle' | 'pending' | 'success' | 'error'>('idle');
   const [filter, setFilter] = useState<PromoFilter>({});
   const headerRef = useRef<HTMLElement>(null), searchRef = useRef<HTMLFormElement>(null), searchInputRef = useRef<HTMLInputElement>(null);
@@ -242,7 +242,6 @@ export default function PromoPage({ config, menu, logoSrc, markSrc, homeHref, pr
       </section>;
       case 'signup': return <section key={key} className={cx('signup-banner')}><div><span className={cx('eyebrow')}>{config.signup.eyebrow}</span><h2>{config.signup.title}</h2><p>{config.signup.text}</p></div><button className={cx('pill-button')} onClick={() => { setNewsletterStatus('idle'); setModal({ kind: 'newsletter', title: 'Newsletter' }); }}>{config.signup.ctaLabel} <span>↗</span></button></section>;
       case 'benefits': return <section key={key} className={cx('benefits')} aria-label="Keunggulan berbelanja">{config.benefits.map((benefit, index) => <div key={index}><Icon name={(['check', 'truck', 'return'] as IconName[])[index] ?? 'check'} className={cx('icon')}/><span><strong>{benefit.title}</strong><small>{benefit.caption}</small></span></div>)}</section>;
-      case 'seo': return <section key={key} className={cx('seo-block')}><h2>{config.seo.title}</h2><p>{config.seo.text}</p>{seoExpanded && config.seo.more && <p>{config.seo.more}</p>}{config.seo.more && <button className={cx('underlined-link')} aria-expanded={seoExpanded} onClick={() => setSeoExpanded(value => !value)}>{seoExpanded ? 'Tampilkan lebih sedikit' : 'Baca selengkapnya'} <span>{seoExpanded ? '−' : '+'}</span></button>}</section>;
     }
   };
 
