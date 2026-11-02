@@ -15,6 +15,9 @@ import styles from './PromoPage.module.css';
 import { placeholder, SLOT_SIZE, type PromoPageConfig, type SectionKey } from '@/lib/promo-page/config';
 import type { PromoMenu, MenuSegment } from '@/lib/promo-page/menu';
 import { filterHref, matchesFilter, parseFilter, type PromoFilter, type PromoItemMeta } from '@/lib/promo-page/filter';
+import type { SectionOf } from '@/lib/home/sections';
+import { NewsletterSection } from '@/components/home/newsletter-section';
+import { FOOTER_COLUMNS, FooterView, type FooterColumn } from '@/components/shop/footer-view';
 
 /** Produk promo: kartu (dirender server) + data saringnya. */
 export type PromoProduct = PromoItemMeta & { card: ReactNode };
@@ -32,6 +35,8 @@ export interface PromoPageProps {
   homeHref: string;
   /** Produk promo — tampil di bagian "products", disaring menu/pencarian halaman ini. */
   products: PromoProduct[];
+  /** Footer = footer halaman utama (langganan email beranda + kartu keunggulan + kolom), kolom "Belanja" → menu promo. */
+  newsletter: SectionOf<'newsletter'>;
   /** Pindah halaman (router Next) — `#id` digulir, `?kat=…` menyaring produk di halaman ini. */
   navigate: (href: string) => void;
   /** Tombol keranjang/akun/dll. → fitur website. false = tampilkan info lokal. */
@@ -63,7 +68,7 @@ function Modal({ title, eyebrow, className, children, onClose }: { title: string
   </dialog>;
 }
 
-export default function PromoPage({ config, menu, logoSrc, markSrc, homeHref, products, navigate, onAction, onNewsletterSubmit, overlayOpen = false }: PromoPageProps) {
+export default function PromoPage({ config, menu, logoSrc, markSrc, homeHref, products, newsletter, navigate, onAction, onNewsletterSubmit, overlayOpen = false }: PromoPageProps) {
   const segments = menu.segments;
   const uid = useId();
   const menuId = `${uid}-menu`, panelId = `${uid}-panel`, searchId = `${uid}-search`, suggestionsId = `${uid}-suggestions`, mainId = `${uid}-main`;
@@ -78,7 +83,7 @@ export default function PromoPage({ config, menu, logoSrc, markSrc, homeHref, pr
   const segmentRefs = useRef<Partial<Record<string, HTMLButtonElement | null>>>({});
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]), suggestionRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const contentRef = useRef<HTMLDivElement>(null), mainRef = useRef<HTMLElement>(null), footerRef = useRef<HTMLElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null), mainRef = useRef<HTMLElement>(null), footerRef = useRef<HTMLDivElement>(null);
   const activeSegment: MenuSegment = segments.find(segment => segment.id === segmentId) ?? segments[0] ?? { id: '', label: '', href: '/produk', image: '', caption: '', categories: [], seriesTitle: '', series: [] };
   const categories = activeSegment.categories.map(c => c.name);
   const activeCategory = activeSegment.categories.find(c => c.name === category) ?? activeSegment.categories[0];
@@ -245,7 +250,14 @@ export default function PromoPage({ config, menu, logoSrc, markSrc, homeHref, pr
     }
   };
 
-  return <div className={cx('root', 'page')}>
+  // Kolom "Belanja" → menu promo (menyaring di halaman ini); Bantuan & SNAPFIT sama dengan footer utama.
+  const footerColumns: FooterColumn[] = [
+    { title: 'Promo', links: [{ label: 'Semua Produk Promo', href: '?' }, ...segments.slice(0, 6).map(segment => ({ label: segment.label, href: segment.href }))] },
+    ...FOOTER_COLUMNS.slice(1),
+  ];
+
+  return <>
+  <div className={cx('root', 'page')}>
     <a className={cx('skip-link')} href={`#${mainId}`}>Lewati ke konten</a>
     {config.appBanner.show && appBannerVisible && <div className={cx('mobile-app-banner')}><button className={cx('app-banner-close')} aria-label="Tutup banner" onClick={() => setAppBannerVisible(false)}><Icon name="close" className={cx('icon')}/></button><span className={cx('app-logo')} aria-hidden="true"><img src={markSrc} alt=""/></span><span className={cx('app-banner-copy')}>{config.appBanner.text}</span><button className={cx('app-banner-cta')} onClick={() => go(config.appBanner.href)}>{config.appBanner.ctaLabel}</button></div>}
     <div className={cx('utility')}><div className={cx('header-width')}><button className={cx('utility-link')} onClick={() => go(config.utility.href)}><span className={cx('return-symbol')}>{config.utility.badge}</span>{config.utility.text} <span className={cx('muted')}>| {config.utility.note}</span><span className={cx('chevron')}>›</span></button><button className={cx('utility-link')} onClick={() => go(config.utility.rightHref)}><Icon name="phone" className={cx('icon')}/>{config.utility.rightText} <span className={cx('chevron')}>›</span></button></div></div>
@@ -264,10 +276,15 @@ export default function PromoPage({ config, menu, logoSrc, markSrc, homeHref, pr
     <main ref={mainRef} id={mainId}><div className={cx('campaign-width')}>
       {config.sections.filter(s => s.active).map(s => section(s.key))}
     </div></main>
-    <footer ref={footerRef} className={cx('site-footer')}><div className={cx('header-width','footer-inner')}><div><a className={cx('wordmark')} href={homeHref} onClick={homeClick}><img src={logoSrc} alt="SNAPFIT"/></a><p>{config.footer.tagline}</p></div><div><h3>Jelajahi</h3>{segments.slice(0,3).map(segment => <button key={segment.id} onClick={() => { window.scrollTo({top:0,behavior:'instant'}); openMenu(segment.id,true); }}>{segment.label}</button>)}</div><div><h3>Lebih banyak</h3>{[{ label: 'Semua produk promo', href: '?' }, { label: 'Tentang SNAPFIT', href: '/tentang' }, { label: 'Bantuan', href: '/bantuan' }].map(link => <button key={link.label} onClick={() => go(link.href)}>{link.label}</button>)}</div></div><div className={cx('header-width','footer-bottom')}><span>{config.footer.bottomLeft}</span><span>{config.footer.bottomRight}</span></div></footer>
     {!(mobile && menuOpen) && !overlayOpen && bottomNavigation}
     {!overlayOpen && <button className={cx('floating-help')} onClick={() => showInfo('help')} aria-label="Bantuan"><img src={markSrc} alt="" className={cx('mark')}/></button>}
     {mounted && mobile && menuOpen && createPortal(<div className={cx('root','overlay-root')}>{menuPanel}</div>,document.body)}
     {mounted && modalContent && createPortal(<div className={cx('root','overlay-root')}>{modalContent}</div>,document.body)}
-  </div>;
+  </div>
+  {/* Di luar .root: reset CSS paket (img lebar 100%, font Arial, dll.) tak mengenai footer situs. */}
+  <div ref={footerRef} className={cx('site-footer-wrap')}>
+    <NewsletterSection s={newsletter}/>
+    <FooterView columns={footerColumns} className="mt-0 border-t-0" onLinkClick={href => { if (!href.startsWith('?') && !href.startsWith('#')) return false; go(href); return true; }}/>
+  </div>
+  </>;
 }

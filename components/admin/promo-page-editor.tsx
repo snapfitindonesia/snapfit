@@ -220,7 +220,7 @@ export function PromoPageEditor({ initial, products, brands }: { initial: PromoP
       {/* Pengaturan umum (bukan bagian yang bisa diurutkan) */}
       <div className="rounded-xl border border-border bg-card">
         <button type="button" className="flex w-full items-center justify-between px-4 py-3 text-left" onClick={() => setOpen(open === "umum" ? null : "umum")} aria-expanded={open === "umum"}>
-          <span><span className="text-sm font-semibold">Pengaturan umum</span> <span className="text-xs text-muted-foreground">— judul SEO, banner atas HP, baris info, pencarian, footer</span></span>
+          <span><span className="text-sm font-semibold">Pengaturan umum</span> <span className="text-xs text-muted-foreground">— judul SEO, banner atas HP, baris info, pencarian</span></span>
           <ChevronDown className={cn("size-4 transition-transform", open === "umum" && "rotate-180")} />
         </button>
         {open === "umum" && (
@@ -267,12 +267,6 @@ export function PromoPageEditor({ initial, products, brands }: { initial: PromoP
                   </div>
                 ))}
               </div>
-            </fieldset>
-            <fieldset className="grid gap-3 rounded-md border border-border p-3 sm:grid-cols-3">
-              <legend className="px-1 text-sm font-medium">Footer</legend>
-              <Text label="Slogan" value={c.footer.tagline} onChange={(tagline) => set("footer", { ...c.footer, tagline })} />
-              <Text label="Bawah kiri" value={c.footer.bottomLeft} onChange={(bottomLeft) => set("footer", { ...c.footer, bottomLeft })} />
-              <Text label="Bawah kanan" value={c.footer.bottomRight} onChange={(bottomRight) => set("footer", { ...c.footer, bottomRight })} />
             </fieldset>
           </div>
         )}

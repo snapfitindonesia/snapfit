@@ -55,7 +55,6 @@ export const promoPageSchema = z.object({
   categories: z.object({ images: z.record(z.string().max(80), img).default({}) }).default({ images: {} }),
   signup: z.object({ eyebrow: text(60), title: text(120), text: text(240), ctaLabel: text(40) }),
   benefits: z.array(z.object({ title: text(60), caption: text(100) })).max(3).default([]),
-  footer: z.object({ tagline: text(160), bottomLeft: text(60), bottomRight: text(80) }),
 });
 export type PromoPageConfig = z.infer<typeof promoPageSchema>;
 
@@ -94,7 +93,6 @@ export const DEFAULT_PROMO_PAGE: PromoPageConfig = {
     { title: "Belanja makin mudah", caption: "Dikirim ke seluruh Indonesia" },
     { title: "7 hari pengembalian", caption: "Untuk produk cacat atau salah kirim" },
   ],
-  footer: { tagline: "Aksesori presisi untuk HP & tablet.", bottomLeft: "SNAPFIT Indonesia", bottomRight: "Pas sejak pertama dipasang." },
 };
 
 /** Gabungkan data tersimpan dengan bawaan (data lama/rusak → bawaan per bagian). */

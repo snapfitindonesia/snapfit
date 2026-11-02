@@ -9,6 +9,7 @@ import { subscribeNewsletter } from "@/lib/actions/newsletter";
 import { waChatUrl } from "@/lib/contact";
 import type { PromoPageConfig } from "@/lib/promo-page/config";
 import type { PromoMenu } from "@/lib/promo-page/menu";
+import type { SectionOf } from "@/lib/home/sections";
 
 export function PromoPageClient(props: {
   config: PromoPageConfig;
@@ -17,6 +18,7 @@ export function PromoPageClient(props: {
   markSrc: string;
   homeHref: string;
   products: PromoProduct[];
+  newsletter: SectionOf<"newsletter">;
 }) {
   const router = useRouter();
   const { authed, openCart, openLogin, cartOpen, loginOpen } = useStoreUI();
