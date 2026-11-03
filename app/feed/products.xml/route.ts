@@ -1,28 +1,14 @@
-import { db } from "@/lib/db";
-import { productPath } from "@/lib/product-url";
-import { applyDiscount, activeDiscountPercent } from "@/lib/format";
-import { isPlaceholderPrice } from "@/lib/price-guard";
 import { buildFallback } from "@/lib/build-fallback";
 import { getPromoHiddenIds } from "@/lib/promo-page/promo";
+import { feedItems, feedResponse, findFeedProducts, type FeedProduct } from "@/lib/feed";
 
 // Feed produk (Google RSS 2.0 + namespace g:) — dipakai Meta Catalog (Data feed)
-// & Google Merchant Center sekaligus. Per-VARIAN, dikelompokkan item_group_id.
+// & Google Merchant Center sekaligus. Per-VARIAN, dikelompokkan item_group_id (lib/feed.ts).
 // URL: /feed/products.xml — regenerasi tiap jam.
 export const revalidate = 3600;
 
-const SITE = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.snapfit.id").replace(/\/$/, "");
-
-function esc(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&apos;");
-}
-
 export async function GET() {
-  let products: Awaited<ReturnType<typeof fetchProducts>> = [];
+  let products: FeedProduct[] = [];
   try {
     products = await fetchProducts();
   } catch (e) {
@@ -30,85 +16,11 @@ export async function GET() {
     // bisa dibaca Google Merchant / Meta Catalog sebagai "semua produk dihapus" (iklan berhenti).
     products = buildFallback(e, []);
   }
-
-  const items: string[] = [];
-  for (const p of products) {
-    const gallery = Array.isArray(p.images) ? (p.images as string[]) : [];
-    const link = `${SITE}${productPath(p)}`;
-    // Merek kosong → "SNAPFIT" HANYA bila judulnya produk SNAPFIT; produk merek lain (MUMBA, Healing Shield, …)
-    // jangan sampai tercatat sebagai SNAPFIT di Merchant Center/AI → tanpa g:brand (isi mereknya di admin).
-    const brand = p.brand || (/^SNAPFIT\b/i.test(p.name) ? "SNAPFIT" : null);
-    const desc = (p.description || p.name).slice(0, 4000);
-    for (const v of p.variants) {
-      const img = v.image || p.coverImage;
-      if (!img || isPlaceholderPrice(v.price)) continue; // harga placeholder → jangan diiklankan
-      const pct = activeDiscountPercent(v.discounts);
-      const finalP = applyDiscount(v.price, pct);
-      const label = [v.color, v.type].filter(Boolean).join(" ").trim();
-      const title = (label ? `${p.name} - ${label}` : p.name).slice(0, 150);
-      const avail = v.stock > 0 ? "in_stock" : "out_of_stock";
-      // Gambar tambahan: COVER dulu (disimpan terpisah dari galeri), lalu galeri.
-      // Gambar utama tetap foto varian (warna sesuai; cover sering berisi teks promo).
-      const extraImgs = [...new Set([p.coverImage, ...gallery])]
-        .filter((u) => u && u !== img)
-        .slice(0, 10)
-        .map((u) => `<g:additional_image_link>${esc(u)}</g:additional_image_link>`)
-        .join("");
-      items.push(
-        `<item>` +
-          `<g:id>${esc(v.id)}</g:id>` +
-          `<g:item_group_id>${esc(p.id)}</g:item_group_id>` +
-          `<title>${esc(title)}</title>` +
-          `<description>${esc(desc)}</description>` +
-          `<link>${esc(link)}</link>` +
-          `<g:image_link>${esc(img)}</g:image_link>` +
-          extraImgs +
-          `<g:availability>${avail}</g:availability>` +
-          `<g:condition>new</g:condition>` +
-          `<g:price>${v.price} IDR</g:price>` +
-          (pct > 0 ? `<g:sale_price>${finalP} IDR</g:sale_price>` : "") +
-          (brand ? `<g:brand>${esc(brand)}</g:brand>` : "") +
-          (v.sku ? `<g:mpn>${esc(v.sku)}</g:mpn>` : "") +
-          `<g:identifier_exists>${v.sku ? "yes" : "no"}</g:identifier_exists>` +
-          (p.category?.name ? `<g:product_type>${esc(p.category.name)}</g:product_type>` : "") +
-          `</item>`,
-      );
-    }
-  }
-
-  const xml =
-    `<?xml version="1.0" encoding="UTF-8"?>` +
-    `<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">` +
-    `<channel>` +
-    `<title>SNAPFIT</title>` +
-    `<link>${SITE}</link>` +
-    `<description>Katalog produk SNAPFIT</description>` +
-    items.join("") +
-    `</channel></rss>`;
-
-  return new Response(xml, {
-    headers: {
-      "Content-Type": "application/xml; charset=utf-8",
-      "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
-    },
-  });
+  return feedResponse("SNAPFIT", "Katalog produk SNAPFIT", feedItems(products));
 }
 
 async function fetchProducts() {
-  // Produk "hanya di halaman promo" tak diiklankan di Google/Meta Shopping.
+  // Produk "hanya di halaman promo" tak diiklankan di Google/Meta Shopping (punya feed sendiri: /feed/buy1get1.xml).
   const hidden = [...(await getPromoHiddenIds())];
-  return db.product.findMany({
-    where: { archived: false, id: { notIn: hidden } },
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true, slug: true, shortId: true, name: true, description: true, brand: true, coverImage: true, images: true,
-      category: { select: { name: true } },
-      variants: {
-        select: {
-          id: true, color: true, type: true, price: true, stock: true, image: true, sku: true,
-          discounts: { select: { percent: true, active: true, startAt: true, endAt: true } },
-        },
-      },
-    },
-  });
+  return findFeedProducts({ where: { archived: false, id: { notIn: hidden } }, orderBy: { createdAt: "desc" } });
 }

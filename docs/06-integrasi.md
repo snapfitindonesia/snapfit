@@ -62,6 +62,13 @@ Dipakai oleh:
 | Google Merchant Center | 5859428306 | Feed terjadwal dari URL di atas |
 | Meta Commerce (katalog) | — | Sumber data = URL feed, format Google Merchant Center; terhubung ke Pixel |
 
+### Feed Buy 1 Get 1 (Meta saja)
+`https://www.snapfit.id/feed/buy1get1.xml` — hanya produk di Admin → Halaman Buy 1 Get 1 (yang sengaja tak masuk
+feed utama/Google Shopping), format & cache sama (`lib/feed.ts`). Label untuk **set produk** di Meta Commerce Manager:
+`custom_label_0` = `buy1get1`, `custom_label_1` = merek perangkat (Samsung, Apple, …), `custom_label_2` = model
+(Galaxy Z Fold 4, iPhone 15, …), `product_type` = "Merek > Lini > Model" (dari judul, `lib/promo-page/devices.ts`).
+**Jangan** dipasang di Google Merchant Center.
+
 ## Google Analytics 4
 
 `components/tracking/google-analytics.tsx`, ID `G-H34K2TJPJP` (env `NEXT_PUBLIC_GA_ID`).
