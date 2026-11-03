@@ -22,6 +22,7 @@ import { getCoinRules } from "@/lib/coins-settings";
 import { BRAND_ID, BRAND_NAME } from "@/lib/brand";
 import { activeCashback } from "@/lib/coins-rules";
 import { getPromoHiddenIds } from "@/lib/promo-page/promo";
+import { getPromoPageConfig, getPromoProducts } from "@/lib/promo-page/data";
 
 // ISR: PDP di-generate on-demand saat request pertama lalu DI-CACHE 1 jam
 // (tak query DB saat build → deploy Vercel aman). Fresh via revalidatePath saat admin edit.
@@ -102,14 +103,20 @@ export default async function ProductDetailPage({
     // URL relatif / tak valid — abaikan
   }
 
-  const [relatedAll, reviews, vouchers, companions, overview, coinRules] = await Promise.all([
-    getRelatedProducts(product.id, product.category?.slug ?? null, 8),
+  // Produk Buy 1 Get 1 (Admin → Halaman Buy 1 Get 1): rekomendasi hanya sesama produk promo, dan hanya
+  // voucher yang dicentang "Tampil di produk Buy 1 Get 1" (Admin → Voucher).
+  const promoIds = (await getPromoPageConfig()).products.productIds;
+  const isPromo = promoIds.includes(product.id);
+  const otherPromoIds = promoIds.filter((id) => id !== product.id);
+  const [relatedAll, reviews, allVouchers, companions, overview, coinRules] = await Promise.all([
+    isPromo ? getPromoProducts(otherPromoIds) : getRelatedProducts(product.id, product.category?.slug ?? null, 8),
     getProductReviews(product.id),
     getActiveVouchers(),
-    getCompanions(product),
+    getCompanions(product, isPromo ? otherPromoIds : undefined),
     overviewFor(product),
     getCoinRules(),
   ]);
+  const vouchers = isPromo ? allVouchers.filter((v) => v.showOnPromo) : allVouchers;
   // Produk yang sudah tampil di "Lengkapi dengan" tak diulang di bawah.
   const companionIds = new Set(companions.map((c) => c.productId));
   const related = relatedAll.filter((p) => !companionIds.has(p.id)).slice(0, 4);
@@ -198,7 +205,7 @@ export default async function ProductDetailPage({
         {related.length > 0 && (
           <section className="mt-16">
             <h2 className={TYPE.h2}>
-              Mungkin kamu butuhkan
+              {isPromo ? "Produk Buy 1 Get 1 lainnya" : "Mungkin kamu butuhkan"}
             </h2>
             <div className="mt-6 grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
               {related.map((p) => (

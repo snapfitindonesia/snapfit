@@ -16,11 +16,12 @@ type Voucher = {
   maxBenefit: number;
   active: boolean;
   stackable: boolean;
+  showOnPromo: boolean;
 };
 
 const input =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-foreground";
-const BLANK = { code: "", type: "POTONGAN", amount: "0", minPurchase: "0", maxBenefit: "0", active: true, stackable: false };
+const BLANK = { code: "", type: "POTONGAN", amount: "0", minPurchase: "0", maxBenefit: "0", active: true, stackable: false, showOnPromo: false };
 
 export function VoucherManager({ vouchers }: { vouchers: Voucher[] }) {
   const router = useRouter();
@@ -30,13 +31,13 @@ export function VoucherManager({ vouchers }: { vouchers: Voucher[] }) {
   const [saving, setSaving] = useState(false);
 
   const reset = () => { setEditId(null); setF({ ...BLANK }); setError(null); };
-  const edit = (v: Voucher) => { setEditId(v.id); setF({ code: v.code, type: v.type, amount: String(v.amount), minPurchase: String(v.minPurchase), maxBenefit: String(v.maxBenefit), active: v.active, stackable: v.stackable }); };
+  const edit = (v: Voucher) => { setEditId(v.id); setF({ code: v.code, type: v.type, amount: String(v.amount), minPurchase: String(v.minPurchase), maxBenefit: String(v.maxBenefit), active: v.active, stackable: v.stackable, showOnPromo: v.showOnPromo }); };
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true); setError(null);
     const res = await saveVoucher(
-      { code: f.code.toUpperCase(), type: f.type as "POTONGAN" | "GRATIS_ONGKIR", amount: Number(f.amount), minPurchase: Number(f.minPurchase), maxBenefit: Number(f.maxBenefit), active: f.active, stackable: f.stackable },
+      { code: f.code.toUpperCase(), type: f.type as "POTONGAN" | "GRATIS_ONGKIR", amount: Number(f.amount), minPurchase: Number(f.minPurchase), maxBenefit: Number(f.maxBenefit), active: f.active, stackable: f.stackable, showOnPromo: f.showOnPromo },
       editId ?? undefined,
     );
     if (res.ok) { reset(); router.refresh(); } else setError(res.error ?? "Gagal.");
@@ -84,6 +85,15 @@ export function VoucherManager({ vouchers }: { vouchers: Voucher[] }) {
             </span>
           </span>
         </label>
+        <label className="flex items-start gap-2 text-sm">
+          <input type="checkbox" checked={f.showOnPromo} onChange={(e) => setF({ ...f, showOnPromo: e.target.checked })} className="mt-0.5 accent-foreground" />
+          <span>
+            Tampil di produk Buy 1 Get 1
+            <span className="block text-xs text-muted-foreground">
+              Bila tidak dicentang, voucher ini tidak ditampilkan di halaman produk promo Buy 1 Get 1 (tetap tampil di produk lain).
+            </span>
+          </span>
+        </label>
         {error && <p className="text-sm text-destructive">{error}</p>}
         <div className="flex gap-2">
           <Button type="submit" size="sm" disabled={saving}>{saving && <Loader2 className="size-4 animate-spin" />}{editId ? "Simpan" : "Tambah"}</Button>
@@ -99,6 +109,7 @@ export function VoucherManager({ vouchers }: { vouchers: Voucher[] }) {
               {v.type === "GRATIS_ONGKIR" ? "Gratis ongkir" : formatRupiah(v.amount)} · min {formatRupiah(v.minPurchase)}
             </span>
             {v.stackable && <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium">Bisa digabung</span>}
+            {v.showOnPromo && <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium">Tampil di B1G1</span>}
             {!v.active && <span className="text-xs text-muted-foreground">nonaktif</span>}
             <div className="ml-auto flex gap-3">
               <button onClick={() => edit(v)} className="text-muted-foreground hover:text-foreground"><Pencil className="size-4" /></button>

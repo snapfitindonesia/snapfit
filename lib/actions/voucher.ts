@@ -13,6 +13,8 @@ export type VoucherPublic = {
   minPurchase: number;
   maxBenefit: number;
   stackable: boolean;
+  /** Tampil juga di halaman produk Buy 1 Get 1 (Admin → Voucher). */
+  showOnPromo: boolean;
   label: string;
 };
 
@@ -32,6 +34,7 @@ const activeVouchersCached = unstable_cache(
       minPurchase: v.minPurchase,
       maxBenefit: v.maxBenefit,
       stackable: v.stackable,
+      showOnPromo: v.showOnPromo,
       label: voucherLabel(v as VoucherLike),
     }));
   },

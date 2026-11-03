@@ -678,6 +678,7 @@ export async function saveVoucher(input: VoucherInput, id?: string): Promise<Res
       maxBenefit: data.maxBenefit,
       active: data.active,
       stackable: data.stackable,
+      showOnPromo: data.showOnPromo,
     };
     const voucher = id
       ? await db.voucher.update({ where: { id }, data: payload })

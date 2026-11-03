@@ -27,11 +27,15 @@ const NAME_HINTS: Record<ProductKind, string[]> = {
 
 const MAX_PRODUCTS = 8;
 
-export async function getCompanions(product: {
-  id: string;
-  name: string;
-  variants: { type: string }[];
-}): Promise<Companion[]> {
+/** `onlyIds`: hanya tawarkan produk ini (PDP produk Buy 1 Get 1 → sesama produk promo). */
+export async function getCompanions(
+  product: {
+    id: string;
+    name: string;
+    variants: { type: string }[];
+  },
+  onlyIds?: string[],
+): Promise<Companion[]> {
   const targets = COMPANION_KINDS[productKind(product.name)];
   const keys = new Set(product.variants.map((v) => typeKey(v.type)).filter((k): k is string => !!k));
   if (!targets.length || !keys.size) return [];
@@ -40,7 +44,7 @@ export async function getCompanions(product: {
   const candidates = await db.product.findMany({
     where: {
       archived: false,
-      id: { not: product.id, notIn: hidden },
+      id: onlyIds ? { not: product.id, in: onlyIds } : { not: product.id, notIn: hidden },
       OR: targets.flatMap((k) => NAME_HINTS[k]).map((h) => ({ name: { contains: h, mode: "insensitive" as const } })),
     },
     select: {

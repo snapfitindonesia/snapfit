@@ -142,6 +142,7 @@ model Voucher {
   maxBenefit  Int     @default(0)
   active      Boolean @default(true)
   stackable   Boolean @default(false) // bisa digabung dgn voucher JENIS LAIN yang juga stackable
+  showOnPromo Boolean @default(false) // tampil di halaman produk Buy 1 Get 1 (bawaan: disembunyikan)
 }
 
 model Order {
