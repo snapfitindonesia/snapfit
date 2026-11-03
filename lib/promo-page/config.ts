@@ -79,15 +79,16 @@ export const SLOT_SIZE = {
 } as const;
 
 export const DEFAULT_PROMO_PAGE: PromoPageConfig = {
-  title: "Buy 1 Get 1 — SNAPFIT",
-  description: "Promo Buy 1 Get 1 SNAPFIT: beli 1 aksesori, gratis 1. Case, tempered glass & pelindung kamera presisi untuk HP-mu.",
+  // Kosong = otomatis berkata kunci (app/buy1get1/page.tsx: jumlah produk & merek perangkat promo).
+  title: "",
+  description: "",
   appBanner: { show: true, text: "Promo Buy 1 Get 1 — beli 1 gratis 1 untuk produk pilihan", ctaLabel: "Lihat", href: "#produk-promo" },
   utility: { badge: "7", text: "Hari Pengembalian", note: "S&K berlaku", href: "/bantuan#pengembalian", rightText: "Buy 1 Get 1 — produk pilihan, gratis 1", rightHref: "#produk-promo" },
   searchPlaceholder: "Cari case, tempered glass, tipe HP…",
   sections: SECTION_KEYS.map((key) => ({ key, active: true })),
   hero: { image: "", alt: "Promo Buy 1 Get 1 SNAPFIT", href: "#produk-promo" },
   arrivals: { image: "", alt: "Produk terbaru SNAPFIT", href: "/produk" },
-  products: { eyebrow: "BUY 1 GET 1", title: "Beli 1, gratis 1.", caption: "Produk pilihan dengan bonus Buy 1 Get 1.", productIds: [], hiddenIds: [] },
+  products: { eyebrow: "BELI 1 GRATIS 1", title: "Promo Buy 1 Get 1", caption: "Beli 1 case atau aksesori, gratis 1 — untuk iPhone, Samsung Galaxy, iPad & lainnya.", productIds: [], hiddenIds: [] },
   categories: { images: {} },
   signup: { eyebrow: "A LITTLE SOMETHING FOR YOU", title: "Promo baru, langsung ke emailmu.", text: "Dapatkan info promo & produk terbaru SNAPFIT.", ctaLabel: "Daftar newsletter" },
   benefits: [

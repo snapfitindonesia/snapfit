@@ -69,3 +69,6 @@
 @media(max-width:800px){.root .promo-filter{font-size:11px;padding:10px 12px}.root .promo-filter .underlined-link{white-space:normal;text-align:right}}
 /* Footer situs (di luar .root): ruang menu bawah HP pindah ke bawah footer agar baris terakhir tak tertutup. */
 @media(max-width:800px){.root.page{padding-bottom:0}.site-footer-wrap{padding-bottom:calc(88px + env(safe-area-inset-bottom,0px))}}
+
+.root .load-more{display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:40px}
+.root .load-more>span{font-size:13px;color:#77756f}

@@ -18,9 +18,13 @@ import { filterHref, matchesFilter, parseFilter, type PromoFilter, type PromoIte
 import type { SectionOf } from '@/lib/home/sections';
 import { NewsletterSection } from '@/components/home/newsletter-section';
 import { FOOTER_COLUMNS, FooterView, type FooterColumn } from '@/components/shop/footer-view';
+import { ProductCard } from '@/components/shop/product-card';
+import type { ProductListItem } from '@/lib/actions/product';
 
 /** Produk promo: kartu (dirender server) + data saringnya. */
-export type PromoProduct = PromoItemMeta & { card: ReactNode };
+// Data produk (bukan kartu jadi) → HTML awal hanya memuat PAGE_SIZE kartu; sisanya lewat "Load More Products".
+export type PromoProduct = PromoItemMeta & { product: ProductListItem };
+const PAGE_SIZE = 12;
 
 const cx = (...names: (string | false | undefined)[]) => names.filter(Boolean).map(name => styles[name as string]).filter(Boolean).join(' ');
 type BottomItem = 'home' | 'category' | 'cart' | 'wishlist' | 'account';
@@ -78,6 +82,8 @@ export default function PromoPage({ config, menu, logoSrc, markSrc, homeHref, pr
   const [appBannerVisible, setAppBannerVisible] = useState(true);
   const [modal, setModal] = useState<ModalState | null>(null), [newsletterStatus, setNewsletterStatus] = useState<'idle' | 'pending' | 'success' | 'error'>('idle');
   const [filter, setFilter] = useState<PromoFilter>({});
+  const [limit, setLimit] = useState(PAGE_SIZE);
+  useEffect(() => setLimit(PAGE_SIZE), [filter.kat, filter.q]); // saringan baru → mulai dari 12 lagi
   const headerRef = useRef<HTMLElement>(null), searchRef = useRef<HTMLFormElement>(null), searchInputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null), menuCloseRef = useRef<HTMLButtonElement>(null), bottomCategoryRef = useRef<HTMLButtonElement>(null);
   const segmentRefs = useRef<Partial<Record<string, HTMLButtonElement | null>>>({});
@@ -242,7 +248,8 @@ export default function PromoPage({ config, menu, logoSrc, markSrc, homeHref, pr
       case 'arrivals': return <section key={key} className={cx('arrivals')} aria-label={config.arrivals.alt || 'Banner'}><button className={cx('image-link', 'rounded')} onClick={() => go(config.arrivals.href)}><img src={banner(config.arrivals, 'arrivals', 'Banner strip')} alt={config.arrivals.alt} width={1920} height={300} loading="lazy"/></button></section>;
       case 'products': return <section key={key} id="produk-promo" className={cx('category-section', 'products-section')} aria-labelledby={`${uid}-products`}><div className={cx('section-heading')}><div><span className={cx('eyebrow')}>{config.products.eyebrow}</span><Heading k={key} id={`${uid}-products`}>{config.products.title}</Heading></div><span className={cx('section-caption')}>{config.products.caption}</span></div>
         {filtering && <div className={cx('promo-filter')}><span>{shownProducts.length} produk · <strong>{filterLabel}</strong></span><button className={cx('underlined-link')} onClick={() => go('?')}>Semua produk promo <span>×</span></button></div>}
-        {shownProducts.length ? <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">{shownProducts.map(p => <div key={p.id}>{p.card}</div>)}</div>
+        {shownProducts.length ? <><div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">{shownProducts.slice(0, limit).map((p, i) => <div key={p.id}><ProductCard product={p.product} priority={i < 4}/></div>)}</div>
+          {shownProducts.length > limit && <div className={cx('load-more')}><span>Menampilkan {limit} dari {shownProducts.length} produk</span><button type="button" className={cx('pill-button')} onClick={() => setLimit(n => n + PAGE_SIZE)}>Load More Products</button></div>}</>
           : <p className={cx('products-empty')}>{filtering ? `Belum ada produk promo untuk ${filterLabel}.` : 'Produk promo segera hadir.'}</p>}
       </section>;
       case 'signup': return <section key={key} className={cx('signup-banner')}><div><span className={cx('eyebrow')}>{config.signup.eyebrow}</span><h2>{config.signup.title}</h2><p>{config.signup.text}</p></div><button className={cx('pill-button')} onClick={() => { setNewsletterStatus('idle'); setModal({ kind: 'newsletter', title: 'Newsletter' }); }}>{config.signup.ctaLabel} <span>↗</span></button></section>;

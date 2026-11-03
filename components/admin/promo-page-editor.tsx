@@ -226,10 +226,10 @@ export function PromoPageEditor({ initial, products, brands }: { initial: PromoP
         {open === "umum" && (
           <div className="space-y-4 border-t border-border p-4">
             <div className="grid gap-3 sm:grid-cols-2">
-              <Text label="Judul halaman (tab & Google)" value={c.title} onChange={(v) => set("title", v)} />
+              <Text label="Judul halaman (tab & Google)" value={c.title} onChange={(v) => set("title", v)} placeholder="Otomatis: Promo Buy 1 Get 1 Case HP & Aksesori" hint="Kosongkan = otomatis (berkata kunci)." />
               <Text label="Placeholder pencarian" value={c.searchPlaceholder} onChange={(v) => set("searchPlaceholder", v)} />
             </div>
-            <Text label="Deskripsi (Google)" area value={c.description} onChange={(v) => set("description", v)} />
+            <Text label="Deskripsi (Google)" area value={c.description} onChange={(v) => set("description", v)} placeholder="Otomatis: jumlah produk & merek perangkat promo" hint="Kosongkan = otomatis, mengikuti jumlah produk & merek yang sedang promo." />
             <fieldset className="space-y-3 rounded-md border border-border p-3">
               <legend className="px-1 text-sm font-medium">Banner atas (HP)</legend>
               <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={c.appBanner.show} onChange={(e) => set("appBanner", { ...c.appBanner, show: e.target.checked })} /> Tampilkan</label>

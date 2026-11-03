@@ -147,6 +147,14 @@ pencarian itu di toko.
    yang sama, tapi Ginee tak memberi judul listing → cari dengan nama produk, bukan "buy 1 get 1". Label
    "2+ LISTING" = varian punya ≥2 listing di toko terpilih (biasanya listing biasa + B1G1).
 
+### Halaman /buy1get1: menu, Load More & SEO
+- **Menu** dibangun dari **judul** produk promo (`lib/promo-page/devices.ts`): merek → lini → model (mis. Samsung →
+  Galaxy Z Fold → Galaxy Z Fold 4), hanya yang punya produk promo — tak bergantung Admin → Kategori. Foto merek:
+  Admin → Halaman Buy 1 Get 1, kosong = sampul produk promo pertama merek itu.
+- **Load More Products**: 12 produk per klik; HTML awal hanya 12 kartu (sisanya data, dirender di browser).
+- **SEO**: judul & deskripsi kosong di dashboard = otomatis berkata kunci (jumlah produk & merek promo); data
+  terstruktur CollectionPage + ItemList + BreadcrumbList; H1 = judul bagian Produk promo.
+
 ### Impor dari Shopee (file Ubah Massal)
 Untuk listing yang di Ginee **tidak punya master sendiri** (mis. "[BUY 1 GET 1] …" yang menumpang di master
 produk biasa — Ginee hanya memberi data master). Admin → **Impor Shopee**:
