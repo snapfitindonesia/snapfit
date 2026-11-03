@@ -8,7 +8,7 @@ import { searchGineeForImport, importGineeProducts } from "@/lib/actions/ginee";
 import type { GineeShop } from "@/lib/ginee/products";
 
 type Variation = { id: string; sku: string; optionValues?: string[]; stock?: number };
-type Item = { productId: string; name: string; image: string; variantCount: number; stock: number; stockKnown: boolean; imported: boolean; variations: Variation[]; productIds: string[]; priceMin?: number; priceMax?: number };
+type Item = { productId: string; name: string; image: string; variantCount: number; stock: number; stockKnown: boolean; imported: boolean; variations: Variation[]; productIds: string[]; priceMin?: number; priceMax?: number; multiListing?: boolean };
 
 const QUICK = ["Fold 8", "iPhone 18 Pro Max", "S26 Ultra"];
 
@@ -38,15 +38,18 @@ export function GineeImport({ shops }: { shops: GineeShop[] }) {
   const [shopId, setShopId] = useState("");
   const [searchShop, setSearchShop] = useState("");
   const [scanned, setScanned] = useState(0);
+  // Mode salinan khusus /buy1get1 (judul + "— Buy 1 Get 1", hanya di halaman promo).
+  const [asPromo, setAsPromo] = useState(false);
+  const [searchPromo, setSearchPromo] = useState(false);
   const shopName = (id: string) => shops.find((s) => s.shopId === id)?.name;
   const priceSource = searchShop ? `harga toko ${shopName(searchShop) ?? "terpilih"}` : "harga Shopee Snapfit";
 
-  async function search(kw: string, shop = shopId) {
+  async function search(kw: string, shop = shopId, promo = asPromo) {
     setKeyword(kw);
     setLoading(true);
     setMsg(null);
     setErrList([]);
-    const res = await searchGineeForImport(kw, 0, shop || undefined);
+    const res = await searchGineeForImport(kw, 0, shop || undefined, promo);
     setLoading(false);
     if (!res.ok) {
       setItems([]);
@@ -58,6 +61,7 @@ export function GineeImport({ shops }: { shops: GineeShop[] }) {
     setTotal(res.total);
     setScanned(res.scanned);
     setSearchShop(shop);
+    setSearchPromo(promo);
     setPage(0);
     setChecked({});
   }
@@ -65,7 +69,7 @@ export function GineeImport({ shops }: { shops: GineeShop[] }) {
   async function loadMore() {
     setLoadingMore(true);
     const next = page + 1;
-    const res = await searchGineeForImport(keyword, next, searchShop || undefined);
+    const res = await searchGineeForImport(keyword, next, searchShop || undefined, searchPromo);
     setLoadingMore(false);
     if (!res.ok) { setMsg(res.error); return; }
     setScanned((n) => n + res.scanned);
@@ -111,7 +115,7 @@ export function GineeImport({ shops }: { shops: GineeShop[] }) {
     for (let i = 0; i < inputs.length; i += 3) {
       setMsg(`Mengimpor ${Math.min(i + 3, inputs.length)}/${inputs.length} produk… (stok gudang, ${priceSource}, merek & foto CDN)`);
       try {
-        const r = await importGineeProducts(inputs.slice(i, i + 3), searchShop || undefined);
+        const r = await importGineeProducts(inputs.slice(i, i + 3), searchShop || undefined, searchPromo);
         res.created += r.created;
         res.skipped += r.skipped;
         res.errors.push(...r.errors);
@@ -121,7 +125,7 @@ export function GineeImport({ shops }: { shops: GineeShop[] }) {
       }
     }
     setImporting(false);
-    setMsg(`Impor selesai: ${res.created} dibuat, ${res.skipped} dilewati. Stok dari gudang Ginee, ${priceSource}, merek & foto CDN sudah otomatis.`);
+    setMsg(`Impor selesai: ${res.created} dibuat${searchPromo ? " sebagai produk Buy 1 Get 1 (sudah masuk halaman /buy1get1, hanya di halaman promo)" : ""}, ${res.skipped} dilewati. Stok dari gudang Ginee, ${priceSource}, merek & foto CDN sudah otomatis.`);
     setErrList(res.errors.slice(0, 10));
     if (res.created > 0) {
       setChecked({});
@@ -156,6 +160,26 @@ export function GineeImport({ shops }: { shops: GineeShop[] }) {
           )}
         </div>
       )}
+
+      <label className="mb-3 flex cursor-pointer items-start gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={asPromo}
+          onChange={(e) => {
+            setAsPromo(e.target.checked);
+            if (keyword.trim() && total !== null) search(keyword, shopId, e.target.checked); // status "sudah diimpor" berbeda
+          }}
+          className="mt-0.5 size-4"
+        />
+        <span>
+          <b>Impor sebagai produk Buy 1 Get 1</b>
+          <span className="block text-xs text-muted-foreground">
+            Judul diberi akhiran “— Buy 1 Get 1”, langsung masuk halaman /buy1get1 (hanya di halaman promo). Boleh walau produk
+            biasanya sudah diimpor; SKU sama → stok tetap ikut gudang Ginee. Cari dengan <b>nama produk</b> (mis. “ring stand iphone 18”),
+            bukan “buy 1 get 1” — Ginee tidak memberi judul listing marketplace.
+          </span>
+        </span>
+      </label>
 
       {/* Pencarian */}
       <div className="flex flex-wrap items-center gap-2">
@@ -234,7 +258,7 @@ export function GineeImport({ shops }: { shops: GineeShop[] }) {
                   <p className="text-xs text-muted-foreground">{it.variantCount} varian · stok gudang {it.stockKnown ? it.stock : "?"}{it.productIds.length > 1 && ` · gabungan ${it.productIds.length} produk Ginee bernama sama`}
                   {isEmpty(it) && <span className="ml-1.5 rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700">HABIS</span>}</p>
                 </div>
-                <span className="rounded-[5px] bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700">✓ Sudah diimpor</span>
+                <span className="rounded-[5px] bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700">✓ {searchPromo ? "Versi Buy 1 Get 1 sudah ada" : "Sudah diimpor"}</span>
               </div>
             );
           }
@@ -259,6 +283,7 @@ export function GineeImport({ shops }: { shops: GineeShop[] }) {
                 <p className="line-clamp-2 text-sm font-medium">{it.name}</p>
                 <p className="text-xs text-muted-foreground">{it.variantCount} varian · stok gudang {it.stockKnown ? it.stock : "?"}{it.productIds.length > 1 && ` · gabungan ${it.productIds.length} produk Ginee bernama sama`}
                   {it.priceMin !== undefined && <> · harga toko {rp(it.priceMin)}{it.priceMax !== it.priceMin && <>–{rp(it.priceMax ?? it.priceMin)}</>}</>}
+                  {it.multiListing && <span className="ml-1.5 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800" title="Varian ini punya ≥2 listing di toko ini — biasanya listing biasa + listing Buy 1 Get 1">2+ LISTING</span>}
                   {isEmpty(it) && <span className="ml-1.5 rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700">HABIS</span>}</p>
               </div>
             </label>

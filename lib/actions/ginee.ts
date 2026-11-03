@@ -19,6 +19,40 @@ import { runGineeStockSync, getWarehouseStockBySku, type StockSyncResult } from 
 import { getDefaultWarehouseId } from "@/lib/ginee/orders";
 import { guessMerek } from "@/lib/brand-guess";
 import { mirrorImages } from "@/lib/upload/mirror";
+import { productSlug } from "@/lib/slug";
+import type { Prisma } from "@prisma/client";
+import { CATALOG_TAG } from "@/lib/catalog";
+import { DEFAULT_PROMO_PAGE, PROMO_PAGE_KEY, PROMO_PAGE_PATH, PROMO_PAGE_TAG, parsePromoPage } from "@/lib/promo-page/config";
+
+// Mode "Impor sebagai produk Buy 1 Get 1": salinan khusus promo dari master yang sama (listing B1G1 di
+// marketplace terhubung ke master yang sama dengan listing biasanya). Judul diberi akhiran ini, masuk
+// /buy1get1 sebagai "hanya di halaman promo"; SKU sama → stok & pesanan tetap ikut Ginee.
+const PROMO_SUFFIX = " — Buy 1 Get 1";
+const MAX_PROMO_PRODUCTS = 48; // = batas productIds di lib/promo-page/config.ts
+
+/** Produk web dari master ini: versi biasa vs versi Buy 1 Get 1 dihitung terpisah. */
+const copyWhere = (asPromo: boolean): Prisma.ProductWhereInput =>
+  asPromo ? { name: { endsWith: PROMO_SUFFIX.trim() } } : { NOT: { name: { endsWith: PROMO_SUFFIX.trim() } } };
+
+/** Tambahkan produk ke /buy1get1 sebagai "hanya di halaman promo" (dibaca langsung dari DB, bukan cache). */
+async function addToPromoPage(ids: string[]): Promise<void> {
+  const raw = (await db.siteSetting.findUnique({ where: { key: PROMO_PAGE_KEY } }))?.value ?? null;
+  const c = parsePromoPage(raw ?? undefined);
+  // Data tersimpan tak terbaca → jangan timpa pengaturan halaman dengan bawaan.
+  if (raw && c === DEFAULT_PROMO_PAGE) throw new Error("pengaturan halaman promo tak terbaca");
+  const productIds = [...new Set([...c.products.productIds, ...ids])].slice(0, MAX_PROMO_PRODUCTS);
+  const hiddenIds = [...new Set([...c.products.hiddenIds, ...ids])].filter((id) => productIds.includes(id));
+  const value = { ...c, products: { ...c.products, productIds, hiddenIds } };
+  await db.siteSetting.upsert({
+    where: { key: PROMO_PAGE_KEY },
+    create: { key: PROMO_PAGE_KEY, value: value as unknown as Prisma.InputJsonValue },
+    update: { value: value as unknown as Prisma.InputJsonValue },
+  });
+  revalidateTag(PROMO_PAGE_TAG);
+  revalidatePath(PROMO_PAGE_PATH);
+  revalidateTag(CATALOG_TAG);
+  revalidatePath("/produk/[slug]", "page");
+}
 
 type SearchItem = ReturnType<typeof summarizeGinee> & {
   stock: number; // total stok GUDANG semua varian
@@ -26,6 +60,8 @@ type SearchItem = ReturnType<typeof summarizeGinee> & {
   imported: boolean;
   variations: GineeVariationBrief[];
   productIds: string[]; // semua master Ginee yang digabung (nama sama); productIds[0] = productId
+  /** Ada varian dengan ≥2 listing di toko terpilih (mis. listing biasa + Buy 1 Get 1). */
+  multiListing?: boolean;
   /** Kisaran harga jual di toko terpilih (hanya bila menyaring per toko). */
   priceMin?: number;
   priceMax?: number;
@@ -98,7 +134,7 @@ async function searchGineeByWords(keyword: string, page: number): Promise<{ tota
   return { total: hits.length, content: hits };
 }
 
-export async function searchGineeForImport(keyword: string, page = 0, shopId?: string): Promise<SearchResult> {
+export async function searchGineeForImport(keyword: string, page = 0, shopId?: string, asPromo = false): Promise<SearchResult> {
   try {
     await requireAdmin();
   } catch {
@@ -114,7 +150,7 @@ export async function searchGineeForImport(keyword: string, page = 0, shopId?: s
     // (mis. 23× "SNAPFIT Case … S26 … Acrylic"). Digabung jadi 1 baris = 1 produk web
     // dengan semua variannya.
     const existing = await db.product.findMany({
-      where: { gineeProductId: { in: content.map((c) => c.productId) } },
+      where: { gineeProductId: { in: content.map((c) => c.productId) }, ...copyWhere(asPromo) },
       select: { gineeProductId: true },
     });
     const importedSet = new Set(existing.map((e) => e.gineeProductId));
@@ -160,6 +196,7 @@ export async function searchGineeForImport(keyword: string, page = 0, shopId?: s
           variations,
           variantCount: variations.length,
           stock: variations.reduce((n, v) => n + (v.stock ?? 0), 0),
+          multiListing: variations.some((v) => (prices.get(v.id)?.listings ?? 0) >= 2),
           ...(shopPrices.length ? { priceMin: Math.min(...shopPrices), priceMax: Math.max(...shopPrices) } : {}),
         }];
       });
@@ -187,6 +224,7 @@ function mergeSameName(items: SearchItem[]): SearchItem[] {
     g.variantCount = g.variations.length;
     g.stock += it.stock;
     g.imported = g.imported || it.imported;
+    g.multiListing = g.multiListing || it.multiListing;
     if (it.priceMin !== undefined) {
       g.priceMin = Math.min(g.priceMin ?? Infinity, it.priceMin);
       g.priceMax = Math.max(g.priceMax ?? 0, it.priceMax ?? it.priceMin);
@@ -207,7 +245,7 @@ type ImportResult = { ok: boolean; created: number; skipped: number; errors: str
  *  - foto  = disalin ke cdn.snapfit.id (WebP), bukan hotlink marketplace
  * UI memanggil per 3 produk agar tak kena batas waktu.
  */
-export async function importGineeProducts(inputs: ImportInput[], shopId?: string): Promise<ImportResult> {
+export async function importGineeProducts(inputs: ImportInput[], shopId?: string, asPromo = false): Promise<ImportResult> {
   try {
     await requireAdmin();
   } catch {
@@ -222,6 +260,12 @@ export async function importGineeProducts(inputs: ImportInput[], shopId?: string
   let skipped = 0;
   const merekNames = (await db.merek.findMany({ select: { name: true } })).map((m) => m.name);
   const warehouseId = await getDefaultWarehouseId().catch(() => null);
+  const promoCreated: string[] = [];
+  let promoRoom = Infinity;
+  if (asPromo) {
+    const raw = (await db.siteSetting.findUnique({ where: { key: PROMO_PAGE_KEY } }))?.value ?? null;
+    promoRoom = MAX_PROMO_PRODUCTS - parsePromoPage(raw ?? undefined).products.productIds.length;
+  }
 
   for (const input of inputs) {
     const label = input.name?.slice(0, 40) ?? input.productId;
@@ -247,12 +291,22 @@ export async function importGineeProducts(inputs: ImportInput[], shopId?: string
         errors.push(`"${label}": tanpa foto — dilewati.`);
         continue;
       }
+      if (asPromo) {
+        if (promoCreated.length >= promoRoom) {
+          skipped++;
+          errors.push(`"${label}": halaman Buy 1 Get 1 sudah penuh (maks. ${MAX_PROMO_PRODUCTS} produk) — dilewati.`);
+          continue;
+        }
+        mapped.name = `${mapped.name}${PROMO_SUFFIX}`;
+        mapped.slug = productSlug(mapped.name);
+      }
 
-      // Sudah pernah diimpor (by gineeProductId, termasuk master lain dalam gabungan)?
+      // Sudah pernah diimpor (by gineeProductId, termasuk master lain dalam gabungan)? Versi biasa &
+      // versi Buy 1 Get 1 dihitung terpisah.
       const ids = [...new Set([input.productId, ...(input.productIds ?? [])])];
-      if (await db.product.findFirst({ where: { gineeProductId: { in: ids } }, select: { id: true } })) {
+      if (await db.product.findFirst({ where: { gineeProductId: { in: ids }, ...copyWhere(asPromo) }, select: { id: true } })) {
         skipped++;
-        errors.push(`"${label}": sudah diimpor — dilewati.`);
+        errors.push(`"${label}": ${asPromo ? "versi Buy 1 Get 1 sudah ada" : "sudah diimpor"} — dilewati.`);
         continue;
       }
       // Slug unik
@@ -260,8 +314,8 @@ export async function importGineeProducts(inputs: ImportInput[], shopId?: string
       if (await db.product.findUnique({ where: { slug }, select: { id: true } })) {
         slug = `${slug}-${input.productId.slice(-6).toLowerCase()}`.slice(0, 90);
       }
-      // SKU unik global
-      const clash = await db.variant.findFirst({ where: { sku: { in: mapped.variants.map((v) => v.sku) } }, select: { sku: true } });
+      // SKU unik global (versi Buy 1 Get 1 sengaja memakai SKU yang sama dengan versi biasa).
+      const clash = asPromo ? null : await db.variant.findFirst({ where: { sku: { in: mapped.variants.map((v) => v.sku) } }, select: { sku: true } });
       if (clash) {
         skipped++;
         errors.push(`"${label}": SKU ${clash.sku} sudah ada — dilewati.`);
@@ -284,7 +338,8 @@ export async function importGineeProducts(inputs: ImportInput[], shopId?: string
       const mirror = await mirrorImages([mapped.coverImage, ...mapped.images, ...mapped.variants.map((v) => v.image)]);
       const cdn = (u: string) => mirror.get(u) ?? u;
 
-      await db.product.create({
+      const createdProduct = await db.product.create({
+        select: { id: true },
         data: {
           slug,
           shortId: await nextShortId(), // ID tetap di URL
@@ -304,6 +359,7 @@ export async function importGineeProducts(inputs: ImportInput[], shopId?: string
         },
       });
       created++;
+      if (asPromo) promoCreated.push(createdProduct.id);
     } catch (e) {
       skipped++;
       errors.push(`"${label}": ${e instanceof Error ? e.message : "gagal"}.`);
@@ -312,6 +368,13 @@ export async function importGineeProducts(inputs: ImportInput[], shopId?: string
     await new Promise((r) => setTimeout(r, 200));
   }
 
+  if (promoCreated.length) {
+    try {
+      await addToPromoPage(promoCreated);
+    } catch (e) {
+      errors.push(`Produk dibuat, tapi gagal dimasukkan ke halaman Buy 1 Get 1 (${e instanceof Error ? e.message : "?"}) — tambahkan manual di Admin → Halaman Buy 1 Get 1.`);
+    }
+  }
   revalidatePath("/admin/produk");
   revalidatePath("/produk");
   revalidateTag(STOREFRONT_TAG);

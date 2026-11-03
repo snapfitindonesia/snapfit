@@ -141,6 +141,11 @@ pencarian itu di toko.
    di Ginee) sebelum mencari. Hasil hanya produk & varian yang dijual di toko itu, dengan **harga toko itu**
    (ditampilkan per baris). Nama, foto & deskripsi tetap dari master Ginee (API Ginee tak menyediakan data
    listing per toko); stok tetap dari gudang. Bawaan = master + harga Shopee "Snapfit Indonesia".
+6. **Impor sebagai produk Buy 1 Get 1**: centang sebelum mencari. Hasilnya salinan khusus promo (judul +
+   "— Buy 1 Get 1", SKU sama → stok tetap ikut gudang), langsung masuk /buy1get1 sebagai "hanya di halaman promo"
+   (maks. 48 produk). Boleh walau versi biasanya sudah diimpor. Listing B1G1 di marketplace terhubung ke master
+   yang sama, tapi Ginee tak memberi judul listing → cari dengan nama produk, bukan "buy 1 get 1". Label
+   "2+ LISTING" = varian punya ≥2 listing di toko terpilih (biasanya listing biasa + B1G1).
 
 ### Mengunci produk dari sinkron Ginee
 Di form produk, aktifkan **"Kunci dari sinkron"** bila stok/harga produk itu ingin

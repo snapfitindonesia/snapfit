@@ -101,6 +101,8 @@ export type VariationPrice = {
   source: "shop" | "master" | "none";
   /** Varian ini dijual (terhubung) di toko yang diminta / toko acuan. */
   listed: boolean;
+  /** Jumlah listing varian ini di toko itu (≥2 = mis. listing biasa + listing Buy 1 Get 1). */
+  listings: number;
 };
 
 /**
@@ -136,7 +138,7 @@ export async function getGineeVariationPrices(
           : !isPlaceholderPrice(master)
             ? { price: master, source: "master" as const }
             : { price: 0, source: "none" as const };
-      map.set(r.variationId, { ...entry, image: r.image, listed: hits.length > 0 });
+      map.set(r.variationId, { ...entry, image: r.image, listed: hits.length > 0, listings: hits.length });
     }
   }
   return map;
