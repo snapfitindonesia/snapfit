@@ -84,3 +84,6 @@
 .root .device-chip.active small{color:#cfcdc8}
 .root .device-row.models .device-chip{height:32px;font-size:12px}
 @media(max-width:800px){.root .device-row{margin:0 -16px;padding:0 16px 2px}.root .device-row.models{margin-left:-16px;padding-left:16px;border-left:0}}
+/* Jarak produk → footer (dulu diberi bagian "Keunggulan" yang sudah dihapus). */
+.root .products-section{padding-bottom:80px}
+@media(max-width:800px){.root .products-section{padding-bottom:56px}}
