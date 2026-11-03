@@ -84,7 +84,7 @@ export const DEFAULT_PROMO_PAGE: PromoPageConfig = {
   description: "",
   appBanner: { show: true, text: "Promo Buy 1 Get 1 — beli 1 gratis 1 untuk produk pilihan", ctaLabel: "Lihat", href: "#produk-promo" },
   utility: { badge: "7", text: "Hari Pengembalian", note: "S&K berlaku", href: "/bantuan#pengembalian", rightText: "Buy 1 Get 1 — produk pilihan, gratis 1", rightHref: "#produk-promo" },
-  searchPlaceholder: "Cari case, tempered glass, tipe HP…",
+  searchPlaceholder: "Cari produk Buy 1 Get 1 (mis. Fold 4, iPhone 15)…",
   sections: SECTION_KEYS.map((key) => ({ key, active: true })),
   hero: { image: "", alt: "Promo Buy 1 Get 1 SNAPFIT", href: "#produk-promo" },
   arrivals: { image: "", alt: "Produk terbaru SNAPFIT", href: "/produk" },

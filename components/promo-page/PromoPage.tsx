@@ -121,6 +121,8 @@ export default function PromoPage({ config, menu, logoSrc, markSrc, homeHref, pr
     // Saringan dari URL (tautan dibagikan / tombol kembali).
     const readFilter = () => setFilter(parseFilter(window.location.search));
     readFilter();
+    // Tautan iklan/bagikan dgn saringan (?kat=galaxy-z-fold-4) → langsung ke daftar produk.
+    if (window.location.search.includes('kat=') || window.location.search.includes('q=')) setTimeout(() => scrollToId('produk-promo', false), 150);
     window.addEventListener('popstate', readFilter);
     return () => { html.style.scrollbarGutter = gutter; media.removeEventListener('change', change); window.removeEventListener('popstate', readFilter); if (closeTimer.current) clearTimeout(closeTimer.current); };
   }, []);
@@ -154,9 +156,16 @@ export default function PromoPage({ config, menu, logoSrc, markSrc, homeHref, pr
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [menuOpen, mobile, segmentId]);
 
-  const scrollToId = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+  // Gulir dgn memperhitungkan header lengket (±121px di desktop) — scrollIntoView biasa tertutup header.
+  const scrollToId = (id: string, smooth = true) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const header = headerRef.current, sticky = header && ['sticky', 'fixed'].includes(getComputedStyle(header).position);
+    const top = el.getBoundingClientRect().top + window.scrollY - (sticky ? header.getBoundingClientRect().height : 0) - 12;
+    window.scrollTo({ top, behavior: smooth && !window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'smooth' : 'auto' });
+  };
   /** Tujuan tombol: `?kat=…&q=…` → saring produk promo; `#id` → gulir di halaman ini; selain itu → halaman website. */
-  const go = (href: string) => {
+  const go = (href: string, scroll = true) => {
     closeMenu(); setSuggestionsOpen(false); setModal(null);
     if (!href) return;
     if (href.startsWith('?')) {
@@ -164,7 +173,7 @@ export default function PromoPage({ config, menu, logoSrc, markSrc, homeHref, pr
       setFilter(next);
       const qs = filterHref(next);
       window.history.pushState(null, '', `${window.location.pathname}${qs === '?' ? '' : qs}`);
-      requestAnimationFrame(() => scrollToId('produk-promo'));
+      if (scroll) requestAnimationFrame(() => scrollToId('produk-promo'));
       return;
     }
     if (href.startsWith('#')) { scrollToId(href.slice(1)); return; }
@@ -247,6 +256,15 @@ export default function PromoPage({ config, menu, logoSrc, markSrc, homeHref, pr
       case 'hero': return <section key={key} className={cx('hero')} aria-label={config.hero.alt || 'Promo'}><button className={cx('image-link')} onClick={() => go(config.hero.href)}><img src={banner(config.hero, 'hero', 'Banner utama')} alt={config.hero.alt} width={1280} height={720} fetchPriority="high"/></button></section>;
       case 'arrivals': return <section key={key} className={cx('arrivals')} aria-label={config.arrivals.alt || 'Banner'}><button className={cx('image-link', 'rounded')} onClick={() => go(config.arrivals.href)}><img src={banner(config.arrivals, 'arrivals', 'Banner strip')} alt={config.arrivals.alt} width={1920} height={300} loading="lazy"/></button></section>;
       case 'products': return <section key={key} id="produk-promo" className={cx('category-section', 'products-section')} aria-labelledby={`${uid}-products`}><div className={cx('section-heading')}><div><span className={cx('eyebrow')}>{config.products.eyebrow}</span><Heading k={key} id={`${uid}-products`}>{config.products.title}</Heading></div><span className={cx('section-caption')}>{config.products.caption}</span></div>
+        {menu.devices.length > 0 && (() => {
+          // Merek aktif: saringan = merek itu sendiri atau salah satu modelnya.
+          const active = menu.devices.find(b => b.slug === filter.kat || b.models.some(m => m.slug === filter.kat));
+          const chip = (label: string, count: number, slug: string | undefined, on: boolean) => <button key={slug ?? 'all'} type="button" className={cx('device-chip', on && 'active')} aria-pressed={on} onClick={() => go(filterHref({ kat: slug, q: filter.q }), false)}>{label} <small>{count}</small></button>;
+          return <div className={cx('device-filter')} role="group" aria-label="Saring menurut perangkat">
+            <div className={cx('device-row')}>{chip('Semua', products.length, undefined, !filter.kat)}{menu.devices.map(b => chip(b.label, b.count, b.slug, active?.slug === b.slug))}</div>
+            {active && active.models.length > 1 && <div className={cx('device-row', 'models')}>{active.models.map(m => chip(m.label, m.count, m.slug, filter.kat === m.slug))}</div>}
+          </div>;
+        })()}
         {filtering && <div className={cx('promo-filter')}><span>{shownProducts.length} produk · <strong>{filterLabel}</strong></span><button className={cx('underlined-link')} onClick={() => go('?')}>Semua produk promo <span>×</span></button></div>}
         {shownProducts.length ? <><div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">{shownProducts.slice(0, limit).map((p, i) => <div key={p.id}><ProductCard product={p.product} priority={i < 4}/></div>)}</div>
           {shownProducts.length > limit && <div className={cx('load-more')}><span>Menampilkan {limit} dari {shownProducts.length} produk</span><button type="button" className={cx('pill-button')} onClick={() => setLimit(n => n + PAGE_SIZE)}>Load More Products</button></div>}</>

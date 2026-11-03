@@ -20,8 +20,11 @@ export type MenuSegment = {
   seriesTitle: string;
   series: MenuLink[];
 };
+/** Chip saringan perangkat di atas daftar produk: merek → model (+ jumlah produk). */
+export type DeviceChip = { label: string; slug: string; count: number };
+export type DeviceBrandChip = DeviceChip & { models: DeviceChip[] };
 /** labels: slug saringan → nama (judul saringan aktif). */
-export type PromoMenu = { segments: MenuSegment[]; suggestions: MenuLink[]; labels: Record<string, string> };
+export type PromoMenu = { segments: MenuSegment[]; suggestions: MenuLink[]; labels: Record<string, string>; devices: DeviceBrandChip[] };
 /** Produk promo untuk menu: data saring + judul (sumber merek/lini/model) + foto sampul. */
 export type PromoMenuItem = PromoItemMeta & { name: string; image: string };
 
@@ -124,5 +127,12 @@ export function getPromoMenu(config: PromoPageConfig, items: PromoMenuItem[]): P
       }
     }
   }
-  return { segments, suggestions: [...new Map(suggestions.map((s) => [s.label.toLowerCase(), s])).values()], labels };
+  // Chip perangkat: model per merek (lini tanpa model, mis. Apple Watch → lini itu sendiri), urutan sama dgn menu.
+  const devices: DeviceBrandChip[] = brands.map((b) => ({
+    label: b.name,
+    slug: b.slug,
+    count: b.count,
+    models: b.lines.flatMap((l) => (l.models.length ? l.models.map((m) => ({ label: m.name, slug: m.slug, count: m.count })) : [{ label: l.name, slug: l.slug, count: l.count }])),
+  }));
+  return { segments, suggestions: [...new Map(suggestions.map((s) => [s.label.toLowerCase(), s])).values()], labels, devices };
 }
