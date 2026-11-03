@@ -1,11 +1,10 @@
 "use client";
 
 // Adapter paket → fitur website (sesuai examples/FashionPageAdapter paket): router Next, keranjang (drawer),
-// login/akun, newsletter, bantuan WhatsApp. Callback dibuat DI SINI (client), bukan dikirim dari server.
+// login/akun, bantuan WhatsApp (newsletter: form di footer, components/home/newsletter-section). Callback dibuat DI SINI (client), bukan dikirim dari server.
 import { useRouter } from "next/navigation";
 import PromoPage, { type PromoAction, type PromoProduct } from "@/components/promo-page/PromoPage";
 import { useStoreUI } from "@/components/shop/store-ui-provider";
-import { subscribeNewsletter } from "@/lib/actions/newsletter";
 import { waChatUrl } from "@/lib/contact";
 import type { PromoPageConfig } from "@/lib/promo-page/config";
 import type { PromoMenu } from "@/lib/promo-page/menu";
@@ -51,10 +50,6 @@ export function PromoPageClient(props: {
       navigate={(href) => (/^https?:\/\//i.test(href) ? window.location.assign(href) : router.push(href))}
       onAction={onAction}
       overlayOpen={cartOpen || loginOpen}
-      onNewsletterSubmit={async (email) => {
-        const r = await subscribeNewsletter({ email, sectionId: "buy1get1" });
-        if (!r.ok) throw new Error(r.error ?? "Gagal");
-      }}
     />
   );
 }

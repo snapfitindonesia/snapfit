@@ -45,11 +45,10 @@ export interface PromoPageProps {
   navigate: (href: string) => void;
   /** Tombol keranjang/akun/dll. → fitur website. false = tampilkan info lokal. */
   onAction?: (action: PromoAction) => boolean;
-  onNewsletterSubmit?: (email: string) => void | Promise<void>;
   /** Drawer keranjang / login toko sedang terbuka → menu bawah & tombol bantuan disembunyikan (tak menutupi). */
   overlayOpen?: boolean;
 }
-type ModalState = { kind: 'info' | 'newsletter'; title: string; action?: BottomItem };
+type ModalState = { kind: 'info'; title: string; action?: BottomItem };
 
 const categoryIcons: Record<string, string> = { Rekomendasi: '✧' };
 
@@ -72,7 +71,7 @@ function Modal({ title, eyebrow, className, children, onClose }: { title: string
   </dialog>;
 }
 
-export default function PromoPage({ config, menu, logoSrc, markSrc, homeHref, products, newsletter, navigate, onAction, onNewsletterSubmit, overlayOpen = false }: PromoPageProps) {
+export default function PromoPage({ config, menu, logoSrc, markSrc, homeHref, products, newsletter, navigate, onAction, overlayOpen = false }: PromoPageProps) {
   const segments = menu.segments;
   const uid = useId();
   const menuId = `${uid}-menu`, panelId = `${uid}-panel`, searchId = `${uid}-search`, suggestionsId = `${uid}-suggestions`, mainId = `${uid}-main`;
@@ -80,7 +79,7 @@ export default function PromoPage({ config, menu, logoSrc, markSrc, homeHref, pr
   const [menuOpen, setMenuOpen] = useState(false), [segmentId, setSegmentId] = useState<string>(segments[0]?.id ?? '');
   const [category, setCategory] = useState('Rekomendasi'), [query, setQuery] = useState(''), [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const [appBannerVisible, setAppBannerVisible] = useState(true);
-  const [modal, setModal] = useState<ModalState | null>(null), [newsletterStatus, setNewsletterStatus] = useState<'idle' | 'pending' | 'success' | 'error'>('idle');
+  const [modal, setModal] = useState<ModalState | null>(null);
   const [filter, setFilter] = useState<PromoFilter>({});
   const [limit, setLimit] = useState(PAGE_SIZE);
   useEffect(() => setLimit(PAGE_SIZE), [filter.kat, filter.q]); // saringan baru → mulai dari 12 lagi
@@ -239,11 +238,7 @@ export default function PromoPage({ config, menu, logoSrc, markSrc, homeHref, pr
 
   const information = modal?.action === 'cart' ? 'Keranjangmu masih kosong. Jelajahi produk promo untuk mulai belanja.' : modal?.action === 'wishlist' ? 'Fitur wishlist segera hadir. Sementara ini, masukkan produk favoritmu ke keranjang.' : modal?.action === 'account' ? 'Masuk ke akun SNAPFIT untuk melihat pesanan & koin.' : 'Butuh bantuan memilih tipe yang pas? Hubungi kami lewat WhatsApp atau lihat halaman bantuan.';
   const modalContent = modal && <Modal title={modal.title} eyebrow="SNAPFIT · BUY 1 GET 1" className={cx('info-dialog')} onClose={() => setModal(null)}>
-    {modal.kind === 'newsletter' ? <>{newsletterStatus === 'success' ? <p className={cx('text-success')}>Terima kasih, pendaftaran berhasil.</p> : <form className={cx('newsletter-form')} onSubmit={async event => {
-        event.preventDefault(); const email = new FormData(event.currentTarget).get('email') as string; setNewsletterStatus('pending');
-        try { await onNewsletterSubmit?.(email); setNewsletterStatus('success'); } catch { setNewsletterStatus('error'); }
-      }}><p>{config.signup.text}</p><label htmlFor={`${uid}-email`}>Alamat email</label><input id={`${uid}-email`} name="email" type="email" placeholder="nama@email.com" required autoComplete="email" disabled={newsletterStatus === 'pending'}/>{newsletterStatus === 'error' && <p role="alert">Pendaftaran belum berhasil. Silakan coba lagi.</p>}<button className={cx('pill-button')} type="submit" disabled={newsletterStatus === 'pending'}>{newsletterStatus === 'pending' ? 'Memproses…' : 'Berlangganan'} <span>↗</span></button></form>}</>
-      : <><p>{information}</p><button className={cx('pill-button')} onClick={() => go(modal.action === 'account' ? '/masuk' : modal.action === undefined ? '/bantuan' : '#produk-promo')}>{modal.action === 'account' ? 'Masuk' : modal.action === undefined ? 'Buka bantuan' : 'Lihat produk promo'} <span>↗</span></button></>}
+    <p>{information}</p><button className={cx('pill-button')} onClick={() => go(modal.action === 'account' ? '/masuk' : modal.action === undefined ? '/bantuan' : '#produk-promo')}>{modal.action === 'account' ? 'Masuk' : modal.action === undefined ? 'Buka bantuan' : 'Lihat produk promo'} <span>↗</span></button>
   </Modal>;
 
   // Judul utama (h1) = judul bagian produk promo (satu h1 per halaman).
@@ -270,8 +265,6 @@ export default function PromoPage({ config, menu, logoSrc, markSrc, homeHref, pr
           {shownProducts.length > limit && <div className={cx('load-more')}><span>Menampilkan {limit} dari {shownProducts.length} produk</span><button type="button" className={cx('pill-button')} onClick={() => setLimit(n => n + PAGE_SIZE)}>Load More Products</button></div>}</>
           : <p className={cx('products-empty')}>{filtering ? `Belum ada produk promo untuk ${filterLabel}.` : 'Produk promo segera hadir.'}</p>}
       </section>;
-      case 'signup': return <section key={key} className={cx('signup-banner')}><div><span className={cx('eyebrow')}>{config.signup.eyebrow}</span><h2>{config.signup.title}</h2><p>{config.signup.text}</p></div><button className={cx('pill-button')} onClick={() => { setNewsletterStatus('idle'); setModal({ kind: 'newsletter', title: 'Newsletter' }); }}>{config.signup.ctaLabel} <span>↗</span></button></section>;
-      case 'benefits': return <section key={key} className={cx('benefits')} aria-label="Keunggulan berbelanja">{config.benefits.map((benefit, index) => <div key={index}><Icon name={(['check', 'truck', 'return'] as IconName[])[index] ?? 'check'} className={cx('icon')}/><span><strong>{benefit.title}</strong><small>{benefit.caption}</small></span></div>)}</section>;
     }
   };
 

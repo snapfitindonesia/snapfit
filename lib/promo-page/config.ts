@@ -10,16 +10,15 @@ export const PROMO_PAGE_PATH = "/buy1get1";
 export const MAX_PROMO_PRODUCTS = 300;
 
 /** Bagian halaman yang bisa diurutkan & disembunyikan (seperti Konten Beranda). */
-// Bagian "categories" (kartu merek), "editorial", "brands" (kotak pilihan) & "seo" (teks bawah) dihapus Nov 2026 —
-// data lama yang masih memuatnya tetap terbaca (diabaikan di parsePromoPage).
-export const SECTION_KEYS = ["hero", "arrivals", "products", "signup", "benefits"] as const;
+// Bagian "categories" (kartu merek), "editorial", "brands" (kotak pilihan), "seo" (teks bawah), "signup" (ajakan
+// langganan) & "benefits" (keunggulan) dihapus Nov 2026 — newsletter & keunggulan kini di footer (sama dgn beranda).
+// Data lama yang masih memuatnya tetap terbaca (diabaikan di parsePromoPage).
+export const SECTION_KEYS = ["hero", "arrivals", "products"] as const;
 export type SectionKey = (typeof SECTION_KEYS)[number];
 export const SECTION_LABELS: Record<SectionKey, { label: string; hint: string }> = {
   hero: { label: "Banner utama", hint: "Foto besar paling atas — 1280 × 720 px" },
   arrivals: { label: "Banner strip", hint: "Banner tipis selebar layar — 1920 × 300 px" },
   products: { label: "Produk promo", hint: "Produk peserta Buy 1 Get 1 (dipilih di bagian Produk promo)" },
-  signup: { label: "Ajakan langganan", hint: "Kotak ajakan daftar newsletter" },
-  benefits: { label: "Keunggulan", hint: "3 poin keunggulan belanja" },
 };
 
 const text = (max: number) => z.string().trim().max(max).default("");
@@ -55,8 +54,6 @@ export const promoPageSchema = z.object({
   }),
   /** Foto per merek perangkat di mega menu (410 × 490 px); kosong = sampul seri pertama, lalu placeholder. */
   categories: z.object({ images: z.record(z.string().max(80), img).default({}) }).default({ images: {} }),
-  signup: z.object({ eyebrow: text(60), title: text(120), text: text(240), ctaLabel: text(40) }),
-  benefits: z.array(z.object({ title: text(60), caption: text(100) })).max(3).default([]),
 });
 export type PromoPageConfig = z.infer<typeof promoPageSchema>;
 
@@ -90,12 +87,6 @@ export const DEFAULT_PROMO_PAGE: PromoPageConfig = {
   arrivals: { image: "", alt: "Produk terbaru SNAPFIT", href: "/produk" },
   products: { eyebrow: "BELI 1 GRATIS 1", title: "Promo Buy 1 Get 1", caption: "Beli 1 case atau aksesori, gratis 1 — untuk iPhone, Samsung Galaxy, iPad & lainnya.", productIds: [], hiddenIds: [] },
   categories: { images: {} },
-  signup: { eyebrow: "A LITTLE SOMETHING FOR YOU", title: "Promo baru, langsung ke emailmu.", text: "Dapatkan info promo & produk terbaru SNAPFIT.", ctaLabel: "Daftar newsletter" },
-  benefits: [
-    { title: "100% original", caption: "Produk resmi SNAPFIT & bergaransi" },
-    { title: "Belanja makin mudah", caption: "Dikirim ke seluruh Indonesia" },
-    { title: "7 hari pengembalian", caption: "Untuk produk cacat atau salah kirim" },
-  ],
 };
 
 /** Gabungkan data tersimpan dengan bawaan (data lama/rusak → bawaan per bagian). */
@@ -115,6 +106,5 @@ export function parsePromoPage(raw: unknown): PromoPageConfig {
   return {
     ...c,
     sections,
-    benefits: c.benefits.length ? c.benefits : DEFAULT_PROMO_PAGE.benefits,
   };
 }

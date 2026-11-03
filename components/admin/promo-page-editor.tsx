@@ -179,26 +179,6 @@ export function PromoPageEditor({ initial, products, brands }: { initial: PromoP
             </div>
           </div>
         );
-      case "signup":
-        return (
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Text label="Label kecil" value={c.signup.eyebrow} onChange={(eyebrow) => set("signup", { ...c.signup, eyebrow })} />
-            <Text label="Judul" value={c.signup.title} onChange={(title) => set("signup", { ...c.signup, title })} />
-            <Text label="Teks" value={c.signup.text} onChange={(text) => set("signup", { ...c.signup, text })} />
-            <Text label="Teks tombol" value={c.signup.ctaLabel} onChange={(ctaLabel) => set("signup", { ...c.signup, ctaLabel })} hint="Membuka form newsletter (masuk ke Pelanggan → Langganan Email)." />
-          </div>
-        );
-      case "benefits":
-        return (
-          <div className="grid gap-3 sm:grid-cols-3">
-            {c.benefits.map((b, i) => (
-              <div key={i} className="space-y-2 rounded-md border border-border p-3">
-                <Text label={`Poin ${i + 1}`} value={b.title} onChange={(title) => set("benefits", c.benefits.map((x, j) => (j === i ? { ...x, title } : x)))} />
-                <Text label="Keterangan" value={b.caption} onChange={(caption) => set("benefits", c.benefits.map((x, j) => (j === i ? { ...x, caption } : x)))} />
-              </div>
-            ))}
-          </div>
-        );
     }
   };
 
