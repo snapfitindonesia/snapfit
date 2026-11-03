@@ -26,6 +26,15 @@ function colIndex(ref: string): number {
   return n - 1;
 }
 
+/** File unggahan: .xlsx langsung, atau .zip berisi beberapa .xlsx (Shopee memecah unduhan besar jadi 1.xlsx, 2.xlsx, …). */
+export function readSpreadsheets(name: string, data: Uint8Array): { file: string; sheets: Sheet[] }[] {
+  if (!/\.zip$/i.test(name)) return [{ file: name, sheets: readXlsx(data) }];
+  const parts = unzipSync(data, { filter: (f) => /\.xlsx$/i.test(f.name) && !f.name.startsWith("__MACOSX/") });
+  return Object.keys(parts)
+    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+    .map((p) => ({ file: `${name} › ${p}`, sheets: readXlsx(parts[p]) }));
+}
+
 export function readXlsx(data: Uint8Array): Sheet[] {
   const files = unzipSync(data);
   const read = (p: string) => (files[p] ? strFromU8(files[p]) : "");

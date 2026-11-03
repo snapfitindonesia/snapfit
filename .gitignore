@@ -53,3 +53,6 @@ scripts/.tmp/
 
 # hasil cek tampilan (npm run ui:check)
 .ui-check/
+
+# File Ubah Massal Shopee (data toko, jangan di-commit)
+/shopee/

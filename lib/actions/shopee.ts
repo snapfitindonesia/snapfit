@@ -28,6 +28,7 @@ const productSchema = z.object({
   parentSku: z.string().max(100).default(""),
   images: z.array(img).max(20),
   weight: z.number().nonnegative().max(100000).optional(),
+  tierName: z.string().max(60).optional(),
   variants: z
     .array(
       z.object({
@@ -135,12 +136,17 @@ export async function importShopeeProducts(input: unknown[], asPromo = false): P
         };
       });
       const uniq = (a: string[]) => [...new Set(a.filter(Boolean))];
+      // Nama kelompok: variasi tingkat 1 dari Shopee (mis. "Warna"; "type"/"colour" → dirapikan); tingkat 2 yang
+      // semuanya "Free …" (listing Buy 1 Get 1) → "Bonus".
+      const tier = (p.tierName ?? "").trim();
+      const tier1 = /^(colou?r|warna)$/i.test(tier) ? "Warna" : /^(type|tipe)$/i.test(tier) ? "Tipe" : tier ? tier[0].toUpperCase() + tier.slice(1) : "";
+      const opts = (key: "color" | "type") => uniq(variants.map((v) => v[key])).map((value) => ({ value, desc: "" }));
       const groups = has2
         ? [
-            { name: "Warna", options: uniq(variants.map((v) => v.color)).map((value) => ({ value, desc: "" })) },
-            { name: "Tipe", options: uniq(variants.map((v) => v.type)).map((value) => ({ value, desc: "" })) },
+            { name: tier1 || "Warna", options: opts("color") },
+            { name: opts("type").every((o) => /^(free|gratis|bonus)\b/i.test(o.value)) ? "Bonus" : "Tipe", options: opts("type") },
           ]
-        : [{ name: "Tipe", options: uniq(variants.map((v) => v.type)).map((value) => ({ value, desc: "" })) }];
+        : [{ name: tier1 || "Tipe", options: opts("type") }];
 
       // Stok: gudang Ginee per SKU (sumber yang sama dgn sinkron harian); SKU tak dikenal → stok Shopee.
       let gineeProductId: string | null = null;

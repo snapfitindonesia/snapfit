@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FileSpreadsheet, Loader2, PackagePlus, Search, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { readXlsx } from "@/lib/xlsx-read";
+import { readSpreadsheets } from "@/lib/xlsx-read";
 import { parseShopeeMassUpdate, type ShopeeProduct } from "@/lib/shopee/mass-update";
 import { findExistingShopeeNames, importShopeeProducts } from "@/lib/actions/shopee";
 
@@ -33,12 +33,10 @@ export function ShopeeImport() {
     setMsg(null);
     setErrList([]);
     try {
-      const read = await Promise.all(
-        [...list].map(async (f) => ({ file: f.name, sheets: readXlsx(new Uint8Array(await f.arrayBuffer())) })),
-      );
+      const read = (await Promise.all([...list].map(async (f) => readSpreadsheets(f.name, new Uint8Array(await f.arrayBuffer()))))).flat();
       const res = parseShopeeMassUpdate(read);
       setProducts(res.products);
-      setFiles(read.map((r) => r.file));
+      setFiles([...list].map((f) => f.name));
       setSheets(res.sheetsUsed);
       setWarnings(res.warnings);
       setChecked({});
@@ -103,11 +101,11 @@ export function ShopeeImport() {
           Produk Saya → <b>Ubah Massal</b> → Download: template <b>Informasi Dasar</b>, <b>Informasi Penjualan</b>,{" "}
           <b>Informasi Media</b> (+ <b>Informasi Pengiriman</b> untuk berat). Kategori &amp; status: Semua.
         </p>
-        <p className="mt-3 font-semibold">2. Upload semua file sekaligus</p>
+        <p className="mt-3 font-semibold">2. Upload semua file sekaligus (.xlsx, atau .zip apa adanya dari Shopee)</p>
         <label className="mt-2 inline-flex cursor-pointer items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm font-medium hover:border-foreground">
           {reading ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
-          Pilih file .xlsx
-          <input type="file" accept=".xlsx" multiple hidden onChange={(e) => { onFiles(e.target.files); e.target.value = ""; }} />
+          Pilih file .xlsx / .zip
+          <input type="file" accept=".xlsx,.zip" multiple hidden onChange={(e) => { onFiles(e.target.files); e.target.value = ""; }} />
         </label>
         {files.length > 0 && (
           <ul className="mt-2 space-y-0.5 text-xs text-muted-foreground">
@@ -176,7 +174,7 @@ export function ShopeeImport() {
                     <input type="checkbox" checked={on} onChange={(e) => setChecked((c) => ({ ...c, [p.id]: e.target.checked }))} className="size-4" />
                   )}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={p.images[0] || p.variants.find((v) => v.image)?.image || "https://placehold.co/64"} alt="" className="size-12 shrink-0 rounded-md border border-border object-cover" />
+                  <img src={p.images[0] || p.variants.find((v) => v.image)?.image || "https://placehold.co/64"} alt="" loading="lazy" className="size-12 shrink-0 rounded-md border border-border object-cover" />
                   <div className="min-w-[180px] flex-1">
                     <p className="line-clamp-2 text-sm font-medium">{p.name}</p>
                     <p className="text-xs text-muted-foreground">

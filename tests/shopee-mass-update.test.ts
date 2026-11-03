@@ -60,9 +60,9 @@ describe("parseShopeeMassUpdate", () => {
   ]);
   const ship = xlsx("Template", [
     ["et_title_product_id", "et_title_weight"],
-    ["Kode Produk", "Berat (kg)"],
+    ["Kode Produk", "Berat Produk/g"],
     NOTE,
-    ["51518418611", "0.25"],
+    ["51518418611", "250"],
   ]);
 
   it("menggabungkan 4 template per Kode Produk", () => {

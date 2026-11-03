@@ -23,15 +23,25 @@ export type ShopeeProduct = {
   parentSku: string;
   images: string[]; // [0] = foto sampul
   weight?: number; // gram
+  /** Nama variasi tingkat 1 di Shopee (mis. "Warna", "type") — dari file Media. */
+  tierName?: string;
   variants: ShopeeVariant[];
 };
 
 type Field =
+  | "ignore" | "optionImage" | "optionName" | "tierName"
   | "variationId" | "productId" | "variationName" | "name" | "description" | "parentSku" | "sku"
   | "price" | "stock" | "cover" | "variationImage" | "image" | "weight" | "option1" | "option2";
 
 // Urutan penting: yang lebih spesifik dulu (mis. "kode variasi" sebelum "kode produk", "sku induk" sebelum "sku").
+// Template Media: pasangan "et_title_option_N_for_variation_1" (nama opsi) + "…option_image_N…" (fotonya),
+// "et_title_variation_1" = nama variasi tingkat 1.
 const FIELDS: [Field, RegExp][] = [
+  // Kolom yang mirip tapi bukan data produk (foto panduan ukuran, harga toko ekspor, ongkir, dll.).
+  ["ignore", /size_?chart|panduan ukuran|categor|kategori|reason|alasan gagal|gtin|direct_listing|purchase_quantity|channel|length|width|height/],
+  ["optionImage", /option_image_\d+_for_variation/],
+  ["optionName", /option_\d+_for_variation/],
+  ["tierName", /^et_title_variation_\d+$/],
   ["variationId", /variation_?id|model_?id|kode variasi|id variasi/],
   ["productId", /product_?id|item_?id|kode produk|id produk/],
   ["variationImage", /variation_?image|option_?image|foto variasi|gambar variasi/],
@@ -120,7 +130,7 @@ export function parseShopeeMassUpdate(files: { file: string; sheets: Sheet[] }[]
         const id = get(row, "productId");
         if (!/^\d{6,}$/.test(id)) continue;
         const p = product(id);
-        const name = get(row, "name");
+        const name = get(row, "name").replace(/\s+/g, " ");
         if (name && !p.name) p.name = name;
         const desc = get(row, "description");
         if (desc && !p.description) p.description = desc;
@@ -136,6 +146,14 @@ export function parseShopeeMassUpdate(files: { file: string; sheets: Sheet[] }[]
         for (const u of imgs) if (!p.images.includes(u)) p.images.push(u);
         const vimg = shopeeImageUrl(get(row, "variationImage"));
         if (vimg && (vid || vname)) variantImage.set(vkey, vimg);
+        // Template Media: foto per opsi variasi tingkat 1 (kolom berpasangan, urut).
+        const optNames = (cols.get("optionName") ?? []).map((c) => (row[c] ?? "").trim());
+        const optImgs = (cols.get("optionImage") ?? []).map((c) => shopeeImageUrl(row[c] ?? ""));
+        optNames.forEach((o, i) => {
+          if (o && optImgs[i]) variantImage.set(`${id}:${o}`, optImgs[i]);
+        });
+        const tier = get(row, "tierName");
+        if (tier && !p.tierName) p.tierName = tier;
 
         const w = num(get(row, "weight"));
         if (w > 0) {
@@ -175,5 +193,5 @@ export function parseShopeeMassUpdate(files: { file: string; sheets: Sheet[] }[]
   return { products, sheetsUsed, warnings };
 }
 
-/** Berat dari template Shopee: gram, atau kg bila < 50 (mis. "0.2"). */
-export const weightGrams = (w?: number) => (!w ? 200 : w < 50 ? Math.round(w * 1000) : Math.round(w));
+/** Berat dari template Shopee ("Berat Produk/g"); kosong → 200 g. */
+export const weightGrams = (w?: number) => (w && w > 0 ? Math.round(w) : 200);
