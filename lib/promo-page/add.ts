@@ -3,9 +3,9 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { CATALOG_TAG } from "@/lib/catalog";
-import { DEFAULT_PROMO_PAGE, PROMO_PAGE_KEY, PROMO_PAGE_PATH, PROMO_PAGE_TAG, parsePromoPage } from "@/lib/promo-page/config";
+import { DEFAULT_PROMO_PAGE, MAX_PROMO_PRODUCTS, PROMO_PAGE_KEY, PROMO_PAGE_PATH, PROMO_PAGE_TAG, parsePromoPage } from "@/lib/promo-page/config";
 
-export const MAX_PROMO_PRODUCTS = 48; // = batas productIds di lib/promo-page/config.ts
+export { MAX_PROMO_PRODUCTS };
 
 /** Produk Buy 1 Get 1 dikenali dari judulnya ("… — Buy 1 Get 1", "[BUY 1 GET 1] …"). */
 export const PROMO_NAME = "Buy 1 Get 1";

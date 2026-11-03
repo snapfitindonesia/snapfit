@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ImageInput } from "@/components/admin/image-input";
 import { cn } from "@/lib/utils";
 import { savePromoPage } from "@/lib/actions/promo-page";
-import { DEFAULT_PROMO_PAGE, PROMO_PAGE_PATH, SECTION_LABELS, type PromoPageConfig, type SectionKey } from "@/lib/promo-page/config";
+import { DEFAULT_PROMO_PAGE, MAX_PROMO_PRODUCTS, PROMO_PAGE_PATH, SECTION_LABELS, type PromoPageConfig, type SectionKey } from "@/lib/promo-page/config";
 
 const input = "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-foreground";
 export type PromoProductOption = { id: string; name: string; archived: boolean };
@@ -101,7 +101,7 @@ export function PromoPageEditor({ initial, products, brands }: { initial: PromoP
             <Text label="Keterangan" value={c.products.caption} onChange={(caption) => set("products", { ...c.products, caption })} />
             <div>
               <span className="text-sm font-medium">Produk peserta promo</span>{" "}
-              <span className="text-xs text-muted-foreground">({c.products.productIds.length}/48 · urutan = urutan tampil)</span>
+              <span className="text-xs text-muted-foreground">({c.products.productIds.length}/{MAX_PROMO_PRODUCTS} · urutan = urutan tampil)</span>
               <div className="relative mt-1">
                 <input className={input} value={pq} onChange={(e) => setPq(e.target.value)} placeholder="Ketik nama produk (min. 2 huruf) untuk menambah…" aria-label="Cari produk untuk ditambahkan" />
                 {matches.length > 0 && (
@@ -112,7 +112,7 @@ export function PromoPageEditor({ initial, products, brands }: { initial: PromoP
                           type="button"
                           className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted"
                           onClick={() => {
-                            set("products", { ...c.products, productIds: [...c.products.productIds, p.id].slice(0, 48) });
+                            set("products", { ...c.products, productIds: [...c.products.productIds, p.id].slice(0, MAX_PROMO_PRODUCTS) });
                             setPq("");
                           }}
                         >

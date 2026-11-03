@@ -143,7 +143,7 @@ pencarian itu di toko.
    listing per toko); stok tetap dari gudang. Bawaan = master + harga Shopee "Snapfit Indonesia".
 6. **Impor sebagai produk Buy 1 Get 1**: centang sebelum mencari. Hasilnya salinan khusus promo (judul +
    "— Buy 1 Get 1", SKU sama → stok tetap ikut gudang), langsung masuk /buy1get1 sebagai "hanya di halaman promo"
-   (maks. 48 produk). Boleh walau versi biasanya sudah diimpor. Listing B1G1 di marketplace terhubung ke master
+   (maks. 300 produk). Boleh walau versi biasanya sudah diimpor. Listing B1G1 di marketplace terhubung ke master
    yang sama, tapi Ginee tak memberi judul listing → cari dengan nama produk, bukan "buy 1 get 1". Label
    "2+ LISTING" = varian punya ≥2 listing di toko terpilih (biasanya listing biasa + B1G1).
 
@@ -155,7 +155,7 @@ produk biasa — Ginee hanya memberi data master). Admin → **Impor Shopee**:
    kolom dikenali dari judulnya (kode `et_title_…` / label), bukan posisinya.
 2. Saring ("Hanya judul Buy 1 Get 1"), centang, Impor. Judul, deskripsi, foto & varian persis Shopee; harga =
    harga listing; stok = gudang Ginee per SKU (SKU tak dikenal → stok Shopee); foto disalin ke CDN.
-3. "Masukkan ke halaman /buy1get1" → langsung jadi produk promo "hanya di halaman promo" (maks. 48).
+3. "Masukkan ke halaman /buy1get1" → langsung jadi produk promo "hanya di halaman promo" (maks. 300).
    Produk bernama sama dilewati.
 
 ### Mengunci produk dari sinkron Ginee

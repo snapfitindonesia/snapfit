@@ -1,6 +1,7 @@
 import { getProducts, type ProductListItem } from "@/lib/actions/product";
 import { getCatalog } from "@/lib/catalog";
 import type { PromoItemMeta } from "@/lib/promo-page/filter";
+import { MAX_PROMO_PRODUCTS } from "@/lib/promo-page/config";
 
 export { getPromoPageConfig } from "@/lib/promo-page/settings";
 
@@ -8,7 +9,7 @@ export { getPromoPageConfig } from "@/lib/promo-page/settings";
  *  includeHidden: produk "hanya di halaman promo" tetap tampil DI SINI. */
 export async function getPromoProducts(ids: string[]): Promise<ProductListItem[]> {
   if (!ids.length) return [];
-  const { items } = await getProducts({ sort: "terbaru", skip: 0, take: Math.min(48, ids.length) }, { ids, includeHidden: true });
+  const { items } = await getProducts({ sort: "terbaru", skip: 0, take: Math.min(MAX_PROMO_PRODUCTS, ids.length) }, { ids, includeHidden: true });
   const order = new Map(ids.map((id, i) => [id, i]));
   return items.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
 }

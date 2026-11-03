@@ -6,6 +6,8 @@ import { z } from "zod";
 export const PROMO_PAGE_KEY = "page.buy1get1";
 export const PROMO_PAGE_TAG = "promo-page-buy1get1";
 export const PROMO_PAGE_PATH = "/buy1get1";
+/** Maks. produk di halaman promo (dinaikkan dari 48 → 300, Nov 2026, untuk impor listing Buy 1 Get 1 Shopee). */
+export const MAX_PROMO_PRODUCTS = 300;
 
 /** Bagian halaman yang bisa diurutkan & disembunyikan (seperti Konten Beranda). */
 // Bagian "categories" (kartu merek), "editorial", "brands" (kotak pilihan) & "seo" (teks bawah) dihapus Nov 2026 —
@@ -46,10 +48,10 @@ export const promoPageSchema = z.object({
     eyebrow: text(60),
     title: text(120),
     caption: text(160),
-    productIds: z.array(z.string().max(40)).max(48).default([]),
+    productIds: z.array(z.string().max(40)).max(MAX_PROMO_PRODUCTS).default([]),
     /** "Hanya di halaman promo": tak tampil di daftar/kategori/pencarian/beranda/sitemap/feed (lib/promo-page/promo.ts).
      *  Halaman produknya tetap bisa dibuka dari /buy1get1 (pilih varian & beli), dengan noindex. */
-    hiddenIds: z.array(z.string().max(40)).max(48).default([]),
+    hiddenIds: z.array(z.string().max(40)).max(MAX_PROMO_PRODUCTS).default([]),
   }),
   /** Foto per merek perangkat di mega menu (410 × 490 px); kosong = sampul seri pertama, lalu placeholder. */
   categories: z.object({ images: z.record(z.string().max(80), img).default({}) }).default({ images: {} }),
