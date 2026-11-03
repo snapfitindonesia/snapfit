@@ -147,6 +147,17 @@ pencarian itu di toko.
    yang sama, tapi Ginee tak memberi judul listing → cari dengan nama produk, bukan "buy 1 get 1". Label
    "2+ LISTING" = varian punya ≥2 listing di toko terpilih (biasanya listing biasa + B1G1).
 
+### Impor dari Shopee (file Ubah Massal)
+Untuk listing yang di Ginee **tidak punya master sendiri** (mis. "[BUY 1 GET 1] …" yang menumpang di master
+produk biasa — Ginee hanya memberi data master). Admin → **Impor Shopee**:
+1. Seller Center → Produk Saya → **Ubah Massal → Download**: Informasi Dasar, Penjualan, Media (+ Pengiriman
+   untuk berat). Upload semua file sekaligus — dibaca di browser (`lib/xlsx-read.ts`, `lib/shopee/mass-update.ts`),
+   kolom dikenali dari judulnya (kode `et_title_…` / label), bukan posisinya.
+2. Saring ("Hanya judul Buy 1 Get 1"), centang, Impor. Judul, deskripsi, foto & varian persis Shopee; harga =
+   harga listing; stok = gudang Ginee per SKU (SKU tak dikenal → stok Shopee); foto disalin ke CDN.
+3. "Masukkan ke halaman /buy1get1" → langsung jadi produk promo "hanya di halaman promo" (maks. 48).
+   Produk bernama sama dilewati.
+
 ### Mengunci produk dari sinkron Ginee
 Di form produk, aktifkan **"Kunci dari sinkron"** bila stok/harga produk itu ingin
 diatur manual — sinkron harian akan melewatinya.

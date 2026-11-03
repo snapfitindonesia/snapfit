@@ -42,6 +42,7 @@ const GROUPS: NavGroup[] = [
       { href: "/admin/produk/edit-massal", label: "Edit Massal" },
       { href: "/admin/produk/impor", label: "Impor CSV" },
       { href: "/admin/ginee/impor", label: "Impor Ginee" },
+      { href: "/admin/shopee/impor", label: "Impor Shopee" },
       { href: "/admin/unggulan", label: "Unggulan" },
       { href: "/admin/kategori", label: "Kategori" },
       { href: "/admin/merek", label: "Merek" },
