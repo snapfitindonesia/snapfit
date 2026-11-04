@@ -98,17 +98,19 @@ export function ProductTable({ products }: { products: AdminProduct[] }) {
     else if (tab === "grosir") list = list.filter((p) => p.isGrosir);
     if (cat) list = list.filter((p) => p.category === cat);
     const q = query.trim().toLowerCase();
-    // Hanya nomor produk ("1235", "#1235", "1235, 1237 1240") → cocokkan nomor persis.
-    const nums = /^[#\d\s,;]+$/.test(q) ? new Set(q.match(/\d+/g)?.map(Number)) : null;
-    if (nums?.size) {
-      list = list.filter((p) => p.shortId !== null && nums.has(p.shortId));
+    const matches = (p: AdminProduct, t: string) =>
+      p.name.toLowerCase().includes(t) ||
+      p.slug.toLowerCase().includes(t) ||
+      p.id.toLowerCase().includes(t) ||
+      p.variants.some((v) => variantLabel(v).toLowerCase().includes(t) || (v.sku ?? "").toLowerCase().includes(t));
+    // Hanya angka ("1235", "#1235", "1235, 1237 1240", SKU "6934913025581"): angka yang merupakan nomor produk
+    // → produk itu saja; selain itu dicari di SKU/nama/kode. Beberapa angka sekaligus menampilkan gabungannya.
+    const nums = /^[#\d\s,;]+$/.test(q) ? (q.match(/\d+/g) ?? []) : [];
+    if (nums.length) {
+      const shortIds = new Set(products.map((p) => p.shortId));
+      list = list.filter((p) => nums.some((n) => (shortIds.has(Number(n)) ? p.shortId === Number(n) : matches(p, n))));
     } else if (q) {
-      list = list.filter((p) =>
-        p.name.toLowerCase().includes(q) ||
-        p.slug.toLowerCase().includes(q) ||
-        p.id.toLowerCase().includes(q) ||
-        p.variants.some((v) => variantLabel(v).toLowerCase().includes(q) || (v.sku ?? "").toLowerCase().includes(q)),
-      );
+      list = list.filter((p) => matches(p, q));
     }
     return list;
   }, [products, tab, cat, query]);
