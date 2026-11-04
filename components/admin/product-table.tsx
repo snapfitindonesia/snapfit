@@ -20,6 +20,7 @@ export type AdminVariant = {
 };
 export type AdminProduct = {
   id: string;
+  shortId: number | null; // nomor produk (#1235) — sama dengan angka di akhir URL produk
   name: string;
   slug: string;
   coverImage: string | null;
@@ -97,7 +98,11 @@ export function ProductTable({ products }: { products: AdminProduct[] }) {
     else if (tab === "grosir") list = list.filter((p) => p.isGrosir);
     if (cat) list = list.filter((p) => p.category === cat);
     const q = query.trim().toLowerCase();
-    if (q) {
+    // Hanya nomor produk ("1235", "#1235", "1235, 1237 1240") → cocokkan nomor persis.
+    const nums = /^[#\d\s,;]+$/.test(q) ? new Set(q.match(/\d+/g)?.map(Number)) : null;
+    if (nums?.size) {
+      list = list.filter((p) => p.shortId !== null && nums.has(p.shortId));
+    } else if (q) {
       list = list.filter((p) =>
         p.name.toLowerCase().includes(q) ||
         p.slug.toLowerCase().includes(q) ||
@@ -203,7 +208,7 @@ export function ProductTable({ products }: { products: AdminProduct[] }) {
             value={rawQuery}
             onChange={(e) => setRawQuery(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && applySearch()}
-            placeholder="Cari nama produk, kode variasi, ID produk"
+            placeholder="Cari nama, kode variasi, atau nomor produk (mis. 1235, 1237)"
             className="w-full bg-transparent py-2 text-sm outline-none"
           />
         </div>
@@ -285,7 +290,7 @@ export function ProductTable({ products }: { products: AdminProduct[] }) {
                         <AdminThumb src={p.coverImage} className="size-12 shrink-0 rounded-md border border-border object-contain" />
                         <div className="min-w-0">
                           <p className="line-clamp-2 font-medium leading-snug">{p.name}</p>
-                          <p className="mt-0.5 text-xs text-muted-foreground">ID Produk: {p.id.slice(0, 10)}</p>
+                          <p className="mt-0.5 text-xs text-muted-foreground">{p.shortId !== null && <><b className="font-semibold text-foreground">#{p.shortId}</b> · </>}ID Produk: {p.id.slice(0, 10)}</p>
                           <p className="text-xs text-muted-foreground">Kode: {p.slug}</p>
                           <div className="mt-1 flex flex-wrap gap-1">
                             {p.archived && (

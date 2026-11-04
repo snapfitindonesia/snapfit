@@ -24,6 +24,7 @@ export default async function AdminProductsPage() {
 
   const data: AdminProduct[] = products.map((p) => ({
     id: p.id,
+    shortId: p.shortId,
     name: p.name,
     slug: p.slug,
     coverImage: p.coverImage,
